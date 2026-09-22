@@ -138,6 +138,7 @@ namespace HoaVaMau.Gameplay
 
         // Base visual scale
         private float baseVisualScaleX = 0.64f;
+        private float baseVisualScaleY = 1.0f;
         private float baseVisualScaleZ = 0.64f;
         private float squashStretchY = 1.0f;
 
@@ -160,6 +161,7 @@ namespace HoaVaMau.Gameplay
             if (visualTransform != null)
             {
                 baseVisualScaleX = visualTransform.localScale.x;
+                baseVisualScaleY = visualTransform.localScale.y;
                 baseVisualScaleZ = visualTransform.localScale.z;
             }
 
@@ -544,19 +546,33 @@ namespace HoaVaMau.Gameplay
 
         private void UpdateCrouchAndCrawl(bool grounded)
         {
-            bool ceilingBlocked = CheckCeilingObstruction();
+            bool ceilingBlocked = CheckCeilingObstruction(out bool blockedFromCrouch);
+            bool tunnelAhead = CheckLowOverhangAhead(horizontalInput);
 
             if (grounded)
             {
-                if (ceilingBlocked)
+                if (blockedFromCrouch)
                 {
+                    // Khoảng hở dưới trần quá thấp (< 1.1m) buộc phải bò trườn
+                    IsCrawling = true;
+                    IsCrouching = true;
+                }
+                else if (ceilingBlocked)
+                {
+                    // Trần nhà thấp vừa phải (1.1m - 1.8m)
+                    IsCrouching = true;
+                    if (crouchPressed || tunnelAhead) IsCrawling = true;
+                }
+                else if (tunnelAhead && (Mathf.Abs(horizontalInput) > 0.05f || crouchPressed))
+                {
+                    // Đang tiến về phía hầm/khe thấp: tự động hạ người bò trườn qua khe
                     IsCrawling = true;
                     IsCrouching = true;
                 }
                 else if (crouchPressed)
                 {
                     IsCrouching = true;
-                    IsCrawling = false;
+                    IsCrawling = tunnelAhead;
                 }
                 else
                 {
@@ -576,11 +592,44 @@ namespace HoaVaMau.Gameplay
             ApplyColliderDimensions();
         }
 
-        private bool CheckCeilingObstruction()
+        private bool CheckCeilingObstruction(out bool blockedFromCrouch)
         {
-            Vector3 origin = transform.position + Vector3.up * 0.45f;
-            float checkDist = standingHeight - 0.45f;
-            return Physics.SphereCast(origin, 0.28f, Vector3.up, out _, checkDist, obstacleMask, QueryTriggerInteraction.Ignore);
+            Vector3 origin = transform.position + Vector3.up * 0.35f;
+            float radius = 0.22f;
+            float checkDist = standingHeight - 0.35f;
+
+            if (Physics.SphereCast(origin, radius, Vector3.up, out RaycastHit hit, checkDist, obstacleMask, QueryTriggerInteraction.Ignore))
+            {
+                float clearance = hit.distance + 0.35f;
+                // Nếu khoảng hở từ sàn đến trần nhỏ hơn chiều cao ngồi xổm (crouchHeight = 1.1m) thì buộc phải bò
+                blockedFromCrouch = (clearance < crouchHeight + 0.05f);
+                return true;
+            }
+
+            blockedFromCrouch = false;
+            return false;
+        }
+
+        private bool CheckLowOverhangAhead(float moveDirX)
+        {
+            float dirX = (Mathf.Abs(moveDirX) > 0.05f) ? Mathf.Sign(moveDirX) : FacingDirection;
+            Vector3 forward = new Vector3(dirX, 0f, 0f);
+
+            float radius = (charController != null) ? charController.radius : 0.36f;
+            float checkDist = radius + 0.55f;
+
+            // Kiểm tra phía trước ở tầm đầu/ngực (chiều cao ngồi xổm/đứng)
+            Vector3 highOrigin = transform.position + Vector3.up * 0.85f;
+            bool highBlocked = Physics.SphereCast(highOrigin, 0.16f, forward, out _, checkDist, obstacleMask, QueryTriggerInteraction.Ignore);
+
+            if (!highBlocked) return false;
+
+            // Kiểm tra phía trước ở tầm sát đất (chiều cao bò trườn)
+            Vector3 lowOrigin = transform.position + Vector3.up * (crawlHeight * 0.5f);
+            bool lowBlocked = Physics.SphereCast(lowOrigin, 0.14f, forward, out _, checkDist, obstacleMask, QueryTriggerInteraction.Ignore);
+
+            // Nếu phía trên vướng nhưng phía dưới thông thoáng -> Có hầm/khe thấp phía trước!
+            return !lowBlocked;
         }
 
         private void ApplyColliderDimensions()
@@ -1074,8 +1123,8 @@ namespace HoaVaMau.Gameplay
             float yRot = facing > 0 ? 0f : 180f;
             visualTransform.localEulerAngles = new Vector3(0f, yRot, targetZRot);
 
-            visualTransform.localScale = new Vector3(baseVisualScaleX * widthFactor, (standingHeight * 0.5f) * heightFactor, baseVisualScaleZ * widthFactor);
-            visualTransform.localPosition = new Vector3(0f, (standingHeight * 0.5f) * heightFactor, 0f);
+            visualTransform.localScale = new Vector3(baseVisualScaleX * widthFactor, baseVisualScaleY * heightFactor, baseVisualScaleZ * widthFactor);
+            visualTransform.localPosition = Vector3.zero;
         }
 
         // ==========================================
@@ -1201,9 +1250,9 @@ namespace HoaVaMau.Gameplay
 
             visualTransform.localEulerAngles = new Vector3(0f, yRot, zRot);
 
-            float scaleY = (targetHeight * 0.5f) * squashStretchY;
-            visualTransform.localScale = new Vector3(baseVisualScaleX * widthScale, scaleY, baseVisualScaleZ * widthScale);
-            visualTransform.localPosition = new Vector3(0f, scaleY, 0f);
+            float heightRatio = (targetHeight / standingHeight) * squashStretchY;
+            visualTransform.localScale = new Vector3(baseVisualScaleX * widthScale, baseVisualScaleY * heightRatio, baseVisualScaleZ * widthScale);
+            visualTransform.localPosition = Vector3.zero;
 
             if (CurrentState != PlayerState.PushPull && CurrentState != PlayerState.Carrying && !IsCrawling)
             {
@@ -1227,8 +1276,8 @@ namespace HoaVaMau.Gameplay
         {
             if (visualTransform != null)
             {
-                visualTransform.localScale = new Vector3(baseVisualScaleX, standingHeight * 0.5f, baseVisualScaleZ);
-                visualTransform.localPosition = new Vector3(0f, standingHeight * 0.5f, 0f);
+                visualTransform.localScale = new Vector3(baseVisualScaleX, baseVisualScaleY, baseVisualScaleZ);
+                visualTransform.localPosition = Vector3.zero;
             }
         }
 
