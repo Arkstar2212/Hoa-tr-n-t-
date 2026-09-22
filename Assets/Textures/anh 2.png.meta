@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 105974d761e3dc64a84d24543ffc903c
+guid: da6809ecf9999d741b89659e16b29433
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6191029807088423388
-    second: cay xoa phong_0
+      213: -7877209389088629119
+    second: anh 2_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -102,13 +102,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: cay xoa phong_0
+      name: anh 2_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 415
-        height: 602
+        width: 635
+        height: 393
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -117,8 +117,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 42ea3a2213b051aa0800000000000000
-      internalID: -6191029807088423388
+      spriteID: 18e100ebbc78ea290800000000000000
+      internalID: -7877209389088629119
       vertices: []
       indices: 
       edges: []
