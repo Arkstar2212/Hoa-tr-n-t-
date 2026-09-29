@@ -40,7 +40,7 @@ Shader "HoaVaMau/StylizedWater2D"
         }
 
         Blend SrcAlpha OneMinusSrcAlpha
-        ZWrite On
+        ZWrite Off
         Cull Back
 
         Pass
@@ -140,11 +140,14 @@ Shader "HoaVaMau/StylizedWater2D"
                 half3 finalColor = waterColor + sunHighlight;
 
                 // Shoreline foam edge
-                float shoreT = saturate(input.uv.y / max(0.001, _FoamDepth));
-                float shoreWash = sin(input.worldPos.x * 2.5 + _Time.y * _WaveSpeed) * 0.12;
-                float foamFade = saturate((1.0 - shoreT) + shoreWash);
-                float foamAlpha = smoothstep(0.4, 0.95, foamFade) * _FoamColor.a;
-                finalColor = lerp(finalColor, _FoamColor.rgb, foamAlpha);
+                if (_FoamDepth > 0.001 && _FoamColor.a > 0.001)
+                {
+                    float shoreT = saturate(input.uv.y / _FoamDepth);
+                    float shoreWash = sin(input.worldPos.x * 2.5 + _Time.y * _WaveSpeed) * 0.12;
+                    float foamFade = saturate((1.0 - shoreT) + shoreWash);
+                    float foamAlpha = smoothstep(0.4, 0.95, foamFade) * _FoamColor.a;
+                    finalColor = lerp(finalColor, _FoamColor.rgb, foamAlpha);
+                }
 
                 float alpha = lerp(_ShallowColor.a, _DeepColor.a, depthFactor);
                 return half4(finalColor, alpha);

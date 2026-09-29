@@ -12,6 +12,27 @@
       },
       "hash": "4b530b7106ea304c557bf7fd6a17d0e16f530b71"
     },
+    "com.tripo3d.unitybridge": {
+      "version": "file:C:/Users/Thanh Tài/Downloads/Tripo3d_Unity_Bridge-latest/Tripo3d_Unity_Bridge",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.modules.jsonserialize": "1.0.0"
+      }
+    },
+    "com.unity.2d.animation": {
+      "version": "16.0.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.2d.common": "15.0.0",
+        "com.unity.2d.sprite": "1.0.0",
+        "com.unity.collections": "2.4.3",
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.2d.common": {
       "version": "15.0.0",
       "depth": 1,
