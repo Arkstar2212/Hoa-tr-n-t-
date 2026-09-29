@@ -1395,6 +1395,7 @@ namespace HoaVaMau.Editor
             velOverLifetime.enabled = true;
             velOverLifetime.x = new ParticleSystem.MinMaxCurve(-0.10f, 0.25f);
             velOverLifetime.y = new ParticleSystem.MinMaxCurve(0.05f, 0.16f);
+            velOverLifetime.z = new ParticleSystem.MinMaxCurve(-0.05f, 0.05f);
 
             var colOverLifetime = ps.colorOverLifetime;
             colOverLifetime.enabled = true;

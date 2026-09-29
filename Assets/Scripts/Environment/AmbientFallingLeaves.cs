@@ -65,6 +65,7 @@ namespace HoaVaMau.Environment
             Vector3 wind = WindManager.WindVector;
             velocityModule.x = new ParticleSystem.MinMaxCurve(wind.x * windInfluence - 0.5f, wind.x * windInfluence + 0.5f);
             velocityModule.y = new ParticleSystem.MinMaxCurve(-fallSpeed - 0.5f, -fallSpeed + 0.3f);
+            velocityModule.z = new ParticleSystem.MinMaxCurve(0f, 0f);
         }
 
         /// <summary>
