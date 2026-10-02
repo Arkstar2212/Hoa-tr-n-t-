@@ -69,8 +69,9 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float pullLeanAngle = -11.0f;
 
         [Header("Cinematic Ledge Climbing")]
-        [SerializeField] private float climbDuration = 1.12f;
+        [SerializeField] private float climbDuration = 2.167f;
         [SerializeField] private float maxClimbForwardLean = 24f;
+        [SerializeField] private bool autoClimbOnLedgeGrab = true;
 
         [Header("Carry & Throw")]
         [SerializeField] private Transform carrySocket;
@@ -90,6 +91,31 @@ namespace HoaVaMau.Gameplay
         public Vector3 Velocity => velocity;
         public bool CanAttachToRope => ropeAttachCooldown <= 0f;
 
+        /// <summary>
+        /// Provides exact world camera focus point. During ledge climb, dynamically tracks
+        /// the climbing character's body/hips so the camera stays centered on the player.
+        /// </summary>
+        public Vector3 CameraTargetPosition
+        {
+            get
+            {
+                if (CurrentState == PlayerState.LedgeClimb || CurrentState == PlayerState.LedgeGrab)
+                {
+                    if (hipBone == null) hipBone = transform.Find("Armature/BoneRoot/Hip");
+                    if (hipBone != null)
+                    {
+                        return new Vector3(hipBone.position.x, hipBone.position.y - 0.9f, 0f);
+                    }
+                    else
+                    {
+                        float t = Mathf.Clamp01(climbProgress);
+                        return Vector3.Lerp(climbStartPos, climbEndPos, t);
+                    }
+                }
+                return transform.position;
+            }
+        }
+
         // Legacy compatibility properties for auxiliary systems
         public float Concealment { get; set; } = 0f;
         public bool IsHidingInBush { get; private set; } = false;
@@ -99,6 +125,7 @@ namespace HoaVaMau.Gameplay
         // References
         private CharacterController charController;
         private LedgeGrabDetector ledgeDetector;
+        private Transform hipBone;
         private RopeController currentRope;
         private InteractableCrate currentCrate;
         private PortableItem carriedItem;
@@ -151,11 +178,17 @@ namespace HoaVaMau.Gameplay
             charController = GetComponent<CharacterController>();
             if (charController != null)
             {
+                charController.enabled = true;
                 charController.skinWidth = 0.04f;
                 charController.stepOffset = 0.35f;
                 charController.minMoveDistance = 0f;
             }
             ledgeDetector = GetComponent<LedgeGrabDetector>();
+
+            if (hipBone == null)
+            {
+                hipBone = transform.Find("Armature/BoneRoot/Hip");
+            }
 
             if (visualTransform == null) visualTransform = transform.Find("Visual");
             if (visualTransform != null)
@@ -179,6 +212,15 @@ namespace HoaVaMau.Gameplay
                     trajectoryPredictor = trajGO.AddComponent<TrajectoryPredictor>();
                 }
             }
+        }
+
+        private void OnEnable()
+        {
+            if (charController != null && CurrentState != PlayerState.LedgeClimb && CurrentState != PlayerState.LedgeGrab)
+            {
+                charController.enabled = true;
+            }
+            if (hipBone == null) hipBone = transform.Find("Armature/BoneRoot/Hip");
         }
 
         private void SetupCarrySocket()
@@ -983,19 +1025,34 @@ namespace HoaVaMau.Gameplay
         // ==========================================
         public void StartLedgeGrab(Vector3 grabPos, Vector3 platformPos)
         {
-            CurrentState = PlayerState.LedgeGrab;
             velocity = Vector3.zero;
 
-            charController.enabled = false;
+            if (charController == null) charController = GetComponent<CharacterController>();
+            if (charController != null) charController.enabled = false;
             transform.position = grabPos;
 
             climbStartPos = grabPos;
             climbEndPos = platformPos;
 
+            // Orient directly facing the wall (Y=90 for right, Y=-90 for left)
+            float yRot = FacingDirection > 0 ? 90f : -90f;
+            transform.rotation = Quaternion.Euler(0f, yRot, 0f);
+
             if (visualTransform != null)
             {
-                float yRot = FacingDirection > 0 ? 0f : 180f;
-                visualTransform.localEulerAngles = new Vector3(0f, yRot, 0f);
+                visualTransform.localEulerAngles = Vector3.zero;
+            }
+
+            if (autoClimbOnLedgeGrab)
+            {
+                CurrentState = PlayerState.LedgeClimb;
+                climbProgress = 0f;
+                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+                if (meshyAnim != null) meshyAnim.OnClimbStarted();
+            }
+            else
+            {
+                CurrentState = PlayerState.LedgeGrab;
             }
         }
 
@@ -1018,6 +1075,8 @@ namespace HoaVaMau.Gameplay
             {
                 CurrentState = PlayerState.LedgeClimb;
                 climbProgress = 0f;
+                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+                if (meshyAnim != null) meshyAnim.OnClimbStarted();
                 return;
             }
 
@@ -1035,16 +1094,30 @@ namespace HoaVaMau.Gameplay
             climbProgress += dt / Mathf.Max(0.1f, climbDuration);
             float t = Mathf.Clamp01(climbProgress);
 
-            transform.position = EvaluateClimbTrajectory(t);
-            ApplyClimbVisualDynamics(t);
+            bool hasClimbAnimation = (GetComponent<Animator>() != null);
+            if (!hasClimbAnimation)
+            {
+                transform.position = EvaluateClimbTrajectory(t);
+                ApplyClimbVisualDynamics(t);
+            }
+            else
+            {
+                // Root is at the exact landing position on the platform.
+                // The normalized animation naturally hoists the character from the ledge onto this spot.
+                transform.position = climbEndPos;
+            }
 
             if (climbProgress >= 1.0f)
             {
                 transform.position = climbEndPos;
-                charController.enabled = true;
+                Physics.SyncTransforms();
+                if (charController != null) charController.enabled = true;
                 velocity = Vector3.zero;
                 CurrentState = PlayerState.Grounded;
                 ResetVisualScale();
+
+                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+                if (meshyAnim != null) meshyAnim.OnClimbFinished();
             }
         }
 

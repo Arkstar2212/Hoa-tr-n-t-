@@ -1,0 +1,177 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &5085279993613986512
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -17.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6538107832056628482, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8572121818980453681, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_Name
+      value: Player_MeshyBoy
+      objectReference: {fileID: 0}
+    - target: {fileID: 8572121818980453681, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8572121818980453681, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8008512678679947489}
+    - targetCorrespondingSourceObject: {fileID: 8572121818980453681, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2479226911518891774}
+    - targetCorrespondingSourceObject: {fileID: 8572121818980453681, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7089099335603199940}
+  m_SourcePrefab: {fileID: 100100000, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+--- !u!1 &3487123489330538465 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8572121818980453681, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
+  m_PrefabInstance: {fileID: 5085279993613986512}
+  m_PrefabAsset: {fileID: 0}
+--- !u!143 &8008512678679947489
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3487123489330538465}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 1.8
+  m_Radius: 0.35
+  m_SlopeLimit: 45
+  m_StepOffset: 0.35
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0.9, z: 0}
+--- !u!114 &2479226911518891774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3487123489330538465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2bd70b94ac54e8f8739263b0dd9c101, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.PlayerController
+  walkSpeed: 3.6
+  sprintSpeed: 6.4
+  crouchSpeed: 2
+  crawlSpeed: 1.35
+  pushPullSpeed: 2.1
+  acceleration: 26
+  deceleration: 30
+  jumpForce: 8.6
+  minJumpTime: 0.12
+  gravity: 23
+  fallGravityMultiplier: 1.4
+  terminalVelocity: 14.5
+  coyoteTimeDuration: 0.16
+  jumpBufferDuration: 0.15
+  standingHeight: 1.8
+  crouchHeight: 1.1
+  crawlHeight: 0.6
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  visualTransform: {fileID: 0}
+  runLeanAngle: 10.5
+  pushLeanAngle: 14
+  pullLeanAngle: -11
+  climbDuration: 2.167
+  maxClimbForwardLean: 24
+  autoClimbOnLedgeGrab: 1
+  carrySocket: {fileID: 0}
+  trajectoryPredictor: {fileID: 0}
+  minThrowSpeed: 5
+  maxThrowSpeed: 14.5
+  throwChargeRate: 8.5
+--- !u!114 &7089099335603199940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3487123489330538465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88cf39b5d8a543b1bee7f06bb25ffc51, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.LedgeGrabDetector
+  forwardCheckDist: 0.85
+  headHeight: 1.6
+  chestHeight: 1
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  platformLandForward: 0.72
