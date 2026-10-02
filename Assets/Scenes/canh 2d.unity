@@ -8362,7 +8362,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: e92aaa74888da254a8ca0c2469819cef, type: 3}
       propertyPath: m_Name
-      value: Meshy_AI_boy_tpose_3d_model_0927033513_image-to-3d-texture
+      value: Boy_Character
       objectReference: {fileID: 0}
     - target: {fileID: 1568410546411677557, guid: e92aaa74888da254a8ca0c2469819cef, type: 3}
       propertyPath: m_LocalPosition.x

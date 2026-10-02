@@ -252,7 +252,7 @@ AnimatorController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Meshy_Boy_AnimatorController
+  m_Name: Boy_AnimatorController
   serializedVersion: 6
   m_AnimatorParameters:
   - m_Name: Speed

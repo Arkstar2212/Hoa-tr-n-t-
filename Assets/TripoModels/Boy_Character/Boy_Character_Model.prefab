@@ -2582,7 +2582,7 @@ GameObject:
   - component: {fileID: 1479073161288377232}
   - component: {fileID: 2116021557488787353}
   m_Layer: 0
-  m_Name: Meshy_AI_boy_tpose_Ready
+  m_Name: Boy_Character_Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

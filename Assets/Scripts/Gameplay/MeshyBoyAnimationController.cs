@@ -107,7 +107,7 @@ namespace HoaVaMau.Gameplay
 #if UNITY_EDITOR
             if (animator != null)
             {
-                string controllerPath = "Assets/TripoModels/Meshy_AI_boy_tpose_3d_model_0927033513_image-to-3d-texture/Meshy_Boy_AnimatorController.controller";
+                string controllerPath = "Assets/TripoModels/Boy_Character/Boy_AnimatorController.controller";
                 var ctrl = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(controllerPath);
                 if (ctrl != null && animator.runtimeAnimatorController != ctrl)
                 {
@@ -117,7 +117,7 @@ namespace HoaVaMau.Gameplay
 
                 if (animator.avatar == null)
                 {
-                    string fbxPath = "Assets/TripoModels/Meshy_AI_boy_tpose_3d_model_0927033513_image-to-3d-texture/Meshy_AI_boy_tpose_3d_model_0927033513_image-to-3d-texture.fbx";
+                    string fbxPath = "Assets/TripoModels/Boy_Character/Boy_Character.fbx";
                     var subAssets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(fbxPath);
                     foreach (var a in subAssets)
                     {
