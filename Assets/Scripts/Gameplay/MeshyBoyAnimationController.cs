@@ -10,7 +10,9 @@ namespace HoaVaMau.Gameplay
         Auto = 0,
         ForceWalk = 1,
         ForceRun = 2,
-        ForceClimb = 3
+        ForceClimb = 3,
+        ForceCrouch = 4,
+        ForceCrawl = 5
     }
 
     /// <summary>
@@ -18,7 +20,7 @@ namespace HoaVaMau.Gameplay
     /// - Không bị giật frame (loại bỏ animator.Play(0f) và animator.speed = 0).
     /// - Sử dụng Animator Blend Tree / CrossFade với thời gian chuyển tiếp 0.15s - 0.2s.
     /// - Xoay mặt mượt mà (Smooth RotateTowards 720 deg/s) thay vì giật lật 180 độ tức thì.
-    /// - Hỗ trợ cả chế độ Gameplay tự động (Đi bộ / Chạy / Leo) lẫn các phím tắt ép xem (1, 2, 3, 0).
+    /// - Hỗ trợ cả chế độ Gameplay tự động (Đi bộ / Chạy / Leo / Ngồi / Bò) lẫn các phím tắt ép xem.
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(Animator))]
@@ -29,7 +31,7 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private MeshyAnimationMode mode = MeshyAnimationMode.Auto;
 
         [Header("Tùy chọn tương tác bàn phím (Play Mode)")]
-        [Tooltip("Bấm 1 (Walk), 2 (Run), 3/C (Climb), 0 (Auto Gameplay)")]
+        [Tooltip("Bấm 1 (Walk), 2 (Run), 3 (Climb), 4 (Crouch), 5 (Crawl), 0 (Auto Gameplay)")]
         [SerializeField] private bool enableKeyShortcuts = true;
 
         [Header("Hiển thị giao diện điều khiển trên màn hình (OnScreen GUI)")]
@@ -49,6 +51,8 @@ namespace HoaVaMau.Gameplay
 
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
         private static readonly int IsClimbingHash = Animator.StringToHash("IsClimbing");
+        private static readonly int IsCrouchingHash = Animator.StringToHash("IsCrouching");
+        private static readonly int IsCrawlingHash = Animator.StringToHash("IsCrawling");
         private static readonly int AnimStateHash = Animator.StringToHash("AnimState");
 
         public MeshyAnimationMode CurrentMode => mode;
@@ -104,6 +108,17 @@ namespace HoaVaMau.Gameplay
             if (characterController == null) characterController = GetComponent<CharacterController>();
             if (playerController == null) playerController = GetComponent<PlayerController>();
 
+            if (animator != null)
+            {
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            }
+
+            var smr = GetComponentInChildren<SkinnedMeshRenderer>();
+            if (smr != null)
+            {
+                smr.updateWhenOffscreen = true;
+            }
+
 #if UNITY_EDITOR
             if (animator != null)
             {
@@ -138,6 +153,8 @@ namespace HoaVaMau.Gameplay
             bool key1 = false;
             bool key2 = false;
             bool key3 = false;
+            bool key4 = false;
+            bool key5 = false;
             bool key0 = false;
 
 #if ENABLE_INPUT_SYSTEM
@@ -146,19 +163,25 @@ namespace HoaVaMau.Gameplay
             {
                 if (kb.digit1Key.wasPressedThisFrame || kb.numpad1Key.wasPressedThisFrame) key1 = true;
                 if (kb.digit2Key.wasPressedThisFrame || kb.numpad2Key.wasPressedThisFrame) key2 = true;
-                if (kb.digit3Key.wasPressedThisFrame || kb.numpad3Key.wasPressedThisFrame || kb.cKey.wasPressedThisFrame) key3 = true;
+                if (kb.digit3Key.wasPressedThisFrame || kb.numpad3Key.wasPressedThisFrame) key3 = true;
+                if (kb.digit4Key.wasPressedThisFrame || kb.numpad4Key.wasPressedThisFrame) key4 = true;
+                if (kb.digit5Key.wasPressedThisFrame || kb.numpad5Key.wasPressedThisFrame) key5 = true;
                 if (kb.digit0Key.wasPressedThisFrame || kb.numpad0Key.wasPressedThisFrame || kb.backspaceKey.wasPressedThisFrame) key0 = true;
             }
 #else
             if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) key1 = true;
             if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) key2 = true;
-            if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3) || Input.GetKeyDown(KeyCode.C)) key3 = true;
+            if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) key3 = true;
+            if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) key4 = true;
+            if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5)) key5 = true;
             if (Input.GetKeyDown(KeyCode.Alpha0) || Input.GetKeyDown(KeyCode.Keypad0) || Input.GetKeyDown(KeyCode.Backspace)) key0 = true;
 #endif
 
             if (key1) ForceWalk();
             else if (key2) ForceRun();
             else if (key3) ForceClimb();
+            else if (key4) ForceCrouch();
+            else if (key5) ForceCrawl();
             else if (key0) SetAutoMode();
         }
 
@@ -197,6 +220,8 @@ namespace HoaVaMau.Gameplay
             if (mode == MeshyAnimationMode.ForceWalk)
             {
                 animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsCrouchingHash, false);
+                animator.SetBool(IsCrawlingHash, false);
                 animator.SetFloat(SpeedHash, 2.0f);
                 CrossFadeToState("Walk", 0.15f);
                 return;
@@ -204,6 +229,8 @@ namespace HoaVaMau.Gameplay
             if (mode == MeshyAnimationMode.ForceRun)
             {
                 animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsCrouchingHash, false);
+                animator.SetBool(IsCrawlingHash, false);
                 animator.SetFloat(SpeedHash, 5.5f);
                 CrossFadeToState("Run", 0.15f);
                 return;
@@ -211,12 +238,32 @@ namespace HoaVaMau.Gameplay
             if (mode == MeshyAnimationMode.ForceClimb)
             {
                 animator.SetBool(IsClimbingHash, true);
+                animator.SetBool(IsCrouchingHash, false);
+                animator.SetBool(IsCrawlingHash, false);
                 CrossFadeToState("Climb", 0.08f);
+                return;
+            }
+            if (mode == MeshyAnimationMode.ForceCrouch)
+            {
+                animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsCrouchingHash, true);
+                animator.SetBool(IsCrawlingHash, false);
+                CrossFadeToState("Crouch", 0.15f);
+                return;
+            }
+            if (mode == MeshyAnimationMode.ForceCrawl)
+            {
+                animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsCrouchingHash, true);
+                animator.SetBool(IsCrawlingHash, true);
+                CrossFadeToState("Crawl", 0.12f);
                 return;
             }
 
             // 2. Chế độ Tự Động (Auto Gameplay)
             bool isClimbing = false;
+            bool isCrouching = false;
+            bool isCrawling = false;
             float targetSpeed = 0f;
 
             if (playerController != null)
@@ -231,21 +278,20 @@ namespace HoaVaMau.Gameplay
                 }
                 else
                 {
+                    isCrouching = playerController.IsCrouching;
+                    isCrawling = playerController.IsCrawling;
+
                     float h = Mathf.Abs(playerController.HorizontalInput);
                     if (h > 0.08f)
                     {
-                        if (playerController.IsSprinting)
-                        {
-                            targetSpeed = 5.2f; // Run
-                        }
-                        else
-                        {
-                            targetSpeed = 2.4f; // Walk
-                        }
+                        if (isCrawling) targetSpeed = 1.2f;
+                        else if (isCrouching) targetSpeed = 1.8f;
+                        else if (playerController.IsSprinting) targetSpeed = 5.5f;
+                        else targetSpeed = 2.0f;
                     }
                     else
                     {
-                        targetSpeed = 0f; // Idle
+                        targetSpeed = 0f;
                     }
                 }
             }
@@ -254,6 +300,8 @@ namespace HoaVaMau.Gameplay
             currentSmoothSpeed = Mathf.SmoothDamp(currentSmoothSpeed, targetSpeed, ref speedVelocity, 0.08f, Mathf.Infinity, dt);
 
             animator.SetBool(IsClimbingHash, isClimbing);
+            animator.SetBool(IsCrouchingHash, isCrouching);
+            animator.SetBool(IsCrawlingHash, isCrawling);
             animator.SetFloat(SpeedHash, currentSmoothSpeed);
 
             if (isClimbing)
@@ -264,29 +312,29 @@ namespace HoaVaMau.Gameplay
                     animator.Play("Climb", 0, 0f);
                 }
             }
+            else if (isCrawling)
+            {
+                CrossFadeToState("Crawl", 0.12f);
+            }
+            else if (isCrouching)
+            {
+                CrossFadeToState("Crouch", 0.15f);
+            }
             else
             {
                 if (currentPlayingState == "Climb")
                 {
                     // Vừa hoàn tất leo trèo, chuyển mượt mà sang Idle/Walk (các pose đã khớp 100%)
                     string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
-                    currentPlayingState = next;
-                    animator.CrossFadeInFixedTime(next, 0.12f);
+                    CrossFadeToState(next, 0.12f);
                 }
                 else
                 {
-                    if (currentSmoothSpeed > 3.6f)
-                    {
-                        currentPlayingState = "Run";
-                    }
-                    else if (currentSmoothSpeed > 0.15f)
-                    {
-                        currentPlayingState = "Walk";
-                    }
-                    else
-                    {
-                        currentPlayingState = "Idle";
-                    }
+                    string targetState = "Idle";
+                    if (currentSmoothSpeed > 3.6f) targetState = "Run";
+                    else if (currentSmoothSpeed > 0.15f) targetState = "Walk";
+
+                    CrossFadeToState(targetState, 0.15f);
                 }
             }
         }
@@ -310,7 +358,21 @@ namespace HoaVaMau.Gameplay
 
         private void CrossFadeToState(string stateName, float duration)
         {
-            if (currentPlayingState == stateName) return;
+            if (animator == null) return;
+
+            // Nếu đã ở trong state này hoặc đang trong quá trình chuyển sang state này -> không gọi đè lại để tránh bị reset frame liên tục
+            if (animator.GetCurrentAnimatorStateInfo(0).IsName(stateName))
+            {
+                currentPlayingState = stateName;
+                return;
+            }
+
+            if (animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).IsName(stateName))
+            {
+                currentPlayingState = stateName;
+                return;
+            }
+
             currentPlayingState = stateName;
             animator.CrossFadeInFixedTime(stateName, duration);
         }
@@ -318,19 +380,55 @@ namespace HoaVaMau.Gameplay
         public void ForceWalk()
         {
             mode = MeshyAnimationMode.ForceWalk;
-            CrossFadeToState("Walk", 0.15f);
+            if (animator != null)
+            {
+                animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsCrouchingHash, false);
+                animator.SetBool(IsCrawlingHash, false);
+                animator.SetFloat(SpeedHash, 2.0f);
+            }
+            CrossFadeToState("Walk", 0.12f);
         }
 
         public void ForceRun()
         {
             mode = MeshyAnimationMode.ForceRun;
-            CrossFadeToState("Run", 0.15f);
+            if (animator != null)
+            {
+                animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsCrouchingHash, false);
+                animator.SetBool(IsCrawlingHash, false);
+                animator.SetFloat(SpeedHash, 5.5f);
+            }
+            CrossFadeToState("Run", 0.12f);
         }
 
         public void ForceClimb()
         {
             mode = MeshyAnimationMode.ForceClimb;
             CrossFadeToState("Climb", 0.15f);
+        }
+
+        public void ForceCrouch()
+        {
+            mode = MeshyAnimationMode.ForceCrouch;
+            if (animator != null)
+            {
+                animator.SetBool(IsCrouchingHash, true);
+                animator.SetBool(IsCrawlingHash, false);
+            }
+            CrossFadeToState("Crouch", 0.15f);
+        }
+
+        public void ForceCrawl()
+        {
+            mode = MeshyAnimationMode.ForceCrawl;
+            if (animator != null)
+            {
+                animator.SetBool(IsCrouchingHash, true);
+                animator.SetBool(IsCrawlingHash, true);
+            }
+            CrossFadeToState("Crawl", 0.12f);
         }
 
         public void SetAutoMode()
@@ -342,7 +440,7 @@ namespace HoaVaMau.Gameplay
         {
             if (!showOnScreenGui || !Application.isPlaying) return;
 
-            GUILayout.BeginArea(new Rect(20, 20, 340, 240), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(20, 20, 360, 280), GUI.skin.box);
             GUILayout.Label("<color=#38bdf8><b>🎮 MESHY BOY TEST CONTROLLER</b></color>", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 14 });
             GUILayout.Space(2);
 
@@ -352,7 +450,7 @@ namespace HoaVaMau.Gameplay
             GUILayout.Label($"Trạng thái hiện tại: <b>{modeText}</b>", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 13 });
             GUILayout.Space(4);
 
-            GUILayout.Label("• <b>A / D</b>: Đi bộ mượt mà (Walk)\n• <b>Shift + A/D</b>: Tăng tốc chạy nhanh (Run)\n• <b>Space</b>: Nhảy (Jump)\n• <b>W khi bám vách đá</b>: Leo trèo (Climb)", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 12 });
+            GUILayout.Label("• <b>A / D</b>: Đi bộ mượt mà (Walk)\n• <b>Shift + A/D</b>: Tăng tốc chạy nhanh (Run)\n• <b>C / Ctrl / S</b>: Ngồi xổm (Crouch)\n• <b>Chui qua hang nhỏ</b>: Tự động Bò trườn (Crawl)\n• <b>W khi bám vách đá</b>: Leo trèo (Climb)", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 11 });
             GUILayout.Space(6);
 
             GUILayout.BeginHorizontal();
@@ -364,6 +462,14 @@ namespace HoaVaMau.Gameplay
 
             GUI.backgroundColor = (mode == MeshyAnimationMode.ForceClimb) ? Color.yellow : Color.white;
             if (GUILayout.Button("3: Climb")) ForceClimb();
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUI.backgroundColor = (mode == MeshyAnimationMode.ForceCrouch) ? Color.yellow : Color.white;
+            if (GUILayout.Button("4: Crouch (Ngồi)")) ForceCrouch();
+
+            GUI.backgroundColor = (mode == MeshyAnimationMode.ForceCrawl) ? Color.yellow : Color.white;
+            if (GUILayout.Button("5: Crawl (Bò)")) ForceCrawl();
             GUILayout.EndHorizontal();
 
             GUI.backgroundColor = (mode == MeshyAnimationMode.Auto) ? Color.cyan : Color.white;
@@ -381,6 +487,12 @@ namespace HoaVaMau.Gameplay
 
         [ContextMenu("Ép chạy: Climb (Leo trèo)")]
         public void ContextMenu_PlayClimb() => ForceClimb();
+
+        [ContextMenu("Ép chạy: Crouch (Ngồi)")]
+        public void ContextMenu_PlayCrouch() => ForceCrouch();
+
+        [ContextMenu("Ép chạy: Crawl (Bò trườn)")]
+        public void ContextMenu_PlayCrawl() => ForceCrawl();
 
         [ContextMenu("Về chế độ Tự Động")]
         public void ContextMenu_Auto() => SetAutoMode();

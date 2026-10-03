@@ -1,0 +1,146 @@
+using UnityEngine;
+
+namespace HoaVaMau.Gameplay
+{
+    /// <summary>
+    /// SOLID - Single Responsibility Principle:
+    /// Chuyên trách động học chuyển động vật lý (Physics & Locomotion Motor):
+    /// - Quản lý gia tốc / giảm tốc và tốc độ mục tiêu (Đi bộ, Chạy nhanh, Bò, Đẩy kéo).
+    /// - Quản lý trọng lực biến thiên, Coyote Time, Jump Buffering, và chiều cao nhảy biến thiên.
+    /// - Di chuyển CharacterController trên mặt phẳng 2D (trục X và Y, Z cố định = 0).
+    /// </summary>
+    public class PlayerMotor
+    {
+        private readonly CharacterController charController;
+
+        // Configuration
+        public float WalkSpeed { get; set; } = 2.2f;
+        public float SprintSpeed { get; set; } = 5.5f;
+        public float CrouchSpeed { get; set; } = 1.8f;
+        public float CrawlSpeed { get; set; } = 1.2f;
+        public float PushPullSpeed { get; set; } = 2.1f;
+        public float Acceleration { get; set; } = 26f;
+        public float Deceleration { get; set; } = 30f;
+
+        public float JumpForce { get; set; } = 8.6f;
+        public float MinJumpTime { get; set; } = 0.12f;
+        public float Gravity { get; set; } = 23f;
+        public float FallGravityMultiplier { get; set; } = 1.4f;
+        public float TerminalVelocity { get; set; } = 14.5f;
+        public float CoyoteTimeDuration { get; set; } = 0.16f;
+        public float JumpBufferDuration { get; set; } = 0.15f;
+
+        // Runtime Physics State
+        public Vector3 Velocity { get; set; }
+        public float CoyoteTimer { get; set; }
+        public float JumpBufferTimer { get; set; }
+        public float JumpTimeElapsed { get; set; }
+        public bool IsGrounded => charController != null && charController.isGrounded;
+
+        public PlayerMotor(CharacterController charController)
+        {
+            this.charController = charController;
+            if (this.charController != null)
+            {
+                this.charController.skinWidth = 0.04f;
+                this.charController.stepOffset = 0.35f;
+                this.charController.minMoveDistance = 0f;
+            }
+        }
+
+        public void TickTimers(float dt)
+        {
+            if (JumpBufferTimer > 0f) JumpBufferTimer -= dt;
+            if (CoyoteTimer > 0f) CoyoteTimer -= dt;
+        }
+
+        public void QueueJump()
+        {
+            JumpBufferTimer = JumpBufferDuration;
+        }
+
+        public bool TryExecuteJump(bool isCrawling, out bool jumped)
+        {
+            jumped = false;
+            if (JumpBufferTimer > 0f && CoyoteTimer > 0f && !isCrawling)
+            {
+                JumpBufferTimer = 0f;
+                CoyoteTimer = 0f;
+                JumpTimeElapsed = 0f;
+                Vector3 vel = Velocity;
+                vel.y = JumpForce;
+                Velocity = vel;
+                jumped = true;
+                return true;
+            }
+            return false;
+        }
+
+        public void ApplyGravity(bool grounded, bool jumpHeld, float dt)
+        {
+            Vector3 vel = Velocity;
+
+            if (grounded)
+            {
+                CoyoteTimer = CoyoteTimeDuration;
+                vel.y = -2.0f; // Firm ground stick to prevent floating/falling through
+            }
+            else
+            {
+                float activeGravity = Gravity;
+                if (vel.y > 0f)
+                {
+                    JumpTimeElapsed += dt;
+                    if (!jumpHeld && JumpTimeElapsed > MinJumpTime)
+                    {
+                        activeGravity *= 1.8f;
+                    }
+                }
+                else
+                {
+                    activeGravity *= FallGravityMultiplier;
+                }
+
+                vel.y -= activeGravity * dt;
+                if (vel.y < -TerminalVelocity) vel.y = -TerminalVelocity;
+            }
+
+            Velocity = vel;
+        }
+
+        public void ApplyHorizontalMovement(float horizontalInput, float currentSpeed, float dt)
+        {
+            Vector3 vel = Velocity;
+            float targetVelX = horizontalInput * currentSpeed;
+            float accelRate = (Mathf.Abs(horizontalInput) > 0.05f) ? Acceleration : Deceleration;
+            vel.x = Mathf.MoveTowards(vel.x, targetVelX, accelRate * dt);
+            vel.z = 0f;
+            Velocity = vel;
+
+            if (charController != null && charController.enabled)
+            {
+                charController.Move(Velocity * dt);
+            }
+        }
+
+        public void MoveDirect(Vector3 displacement)
+        {
+            if (charController != null && charController.enabled)
+            {
+                charController.Move(displacement);
+            }
+        }
+
+        public void Teleport(Vector3 position)
+        {
+            if (charController != null)
+            {
+                bool wasEnabled = charController.enabled;
+                charController.enabled = false;
+                charController.transform.position = new Vector3(position.x, position.y, 0f);
+                Velocity = Vector3.zero;
+                charController.enabled = wasEnabled;
+            }
+        }
+    }
+}
