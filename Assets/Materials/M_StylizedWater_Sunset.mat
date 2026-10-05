@@ -25,25 +25,25 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _FarZ: 25
-    - _FoamDepth: 0.08
+    - _FarZ: 60
+    - _FoamDepth: 0
     - _GradientPower: 1.2
-    - _NearZ: 0
-    - _ReflectionFalloff: 2
+    - _NearZ: -24
+    - _ReflectionFalloff: 2.8
     - _ReflectionIntensity: 2.2
-    - _ReflectionWidth: 3.5
-    - _RippleScale: 7
-    - _RippleSpeed: 1
-    - _RippleStrength: 0.45
-    - _SunWorldX: 2.5
-    - _WaveFrequency: 1.5
-    - _WaveHeight: 0.02
-    - _WaveSpeed: 1.2
+    - _ReflectionWidth: 6
+    - _RippleScale: 5.5
+    - _RippleSpeed: 0.9
+    - _RippleStrength: 0.4
+    - _SunWorldX: -3.5
+    - _WaveFrequency: 1.4
+    - _WaveHeight: 0.016
+    - _WaveSpeed: 1.1
     m_Colors:
-    - _DeepColor: {r: 0.06, g: 0.16, b: 0.26, a: 0.98}
-    - _FoamColor: {r: 0.95, g: 0.97999996, b: 1, a: 0.9}
-    - _HorizonWaterColor: {r: 0.68, g: 0.38, b: 0.24, a: 1}
-    - _ShallowColor: {r: 0.14, g: 0.38, b: 0.42, a: 0.95}
-    - _SunReflectionColor: {r: 1, g: 0.84, b: 0.52, a: 1}
+    - _DeepColor: {r: 0.04, g: 0.12, b: 0.16, a: 1}
+    - _FoamColor: {r: 1, g: 1, b: 1, a: 0}
+    - _HorizonWaterColor: {r: 0.8, g: 0.48, b: 0.28, a: 1}
+    - _ShallowColor: {r: 0.1, g: 0.28, b: 0.32, a: 1}
+    - _SunReflectionColor: {r: 1.5, g: 1.05, b: 0.55, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

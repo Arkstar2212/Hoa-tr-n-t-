@@ -15,9 +15,7 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private LayerMask obstacleMask = ~0; // Default to all layers
 
         [Header("Position Offsets")]
-        [SerializeField] private float hangOffsetForward = 0.34f;
-        [SerializeField] private float hangOffsetDown = 1.75f;
-        [SerializeField] private float platformLandForward = 0.80f;
+        [SerializeField] private float platformLandForward = 0.72f;
 
         /// <summary>
         /// Attempts to detect a valid ledge in the facing direction.
@@ -48,8 +46,8 @@ namespace HoaVaMau.Gameplay
             }
 
             // 3. Cast downward onto the top edge of the platform
-            Vector3 downOrigin = chestOrigin + forward * (wallHit.distance + 0.25f) + Vector3.up * 0.8f;
-            if (!Physics.Raycast(downOrigin, Vector3.down, out RaycastHit ledgeHit, 1.2f, obstacleMask, QueryTriggerInteraction.Ignore))
+            Vector3 downOrigin = chestOrigin + forward * (wallHit.distance + 0.25f) + Vector3.up * 1.2f;
+            if (!Physics.Raycast(downOrigin, Vector3.down, out RaycastHit ledgeHit, 1.8f, obstacleMask, QueryTriggerInteraction.Ignore))
             {
                 return false;
             }
@@ -61,8 +59,10 @@ namespace HoaVaMau.Gameplay
             float wallX = wallHit.point.x;
             float topY = ledgeHit.point.y;
 
-            hangPos = new Vector3(wallX - facingDir * hangOffsetForward, topY - hangOffsetDown, 0f);
-            platformLandPos = new Vector3(wallX + facingDir * platformLandForward, topY + 0.05f, 0f);
+            // With normalized climb animation, root is placed directly on platform surface.
+            // Hands reach to wall edge at t=0, and character finishes standing at this exact spot.
+            hangPos = new Vector3(wallX + facingDir * platformLandForward, topY, 0f);
+            platformLandPos = hangPos;
 
             return true;
         }

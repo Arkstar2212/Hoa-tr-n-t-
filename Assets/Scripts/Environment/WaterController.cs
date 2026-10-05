@@ -16,37 +16,37 @@ namespace HoaVaMau.Environment
         [SerializeField] private float manualSunWorldX = 0f;
 
         [Header("Gradient Colors")]
-        [SerializeField] private Color shallowColor = new Color(0.16f, 0.42f, 0.48f, 1.0f);
-        [SerializeField] private Color deepColor = new Color(0.08f, 0.20f, 0.30f, 1.0f);
-        [SerializeField] private Color horizonWaterColor = new Color(0.62f, 0.38f, 0.26f, 1.0f);
+        [SerializeField] private Color shallowColor = new Color(0.10f, 0.28f, 0.32f, 1.0f);
+        [SerializeField] private Color deepColor = new Color(0.04f, 0.12f, 0.16f, 1.0f);
+        [SerializeField] private Color horizonWaterColor = new Color(0.80f, 0.48f, 0.28f, 1.0f);
         [Range(0.2f, 4.0f)]
         [SerializeField] private float gradientPower = 1.2f;
-        [SerializeField] private float nearZ = 0.0f;
-        [SerializeField] private float farZ = 25.0f;
+        [SerializeField] private float nearZ = -5.0f;
+        [SerializeField] private float farZ = 55.0f;
 
         [Header("Sunset Reflection")]
-        [SerializeField] private Color sunReflectionColor = new Color(1.0f, 0.82f, 0.55f, 1.0f);
+        [SerializeField] private Color sunReflectionColor = new Color(1.5f, 1.05f, 0.55f, 1.0f);
         [Range(0.2f, 10.0f)]
-        [SerializeField] private float reflectionWidth = 3.0f;
+        [SerializeField] private float reflectionWidth = 6.0f;
         [Range(0.0f, 5.0f)]
-        [SerializeField] private float reflectionIntensity = 2.0f;
+        [SerializeField] private float reflectionIntensity = 2.2f;
         [Range(0.5f, 5.0f)]
-        [SerializeField] private float reflectionFalloff = 2.0f;
+        [SerializeField] private float reflectionFalloff = 2.8f;
 
         [Header("Wave & Ripple Procedural Movement")]
-        [SerializeField] private float waveSpeed = 1.2f;
-        [SerializeField] private float waveFrequency = 1.5f;
+        [SerializeField] private float waveSpeed = 1.1f;
+        [SerializeField] private float waveFrequency = 1.4f;
         [Range(0.0f, 0.2f)]
-        [SerializeField] private float waveHeight = 0.02f;
-        [SerializeField] private float rippleScale = 6.0f;
-        [SerializeField] private float rippleSpeed = 1.0f;
+        [SerializeField] private float waveHeight = 0.016f;
+        [SerializeField] private float rippleScale = 5.5f;
+        [SerializeField] private float rippleSpeed = 0.9f;
         [Range(0.0f, 1.0f)]
-        [SerializeField] private float rippleStrength = 0.45f;
+        [SerializeField] private float rippleStrength = 0.40f;
 
         [Header("Foam Edge")]
-        [SerializeField] private Color foamColor = new Color(0.95f, 0.98f, 1.0f, 0.9f);
+        [SerializeField] private Color foamColor = new Color(1.0f, 1.0f, 1.0f, 0.0f);
         [Range(0.0f, 0.3f)]
-        [SerializeField] private float foamDepth = 0.08f;
+        [SerializeField] private float foamDepth = 0.0f;
 
         private Renderer waterRenderer;
         private MaterialPropertyBlock propBlock;
@@ -138,6 +138,28 @@ namespace HoaVaMau.Environment
             deepColor = deep;
             horizonWaterColor = horizon;
             sunReflectionColor = reflection;
+            ApplyProperties();
+        }
+
+        public void SetFoam(Color color, float depth)
+        {
+            foamColor = color;
+            foamDepth = depth;
+            ApplyProperties();
+        }
+
+        public void Configure(Color shallow, Color deep, Color horizon, Color reflection, float inNearZ, float inFarZ, float inReflectionWidth, float inReflectionIntensity, float inFoamDepth, Color inFoamColor)
+        {
+            shallowColor = shallow;
+            deepColor = deep;
+            horizonWaterColor = horizon;
+            sunReflectionColor = reflection;
+            nearZ = inNearZ;
+            farZ = inFarZ;
+            reflectionWidth = inReflectionWidth;
+            reflectionIntensity = inReflectionIntensity;
+            foamDepth = inFoamDepth;
+            foamColor = inFoamColor;
             ApplyProperties();
         }
     }

@@ -94,8 +94,9 @@ namespace HoaVaMau.Gameplay
 
             var vel = ps.velocityOverLifetime;
             vel.enabled = true;
-            vel.y = new ParticleSystem.MinMaxCurve(0.5f, 1.8f);
             vel.x = new ParticleSystem.MinMaxCurve(0.4f, 1.2f);
+            vel.y = new ParticleSystem.MinMaxCurve(0.5f, 1.8f);
+            vel.z = new ParticleSystem.MinMaxCurve(-0.1f, 0.1f);
 
             ParticleSystemRenderer rend = vfxGO.GetComponent<ParticleSystemRenderer>();
             Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit");

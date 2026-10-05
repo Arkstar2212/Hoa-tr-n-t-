@@ -12,6 +12,27 @@
       },
       "hash": "4b530b7106ea304c557bf7fd6a17d0e16f530b71"
     },
+    "com.tripo3d.unitybridge": {
+      "version": "file:C:/Users/Thanh Tài/Downloads/Tripo3d_Unity_Bridge-latest/Tripo3d_Unity_Bridge",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.modules.jsonserialize": "1.0.0"
+      }
+    },
+    "com.unity.2d.animation": {
+      "version": "16.0.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.2d.common": "15.0.0",
+        "com.unity.2d.sprite": "1.0.0",
+        "com.unity.collections": "2.4.3",
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.2d.common": {
       "version": "15.0.0",
       "depth": 1,
@@ -94,6 +115,15 @@
       "depth": 1,
       "source": "builtin",
       "dependencies": {}
+    },
+    "com.unity.cinemachine": {
+      "version": "6.6.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.splines": "2.8.4",
+        "com.unity.modules.imgui": "1.0.0"
+      }
     },
     "com.unity.collab-proxy": {
       "version": "2.13.6",
@@ -198,6 +228,18 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.probuilder": {
+      "version": "6.1.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.shadergraph": "17.0.3",
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.settings-manager": "1.0.3"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.profiling.core": {
       "version": "1.0.3",
       "depth": 2,
@@ -241,6 +283,13 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.settings-manager": {
+      "version": "2.1.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
     "com.unity.shadergraph": {
       "version": "17.6.0",
       "depth": 1,
@@ -250,6 +299,17 @@
         "com.unity.searcher": "4.9.3",
         "com.unity.graph-authoring": "1.0.0"
       }
+    },
+    "com.unity.splines": {
+      "version": "2.9.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.mathematics": "1.2.1",
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.settings-manager": "1.0.3"
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
       "version": "1.8.0",

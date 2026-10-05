@@ -145,10 +145,11 @@ namespace HoaVaMau.Gameplay
             velocityY = 0f;
             velocityZ = 0f;
 
+            Vector3 trackPos = (playerCtrl != null) ? playerCtrl.CameraTargetPosition : target.position;
             if (currentMode == CameraPerspectiveMode.SideScroll2D)
             {
-                float startX = target.position.x + cameraOffset2D.x + currentLookAheadX;
-                float startY = Mathf.Max(target.position.y + cameraOffset2D.y, minCameraY);
+                float startX = trackPos.x + cameraOffset2D.x + currentLookAheadX;
+                float startY = Mathf.Max(trackPos.y + cameraOffset2D.y, minCameraY);
                 if (clampCameraBounds)
                 {
                     startX = Mathf.Clamp(startX, minCameraX, maxCameraX);
@@ -159,7 +160,7 @@ namespace HoaVaMau.Gameplay
             }
             else
             {
-                Vector3 idealPos = target.position + roomOffset3D;
+                Vector3 idealPos = trackPos + roomOffset3D;
                 idealPos.x = Mathf.Clamp(idealPos.x, roomMinCamPos.x, roomMaxCamPos.x);
                 idealPos.y = Mathf.Clamp(idealPos.y, roomMinCamPos.y, roomMaxCamPos.y);
                 idealPos.z = Mathf.Clamp(idealPos.z, roomMinCamPos.z, roomMaxCamPos.z);
@@ -226,8 +227,9 @@ namespace HoaVaMau.Gameplay
             currentLookAheadX = Mathf.SmoothDamp(currentLookAheadX, targetLookAhead, ref lookAheadVelocity, Mathf.Max(lookAheadSmoothTime, 0.05f), Mathf.Infinity, dt);
 
             Vector3 currentPos = transform.position;
-            float targetX = target.position.x + cameraOffset2D.x + currentLookAheadX;
-            float targetY = Mathf.Max(target.position.y + cameraOffset2D.y, minCameraY);
+            Vector3 trackPos = (playerCtrl != null) ? playerCtrl.CameraTargetPosition : target.position;
+            float targetX = trackPos.x + cameraOffset2D.x + currentLookAheadX;
+            float targetY = Mathf.Max(trackPos.y + cameraOffset2D.y, minCameraY);
 
             // Clamp camera horizontal boundaries in 2D only if requested
             if (clampCameraBounds)
@@ -258,9 +260,10 @@ namespace HoaVaMau.Gameplay
         private void Update3DMode(float dt)
         {
             Vector3 currentPos = transform.position;
+            Vector3 trackPos = (playerCtrl != null) ? playerCtrl.CameraTargetPosition : target.position;
 
             // Compute ideal 3D camera position relative to player
-            Vector3 idealPos = target.position + roomOffset3D;
+            Vector3 idealPos = trackPos + roomOffset3D;
 
             // Clamp camera position within room boundaries
             idealPos.x = Mathf.Clamp(idealPos.x, roomMinCamPos.x, roomMaxCamPos.x);

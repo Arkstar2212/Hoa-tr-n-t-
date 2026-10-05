@@ -11,11 +11,15 @@ namespace HoaVaMau.Gameplay
     [RequireComponent(typeof(Camera))]
     public class SideScroll2DCamera : MonoBehaviour
     {
+        [Header("Projection Mode")]
+        [SerializeField] private bool usePerspective = true;
+        [SerializeField] private float fieldOfView = 22.0f;
+
         [Header("Orthographic View Settings")]
         [Tooltip("Half the vertical size of the camera viewing volume")]
         [SerializeField] private float orthographicSize = 6.0f;
         [Tooltip("Fixed camera Z depth (distance back from the 2.5D gameplay plane)")]
-        [SerializeField] private float fixedZ = -15.0f;
+        [SerializeField] private float fixedZ = -28.0f;
 
         [Header("Target Tracking")]
         [SerializeField] private Transform target;
@@ -33,6 +37,36 @@ namespace HoaVaMau.Gameplay
         private Camera cam;
         private float velocityX;
         private float velocityY;
+
+        public bool UsePerspective
+        {
+            get => usePerspective;
+            set
+            {
+                usePerspective = value;
+                ApplyCameraSettings();
+            }
+        }
+
+        public float FieldOfView
+        {
+            get => fieldOfView;
+            set
+            {
+                fieldOfView = value;
+                ApplyCameraSettings();
+            }
+        }
+
+        public float FixedZ
+        {
+            get => fixedZ;
+            set
+            {
+                fixedZ = value;
+                ApplyCameraSettings();
+            }
+        }
 
         public float OrthographicSize
         {
@@ -66,11 +100,16 @@ namespace HoaVaMau.Gameplay
         {
             if (cam == null) return;
 
-            cam.orthographic = true;
-            cam.orthographicSize = orthographicSize;
-
-            // Enforce pure side-view (facing directly down +Z axis)
-            transform.rotation = Quaternion.identity;
+            if (usePerspective)
+            {
+                cam.orthographic = false;
+                cam.fieldOfView = fieldOfView;
+            }
+            else
+            {
+                cam.orthographic = true;
+                cam.orthographicSize = orthographicSize;
+            }
 
             // Enforce fixed Z
             Vector3 pos = transform.position;

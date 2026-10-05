@@ -42,6 +42,8 @@ namespace HoaVaMau.Gameplay
             var velocityOverLifetime = reedFluffSystem.velocityOverLifetime;
             velocityOverLifetime.enabled = true;
             velocityOverLifetime.x = new ParticleSystem.MinMaxCurve(0.3f, 1.0f); // Drifts with wind
+            velocityOverLifetime.y = new ParticleSystem.MinMaxCurve(0.0f, 0.0f);
+            velocityOverLifetime.z = new ParticleSystem.MinMaxCurve(0.0f, 0.0f);
 
             var emission = reedFluffSystem.emission;
             emission.rateOverTime = 0;
