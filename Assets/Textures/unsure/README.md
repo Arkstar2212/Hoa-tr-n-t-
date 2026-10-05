@@ -18,9 +18,12 @@ Chứa các ảnh cắt thử nghiệm (crop) hoặc ảnh bóc nền tự độ
 * `cay xoa phong.png` (+ `.meta`)
 
 ## 2. `Test_And_Unused/`
-Chứa các ảnh thử nghiệm hoặc chưa được gán vào Material / Scene nào:
+Chứa các ảnh thử nghiệm, ảnh trùng lặp hoặc tệp mồ côi chưa được sử dụng:
 * `anh 1.png` (+ `.meta`)
 * `anh 2.png` (+ `.meta`)
 * `anh 3.png` (+ `.meta`)
 * `anh 4.png` (+ `.meta`)
 * `boat_test.png` (+ `.meta`)
+* `Meshy_AI_Mossbound_Monolith_0930092557_texture_metallic.png` (+ `.meta`) *(bản trùng lặp không gán vào Material Đá Tảng Rêu)*
+* `Meshy_AI_Mossbound_Monolith_0930092557_texture_normal.png` (+ `.meta`) *(bản trùng lặp không gán vào Material Đá Tảng Rêu)*
+* `Meshy_AI_Bamboo_Hut_0930070658_texture.fbx.meta` *(meta mồ côi từ file fbx đã được thay thế bằng Nhà Sàn Lá.fbx)*
