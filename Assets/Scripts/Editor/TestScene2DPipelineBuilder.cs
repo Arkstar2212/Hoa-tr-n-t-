@@ -487,8 +487,10 @@ namespace HoaVaMau.Editor
 
         private static void CreateDistantClouds(UnityEngine.SceneManagement.Scene scene, float depthZ, Color cloudColor)
         {
-            Texture2D cloudTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/cumulus_cloud_02.png");
-            if (cloudTex == null) cloudTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/lana_cloud_01.png");
+            Texture2D cloudTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Clouds/cumulus_cloud_02.png") 
+                ?? AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/cumulus_cloud_02.png");
+            if (cloudTex == null) cloudTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Clouds/lana_cloud_01.png")
+                ?? AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/lana_cloud_01.png");
 
             Shader cloudShader = Shader.Find("HoaVaMau/CinematicCloud") ?? Shader.Find("Universal Render Pipeline/Unlit");
             Material cloudMat = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsPath}/M_DistantClouds.mat");
