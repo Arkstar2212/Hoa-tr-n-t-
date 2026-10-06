@@ -13,11 +13,17 @@
       "hash": "4b530b7106ea304c557bf7fd6a17d0e16f530b71"
     },
     "com.tripo3d.unitybridge": {
-      "version": "file:C:/Users/Thanh Tài/Downloads/Tripo3d_Unity_Bridge-latest/Tripo3d_Unity_Bridge",
+      "version": "file:com.tripo3d.unitybridge",
       "depth": 0,
-      "source": "local",
+      "source": "embedded",
       "dependencies": {
-        "com.unity.modules.jsonserialize": "1.0.0"
+        "com.unity.editorcoroutines": "1.0.0",
+        "com.unity.cloud.gltfast": "6.14.1",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.modules.unitywebrequesttexture": "1.0.0",
+        "com.unity.modules.unitywebrequestwww": "1.0.0",
+        "com.unity.modules.unitywebrequestaudio": "1.0.0"
       }
     },
     "com.unity.2d.animation": {
@@ -125,6 +131,19 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "com.unity.cloud.gltfast": {
+      "version": "6.14.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.burst": "1.8.24",
+        "com.unity.collections": "1.2.4",
+        "com.unity.mathematics": "1.2.6",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.collab-proxy": {
       "version": "2.13.6",
       "depth": 0,
@@ -154,6 +173,12 @@
         "com.unity.modules.screencapture": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.unity.editorcoroutines": {
+      "version": "6.6.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {}
     },
     "com.unity.ext.nunit": {
       "version": "2.1.0",
