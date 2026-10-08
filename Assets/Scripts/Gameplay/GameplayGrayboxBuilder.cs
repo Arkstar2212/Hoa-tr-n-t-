@@ -276,7 +276,8 @@ namespace HoaVaMau.Gameplay
             {
                 Texture2D bgTex = null;
 #if UNITY_EDITOR
-                bgTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/game_background_sky.png");
+                bgTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Sky/game_background_sky.png")
+                    ?? UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/game_background_sky.png");
 #endif
                 if (bgTex == null)
                 {

@@ -1,0 +1,19 @@
+{
+    "name": "tripoforunity.Editor",
+    "rootNamespace": "TripoForUnity.Editor",
+    "references": [
+        "tripoforunity.Runtime",
+        "Unity.EditorCoroutines.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
