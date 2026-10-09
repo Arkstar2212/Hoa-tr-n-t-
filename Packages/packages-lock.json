@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.besty.unity-skills": {
-      "version": "https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity",
+      "version": "https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v2.9.0",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -10,7 +10,21 @@
         "com.unity.timeline": "1.7.7",
         "com.unity.ugui": "1.0.0"
       },
-      "hash": "4b530b7106ea304c557bf7fd6a17d0e16f530b71"
+      "hash": "58d3339d90e265cb138d9377630fbee286bc9ec9"
+    },
+    "com.tripo3d.unitybridge": {
+      "version": "file:com.tripo3d.unitybridge",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.editorcoroutines": "1.0.0",
+        "com.unity.cloud.gltfast": "6.14.1",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.modules.unitywebrequesttexture": "1.0.0",
+        "com.unity.modules.unitywebrequestwww": "1.0.0",
+        "com.unity.modules.unitywebrequestaudio": "1.0.0"
+      }
     },
     "com.unity.2d.animation": {
       "version": "16.0.1",
@@ -57,7 +71,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ai.assistant": {
-      "version": "2.19.0-pre.2",
+      "version": "2.20.0-pre.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -117,6 +131,19 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "com.unity.cloud.gltfast": {
+      "version": "6.14.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.burst": "1.8.24",
+        "com.unity.collections": "1.2.4",
+        "com.unity.mathematics": "1.2.6",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.collab-proxy": {
       "version": "2.13.6",
       "depth": 0,
@@ -146,6 +173,12 @@
         "com.unity.modules.screencapture": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.unity.editorcoroutines": {
+      "version": "6.6.0",
+      "depth": 1,
+      "source": "builtin",
+      "dependencies": {}
     },
     "com.unity.ext.nunit": {
       "version": "2.1.0",
