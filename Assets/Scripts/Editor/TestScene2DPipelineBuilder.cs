@@ -18,7 +18,7 @@ namespace HoaVaMau.Editor
         [MenuItem("Tools/2D Pipeline/Build Scene 1: Sunset (canh 2d)")]
         public static void BuildSunsetInActiveScene()
         {
-            BuildSunsetSceneInternal("Assets/Scenes/canh 2d.unity", true);
+            BuildSunsetSceneInternal("Assets/Scenes/Scene_2D_Sunset_Art.unity", true);
         }
 
         [MenuItem("Tools/2D Pipeline/Build Scene 1: Test_Sunset_2D.unity")]
@@ -36,11 +36,11 @@ namespace HoaVaMau.Editor
         [MenuItem("Tools/2D Pipeline/Build All Scenes")]
         public static void BuildAllScenes()
         {
-            BuildSunsetSceneInternal("Assets/Scenes/canh 2d.unity", true);
+            BuildSunsetSceneInternal("Assets/Scenes/Scene_2D_Sunset_Art.unity", true);
             BuildSunsetSceneInternal("Assets/Scenes/Test_Sunset_2D.unity", false);
             BuildTwilightSceneInternal("Assets/Scenes/Test_Twilight_2D.unity");
             // Re-open canh 2d so the user sees it immediately
-            EditorSceneManager.OpenScene("Assets/Scenes/canh 2d.unity");
+            EditorSceneManager.OpenScene("Assets/Scenes/Scene_2D_Sunset_Art.unity");
             Debug.Log("[2D Pipeline] Successfully built and updated all scenes!");
         }
 
@@ -336,8 +336,8 @@ namespace HoaVaMau.Editor
 
         private static void AddForegroundRocks(Transform parent)
         {
-            GameObject rock01Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Rock001.fbx");
-            GameObject rock02Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Rock0022.fbx");
+            GameObject rock01Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Small_01.fbx");
+            GameObject rock02Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Small_02.fbx");
 
             Material rockMat = GetOrCreateRockMaterial();
 
@@ -364,7 +364,7 @@ namespace HoaVaMau.Editor
 
         private static void AddForegroundGrass(Transform parent)
         {
-            GameObject grassPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PF_StylizedGrassTuft_3D.prefab");
+            GameObject grassPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Foliage/PF_StylizedGrassTuft_3D.prefab");
             if (grassPrefab == null) return;
 
             float[] xCoords = { -7.5f, -6.2f, -5.0f, -3.2f, -2.0f, -1.2f };
@@ -381,7 +381,7 @@ namespace HoaVaMau.Editor
 
         private static GameObject AddForegroundCharacter(Transform parent)
         {
-            GameObject charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/nhan vat chinh 3d.fbx");
+            GameObject charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Characters/Character_An.fbx");
             if (charPrefab == null)
             {
                 GameObject placeholder = GameObject.CreatePrimitive(PrimitiveType.Capsule);

@@ -64,7 +64,7 @@ namespace HoaVaMau.Gameplay
 
             // 5. Tìm Animation Clip trong cha_rigged_animations.fbx
             AnimationClip targetClip = null;
-            string fbxPath = "Assets/Models/cha_rigged_animations.fbx";
+            string fbxPath = "Assets/Models/Characters/Character_Rigged_Animations.fbx";
             Object[] assets = AssetDatabase.LoadAllAssetsAtPath(fbxPath);
             foreach (Object asset in assets)
             {
@@ -80,7 +80,7 @@ namespace HoaVaMau.Gameplay
             }
 
             // 6. Tạo/Cập nhật Animator Controller chuẩn với State "Gapbung_rig"
-            string controllerPath = "Assets/Models/GapbungPlayerController.controller";
+            string controllerPath = "Assets/Animations/Controllers/AC_Hero_GapBungPlayer.controller";
             AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
             if (controller == null)
             {

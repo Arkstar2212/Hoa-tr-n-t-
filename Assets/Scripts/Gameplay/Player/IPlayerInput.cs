@@ -20,6 +20,9 @@ namespace HoaVaMau.Gameplay
         bool AimThrowHeld { get; }
         bool MouseLeftPressed { get; }
         bool MouseLeftReleasedThisFrame { get; }
+        Vector2 MousePosition { get; }
+        bool MouseRightPressed { get; }
+        bool RopeGrabPressed { get; }
 
         void ReadInput();
     }

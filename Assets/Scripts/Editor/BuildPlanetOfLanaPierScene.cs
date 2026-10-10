@@ -11,7 +11,7 @@ namespace HoaVaMau.Editor
 {
     public static class BuildPlanetOfLanaPierScene
     {
-        private const string ScenePath = "Assets/Scenes/platform test.unity";
+        private const string ScenePath = "Assets/Scenes/Scene_Platform_Test.unity";
         private const string MaterialsPath = "Assets/Materials";
         private const string LightingPath = "Assets/Lighting";
         private const string PrefabsPath = "Assets/Prefabs";
@@ -544,8 +544,8 @@ namespace HoaVaMau.Editor
             bank.GetComponent<Renderer>().sharedMaterial = groundMat;
 
             // 3D Rocks
-            GameObject rock01 = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Rock001.fbx");
-            GameObject rock02 = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Rock0022.fbx");
+            GameObject rock01 = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Small_01.fbx");
+            GameObject rock02 = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Small_02.fbx");
 
             if (rock01 != null)
             {
@@ -740,8 +740,8 @@ namespace HoaVaMau.Editor
 
         private static GameObject SpawnPlayerCharacter(Transform parent)
         {
-            GameObject charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/cha_rigged_animations.fbx");
-            if (charPrefab == null) charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/nhan vat chinh 3d.fbx");
+            GameObject charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Characters/Character_Rigged_Animations.fbx");
+            if (charPrefab == null) charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Characters/Character_An.fbx");
             if (charPrefab == null) return null;
 
             GameObject player = Object.Instantiate(charPrefab, parent);
@@ -776,7 +776,7 @@ namespace HoaVaMau.Editor
             var animator = player.GetComponent<Animator>();
             if (animator != null)
             {
-                var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Models/gap bung.controller");
+                var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Hero_GapBung.controller");
                 if (controller != null) animator.runtimeAnimatorController = controller;
             }
 

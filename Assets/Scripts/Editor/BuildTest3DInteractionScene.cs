@@ -23,21 +23,21 @@ namespace HoaVaMau.Editor
             if (litShader == null) litShader = Shader.Find("Standard");
 
             // Material: Ground Grass
-            Material matGrass = GetOrCreateMaterial("Assets/Materials/M_Test3D_Grass.mat", litShader, new Color(0.31f, 0.45f, 0.22f), 0.1f);
+            Material matGrass = GetOrCreateMaterial("Assets/Materials/Foliage/M_Test3D_Grass.mat", litShader, new Color(0.31f, 0.45f, 0.22f), 0.1f);
             // Material: Ground Dirt Path
-            Material matDirt = GetOrCreateMaterial("Assets/Materials/M_Test3D_Dirt.mat", litShader, new Color(0.48f, 0.38f, 0.27f), 0.15f);
+            Material matDirt = GetOrCreateMaterial("Assets/Materials/Environment/Ground/M_Test3D_Dirt.mat", litShader, new Color(0.48f, 0.38f, 0.27f), 0.15f);
             // Material: Water 3D
-            Material matWater = GetOrCreateMaterial("Assets/Materials/M_Test3D_Water.mat", litShader, new Color(0.12f, 0.52f, 0.62f, 0.85f), 0.9f, true);
+            Material matWater = GetOrCreateMaterial("Assets/Materials/Environment/Water/M_Test3D_Water.mat", litShader, new Color(0.12f, 0.52f, 0.62f, 0.85f), 0.9f, true);
             // Material: Rock
-            Material matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/M_StylizedRock_Silhouette.mat");
+            Material matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Rocks/M_StylizedRock_Silhouette.mat");
             if (matRock == null) matRock = GetOrCreateMaterial("Assets/Materials/M_Test3D_Rock.mat", litShader, new Color(0.38f, 0.36f, 0.40f), 0.2f);
             // Material: Wood
-            Material matWood = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/M_Boat_Wood.mat");
+            Material matWood = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Vehicles/M_Boat_Wood.mat");
             if (matWood == null) matWood = GetOrCreateMaterial("Assets/Materials/M_Test3D_Wood.mat", litShader, new Color(0.38f, 0.24f, 0.14f), 0.2f);
             // Material: Foliage
-            Material matFoliage = GetOrCreateMaterial("Assets/Materials/M_Test3D_Foliage.mat", litShader, new Color(0.24f, 0.42f, 0.18f), 0.1f);
+            Material matFoliage = GetOrCreateMaterial("Assets/Materials/Foliage/M_Test3D_Foliage.mat", litShader, new Color(0.24f, 0.42f, 0.18f), 0.1f);
             // Material: Relic
-            Material matRelic = GetOrCreateMaterial("Assets/Materials/M_Test3D_Relic.mat", litShader, new Color(0.95f, 0.80f, 0.30f), 0.8f);
+            Material matRelic = GetOrCreateMaterial("Assets/Materials/Props/M_Test3D_Relic.mat", litShader, new Color(0.95f, 0.80f, 0.30f), 0.8f);
 
             // 3. Setup Directional Light
             GameObject lightGo = new GameObject("Directional Light");
@@ -95,8 +95,8 @@ namespace HoaVaMau.Editor
             GameObject rocksGroup = new GameObject("Rocks_Bao");
             rocksGroup.transform.SetParent(envRoot.transform);
 
-            GameObject rock001Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Rock001.fbx");
-            GameObject rock0022Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Rock0022.fbx");
+            GameObject rock001Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Small_01.fbx");
+            GameObject rock0022Prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Small_02.fbx");
 
             // Sắp xếp bố cục rõ ràng theo đúng yêu cầu:
             //       ROCK    ROCK
@@ -221,7 +221,7 @@ namespace HoaVaMau.Editor
             GameObject grassGroup = new GameObject("Grass");
             grassGroup.transform.SetParent(envRoot.transform);
 
-            GameObject grassTuftPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PF_StylizedGrassTuft_3D.prefab");
+            GameObject grassTuftPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Foliage/PF_StylizedGrassTuft_3D.prefab");
             if (grassTuftPrefab != null)
             {
                 Vector3[] grassPositions = new Vector3[]
@@ -290,7 +290,7 @@ namespace HoaVaMau.Editor
             Object.DestroyImmediate(waterGo.GetComponent<Collider>());
 
             // 7. Boat 3D
-            GameObject boatPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PF_StylizedBoat.prefab");
+            GameObject boatPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Vehicles/PF_StylizedBoat.prefab");
             GameObject boatGo = null;
             if (boatPrefab != null)
             {
@@ -311,7 +311,7 @@ namespace HoaVaMau.Editor
             }
 
             // 8. Player 3D
-            GameObject charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/cha_rigged_animations.fbx");
+            GameObject charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Characters/Character_Rigged_Animations.fbx");
             GameObject playerGo = null;
             if (charPrefab != null)
             {
@@ -337,7 +337,7 @@ namespace HoaVaMau.Editor
                 // Animator Controller
                 Animator anim = playerGo.GetComponent<Animator>();
                 if (anim == null) anim = playerGo.AddComponent<Animator>();
-                anim.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Models/Player3D_InteractionController.controller");
+                anim.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Player3D_Interaction.controller");
 
                 // Assign player to camera follow
                 camFollow.SetTarget(playerGo.transform);

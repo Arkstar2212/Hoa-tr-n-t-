@@ -58,7 +58,7 @@ namespace HoaVaMau.Gameplay
 
             if (Mathf.Abs(verticalInput) > 0.1f)
             {
-                float climbSpeed = 3.2f;
+                float climbSpeed = 5.2f; // Leo dây nhanh và nhạy hơn
                 currentRope.Climb(player, verticalInput * climbSpeed * dt);
             }
 

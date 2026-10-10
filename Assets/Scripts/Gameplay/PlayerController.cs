@@ -21,8 +21,8 @@ namespace HoaVaMau.Gameplay
     public class PlayerController : MonoBehaviour
     {
         [Header("Locomotion Speeds")]
-        [SerializeField] private float walkSpeed = 2.2f;
-        [SerializeField] private float sprintSpeed = 5.5f;
+        [SerializeField] private float walkSpeed = 2.4f;
+        [SerializeField] private float sprintSpeed = 4.2f; // Tốc độ chạy tự nhiên, không quá nhanh
         [SerializeField] private float crouchSpeed = 1.8f;
         [SerializeField] private float crawlSpeed = 1.2f;
         [SerializeField] private float pushPullSpeed = 2.1f;
@@ -51,9 +51,9 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float pullLeanAngle = -11.0f;
 
         [Header("Cinematic Ledge Climbing")]
-        [SerializeField] private float climbDuration = 2.167f;
+        [SerializeField] private float climbDuration = 1.05f;
         [SerializeField] private float maxClimbForwardLean = 24f;
-        [SerializeField] private bool autoClimbOnLedgeGrab = true;
+        [SerializeField] private bool autoClimbOnLedgeGrab = false;
 
         [Header("Carry & Throw")]
         [SerializeField] private Transform carrySocket;
@@ -251,6 +251,32 @@ namespace HoaVaMau.Gameplay
             motor.TickTimers(dt);
             if (inputReader.JumpPressed) motor.QueueJump();
 
+            // 2.5 Bấm phím [F] để bám leo dây hoặc thả buông dây thừng
+            if (inputReader.RopeGrabPressed)
+            {
+                if (CurrentState == PlayerState.RopeGrab || CurrentState == PlayerState.RopeClimb)
+                {
+                    // Đang leo dây mà bấm F: Thả tay rơi xuống tự do
+                    DetachFromRope(Vector3.zero);
+                }
+                else if (CanAttachToRope)
+                {
+                    // Muốn bám dây: kiểm tra trigger đang chạm hoặc tìm dây gần nhất trong 2.0m
+                    RopeController targetRope = nearbyRope;
+                    int targetNode = nearbyRopeNodeIndex;
+
+                    if (targetRope == null)
+                    {
+                        targetRope = FindNearbyRope(out targetNode);
+                    }
+
+                    if (targetRope != null && targetNode >= 0)
+                    {
+                        targetRope.OnPlayerTouchSegment(this, targetNode);
+                    }
+                }
+            }
+
             // 3. Phân luồng máy trạng thái (State Dispatcher)
             switch (CurrentState)
             {
@@ -258,16 +284,22 @@ namespace HoaVaMau.Gameplay
                 case PlayerState.Airborne:
                 case PlayerState.Carrying:
                     HandleLocomotion(dt);
-                    interactionHandler.CheckInteractions(this, inputReader.InteractPressed, inputReader.GrabCrateHeld, inputReader.AimThrowHeld);
-                    if (interactionHandler.IsCarrying && inputReader.MouseLeftPressed)
-                    {
-                        interactionHandler.SetDragActive(true);
-                        interactionHandler.UpdateDragCarryInertia(this, dt);
-                    }
-                    else if (interactionHandler.LmbDragActive && inputReader.MouseLeftReleasedThisFrame)
-                    {
-                        interactionHandler.ExecuteDragThrow(this);
-                    }
+                    interactionHandler.CheckInteractions(
+                        this,
+                        inputReader.InteractPressed,
+                        inputReader.GrabCrateHeld,
+                        inputReader.MouseLeftPressed,
+                        inputReader.MouseRightPressed);
+                    break;
+
+                case PlayerState.AimingThrow:
+                    // Dừng chân tập trung canh góc & lực ném
+                    interactionHandler.UpdateAimingThrow(
+                        this,
+                        inputReader.MousePosition,
+                        inputReader.MouseLeftReleasedThisFrame,
+                        inputReader.MouseRightPressed || inputReader.InteractPressed,
+                        dt);
                     break;
 
                 case PlayerState.PushPull:
@@ -343,8 +375,8 @@ namespace HoaVaMau.Gameplay
             // Đánh giá tư thế Ngồi & Bò
             postureHandler.UpdatePostures(grounded, inputReader.CrouchPressed, inputReader.Horizontal, FacingDirection);
 
-            // Bật nhảy (Coyote Time + Jump Buffer)
-            if (motor.TryExecuteJump(IsCrawling, out bool jumped))
+            // Bật nhảy (Coyote Time + Jump Buffer + Running Momentum Leap)
+            if (motor.TryExecuteJump(IsCrawling, IsSprinting, inputReader.Horizontal, out bool jumped))
             {
                 visualEffects.SetSquashStretch(1.25f); // Launch stretch
                 CurrentState = PlayerState.Airborne;
@@ -405,6 +437,8 @@ namespace HoaVaMau.Gameplay
             if (wantsClimb)
             {
                 CurrentState = PlayerState.LedgeClimb;
+                var anAnim = GetComponent<AnAnimationController>();
+                if (anAnim != null) anAnim.OnClimbStarted();
                 var meshyAnim = GetComponent<MeshyBoyAnimationController>();
                 if (meshyAnim != null) meshyAnim.OnClimbStarted();
                 return;
@@ -434,6 +468,10 @@ namespace HoaVaMau.Gameplay
                 motor.Velocity = Vector3.zero;
                 CurrentState = PlayerState.Grounded;
                 visualEffects.ResetScale();
+                var anAnim = GetComponent<AnAnimationController>();
+                if (anAnim != null) anAnim.OnClimbFinished();
+                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+                if (meshyAnim != null) meshyAnim.OnClimbFinished();
             }
         }
 
@@ -469,6 +507,48 @@ namespace HoaVaMau.Gameplay
                 CurrentState = PlayerState.Airborne;
                 motor.Velocity = releaseVelocity;
             }
+        }
+
+        private RopeController nearbyRope;
+        private int nearbyRopeNodeIndex = -1;
+
+        public void RegisterNearbyRope(RopeController rope, int nodeIndex)
+        {
+            nearbyRope = rope;
+            nearbyRopeNodeIndex = nodeIndex;
+        }
+
+        public void UnregisterNearbyRope(RopeController rope)
+        {
+            if (nearbyRope == rope)
+            {
+                nearbyRope = null;
+                nearbyRopeNodeIndex = -1;
+            }
+        }
+
+        public RopeController FindNearbyRope(out int nearestNodeIndex)
+        {
+            nearestNodeIndex = -1;
+            var ropes = Object.FindObjectsByType<RopeController>(FindObjectsInactive.Exclude);
+            RopeController bestRope = null;
+            float bestDistSq = 2.0f * 2.0f; // Bán kính tìm kiếm 2.0 mét
+
+            Vector3 playerCenter = transform.position + Vector3.up * 1.0f;
+
+            foreach (var rope in ropes)
+            {
+                if (rope == null) continue;
+                int nodeIdx = rope.GetNearestNodeIndex(playerCenter, out float dist);
+                if (dist <= 2.0f && (dist * dist) < bestDistSq)
+                {
+                    bestDistSq = dist * dist;
+                    bestRope = rope;
+                    nearestNodeIndex = nodeIdx;
+                }
+            }
+
+            return bestRope;
         }
 
         public void DetachFromRope(Vector3 releaseVelocity)
@@ -528,7 +608,8 @@ namespace HoaVaMau.Gameplay
             GUI.Label(new Rect(26f, 18f, bannerW - 20f, 24f), $"<color={stateColor}>● {stateLabel}</color>", stateStyle);
 
             GUIStyle subStyle = new GUIStyle(GUI.skin.label) { fontSize = 10, normal = { textColor = new Color(0.8f, 0.85f, 0.9f) } };
-            GUI.Label(new Rect(26f, 36f, bannerW - 20f, 18f), $"Tốc độ: {Velocity.x:F1} m/s | Hướng: {(FacingDirection > 0 ? "Phải" : "Trái")}", subStyle);
+            string ropeHint = (nearbyRope != null && CurrentState != PlayerState.RopeGrab && CurrentState != PlayerState.RopeClimb) ? " | <color=#fb923c><b>[F] Leo dây</b></color>" : "";
+            GUI.Label(new Rect(26f, 36f, bannerW - 20f, 18f), $"Tốc độ: {Velocity.x:F1} m/s | Hướng: {(FacingDirection > 0 ? "Phải" : "Trái")}{ropeHint}", subStyle);
 
             // 2. Comprehensive Controls Guide (Top Right)
             float panelW = 430f;
@@ -553,18 +634,19 @@ namespace HoaVaMau.Gameplay
             };
 
             string controls = 
-                "• <b>[A] / [D]</b> hoặc <b>Cần Analog</b>: Đi bộ (nhích nhẹ = đi chậm)\n" +
-                "• <b>[Left Shift]</b> hoặc <b>Analog đẩy mạnh</b>: Chạy nước rút (Sprint)\n" +
-                "• <b>[Space]</b>: Nhảy (nhấp nhẹ = nhảy thấp, giữ = nhảy cao, mép vực Coyote)\n" +
-                "• <b>[C] / [Ctrl] / [S]</b>: Ngồi xổm | Tự động <b>Bò trườn (Crawl)</b> khi vào hầm thấp\n" +
-                "• <b>[Chuột Trái] (Giữ gần thùng) + [A]/[D]</b>: Bám & <b>Kéo / Đẩy thùng gỗ</b>\n" +
-                "• <b>[E]</b>: <b>Nhặt đồ</b> | Bấm [E] lần nữa để đặt nhẹ xuống\n" +
-                "• <b>Đang cầm đồ → Giữ [Chuột Trái]</b>: <b>Kéo lê (Drag)</b> – vật theo quán tính\n" +
-                "• <b>Thả [Chuột Trái]</b>: <b>Ném</b> theo hướng và tốc độ kéo (Parabol)\n" +
-                "• <b>[Chuột Phải] khi đang cầm</b>: Đặt xuống ngay\n" +
-                "• <b>Dây thừng</b>: Nhảy vào bám | <b>[A]/[D]</b> lấy đà đung đưa quán tính | <b>[Space]</b> phóng qua vực";
+                "• <b>[A] / [D]</b>: Đi bộ trái / phải (nhích nhẹ = đi chậm)\n" +
+                "• <b>[S] / [C] / [Ctrl]</b>: Ngồi xổm | Tự động <b>Bò trườn (Crawl)</b> qua hầm thấp\n" +
+                "• <b>[W]</b>: <b>Leo lên</b> khi bám gờ vách đá hoặc khi đang leo dây thừng\n" +
+                "• <b>[Left Shift]</b>: Chạy nước rút (Sprint) tốc độ tự nhiên (4.2 m/s)\n" +
+                "• <b>[Space]</b>: Nhảy | <b>Đặc biệt: Chạy lấy đà + [Space]</b> phóng xa vượt trội theo chiều ngang!\n" +
+                "• <b>[Giữ Chuột Trái] cạnh thùng + [A]/[D]</b>: <b>Kéo / Đẩy thùng gỗ</b> áp sát vách leo lên\n" +
+                "• <b>[E]</b>: <b>Nhặt đồ / Nhặt bóng</b> | Bấm [E] lần nữa hoặc [Chuột Phải] để đặt nhẹ xuống\n" +
+                "• <b>Cầm bóng → Giữ [Chuột Trái]</b>: <b>Canh góc & Lực ném</b> (rê chuột chỉnh tầm xa/gần, vệt Parabol)\n" +
+                "• <b>Thả [Chuột Trái]</b>: <b>Ném bóng</b> theo đúng quỹ đạo đã canh!\n" +
+                "• <b>Dây thừng</b>: Đến gần/nhảy đến bấm <b>[F]</b> để bám | <b>[W]/[S]</b> trèo | <b>[A]/[D]</b> đu đưa | <b>[Space]</b> nhảy phóng / <b>[F]</b> thả rơi\n" +
+                "• <b>Thùng gỗ vỡ</b>: Ném trúng 3 lần -> Vỡ nhiều mảnh vụn sập rơi tại chỗ (PhysX Collapse)!";
 
-            GUI.Label(new Rect(px + 12f, py + 28f, panelW - 24f, panelH - 32f), controls, guideText);
+            GUI.Label(new Rect(px + 12f, py + 26f, panelW - 24f, panelH - 30f), controls, guideText);
         }
     }
 }

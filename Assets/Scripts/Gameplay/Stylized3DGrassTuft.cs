@@ -292,10 +292,11 @@ namespace HoaVaMau.Gameplay
                 ? "Mat_PainterlyGrass_Tuft_Leaning"
                 : "Mat_PainterlyGrass_Tuft_Upright";
 
-            string matPath = $"Assets/Materials/{matName}.mat";
+            string matPath = $"Assets/Materials/Foliage/{matName}.mat";
 
 #if UNITY_EDITOR
-            Material assetMat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+            Material assetMat = AssetDatabase.LoadAssetAtPath<Material>(matPath)
+                             ?? AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{matName}.mat");
             if (assetMat != null)
             {
                 mr.sharedMaterial = assetMat;

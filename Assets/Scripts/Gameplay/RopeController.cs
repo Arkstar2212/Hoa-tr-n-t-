@@ -37,12 +37,13 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float ropeVisualWidth = 0.10f;
 
         [Header("Physics & Motion Smoothing")]
-        [SerializeField] private float gravity = 15.0f;
+        [SerializeField] private float gravity = 22.0f;
         [Range(0.90f, 0.999f)]
-        [SerializeField] private float airDamping = 0.993f; // High velocity retention for natural pendulum momentum
+        [SerializeField] private float airDamping = 0.985f; // Stable damping preventing endless chaotic oscillation
         [Range(4, 20)]
         [SerializeField] private int constraintIterations = 14; // High iterations = zero rubber-banding
-        [SerializeField] private float maxSwingSpeed = 13.5f;
+        [SerializeField] private float maxSwingSpeed = 7.5f;
+        [SerializeField] private float maxSwingAngle = 52.0f; // Angular lock clamp (degrees from vertical)
 
         [Header("Ambient Breeze (Gentle Wiggle)")]
         [SerializeField] private bool enableAmbientWiggle = true;
@@ -50,8 +51,8 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float windFrequency = 1.25f;
 
         [Header("Player Interaction")]
-        [SerializeField] private float playerSwingForce = 34.0f;
-        [SerializeField] private float climbWiggleForce = 0.4f;
+        [SerializeField] private float playerSwingForce = 16.0f; // Controlled swing force
+        [SerializeField] private float climbWiggleForce = 0.25f;
 
         [Header("Visuals")]
         [SerializeField] private Color ropeColor = new Color(0.60f, 0.45f, 0.28f); // Warm natural cord
@@ -144,7 +145,7 @@ namespace HoaVaMau.Gameplay
                 rb.useGravity = false;
 
                 SphereCollider sc = trigGO.AddComponent<SphereCollider>();
-                sc.radius = 0.40f;
+                sc.radius = 0.85f;
                 sc.isTrigger = true;
 
                 RopeSegmentTrigger rst = trigGO.AddComponent<RopeSegmentTrigger>();
@@ -164,6 +165,11 @@ namespace HoaVaMau.Gameplay
             anchorPosition = transform.position;
             anchorPosition.z = 0f;
 
+            // Anchor is strictly locked in place
+            nodes[0].position = anchorPosition;
+            nodes[0].prevPosition = anchorPosition;
+            nodes[0].acceleration = Vector3.zero;
+
             // 1. Accumulate Forces
             Vector3 gravityForce = Vector3.down * gravity;
 
@@ -180,7 +186,7 @@ namespace HoaVaMau.Gameplay
                     float heightFactor = (float)i / (nodes.Length - 1);
                     float sway = wave * windAmplitude * heightFactor;
 
-                    if (attachedPlayer != null) sway *= 0.2f;
+                    if (attachedPlayer != null) sway *= 0.1f;
 
                     nodes[i].acceleration += new Vector3(sway, 0f, 0f);
                 }
@@ -192,20 +198,29 @@ namespace HoaVaMau.Gameplay
                 int grabIdx = Mathf.Clamp(Mathf.RoundToInt(playerClimbFraction * (nodes.Length - 1)), 1, nodes.Length - 1);
                 Vector3 currentVel = (nodes[grabIdx].position - nodes[grabIdx].prevPosition) / Mathf.Max(dt, 0.001f);
 
-                // Resonant boost: if pressing in direction of motion, add extra pump
-                float pumpMultiplier = 1.0f;
-                if (Mathf.Sign(currentSwingInput) == Mathf.Sign(currentVel.x) && Mathf.Abs(currentVel.x) > 0.4f)
+                // Prevent over-accelerating if already near maximum deflection angle
+                Vector3 grabOffset = nodes[grabIdx].position - anchorPosition;
+                float currentAngle = Vector2.SignedAngle(Vector2.down, new Vector2(grabOffset.x, grabOffset.y));
+                bool pushingPastLimit = (currentSwingInput > 0 && currentAngle > (maxSwingAngle - 4f)) ||
+                                        (currentSwingInput < 0 && currentAngle < -(maxSwingAngle - 4f));
+
+                if (!pushingPastLimit)
                 {
-                    pumpMultiplier = 1.5f;
+                    // Resonant boost: if pressing in direction of motion, add gentle pump
+                    float pumpMultiplier = 1.0f;
+                    if (Mathf.Sign(currentSwingInput) == Mathf.Sign(currentVel.x) && Mathf.Abs(currentVel.x) > 0.3f)
+                    {
+                        pumpMultiplier = 1.25f;
+                    }
+
+                    Vector3 swingDir = new Vector3(currentSwingInput * playerSwingForce * pumpMultiplier, 0f, 0f);
+
+                    nodes[grabIdx].acceleration += swingDir;
+                    if (grabIdx > 1) nodes[grabIdx - 1].acceleration += swingDir * 0.60f;
+                    if (grabIdx < nodes.Length - 1) nodes[grabIdx + 1].acceleration += swingDir * 0.60f;
                 }
 
-                Vector3 swingDir = new Vector3(currentSwingInput * playerSwingForce * pumpMultiplier, 0f, 0f);
-
-                nodes[grabIdx].acceleration += swingDir;
-                if (grabIdx > 1) nodes[grabIdx - 1].acceleration += swingDir * 0.70f;
-                if (grabIdx < nodes.Length - 1) nodes[grabIdx + 1].acceleration += swingDir * 0.70f;
-
-                currentSwingInput = Mathf.MoveTowards(currentSwingInput, 0f, dt * 1.8f);
+                currentSwingInput = Mathf.MoveTowards(currentSwingInput, 0f, dt * 2.2f);
             }
 
             // 2. Verlet Integration Step
@@ -225,7 +240,7 @@ namespace HoaVaMau.Gameplay
                 nodes[i].acceleration = Vector3.zero;
             }
 
-            // 3. Relax Distance Constraints (enforces exact rope length without stretching or exploding)
+            // 3. Relax Distance Constraints & Enforce Angular Clamp
             for (int iter = 0; iter < constraintIterations; iter++)
             {
                 nodes[0].position = anchorPosition; // Anchor is pinned
@@ -249,7 +264,38 @@ namespace HoaVaMau.Gameplay
                         nodes[i + 1].position -= correction;
                     }
                 }
+
+                // Angular and vertical locks:
+                // Prevents rope from buckling upside down or swinging wildly beyond max deflection
+                for (int i = 1; i < nodes.Length; i++)
+                {
+                    // Vertical lock: node must never be higher than anchor minus min spacing
+                    float maxY = anchorPosition.y - 0.04f * i;
+                    if (nodes[i].position.y > maxY)
+                    {
+                        nodes[i].position = new Vector3(nodes[i].position.x, maxY, 0f);
+                    }
+
+                    // Angular clamp relative to anchor
+                    Vector2 fromAnchor = new Vector2(nodes[i].position.x - anchorPosition.x, nodes[i].position.y - anchorPosition.y);
+                    float angle = Vector2.SignedAngle(Vector2.down, fromAnchor);
+                    if (Mathf.Abs(angle) > maxSwingAngle)
+                    {
+                        float clampedAngle = Mathf.Clamp(angle, -maxSwingAngle, maxSwingAngle);
+                        float rad = (clampedAngle - 90f) * Mathf.Deg2Rad;
+                        float r = fromAnchor.magnitude;
+                        Vector3 clampedPos = new Vector3(anchorPosition.x + Mathf.Cos(rad) * r, anchorPosition.y + Mathf.Sin(rad) * r, 0f);
+                        nodes[i].position = clampedPos;
+                        nodes[i].prevPosition = Vector3.Lerp(nodes[i].prevPosition, clampedPos, 0.5f);
+                    }
+
+                    nodes[i].position = new Vector3(nodes[i].position.x, nodes[i].position.y, 0f);
+                    nodes[i].prevPosition = new Vector3(nodes[i].prevPosition.x, nodes[i].prevPosition.y, 0f);
+                }
             }
+
+            nodes[0].position = anchorPosition;
+            nodes[0].prevPosition = anchorPosition;
 
             // 4. Update grab trigger positions along rope
             if (triggerColliders.Count > 0)
@@ -309,6 +355,26 @@ namespace HoaVaMau.Gameplay
         public void ApplySwingInput(float horizontalInput, float dt)
         {
             currentSwingInput = Mathf.Clamp(horizontalInput, -1f, 1f);
+        }
+
+        public int GetNearestNodeIndex(Vector3 pos, out float distance)
+        {
+            int bestIdx = 0;
+            float minDistSq = float.MaxValue;
+            if (nodes != null)
+            {
+                for (int i = 0; i < nodes.Length; i++)
+                {
+                    float dSq = (nodes[i].position - pos).sqrMagnitude;
+                    if (dSq < minDistSq)
+                    {
+                        minDistSq = dSq;
+                        bestIdx = i;
+                    }
+                }
+            }
+            distance = Mathf.Sqrt(minDistSq);
+            return bestIdx;
         }
 
         public void Climb(PlayerController player, float deltaMeters)

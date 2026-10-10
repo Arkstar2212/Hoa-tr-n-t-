@@ -13,7 +13,7 @@ namespace HoaVaMau.Gameplay
         private readonly CharacterController charController;
         private readonly LedgeGrabDetector ledgeDetector;
 
-        public float ClimbDuration { get; set; } = 2.167f;
+        public float ClimbDuration { get; set; } = 1.05f; // Tăng tốc độ trèo tường nhanh và linh hoạt hơn
         public float MaxClimbForwardLean { get; set; } = 24f;
         public bool AutoClimbOnLedgeGrab { get; set; } = true;
 
@@ -25,7 +25,7 @@ namespace HoaVaMau.Gameplay
             Transform transform,
             CharacterController charController,
             LedgeGrabDetector ledgeDetector,
-            float climbDuration = 2.167f,
+            float climbDuration = 1.05f,
             float maxClimbForwardLean = 24f,
             bool autoClimbOnLedgeGrab = true)
         {

@@ -23,6 +23,9 @@ namespace HoaVaMau.Gameplay
         public bool AimThrowHeld { get; private set; }
         public bool MouseLeftPressed { get; private set; }
         public bool MouseLeftReleasedThisFrame { get; private set; }
+        public Vector2 MousePosition { get; private set; }
+        public bool MouseRightPressed { get; private set; }
+        public bool RopeGrabPressed { get; private set; }
 
         public void ReadInput()
         {
@@ -37,6 +40,8 @@ namespace HoaVaMau.Gameplay
             AimThrowHeld = false;
             MouseLeftPressed = false;
             MouseLeftReleasedThisFrame = false;
+            MouseRightPressed = false;
+            RopeGrabPressed = false;
 
 #if ENABLE_INPUT_SYSTEM
             var kb = Keyboard.current;
@@ -59,6 +64,8 @@ namespace HoaVaMau.Gameplay
 
                 if (kb.eKey.wasPressedThisFrame) InteractPressed = true;
                 if (kb.eKey.isPressed) GrabCrateHeld = true;
+
+                if (kb.fKey.wasPressedThisFrame) RopeGrabPressed = true;
             }
 
             var mouse = Mouse.current;
@@ -66,6 +73,8 @@ namespace HoaVaMau.Gameplay
             {
                 MouseLeftPressed = mouse.leftButton.isPressed;
                 MouseLeftReleasedThisFrame = mouse.leftButton.wasReleasedThisFrame;
+                MousePosition = mouse.position.ReadValue();
+                MouseRightPressed = mouse.rightButton.isPressed;
                 if (mouse.rightButton.isPressed) AimThrowHeld = true;
             }
 #else
@@ -87,10 +96,20 @@ namespace HoaVaMau.Gameplay
             if (Input.GetKeyDown(KeyCode.E)) InteractPressed = true;
             if (Input.GetKey(KeyCode.E)) GrabCrateHeld = true;
 
+            if (Input.GetKeyDown(KeyCode.F)) RopeGrabPressed = true;
+
             MouseLeftPressed = Input.GetMouseButton(0);
             MouseLeftReleasedThisFrame = Input.GetMouseButtonUp(0);
+            MousePosition = Input.mousePosition;
+            MouseRightPressed = Input.GetMouseButton(1);
             if (Input.GetMouseButton(1)) AimThrowHeld = true;
 #endif
+
+            // Hold chuột trái hoặc phím E đều dùng để kéo/đẩy thùng
+            if (MouseLeftPressed)
+            {
+                GrabCrateHeld = true;
+            }
         }
     }
 }
