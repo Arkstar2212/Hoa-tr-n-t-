@@ -1439,8 +1439,8 @@ namespace HoaVaMau.Editor
         // =========================================================================
         private static GameObject SpawnHeroCharacter(Transform parent, Vector3 spawnPos)
         {
-            GameObject charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/cha_rigged_animations.fbx");
-            if (charPrefab == null) charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/nhan vat chinh 3d.fbx");
+            GameObject charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Characters/Character_Rigged_Animations.fbx");
+            if (charPrefab == null) charPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Characters/Character_An.fbx");
             if (charPrefab == null) return null;
 
             GameObject player = Object.Instantiate(charPrefab, parent);
@@ -1479,7 +1479,7 @@ namespace HoaVaMau.Editor
             var animator = player.GetComponent<Animator>();
             if (animator != null)
             {
-                var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Models/gap bung.controller");
+                var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Hero_GapBung.controller");
                 if (controller != null) animator.runtimeAnimatorController = controller;
             }
 

@@ -83,14 +83,14 @@ namespace HoaVaMau.Editor
             GameObject singleGO = new GameObject("PF_StylizedGrassTuft_3D");
             var tuftSingle = singleGO.AddComponent<Stylized3DGrassTuft>();
             tuftSingle.Setup(TuftMeshStyle.StarCards, TuftTextureVariant.Upright, 1.25f, 0.85f);
-            PrefabUtility.SaveAsPrefabAsset(singleGO, "Assets/Prefabs/PF_StylizedGrassTuft_3D.prefab");
+            PrefabUtility.SaveAsPrefabAsset(singleGO, "Assets/Prefabs/Foliage/PF_StylizedGrassTuft_3D.prefab");
             DestroyImmediate(singleGO);
 
             // 2. Meadow Cluster Prefab
             GameObject clusterGO = new GameObject("PF_StylizedGrassTuft_MeadowCluster");
             var tuftCluster = clusterGO.AddComponent<Stylized3DGrassTuft>();
             tuftCluster.Setup(TuftMeshStyle.ClusteredPatch, TuftTextureVariant.Upright, 1.15f, 0.85f);
-            PrefabUtility.SaveAsPrefabAsset(clusterGO, "Assets/Prefabs/PF_StylizedGrassTuft_MeadowCluster.prefab");
+            PrefabUtility.SaveAsPrefabAsset(clusterGO, "Assets/Prefabs/Foliage/PF_StylizedGrassTuft_MeadowCluster.prefab");
             DestroyImmediate(clusterGO);
 
             AssetDatabase.SaveAssets();

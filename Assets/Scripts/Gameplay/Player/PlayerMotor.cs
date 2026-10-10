@@ -14,8 +14,9 @@ namespace HoaVaMau.Gameplay
         private readonly CharacterController charController;
 
         // Configuration
-        public float WalkSpeed { get; set; } = 2.2f;
-        public float SprintSpeed { get; set; } = 5.5f;
+        public float WalkSpeed { get; set; } = 2.4f;
+        public float SprintSpeed { get; set; } = 4.2f; // Tốc độ chạy vừa phải, không quá nhanh
+        public float RunningJumpBoostMultiplier { get; set; } = 1.45f; // Tăng tầm bay ngang khi chạy lấy đà
         public float CrouchSpeed { get; set; } = 1.8f;
         public float CrawlSpeed { get; set; } = 1.2f;
         public float PushPullSpeed { get; set; } = 2.1f;
@@ -35,6 +36,7 @@ namespace HoaVaMau.Gameplay
         public float CoyoteTimer { get; set; }
         public float JumpBufferTimer { get; set; }
         public float JumpTimeElapsed { get; set; }
+        public bool IsMomentumJump { get; private set; }
         public bool IsGrounded => charController != null && charController.isGrounded;
 
         public PlayerMotor(CharacterController charController)
@@ -59,7 +61,7 @@ namespace HoaVaMau.Gameplay
             JumpBufferTimer = JumpBufferDuration;
         }
 
-        public bool TryExecuteJump(bool isCrawling, out bool jumped)
+        public bool TryExecuteJump(bool isCrawling, bool isSprinting, float horizontalInput, out bool jumped)
         {
             jumped = false;
             if (JumpBufferTimer > 0f && CoyoteTimer > 0f && !isCrawling)
@@ -69,11 +71,29 @@ namespace HoaVaMau.Gameplay
                 JumpTimeElapsed = 0f;
                 Vector3 vel = Velocity;
                 vel.y = JumpForce;
+
+                // Nếu chạy nhảy lấy đà (sprint + di chuyển ngang): Tăng mạnh xung lượng ngang để nhảy xa hơn hẳn
+                if (isSprinting && Mathf.Abs(horizontalInput) > 0.1f)
+                {
+                    float dir = Mathf.Sign(horizontalInput);
+                    vel.x = dir * (SprintSpeed * RunningJumpBoostMultiplier);
+                    IsMomentumJump = true;
+                }
+                else
+                {
+                    IsMomentumJump = false;
+                }
+
                 Velocity = vel;
                 jumped = true;
                 return true;
             }
             return false;
+        }
+
+        public bool TryExecuteJump(bool isCrawling, out bool jumped)
+        {
+            return TryExecuteJump(isCrawling, false, 0f, out jumped);
         }
 
         public void ApplyGravity(bool grounded, bool jumpHeld, float dt)
@@ -84,6 +104,7 @@ namespace HoaVaMau.Gameplay
             {
                 CoyoteTimer = CoyoteTimeDuration;
                 vel.y = -2.0f; // Firm ground stick to prevent floating/falling through
+                IsMomentumJump = false;
             }
             else
             {
@@ -112,8 +133,19 @@ namespace HoaVaMau.Gameplay
         {
             Vector3 vel = Velocity;
             float targetVelX = horizontalInput * currentSpeed;
-            float accelRate = (Mathf.Abs(horizontalInput) > 0.05f) ? Acceleration : Deceleration;
-            vel.x = Mathf.MoveTowards(vel.x, targetVelX, accelRate * dt);
+
+            // Nếu đang trong cú nhảy lấy đà trên không: bảo toàn đà bay ngang
+            if (IsMomentumJump && !IsGrounded && Mathf.Abs(vel.x) > currentSpeed)
+            {
+                float airDecel = 3.2f;
+                vel.x = Mathf.MoveTowards(vel.x, targetVelX, airDecel * dt);
+            }
+            else
+            {
+                float accelRate = (Mathf.Abs(horizontalInput) > 0.05f) ? Acceleration : Deceleration;
+                vel.x = Mathf.MoveTowards(vel.x, targetVelX, accelRate * dt);
+            }
+
             vel.z = 0f;
             Velocity = vel;
 

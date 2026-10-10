@@ -60,19 +60,15 @@ namespace HoaVaMau.Gameplay
                     IsCrouching = true;
                     if (crouchPressed || tunnelAhead) IsCrawling = true;
                 }
-                else if (tunnelAhead && (Mathf.Abs(moveInputX) > 0.05f || crouchPressed))
-                {
-                    // Đang tiến về phía hầm/khe thấp: tự động hạ người bò trườn qua khe
-                    IsCrawling = true;
-                    IsCrouching = true;
-                }
                 else if (crouchPressed)
                 {
+                    // Người chơi chủ động bấm phím ngồi (S / C / Ctrl)
                     IsCrouching = true;
                     IsCrawling = tunnelAhead;
                 }
                 else
                 {
+                    // Không tự động ngồi khi đi bộ qua khe thấp nếu người chơi không bấm phím ngồi
                     IsCrouching = false;
                     IsCrawling = false;
                 }

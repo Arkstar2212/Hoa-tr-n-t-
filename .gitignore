@@ -73,3 +73,7 @@ crashlytics-build.properties
 
 # Test results
 test-results.xml
+
+# AI assistant configuration
+.claude/
+

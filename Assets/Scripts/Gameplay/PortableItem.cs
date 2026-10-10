@@ -23,6 +23,7 @@ namespace HoaVaMau.Gameplay
         private Collider col;
         private Vector3 initialSpawnPos;
         private bool isCarried = false;
+        private bool wasThrown = false;
         private PlayerController carrier;
 
         public bool IsCarried => isCarried;
@@ -113,6 +114,7 @@ namespace HoaVaMau.Gameplay
             rb.isKinematic = false;
             rb.useGravity = true;
             rb.linearVelocity = gentleNudge;
+            wasThrown = false;
         }
 
         /// <summary>
@@ -131,6 +133,21 @@ namespace HoaVaMau.Gameplay
             rb.useGravity = true;
             rb.linearVelocity = throwVelocity;
             rb.angularVelocity = new Vector3(0f, 0f, -Mathf.Sign(throwVelocity.x) * 12f);
+            wasThrown = true;
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (wasThrown || collision.relativeVelocity.magnitude > 2.8f)
+            {
+                var destructible = collision.gameObject.GetComponentInParent<DestructibleCrate>();
+                if (destructible != null && !destructible.IsDestroyed)
+                {
+                    Vector3 contactPt = collision.contacts.Length > 0 ? collision.contacts[0].point : transform.position;
+                    destructible.TakeDamage(1, contactPt, collision.relativeVelocity);
+                }
+            }
+            wasThrown = false;
         }
 
         public void Respawn()
@@ -138,6 +155,7 @@ namespace HoaVaMau.Gameplay
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             transform.position = initialSpawnPos;
+            wasThrown = false;
         }
 
         private void OnDrawGizmosSelected()

@@ -20,7 +20,7 @@ namespace HoaVaMau.Gameplay
     public class CharacterPlaygroundBuilder : MonoBehaviour
     {
 #if UNITY_EDITOR
-        private const string SceneAssetPath = "Assets/Scenes/SampleScene.unity";
+        private const string SceneAssetPath = "Assets/Scenes/Playground_Mechanics.unity";
 
         [MenuItem("Hoa va Mau/Build Character Playground Level")]
         public static void BuildMenuCommand()
@@ -64,11 +64,15 @@ namespace HoaVaMau.Gameplay
             foreach (var root in roots)
             {
                 if (root == null) continue;
-                if (root.name == "Main Camera" || root.name == "Directional Light" || root.name == "Global Volume")
+                // Preserve camera, lights, volume, Player_An, and existing project assets
+                if (root.name == "Main Camera" || root.name == "Directional Light" || root.name == "Global Volume") continue;
+                if (root.name.Contains("Player_An") || root.name.Contains("Environment") || root.name.Contains("Art") || root.name.Contains("Terrain")) continue;
+
+                // Only clean previous temporary playground root
+                if (root.name.StartsWith("--- Character Playground"))
                 {
-                    continue;
+                    DestroyImmediate(root);
                 }
-                DestroyImmediate(root);
             }
         }
 
@@ -96,10 +100,26 @@ namespace HoaVaMau.Gameplay
             // Extra thick (4.0m deep) platform base so falling through is physically impossible
             BuildPlatform(root.transform, "Runway_Main", new Vector3(-13f, -2.0f, 0f), new Vector3(20f, 4.0f, 4f), groundMat);
             BuildPlatform(root.transform, "Runway_StepHurdle", new Vector3(-8f, 0.45f, 0f), new Vector3(1.6f, 0.9f, 3.5f), cliffMat);
-            BuildSign(root.transform, "Sign_Station1", new Vector3(-20f, 2.6f, 0f), "TRẠM 1: CHẠY & NHẢY\n[A]/[D] Di chuyển | [Shift] Chạy nhanh | [Space] Nhảy");
+            BuildSign(root.transform, "Sign_Station1", new Vector3(-21f, 2.8f, 0f), "TRẠM 1: CHẠY & NHẢY\n[A]/[D] Đi | [Shift] Chạy | [Space] Nhảy\nChạy lấy đà + [Space] phóng xa vượt trội!");
             BuildGrassPatch(root.transform, "Runway_L", -21f, -9.5f, 0.0f);
             BuildGrassPatch(root.transform, "Runway_R", -6.5f, -4.0f, 0.0f);
             BuildCheckpoint(root.transform, "CP_Station1", new Vector3(-17.5f, 0.05f, 0f), 0);
+
+            // KHÚC DÂY TEST NGAY RUNWAY (Test Rope Segment)
+            BuildPlatform(root.transform, "TestRope_OverheadBeam", new Vector3(-11.5f, 6.2f, 0f), new Vector3(4.2f, 0.35f, 1.2f), woodMat);
+            BuildPlatform(root.transform, "TestRope_Pillar_L", new Vector3(-13.4f, 3.1f, 0.4f), new Vector3(0.35f, 6.0f, 0.4f), woodMat);
+            BuildPlatform(root.transform, "TestRope_Pillar_R", new Vector3(-9.6f, 3.1f, 0.4f), new Vector3(0.35f, 6.0f, 0.4f), woodMat);
+            BuildVerletRope(root.transform, new Vector3(-11.5f, 6.0f, 0f), 4.2f);
+            BuildSign(root.transform, "Sign_Rope_Test", new Vector3(-13.0f, 2.6f, 0f), "KHÚC DÂY TEST\nNhảy vào bám | [W]/[S] leo\n[A]/[D] đu lấy đà | [Space] phóng");
+
+            // BÓNG TEST & CANH NÉM PARABOL (Test Throwable Balls)
+            BuildThrowableItem(root.transform, "TestBall_Runway_1", new Vector3(-15.6f, 0.35f, 0f), orbMat);
+            BuildThrowableItem(root.transform, "TestBall_Runway_2", new Vector3(-14.8f, 0.35f, 0f), orbMat);
+            BuildSign(root.transform, "Sign_Ball_Test", new Vector3(-16.8f, 2.0f, 0f), "BÓNG TEST & CANH NÉM\n[E] Nhặt | Giữ [Chuột Trái] canh góc & lực (Parabol)\nThả để Ném | [Chuột Phải] đặt xuống");
+
+            // THÙNG TEST (KÉO / ĐẨY & PHÁ VỠ PHYSX)
+            BuildPushPullCrate(root.transform, new Vector3(-6.2f, 0.0f, 0f), crateMat, metalMat);
+            BuildSign(root.transform, "Sign_Crate_Test", new Vector3(-7.2f, 2.4f, 0f), "THÙNG TEST\nGiữ [Chuột Trái] + [A]/[D] kéo/đẩy\nNém bóng trúng 3 lần -> Nứt & nổ vỡ mảnh PhysX!");
 
             // STATION 2: MULTI-TIER LEDGE CLIMB (X = -5 to 8)
             BuildLedgeCliff(root.transform, "Ledge_Tier1", new Vector3(-1f, -1.1f, 0f), new Vector3(5f, 5.8f, 3.5f), cliffMat, groundMat);
@@ -150,8 +170,8 @@ namespace HoaVaMau.Gameplay
             BuildGrassPatch(root.transform, "ThrowFloor", 55.0f, 65.0f, 3.6f);
             BuildCheckpoint(root.transform, "CP_Station6", new Vector3(55.0f, 3.65f, 0f), 5);
 
-            // SPAWN PROTAGONIST
-            BuildPlayer(root.transform, new Vector3(-17.5f, 0.05f, 0f), playerMat, skinMat, headbandMat, orbMat);
+            // SPAWN PROTAGONIST AN (Authentic Model & Animations)
+            BuildPlayer(root.transform, new Vector3(-17.5f, 0.05f, 0f), orbMat);
         }
 
         private static void SetupManagers(Transform parent)
@@ -273,6 +293,7 @@ namespace HoaVaMau.Gameplay
             crateGO.AddComponent<BoxCollider>();
             crateGO.AddComponent<Rigidbody>();
             crateGO.AddComponent<InteractableCrate>();
+            crateGO.AddComponent<DestructibleCrate>();
 
             GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube);
             body.name = "Visual_Body";
@@ -342,123 +363,59 @@ namespace HoaVaMau.Gameplay
             rope.BuildRope();
         }
 
-        private static void BuildPlayer(Transform parent, Vector3 pos, Material torsoMat, Material skinMat, Material headbandMat, Material orbMat)
+        private static void BuildPlayer(Transform parent, Vector3 pos, Material orbMat)
         {
-            GameObject playerGO = new GameObject("Player_LanaProtagonist");
-            playerGO.tag = "Player";
-            playerGO.transform.SetParent(parent);
-            playerGO.transform.position = pos;
+            // Use verified authentic character An model with official animations
+            GameObject playerGO = GameObject.Find("Player_An") ?? GameObject.FindWithTag("Player");
 
-            var cc = playerGO.AddComponent<CharacterController>();
-            cc.height = 1.8f;
-            cc.radius = 0.36f;
-            cc.center = new Vector3(0f, 0.9f, 0f);
-            cc.stepOffset = 0.35f;
-
-            GameObject visual = new GameObject("Visual");
-            visual.transform.SetParent(playerGO.transform);
-            visual.transform.localPosition = new Vector3(0f, 0f, 0f);
-            visual.transform.localScale = Vector3.one;
-
-            // Torso (capsule at center Y = 0.70m)
-            GameObject torso = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            torso.name = "Torso";
-            torso.transform.SetParent(visual.transform);
-            torso.transform.localPosition = new Vector3(0f, 0.70f, 0f);
-            torso.transform.localScale = new Vector3(0.50f, 0.44f, 0.44f);
-            torso.GetComponent<MeshRenderer>().sharedMaterial = torsoMat;
-            DestroyImmediate(torso.GetComponent<Collider>());
-
-            // Boots / Feet
-            Material bootMat = GetOrCreateMaterial("M_Playground_Iron", new Color(0.18f, 0.20f, 0.24f), 0.65f);
-            GameObject footL = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            footL.name = "Foot_L";
-            footL.transform.SetParent(visual.transform);
-            footL.transform.localPosition = new Vector3(0.04f, 0.16f, 0.14f);
-            footL.transform.localScale = new Vector3(0.15f, 0.15f, 0.22f);
-            footL.GetComponent<MeshRenderer>().sharedMaterial = bootMat;
-            DestroyImmediate(footL.GetComponent<Collider>());
-
-            GameObject footR = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            footR.name = "Foot_R";
-            footR.transform.SetParent(visual.transform);
-            footR.transform.localPosition = new Vector3(0.04f, 0.16f, -0.14f);
-            footR.transform.localScale = new Vector3(0.15f, 0.15f, 0.22f);
-            footR.GetComponent<MeshRenderer>().sharedMaterial = bootMat;
-            DestroyImmediate(footR.GetComponent<Collider>());
-
-            // Head (sphere at Y = 1.34m, sitting above torso)
-            GameObject head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            head.name = "Head";
-            head.transform.SetParent(visual.transform);
-            head.transform.localPosition = new Vector3(0f, 1.34f, 0f);
-            head.transform.localScale = new Vector3(0.44f, 0.44f, 0.44f);
-            head.GetComponent<MeshRenderer>().sharedMaterial = skinMat;
-            DestroyImmediate(head.GetComponent<Collider>());
-
-            // Headband ring
-            GameObject headband = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            headband.name = "Headband";
-            headband.transform.SetParent(visual.transform);
-            headband.transform.localPosition = new Vector3(0f, 1.38f, 0f);
-            headband.transform.localScale = new Vector3(0.46f, 0.05f, 0.46f);
-            headband.GetComponent<MeshRenderer>().sharedMaterial = headbandMat;
-            DestroyImmediate(headband.GetComponent<Collider>());
-
-            // Flowing ribbon tail behind head (Planet of Lana style)
-            GameObject ribbon = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ribbon.name = "Ribbon_Tail";
-            ribbon.transform.SetParent(visual.transform);
-            ribbon.transform.localPosition = new Vector3(-0.28f, 1.32f, 0f);
-            ribbon.transform.localRotation = Quaternion.Euler(0f, 0f, 22f);
-            ribbon.transform.localScale = new Vector3(0.30f, 0.07f, 0.04f);
-            ribbon.GetComponent<MeshRenderer>().sharedMaterial = headbandMat;
-            DestroyImmediate(ribbon.GetComponent<Collider>());
-
-            // Hands
-            GameObject handL = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            handL.name = "Hand_L";
-            handL.transform.SetParent(visual.transform);
-            handL.transform.localPosition = new Vector3(0.20f, 0.68f, 0.22f);
-            handL.transform.localScale = new Vector3(0.15f, 0.15f, 0.15f);
-            handL.GetComponent<MeshRenderer>().sharedMaterial = skinMat;
-            DestroyImmediate(handL.GetComponent<Collider>());
-
-            GameObject handR = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            handR.name = "Hand_R";
-            handR.transform.SetParent(visual.transform);
-            handR.transform.localPosition = new Vector3(0.20f, 0.68f, -0.22f);
-            handR.transform.localScale = new Vector3(0.15f, 0.15f, 0.15f);
-            handR.GetComponent<MeshRenderer>().sharedMaterial = skinMat;
-            DestroyImmediate(handR.GetComponent<Collider>());
-
-            GameObject carrySocket = new GameObject("CarrySocket");
-            carrySocket.transform.SetParent(playerGO.transform);
-            carrySocket.transform.localPosition = new Vector3(0.42f, 1.05f, 0f);
-
-            GameObject trajGO = new GameObject("TrajectoryPredictor");
-            trajGO.transform.SetParent(playerGO.transform);
-            trajGO.transform.localPosition = Vector3.zero;
-            trajGO.AddComponent<TrajectoryPredictor>();
-            var lineRend = trajGO.GetComponent<LineRenderer>();
-            if (lineRend != null)
+            if (playerGO == null)
             {
-                lineRend.sharedMaterial = orbMat;
-                lineRend.enabled = false;
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Characters/PF_Player_An.prefab");
+                if (prefab != null)
+                {
+                    playerGO = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                    playerGO.name = "Player_An";
+                    playerGO.tag = "Player";
+                    playerGO.transform.position = pos;
+                    playerGO.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+                }
             }
 
-            playerGO.AddComponent<LedgeGrabDetector>();
-            playerGO.AddComponent<PlayerController>();
-            playerGO.AddComponent<GrassInteraction>();
-
-            Camera cam = Camera.main;
-            if (cam != null)
+            if (playerGO == null)
             {
-                var camCtrl = cam.GetComponent<Cinematic2DCamera>();
-                if (camCtrl == null) camCtrl = cam.gameObject.AddComponent<Cinematic2DCamera>();
-                camCtrl.Target = playerGO.transform;
-                camCtrl.ConfigureLevelBounds(-35f, 120f, 1.0f, false);
-                camCtrl.SnapToTarget();
+                GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Characters/Character_An.fbx");
+                if (model != null)
+                {
+                    playerGO = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                    playerGO.name = "Player_An";
+                    playerGO.tag = "Player";
+                    playerGO.transform.position = pos;
+                    playerGO.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+
+                    var cc = playerGO.AddComponent<CharacterController>();
+                    cc.height = 1.8f;
+                    cc.radius = 0.35f;
+                    cc.center = new Vector3(0f, 0.9f, 0f);
+                    cc.stepOffset = 0.35f;
+
+                    playerGO.AddComponent<AnAnimationController>();
+                    playerGO.AddComponent<PlayerController>();
+                    playerGO.AddComponent<LedgeGrabDetector>();
+                    playerGO.AddComponent<GrassInteraction>();
+                }
+            }
+
+            if (playerGO != null)
+            {
+                // Ensure camera tracks Player_An
+                Camera mainCam = Camera.main;
+                if (mainCam != null)
+                {
+                    var camCtrl = mainCam.GetComponent<Cinematic2DCamera>() ?? mainCam.gameObject.AddComponent<Cinematic2DCamera>();
+                    camCtrl.Target = playerGO.transform;
+                    camCtrl.ConfigureLevelBounds(-35f, 120f, 1.0f, false);
+                    camCtrl.SnapToTarget();
+                }
             }
         }
 
@@ -535,6 +492,15 @@ namespace HoaVaMau.Gameplay
 
             string path = $"{dir}/{name}.mat";
             Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                string[] guids = AssetDatabase.FindAssets($"{name} t:Material", new[] { dir });
+                if (guids.Length > 0)
+                {
+                    path = AssetDatabase.GUIDToAssetPath(guids[0]);
+                    mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+                }
+            }
             Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
 
             if (mat == null)
@@ -558,6 +524,15 @@ namespace HoaVaMau.Gameplay
 
             string path = $"{dir}/{name}.mat";
             Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                string[] guids = AssetDatabase.FindAssets($"{name} t:Material", new[] { dir });
+                if (guids.Length > 0)
+                {
+                    path = AssetDatabase.GUIDToAssetPath(guids[0]);
+                    mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+                }
+            }
             Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color") ?? Shader.Find("Standard");
 
             if (mat == null)

@@ -270,7 +270,7 @@ namespace HoaVaMau.Gameplay
             // Load painted game background material or texture
             Material skyMat = null;
 #if UNITY_EDITOR
-            skyMat = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Mat_Sky_Background.mat");
+            skyMat = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Backdrop_Sky/Mat_Sky_Background.mat");
 #endif
             if (skyMat == null)
             {
@@ -822,7 +822,7 @@ namespace HoaVaMau.Gameplay
         {
             GameObject rockInstance = null;
 #if UNITY_EDITOR
-            GameObject rockPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Rock0022.fbx");
+            GameObject rockPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Small_02.fbx");
             if (rockPrefab != null)
             {
                 rockInstance = Object.Instantiate(rockPrefab, parent);

@@ -286,7 +286,7 @@ namespace HoaVaMau.Gameplay
                     {
                         if (isCrawling) targetSpeed = 1.2f;
                         else if (isCrouching) targetSpeed = 1.8f;
-                        else if (playerController.IsSprinting) targetSpeed = 5.5f;
+                        else if (playerController.IsSprinting) targetSpeed = 4.2f;
                         else targetSpeed = 2.0f;
                     }
                     else
@@ -331,7 +331,7 @@ namespace HoaVaMau.Gameplay
                 else
                 {
                     string targetState = "Idle";
-                    if (currentSmoothSpeed > 3.6f) targetState = "Run";
+                    if (currentSmoothSpeed > 3.0f) targetState = "Run";
                     else if (currentSmoothSpeed > 0.15f) targetState = "Walk";
 
                     CrossFadeToState(targetState, 0.15f);

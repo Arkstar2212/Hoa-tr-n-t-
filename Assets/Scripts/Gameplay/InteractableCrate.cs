@@ -39,6 +39,11 @@ namespace HoaVaMau.Gameplay
             rb = GetComponent<Rigidbody>();
             boxCollider = GetComponent<BoxCollider>();
 
+            if (GetComponent<DestructibleCrate>() == null)
+            {
+                gameObject.AddComponent<DestructibleCrate>();
+            }
+
             ConfigurePhysics();
         }
 
@@ -75,6 +80,9 @@ namespace HoaVaMau.Gameplay
         {
             side = 0;
             if (isGrabbed) return false;
+
+            var destructible = GetComponent<DestructibleCrate>();
+            if (destructible != null && destructible.IsDestroyed) return false;
 
             Vector3 crateCenter = transform.position + new Vector3(0f, boxSize.y * 0.5f, 0f);
             float deltaX = playerPos.x - crateCenter.x;
