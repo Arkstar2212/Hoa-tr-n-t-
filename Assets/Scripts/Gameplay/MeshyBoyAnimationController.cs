@@ -34,8 +34,8 @@ namespace HoaVaMau.Gameplay
         [Tooltip("Bấm 1 (Walk), 2 (Run), 3 (Climb), 4 (Crouch), 5 (Crawl), 0 (Auto Gameplay)")]
         [SerializeField] private bool enableKeyShortcuts = true;
 
-        [Header("Hiển thị giao diện điều khiển trên màn hình (OnScreen GUI)")]
-        [SerializeField] private bool showOnScreenGui = true;
+        [Header("Hiển thị giao diện điều khiển trên màn hình (OnScreen GUI - Bấm F1/H để bật/tắt)")]
+        [SerializeField] private bool showOnScreenGui = false;
 
         [Header("Xoay mặt mượt mà")]
         [SerializeField] private bool smoothFacing = true;
@@ -156,6 +156,7 @@ namespace HoaVaMau.Gameplay
             bool key4 = false;
             bool key5 = false;
             bool key0 = false;
+            bool toggleGui = false;
 
 #if ENABLE_INPUT_SYSTEM
             var kb = Keyboard.current;
@@ -167,6 +168,7 @@ namespace HoaVaMau.Gameplay
                 if (kb.digit4Key.wasPressedThisFrame || kb.numpad4Key.wasPressedThisFrame) key4 = true;
                 if (kb.digit5Key.wasPressedThisFrame || kb.numpad5Key.wasPressedThisFrame) key5 = true;
                 if (kb.digit0Key.wasPressedThisFrame || kb.numpad0Key.wasPressedThisFrame || kb.backspaceKey.wasPressedThisFrame) key0 = true;
+                if (kb.f1Key.wasPressedThisFrame || kb.hKey.wasPressedThisFrame) toggleGui = true;
             }
 #else
             if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) key1 = true;
@@ -175,7 +177,16 @@ namespace HoaVaMau.Gameplay
             if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) key4 = true;
             if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5)) key5 = true;
             if (Input.GetKeyDown(KeyCode.Alpha0) || Input.GetKeyDown(KeyCode.Keypad0) || Input.GetKeyDown(KeyCode.Backspace)) key0 = true;
+            if (Input.GetKeyDown(KeyCode.F1) || Input.GetKeyDown(KeyCode.H)) toggleGui = true;
 #endif
+
+            if (toggleGui) showOnScreenGui = !showOnScreenGui;
+
+            // Khi người chơi di chuyển (bấm A/D), tự động trở về Auto Gameplay để phản hồi tức thì
+            if (mode != MeshyAnimationMode.Auto && playerController != null && Mathf.Abs(playerController.HorizontalInput) > 0.08f)
+            {
+                SetAutoMode();
+            }
 
             if (key1) ForceWalk();
             else if (key2) ForceRun();

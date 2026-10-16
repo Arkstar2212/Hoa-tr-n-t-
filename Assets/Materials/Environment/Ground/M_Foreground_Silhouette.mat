@@ -30,8 +30,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _Cutoff: 0.05
-    - _WindSway: 0.04
     - _WindSpeed: 0.8
+    - _WindSway: 0.04
     m_Colors:
     - _SilhouetteColor: {r: 0.04, g: 0.08, b: 0.06, a: 1}
   m_BuildTextureStacks: []

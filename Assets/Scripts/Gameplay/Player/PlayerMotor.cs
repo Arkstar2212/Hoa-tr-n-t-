@@ -103,7 +103,7 @@ namespace HoaVaMau.Gameplay
             if (grounded)
             {
                 CoyoteTimer = CoyoteTimeDuration;
-                vel.y = -2.0f; // Firm ground stick to prevent floating/falling through
+                vel.y = -4.5f; // Lực ghì bám mặt đất dốc (ramp) để khi chạy xuống dốc không bị hẫng airborne
                 IsMomentumJump = false;
             }
             else
@@ -152,6 +152,14 @@ namespace HoaVaMau.Gameplay
             if (charController != null && charController.enabled)
             {
                 charController.Move(Velocity * dt);
+
+                // Khóa cứng trục Z = 0 cho gameplay 2.5D
+                Vector3 pos = charController.transform.position;
+                if (Mathf.Abs(pos.z) > 0.0001f)
+                {
+                    pos.z = 0f;
+                    charController.transform.position = pos;
+                }
             }
         }
 
