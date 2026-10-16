@@ -53,7 +53,7 @@ namespace HoaVaMau.Gameplay
         [Header("Cinematic Ledge Climbing")]
         [SerializeField] private float climbDuration = 1.05f;
         [SerializeField] private float maxClimbForwardLean = 24f;
-        [SerializeField] private bool autoClimbOnLedgeGrab = false;
+        [SerializeField] private bool autoClimbOnLedgeGrab = true;
 
         [Header("Carry & Throw")]
         [SerializeField] private Transform carrySocket;
@@ -146,8 +146,12 @@ namespace HoaVaMau.Gameplay
         {
             if (charController == null) charController = GetComponent<CharacterController>();
             if (ledgeDetector == null) ledgeDetector = GetComponent<LedgeGrabDetector>();
+            if (ledgeDetector == null) ledgeDetector = gameObject.AddComponent<LedgeGrabDetector>();
             if (hipBone == null) hipBone = transform.Find("Armature/BoneRoot/Hip");
             if (visualTransform == null) visualTransform = transform.Find("Visual");
+
+            var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+            if (meshyAnim == null) meshyAnim = gameObject.AddComponent<MeshyBoyAnimationController>();
 
             SetupCarrySocket();
             SetupTrajectoryPredictor();
