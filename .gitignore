@@ -77,3 +77,7 @@ test-results.xml
 # AI assistant configuration
 .claude/
 
+# Blender workspace and backup files at root (worked on separately, keep files in Assets)
+/*.blend
+/*.blend1
+/*.blend@
