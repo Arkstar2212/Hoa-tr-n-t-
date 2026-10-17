@@ -50,16 +50,20 @@ namespace HoaVaMau.Gameplay
             var rootStateMachine = controller.layers[0].stateMachine;
 
             AnimationClip idleClip = LoadClipFromFBX("Assets/Animations/Hero/Loco/Hero_Loco_Idle_Loop_IP.fbx");
-            AnimationClip walkClip = LoadClipFromFBX("Assets/Animations/Hero/Loco/Hero_Loco_Walk_Fwd_IP.fbx");
-            AnimationClip runClip = LoadClipFromFBX("Assets/Animations/Hero/Loco/Hero_Loco_Run_Fwd_IP.fbx");
-            AnimationClip climbClip = LoadClipFromFBX("Assets/Animations/Hero/Traverse/Hero_Traverse_Climb_Down_IP.fbx");
+            AnimationClip walkClip = LoadClipFromFBX("Assets/TripoModels/Boy_Character/Boy_Character.fbx", "walk");
+            if (walkClip == null) walkClip = LoadClipFromFBX("Assets/Animations/Hero/Loco/Hero_Loco_Walk_Fwd_IP.fbx");
+            AnimationClip runClip = LoadClipFromFBX("Assets/TripoModels/Boy_Character/Boy_Character.fbx", "run");
+            if (runClip == null) runClip = LoadClipFromFBX("Assets/Animations/Hero/Loco/Hero_Loco_Run_Fwd_IP.fbx");
+            AnimationClip climbClip = LoadClipFromFBX("Assets/TripoModels/Boy_Character/Boy_Character.fbx", "climb");
+            if (climbClip == null) climbClip = LoadClipFromFBX("Assets/Animations/Hero/Traverse/Hero_Traverse_Climb_Down_IP.fbx");
             AnimationClip crouchClip = LoadClipFromFBX("Assets/Animations/Hero/Stealth/Hero_Stealth_Crouch_Sneak_Left_IP.fbx");
             AnimationClip crawlClip = LoadClipFromFBX("Assets/Animations/Hero/Stealth/Hero_Stealth_Crawl_Fwd_IP.fbx");
 
             SetOrCreateState(rootStateMachine, "Idle", idleClip, new Vector3(250, 100, 0));
             SetOrCreateState(rootStateMachine, "Walk", walkClip, new Vector3(250, 200, 0));
             SetOrCreateState(rootStateMachine, "Run", runClip, new Vector3(250, 300, 0));
-            SetOrCreateState(rootStateMachine, "Climb", climbClip, new Vector3(500, 100, 0));
+            var climbState = SetOrCreateState(rootStateMachine, "Climb", climbClip, new Vector3(500, 100, 0));
+            if (climbState != null) climbState.speed = 1.85f;
             SetOrCreateState(rootStateMachine, "Crouch", crouchClip, new Vector3(500, 200, 0));
             SetOrCreateState(rootStateMachine, "Crawl", crawlClip, new Vector3(500, 300, 0));
 
@@ -273,7 +277,7 @@ namespace HoaVaMau.Gameplay
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
-        private static AnimationClip LoadClipFromFBX(string fbxPath)
+        private static AnimationClip LoadClipFromFBX(string fbxPath, string clipName = null)
         {
             var objects = AssetDatabase.LoadAllAssetsAtPath(fbxPath);
             if (objects == null) return null;
@@ -281,7 +285,10 @@ namespace HoaVaMau.Gameplay
             {
                 if (obj is AnimationClip clip && !clip.name.StartsWith("__preview__"))
                 {
-                    return clip;
+                    if (string.IsNullOrEmpty(clipName) || clip.name.Equals(clipName, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        return clip;
+                    }
                 }
             }
             return null;

@@ -57,20 +57,15 @@ namespace HoaVaMau.Gameplay
             ClimbEndPos = new Vector3(landPos.x, landPos.y, 0f);
             ClimbProgress = 0f;
 
-            bool hasClimbAnimation = (transform.GetComponent<Animator>() != null);
-            if (hasClimbAnimation)
-            {
-                // Khi có 3D Animator Humanoid, đặt vị trí nhân vật tại điểm đáp ngay lập tức
-                // Animation sẽ nâng người nhân vật tự nhiên lên vị trí này
-                transform.position = ClimbEndPos;
-            }
-            else
-            {
-                transform.position = ClimbStartPos;
-            }
+            // Luôn bắt đầu tại vị trí bám gờ (ClimbStartPos) và di chuyển mượt theo quỹ đạo EvaluateClimbTrajectory
+            // Không dịch chuyển tức thời (teleport) lên ClimbEndPos ở frame 0 để tránh lỗi giật hình
+            transform.position = ClimbStartPos;
 
             var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
             if (meshyAnim != null) meshyAnim.OnClimbStarted();
+
+            var anAnim = transform.GetComponent<AnAnimationController>();
+            if (anAnim != null) anAnim.OnClimbStarted();
         }
 
         public bool UpdateClimb(float dt, float facingDirection, Transform visualTransform, float baseScaleX, float baseScaleY, float baseScaleZ)
@@ -78,15 +73,13 @@ namespace HoaVaMau.Gameplay
             ClimbProgress += dt / Mathf.Max(0.1f, ClimbDuration);
             float t = Mathf.Clamp01(ClimbProgress);
 
+            // Di chuyển nhân vật mượt mà theo đường cong cơ sinh học từ mép tường lên đỉnh gờ
+            transform.position = EvaluateClimbTrajectory(t, facingDirection);
+
             bool hasClimbAnimation = (transform.GetComponent<Animator>() != null);
             if (!hasClimbAnimation)
             {
-                transform.position = EvaluateClimbTrajectory(t, facingDirection);
                 ApplyClimbVisualDynamics(t, facingDirection, visualTransform, baseScaleX, baseScaleY, baseScaleZ);
-            }
-            else
-            {
-                transform.position = ClimbEndPos;
             }
 
             if (ClimbProgress >= 1.0f)
@@ -97,6 +90,9 @@ namespace HoaVaMau.Gameplay
 
                 var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
                 if (meshyAnim != null) meshyAnim.OnClimbFinished();
+
+                var anAnim = transform.GetComponent<AnAnimationController>();
+                if (anAnim != null) anAnim.OnClimbFinished();
 
                 return true; // Finished climbing
             }
@@ -109,35 +105,41 @@ namespace HoaVaMau.Gameplay
             Vector3 start = ClimbStartPos;
             Vector3 end = ClimbEndPos;
 
-            float wallX = start.x + facing * 0.34f;
-            float ledgeY = end.y - 0.05f;
+            // Tọa độ mép tường thực tế (start.x nằm cách mặt tường 0.28m về phía ngoài)
+            float wallX = start.x + facing * 0.28f;
+            float topY = end.y;
 
+            // P0: Điểm bám ban đầu áp sát mặt ngoài của vách tường
             Vector3 p0 = start;
-            Vector3 p1 = new Vector3(wallX - facing * 0.16f, ledgeY - 0.30f, 0f);
-            Vector3 p2 = new Vector3(wallX + facing * 0.38f, ledgeY + 0.06f, 0f);
+            // P1: Kéo người thẳng đứng dọc theo mặt ngoài vách tường lên sát mép gờ (không xuyên tường)
+            Vector3 p1 = new Vector3(wallX - facing * 0.14f, topY - 0.08f, 0f);
+            // P2: Chống tay vượt qua góc gờ (wallX, topY) đặt chân lên mặt sàn
+            Vector3 p2 = new Vector3(wallX + facing * 0.24f, topY, 0f);
+            // P3: Đứng thẳng dậy hoàn toàn tại điểm đáp trên platform
             Vector3 p3 = end;
 
-            if (t <= 0.14f)
+            if (t <= 0.46f)
             {
-                float subT = t / 0.14f;
-                float dip = Mathf.Sin(subT * Mathf.PI) * 0.025f;
-                return p0 - new Vector3(0f, dip, 0f);
+                // Pha 1 (0% -> 46%): Bám vách và kéo thân người thẳng đứng lên dọc theo mặt tường
+                float subT = t / 0.46f;
+                float easeY = Mathf.SmoothStep(0f, 1f, subT);
+                float easeX = subT * subT;
+                return new Vector3(
+                    Mathf.Lerp(p0.x, p1.x, easeX),
+                    Mathf.Lerp(p0.y, p1.y, easeY),
+                    0f);
             }
-            else if (t <= 0.52f)
+            else if (t <= 0.78f)
             {
-                float subT = (t - 0.14f) / 0.38f;
-                float ease = 1f - Mathf.Pow(1f - subT, 2.2f);
-                return Vector3.Lerp(p0, p1, ease);
-            }
-            else if (t <= 0.80f)
-            {
-                float subT = (t - 0.52f) / 0.28f;
+                // Pha 2 (46% -> 78%): Vượt qua mép gờ (Mantle) bước chân lên mặt sàn
+                float subT = (t - 0.46f) / 0.32f;
                 float ease = Mathf.SmoothStep(0f, 1f, subT);
                 return Vector3.Lerp(p1, p2, ease);
             }
             else
             {
-                float subT = (t - 0.80f) / 0.20f;
+                // Pha 3 (78% -> 100%): Đứng thẳng dậy và bước ổn định vào trong platform
+                float subT = (t - 0.78f) / 0.22f;
                 float ease = Mathf.SmoothStep(0f, 1f, subT);
                 return Vector3.Lerp(p2, p3, ease);
             }

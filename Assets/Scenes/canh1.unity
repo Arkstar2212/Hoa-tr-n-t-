@@ -4213,7 +4213,7 @@ MonoBehaviour:
   runLeanAngle: 10.5
   pushLeanAngle: 14
   pullLeanAngle: -11
-  climbDuration: 2.167
+  climbDuration: 1.05
   maxClimbForwardLean: 24
   autoClimbOnLedgeGrab: 1
   carrySocket: {fileID: 0}

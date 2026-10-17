@@ -20,6 +20,7 @@ namespace HoaVaMau.Test3D
         [SerializeField] private Transform cameraTransform;
 
         private CharacterController controller;
+        private Transform hipsBone;
         private Vector3 velocity;
         private float verticalVelocity = 0f;
 
@@ -30,11 +31,43 @@ namespace HoaVaMau.Test3D
         {
             controller = GetComponent<CharacterController>();
             if (animator == null) animator = GetComponentInChildren<Animator>();
+            if (animator != null)
+            {
+                animator.applyRootMotion = false;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                if (animator.isHuman) hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
+            }
             if (cameraTransform == null && Camera.main != null) cameraTransform = Camera.main.transform;
+        }
+
+        private void OnAnimatorMove()
+        {
+            // Chặn hoàn toàn Root Motion tự động để tránh nhân vật bị giật lùi
+        }
+
+        private void LateUpdate()
+        {
+            if (animator == null) return;
+            if (hipsBone == null && animator.isHuman)
+            {
+                hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
+            }
+            if (hipsBone != null)
+            {
+                Vector3 pos = hipsBone.position;
+                pos.x = transform.position.x;
+                pos.z = transform.position.z;
+                hipsBone.position = pos;
+            }
         }
 
         private void Update()
         {
+            if (animator != null && animator.applyRootMotion)
+            {
+                animator.applyRootMotion = false;
+            }
+
             float horizontal = 0f;
             float vertical = 0f;
             bool isSprint = false;
