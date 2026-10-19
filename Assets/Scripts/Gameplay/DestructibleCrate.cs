@@ -40,6 +40,22 @@ namespace HoaVaMau.Gameplay
         public int CurrentHits => currentHits;
         public int MaxHits => maxHits;
         public bool IsDestroyed => isDestroyed;
+        public float MinImpactSpeed => minImpactSpeed;
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (isDestroyed) return;
+
+            // Kích hoạt sát thương nếu vật thể vật lý va chạm với vận tốc đủ lớn
+            if (collision.relativeVelocity.magnitude >= minImpactSpeed)
+            {
+                if (collision.rigidbody != null && !collision.rigidbody.isKinematic)
+                {
+                    Vector3 contactPt = collision.contacts.Length > 0 ? collision.contacts[0].point : transform.position;
+                    TakeDamage(1, contactPt, collision.relativeVelocity);
+                }
+            }
+        }
 
         private void Awake()
         {

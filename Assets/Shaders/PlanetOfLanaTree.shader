@@ -8,7 +8,7 @@ Shader "HoaVaMau/PlanetOfLanaTree"
     Properties
     {
         [Header(Texture and Tint)]
-        _MainTex            ("Sprite Texture", 2D) = "white" {}
+        [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color              ("Tint Color", Color) = (1, 1, 1, 1)
         _Cutoff             ("Alpha Cutoff (0 = Alpha Blend)", Range(0.0, 1.0)) = 0.01
 
@@ -81,25 +81,23 @@ Shader "HoaVaMau/PlanetOfLanaTree"
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
 
-            CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST;
-                float4 _Color;
-                float  _Cutoff;
-                float  _RootHeight;
-                float  _CanopyStart;
-                float  _TrunkSpeed;
-                float  _TrunkAmp;
-                float  _TrunkBendPower;
-                float  _TrunkArcDrop;
-                float  _CanopySpeed;
-                float  _CanopyAmp;
-                float  _CanopyBillow;
-                float  _GustStrength;
-                float  _GustSpeed;
-                float  _PhaseOffset;
-                float  _WindDirection;
-                float  _UseGlobalWind;
-            CBUFFER_END
+            float4 _MainTex_ST;
+            float4 _Color;
+            float  _Cutoff;
+            float  _RootHeight;
+            float  _CanopyStart;
+            float  _TrunkSpeed;
+            float  _TrunkAmp;
+            float  _TrunkBendPower;
+            float  _TrunkArcDrop;
+            float  _CanopySpeed;
+            float  _CanopyAmp;
+            float  _CanopyBillow;
+            float  _GustStrength;
+            float  _GustSpeed;
+            float  _PhaseOffset;
+            float  _WindDirection;
+            float  _UseGlobalWind;
 
             // Globals from WindManager (tự động nhận từ GPU nếu có)
             float4 _GlobalWind;
