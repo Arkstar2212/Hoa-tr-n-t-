@@ -251,7 +251,7 @@ namespace HoaVaMau.Editor
                 return;
             }
 
-            GameObject[] allObjects = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            GameObject[] allObjects = Object.FindObjectsByType<GameObject>();
             int count = 0;
             foreach (var go in allObjects)
             {
@@ -387,7 +387,7 @@ namespace HoaVaMau.Editor
             }
 
             // 4. Clean up extraneous crate cameras
-            Camera[] allCams = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
+            Camera[] allCams = Object.FindObjectsByType<Camera>();
             foreach (var c in allCams)
             {
                 if (c.tag != "MainCamera" && c.name == "Camera")

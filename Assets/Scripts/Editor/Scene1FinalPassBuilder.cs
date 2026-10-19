@@ -44,7 +44,7 @@ namespace HoaVaMau.Editor
             var timberDark = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/M_CaMau_TimberDark.mat");
             var barkMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/CaMau/M_CaMau_MangroveBark.mat");
 
-            var allRenderers = Object.FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var allRenderers = Object.FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include);
             foreach (var r in allRenderers)
             {
                 if (r.sharedMaterial == null || r.sharedMaterial.shader == null || r.sharedMaterial.shader.name.Contains("Error") || r.sharedMaterial.name == "Default-Material")

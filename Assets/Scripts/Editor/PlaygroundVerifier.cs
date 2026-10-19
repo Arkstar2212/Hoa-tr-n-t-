@@ -91,7 +91,7 @@ namespace HoaVaMau.Editor
             Debug.Log($"<color=#40b8a6>[PlaygroundVerifier]</color> Managers: CheckpointManager={cpMgr != null}, WindManager={windMgr != null}, GrassManager={grassMgr != null}");
 
             // 6. Check Grass Tufts
-            var tufts = Object.FindObjectsByType<Stylized3DGrassTuft>(FindObjectsSortMode.None);
+            var tufts = Object.FindObjectsByType<Stylized3DGrassTuft>();
             Debug.Log($"<color=#40b8a6>[PlaygroundVerifier]</color> Total Stylized 3D Grass Tufts: {tufts.Length}");
 
             // 7. Check Platforms thickness
