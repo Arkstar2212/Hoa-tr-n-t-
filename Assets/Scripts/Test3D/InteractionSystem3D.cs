@@ -34,7 +34,7 @@ namespace HoaVaMau.Test3D
             }
 
             // Find closest interactable
-            InteractableObject3D[] allInteractables = Object.FindObjectsByType<InteractableObject3D>(FindObjectsSortMode.None);
+            InteractableObject3D[] allInteractables = Object.FindObjectsByType<InteractableObject3D>();
             closestInteractable = null;
             float minDistance = detectionRadius;
 

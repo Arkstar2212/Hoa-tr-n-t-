@@ -186,12 +186,19 @@ namespace HoaVaMau.Gameplay
 
         public void PickupItem(PlayerController player, PortableItem item)
         {
+            Vector3 itemGroundPos = item.transform.position;
             carriedItem = item;
             carriedItem.OnPickedUp(player, carrySocket);
             player.SetState(PlayerState.Carrying);
             UpdateCarrySocketTransform(player.FacingDirection);
 
             isAiming = false;
+
+            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
+            if (meshyAnim != null) meshyAnim.OnPickupStarted(itemGroundPos, carrySocket);
+
+            var anAnim = transform.GetComponent<AnAnimationController>();
+            if (anAnim != null) anAnim.OnPickupStarted(itemGroundPos, carrySocket);
         }
 
         public void DropCarriedItem(PlayerController player)
@@ -206,6 +213,14 @@ namespace HoaVaMau.Gameplay
             isAiming = false;
             if (trajectoryPredictor != null) trajectoryPredictor.Hide();
             player.SetState(PlayerState.Grounded);
+
+            UpdateCarrySocketTransform(player.FacingDirection);
+
+            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
+            if (meshyAnim != null) meshyAnim.OnAimThrowCancelled();
+
+            var anAnim = transform.GetComponent<AnAnimationController>();
+            if (anAnim != null) anAnim.OnAimThrowCancelled();
         }
 
         // ================= CANH GÓC & LỰC NÉM PARABOL (AIM & THROW) =================
@@ -215,6 +230,12 @@ namespace HoaVaMau.Gameplay
             if (carriedItem == null) return;
             isAiming = true;
             player.SetState(PlayerState.AimingThrow);
+
+            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
+            if (meshyAnim != null) meshyAnim.OnAimThrowStarted(carrySocket);
+
+            var anAnim = transform.GetComponent<AnAnimationController>();
+            if (anAnim != null) anAnim.OnAimThrowStarted(carrySocket);
         }
 
         public void UpdateAimingThrow(
@@ -230,7 +251,8 @@ namespace HoaVaMau.Gameplay
                 return;
             }
 
-            Vector3 launchPos = (carrySocket != null) ? carrySocket.position : transform.position + Vector3.up * 1.05f;
+            // Sử dụng điểm phóng chuẩn ổn định theo hướng mặt nhân vật để đường ngắm Parabol không bị rung theo tay
+            Vector3 launchPos = transform.position + new Vector3(player.FacingDirection * 0.44f, 1.05f, 0f);
             launchPos.z = 0f;
 
             // Chuyển đổi tọa độ chuột màn hình sang không gian thế giới mặt phẳng 2D (Z = 0)
@@ -324,6 +346,14 @@ namespace HoaVaMau.Gameplay
             carriedItem = null;
             isAiming = false;
             player.SetState(PlayerState.Grounded);
+
+            UpdateCarrySocketTransform(player.FacingDirection);
+
+            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
+            if (meshyAnim != null) meshyAnim.OnThrowReleased();
+
+            var anAnim = transform.GetComponent<AnAnimationController>();
+            if (anAnim != null) anAnim.OnThrowReleased();
         }
 
         public void CancelAiming(PlayerController player)
@@ -338,6 +368,14 @@ namespace HoaVaMau.Gameplay
             {
                 player.SetState(PlayerState.Grounded);
             }
+
+            UpdateCarrySocketTransform(player.FacingDirection);
+
+            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
+            if (meshyAnim != null) meshyAnim.OnAimThrowCancelled();
+
+            var anAnim = transform.GetComponent<AnAnimationController>();
+            if (anAnim != null) anAnim.OnAimThrowCancelled();
         }
 
         public void UpdateCarrySocketTransform(float facingDirection)

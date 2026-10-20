@@ -150,8 +150,11 @@ namespace HoaVaMau.Gameplay
             if (hipBone == null) hipBone = transform.Find("Armature/BoneRoot/Hip");
             if (visualTransform == null) visualTransform = transform.Find("Visual");
 
-            var meshyAnim = GetComponent<MeshyBoyAnimationController>();
-            if (meshyAnim == null) meshyAnim = gameObject.AddComponent<MeshyBoyAnimationController>();
+            if (GetComponent<AnAnimationController>() == null)
+            {
+                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+                if (meshyAnim == null) meshyAnim = gameObject.AddComponent<MeshyBoyAnimationController>();
+            }
 
             SetupCarrySocket();
             SetupTrajectoryPredictor();

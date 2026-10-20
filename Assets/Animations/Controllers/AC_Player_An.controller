@@ -167,7 +167,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Climb
-  m_Speed: 1
+  m_Speed: 1.85
   m_CycleOffset: 0
   m_Transitions: []
   m_StateMachineBehaviours: []
@@ -179,7 +179,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: b223da64551749e4c9ad85d6a096064b, type: 3}
+  m_Motion: {fileID: -529086017489758698, guid: e92aaa74888da254a8ca0c2469819cef, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -205,7 +205,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: 25245962024ab70478a2ac58aad05791, type: 3}
+  m_Motion: {fileID: 6200578666267062213, guid: e92aaa74888da254a8ca0c2469819cef, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -284,7 +284,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: feb89c01a6eed1a419c8f82517ca9305, type: 3}
+  m_Motion: {fileID: -3419257869308726280, guid: e92aaa74888da254a8ca0c2469819cef, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 

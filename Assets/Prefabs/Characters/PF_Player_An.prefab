@@ -369,8 +369,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2bd70b94ac54e8f8739263b0dd9c101, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.PlayerController
-  walkSpeed: 2.4
-  sprintSpeed: 4.2
+  walkSpeed: 2.2
+  sprintSpeed: 5.5
   crouchSpeed: 1.8
   crawlSpeed: 1.2
   pushPullSpeed: 2.1
@@ -395,7 +395,7 @@ MonoBehaviour:
   pullLeanAngle: -11
   climbDuration: 1.05
   maxClimbForwardLean: 24
-  autoClimbOnLedgeGrab: 0
+  autoClimbOnLedgeGrab: 1
   carrySocket: {fileID: 4050149011516317745}
   trajectoryPredictor: {fileID: 2361046213026597568}
   minThrowSpeed: 5
@@ -419,7 +419,7 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  platformLandForward: 0.72
+  platformLandForward: 0.42
 --- !u!114 &9152849726772279026
 MonoBehaviour:
   m_ObjectHideFlags: 0

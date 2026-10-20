@@ -41,9 +41,30 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private bool smoothFacing = true;
         [SerializeField] private float turnSpeed = 720f;
 
+        private enum ThrowAnimPhase
+        {
+            None = 0,
+            Pickup = 1,       // Khúc đầu (0.00 -> 0.37): Cúi xuống nhặt vật từ mặt đất lên tay
+            AimWindup = 2,    // Khúc chuẩn bị ném (0.37 -> 0.45): Đưa tay ra sau ngắm ném và giữ nguyên tư thế
+            Release = 3       // Khúc cuối (0.45 -> 0.88): Vung tay ném mạnh về phía trước và thu tay về
+        }
+
+        private const float ThrowPickupStartNorm = 0.00f;
+        private const float ThrowPickupGrabNorm = 0.21f;  // Frame 31: tay chạm vật dưới đất
+        private const float ThrowPickupEndNorm = 0.37f;   // Frame 54: đứng thẳng dậy cầm vật trước ngực
+        private const float ThrowAimHoldNorm = 0.45f;     // Frame 66: tay phải kéo ra sau đầu chuẩn bị ném
+        private const float ThrowReleaseEndNorm = 0.88f;  // Frame 128: hoàn tất vung tay ném và thu tay về
+
         private Animator animator;
         private CharacterController characterController;
         private PlayerController playerController;
+        private Transform hipsBone;
+        private Transform rightHandBone;
+        private Transform activeCarrySocket;
+        private Vector3 pickupGroundWorldPos;
+        private ThrowAnimPhase throwPhase = ThrowAnimPhase.None;
+        private float throwNormTime = 0f;
+        private float standingHipOffsetY = 0.63f;
         private float currentSmoothSpeed = 0f;
         private float speedVelocity = 0f;
         private float targetFacingAngle = 90f; // 90 = Right, -90 = Left
@@ -74,6 +95,7 @@ namespace HoaVaMau.Gameplay
             SetupComponents();
             if (animator != null) animator.speed = 1f;
             targetFacingAngle = transform.eulerAngles.y;
+            standingHipOffsetY = 0.63f * Mathf.Max(0.1f, transform.lossyScale.y);
         }
 
         private void Update()
@@ -84,10 +106,15 @@ namespace HoaVaMau.Gameplay
                 if (animator == null) return;
             }
 
+            if (animator.applyRootMotion) animator.applyRootMotion = false;
+
             if (!Application.isPlaying) return;
 
-            // Đảm bảo tốc độ Animator luôn mượt mà (1.0f)
-            if (animator.speed != 1f) animator.speed = 1f;
+            // Đảm bảo tốc độ Animator luôn mượt mà (1.0f) khi không ở trong pha điều khiển frame ném
+            if (throwPhase == ThrowAnimPhase.None && animator.speed != 1f)
+            {
+                animator.speed = 1f;
+            }
 
             // Xử lý phím tắt test nhanh
             if (enableKeyShortcuts)
@@ -102,6 +129,92 @@ namespace HoaVaMau.Gameplay
             UpdateAnimationLogic();
         }
 
+        private void OnAnimatorMove()
+        {
+            // Chặn hoàn toàn Root Motion tự động của Animator để CharacterController và PlayerLedgeClimber
+            // làm chủ 100% vị trí vật lý, không bao giờ xảy ra xung đột giật lùi.
+        }
+
+        private void LateUpdate()
+        {
+            if (!Application.isPlaying || animator == null) return;
+
+            if (hipsBone == null && animator.isHuman)
+            {
+                hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
+            }
+            if (rightHandBone == null && animator.isHuman)
+            {
+                rightHandBone = animator.GetBoneTransform(HumanBodyBones.RightHand);
+            }
+
+            if (hipsBone != null)
+            {
+                Vector3 rootPos = transform.position;
+                Vector3 hipPos = hipsBone.position;
+
+                if (currentPlayingState == "Idle" || currentPlayingState == "Walk")
+                {
+                    float currentOffsetY = hipPos.y - rootPos.y;
+                    if (currentOffsetY > 0.25f && currentOffsetY < 1.5f)
+                    {
+                        standingHipOffsetY = Mathf.Lerp(standingHipOffsetY, currentOffsetY, Time.deltaTime * 10f);
+                    }
+                }
+
+                // Khóa hoàn toàn trục X và Z của xương Hips theo vị trí thực của nhân vật (100% In-Place)
+                // Ngăn chặn triệt để hiện tượng mesh chạy tiến ra trước Collider rồi bị giật lùi lại khi lặp vòng
+                hipPos.x = rootPos.x;
+                hipPos.z = rootPos.z;
+
+                // Khi đang leo trèo (Climb), quỹ đạo độ cao Y đã được PlayerLedgeClimber.EvaluateClimbTrajectory điều khiển mượt mà
+                if (currentPlayingState == "Climb")
+                {
+                    float climbT = (playerController != null && playerController.LedgeClimber != null)
+                        ? Mathf.Clamp01(playerController.LedgeClimber.ClimbProgress)
+                        : 1f;
+                    float facing = (playerController != null) ? playerController.FacingDirection : 1f;
+
+                    // Khi đang đu và vượt gờ (t = 0 -> 1), áp nhẹ thân người sát vào mép tường và trả về 0 tuyệt đối ở t = 1
+                    float wallHugArc = Mathf.Sin(climbT * Mathf.PI);
+                    hipPos.x = rootPos.x + facing * 0.08f * wallHugArc;
+                    hipPos.y = rootPos.y + standingHipOffsetY - 0.10f * wallHugArc;
+                }
+
+                hipsBone.position = hipPos;
+            }
+
+            // Đồng bộ vị trí vật cầm trên tay theo từng pha Nhặt (Pickup) và Chuẩn bị ném (AimWindup)
+            if (activeCarrySocket != null)
+            {
+                float facing = (playerController != null) ? playerController.FacingDirection : 1f;
+                Vector3 defaultCarryWorldPos = transform.position + new Vector3(facing * 0.44f, 1.05f, 0f);
+
+                if (throwPhase == ThrowAnimPhase.Pickup)
+                {
+                    if (throwNormTime < ThrowPickupGrabNorm)
+                    {
+                        // Khi tay đang cúi xuống: giữ vật nằm yên trên mặt đất cho tới lúc tay chạm vào vật
+                        activeCarrySocket.position = new Vector3(pickupGroundWorldPos.x, pickupGroundWorldPos.y, 0f);
+                    }
+                    else
+                    {
+                        // Khi tay nhấc vật từ đất lên ngực: đi theo bàn tay phải và hòa vào vị trí cầm trước ngực
+                        float liftT = Mathf.Clamp01((throwNormTime - ThrowPickupGrabNorm) / (ThrowPickupEndNorm - ThrowPickupGrabNorm));
+                        Vector3 handPos = (rightHandBone != null)
+                            ? new Vector3(rightHandBone.position.x, rightHandBone.position.y, 0f)
+                            : Vector3.Lerp(pickupGroundWorldPos, defaultCarryWorldPos, liftT);
+                        activeCarrySocket.position = Vector3.Lerp(handPos, defaultCarryWorldPos, liftT * liftT);
+                    }
+                }
+                else if (throwPhase == ThrowAnimPhase.AimWindup && rightHandBone != null)
+                {
+                    // Khi giơ tay ra sau chuẩn bị ném: đặt vật nằm trên bàn tay phải đang vung ra sau
+                    activeCarrySocket.position = new Vector3(rightHandBone.position.x, rightHandBone.position.y + 0.05f, 0f);
+                }
+            }
+        }
+
         public void SetupComponents()
         {
             if (animator == null) animator = GetComponent<Animator>();
@@ -111,6 +224,12 @@ namespace HoaVaMau.Gameplay
             if (animator != null)
             {
                 animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                animator.applyRootMotion = false;
+                if (animator.isHuman)
+                {
+                    if (hipsBone == null) hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
+                    if (rightHandBone == null) rightHandBone = animator.GetBoneTransform(HumanBodyBones.RightHand);
+                }
             }
 
             var smr = GetComponentInChildren<SkinnedMeshRenderer>();
@@ -297,8 +416,8 @@ namespace HoaVaMau.Gameplay
                     {
                         if (isCrawling) targetSpeed = 1.2f;
                         else if (isCrouching) targetSpeed = 1.8f;
-                        else if (playerController.IsSprinting) targetSpeed = 4.2f;
-                        else targetSpeed = 2.0f;
+                        else if (playerController.IsSprinting) targetSpeed = 5.5f;
+                        else targetSpeed = 2.2f;
                     }
                     else
                     {
@@ -317,10 +436,91 @@ namespace HoaVaMau.Gameplay
 
             if (isClimbing)
             {
+                throwPhase = ThrowAnimPhase.None;
+                animator.speed = 1f;
                 if (currentPlayingState != "Climb")
                 {
                     currentPlayingState = "Climb";
                     animator.Play("Climb", 0, 0f);
+                }
+            }
+            else if (throwPhase == ThrowAnimPhase.Pickup)
+            {
+                // Pha 1 (Khi bấm E nhặt vật): Chạy khúc đầu của animation Throw (0.00 -> 0.37: cúi xuống nhặt vật lên ngực)
+                currentPlayingState = "Throw";
+                animator.speed = 0f;
+                throwNormTime += (ThrowPickupEndNorm / 0.72f) * dt;
+
+                // Cho phép ngắt sớm pha đứng dậy nếu người chơi bắt đầu di chuyển sau khi đã nhặt vật lên tay
+                if (throwNormTime >= ThrowPickupEndNorm || (throwNormTime >= 0.30f && currentSmoothSpeed > 0.35f))
+                {
+                    ResetCarrySocketOffset();
+                    throwPhase = ThrowAnimPhase.None;
+                    animator.speed = 1f;
+                    string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
+                    CrossFadeToState(next, 0.12f);
+                }
+                else
+                {
+                    animator.Play("Throw", 0, Mathf.Clamp(throwNormTime, ThrowPickupStartNorm, ThrowPickupEndNorm));
+                }
+            }
+            else if (throwPhase == ThrowAnimPhase.AimWindup || (playerController != null && playerController.CurrentState == PlayerState.AimingThrow))
+            {
+                // Pha 2 (Chuẩn bị ném / Giữ Chuột Trái): Bỏ qua đoạn nhặt đồ, lấy khúc chuẩn bị ném (0.37 -> 0.45) và giữ nguyên tư thế giơ tay ngắm
+                if (throwPhase != ThrowAnimPhase.AimWindup)
+                {
+                    throwPhase = ThrowAnimPhase.AimWindup;
+                    throwNormTime = ThrowPickupEndNorm;
+                }
+                currentPlayingState = "Throw";
+                animator.speed = 0f;
+                throwNormTime = Mathf.MoveTowards(throwNormTime, ThrowAimHoldNorm, (0.08f / 0.18f) * dt);
+                animator.Play("Throw", 0, throwNormTime);
+            }
+            else if (throwPhase == ThrowAnimPhase.Release)
+            {
+                // Pha 3 (Thả Chuột Trái ném): Chạy khúc cuối của animation Throw (0.45 -> 0.88: vung tay ném mạnh và thu tay về)
+                currentPlayingState = "Throw";
+                animator.speed = 0f;
+                throwNormTime += ((ThrowReleaseEndNorm - ThrowAimHoldNorm) / 0.50f) * dt;
+
+                if (throwNormTime >= ThrowReleaseEndNorm || (throwNormTime >= 0.65f && currentSmoothSpeed > 0.35f))
+                {
+                    throwPhase = ThrowAnimPhase.None;
+                    animator.speed = 1f;
+                    string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
+                    CrossFadeToState(next, 0.12f);
+                }
+                else
+                {
+                    animator.Play("Throw", 0, Mathf.Clamp(throwNormTime, ThrowAimHoldNorm, ThrowReleaseEndNorm));
+                }
+            }
+            else if (playerController != null && playerController.CurrentState == PlayerState.PushPull)
+            {
+                CrossFadeToState("PushPull", 0.15f);
+            }
+            else if (playerController != null && playerController.CurrentState == PlayerState.Carrying)
+            {
+                if (currentSmoothSpeed > 0.15f)
+                {
+                    CrossFadeToState("Carry", 0.15f);
+                }
+                else
+                {
+                    CrossFadeToState("Idle", 0.15f);
+                }
+            }
+            else if (playerController != null && playerController.CurrentState == PlayerState.Airborne)
+            {
+                if (playerController.Velocity.y > 0.2f)
+                {
+                    CrossFadeToState("Jump", 0.12f);
+                }
+                else
+                {
+                    CrossFadeToState("Fall", 0.15f);
                 }
             }
             else if (isCrawling)
@@ -333,9 +533,9 @@ namespace HoaVaMau.Gameplay
             }
             else
             {
-                if (currentPlayingState == "Climb")
+                if (currentPlayingState == "Climb" || currentPlayingState == "Jump" || currentPlayingState == "Fall" || currentPlayingState == "Throw")
                 {
-                    // Vừa hoàn tất leo trèo, chuyển mượt mà sang Idle/Walk (các pose đã khớp 100%)
+                    // Vừa hoàn tất leo trèo, nhảy hoặc ném, chuyển mượt mà sang Idle/Walk
                     string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
                     CrossFadeToState(next, 0.12f);
                 }
@@ -350,9 +550,66 @@ namespace HoaVaMau.Gameplay
             }
         }
 
+        public void OnPickupStarted(Vector3 itemGroundWorldPos, Transform carrySocketTransform)
+        {
+            if (animator == null) return;
+            pickupGroundWorldPos = itemGroundWorldPos;
+            activeCarrySocket = carrySocketTransform;
+            throwPhase = ThrowAnimPhase.Pickup;
+            throwNormTime = ThrowPickupStartNorm;
+            currentPlayingState = "Throw";
+            animator.speed = 0f;
+            animator.Play("Throw", 0, ThrowPickupStartNorm);
+        }
+
+        public void OnAimThrowStarted(Transform carrySocketTransform)
+        {
+            if (animator == null) return;
+            activeCarrySocket = carrySocketTransform;
+            throwPhase = ThrowAnimPhase.AimWindup;
+            throwNormTime = ThrowPickupEndNorm; // Bắt đầu ngay tại mốc chuẩn bị ném (0.37), bỏ qua hoàn toàn đoạn nhặt đồ
+            currentPlayingState = "Throw";
+            animator.speed = 0f;
+            animator.Play("Throw", 0, throwNormTime);
+        }
+
+        public void OnThrowReleased()
+        {
+            if (animator == null) return;
+            ResetCarrySocketOffset();
+            throwPhase = ThrowAnimPhase.Release;
+            throwNormTime = ThrowAimHoldNorm; // Chạy từ tư thế giơ tay ngắm (0.45) hết khúc cuối vung tay ném (0.88)
+            currentPlayingState = "Throw";
+            animator.speed = 0f;
+            animator.Play("Throw", 0, throwNormTime);
+        }
+
+        public void OnAimThrowCancelled()
+        {
+            ResetCarrySocketOffset();
+            throwPhase = ThrowAnimPhase.None;
+            if (animator != null)
+            {
+                animator.speed = 1f;
+                string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
+                CrossFadeToState(next, 0.12f);
+            }
+        }
+
+        private void ResetCarrySocketOffset()
+        {
+            if (activeCarrySocket != null)
+            {
+                float facing = (playerController != null) ? playerController.FacingDirection : 1f;
+                activeCarrySocket.localPosition = new Vector3(facing * 0.44f, 1.05f, 0f);
+            }
+        }
+
         public void OnClimbStarted()
         {
             if (animator == null) return;
+            throwPhase = ThrowAnimPhase.None;
+            animator.speed = 1f;
             currentPlayingState = "Climb";
             animator.SetBool(IsClimbingHash, true);
             animator.CrossFadeInFixedTime("Climb", 0.08f);
