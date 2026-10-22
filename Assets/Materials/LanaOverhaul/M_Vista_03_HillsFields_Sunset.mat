@@ -30,9 +30,14 @@ Material:
     m_Ints: []
     m_Floats:
     - _BottomFeather: 0
+    - _CloudRadianceIntensity: 0.44
     - _LeftFeather: 0.24
     - _RightFeather: 0
+    - _SkyClarity: 1.06
+    - _SunbeamIntensity: 0.24
     m_Colors:
+    - _CloudRadianceColor: {r: 1, g: 0.99, b: 0.92, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _SunbeamOriginUV: {r: 0.53, g: 0.7, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
