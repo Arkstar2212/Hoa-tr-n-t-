@@ -41,6 +41,21 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private bool smoothFacing = true;
         [SerializeField] private float turnSpeed = 720f;
 
+        [Header("Trạng thái Cutscene")]
+        [SerializeField] private bool isCutsceneActive = false;
+        public bool IsCutsceneActive
+        {
+            get => isCutsceneActive;
+            set
+            {
+                isCutsceneActive = value;
+                if (!isCutsceneActive && animator != null)
+                {
+                    animator.speed = 1f;
+                }
+            }
+        }
+
         private enum ThrowAnimPhase
         {
             None = 0,
@@ -99,6 +114,8 @@ namespace HoaVaMau.Gameplay
 
         private void Update()
         {
+            if (isCutsceneActive) return;
+
             if (animator == null)
             {
                 SetupComponents();
@@ -125,12 +142,22 @@ namespace HoaVaMau.Gameplay
 
         private void OnAnimatorMove()
         {
+            if (isCutsceneActive)
+            {
+                if (animator != null && animator.applyRootMotion)
+                {
+                    transform.position += animator.deltaPosition;
+                    transform.rotation *= animator.deltaRotation;
+                }
+                return;
+            }
             // Chặn hoàn toàn Root Motion tự động của Animator để CharacterController và PlayerLedgeClimber
             // làm chủ 100% vị trí vật lý, không bao giờ xảy ra xung đột giật lùi.
         }
 
         private void LateUpdate()
         {
+            if (isCutsceneActive) return;
             if (!Application.isPlaying || animator == null) return;
 
             if (hipsBone == null && animator.isHuman)
