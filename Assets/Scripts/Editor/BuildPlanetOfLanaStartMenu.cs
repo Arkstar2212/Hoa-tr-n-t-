@@ -1087,7 +1087,7 @@ namespace HoaVaMau.Editor
             };
 
             // Ensure dummy save slot data exists for realistic Continue and Save selection preview
-            HoaVaMauSaveSystem.SaveCurrentGameState(1, "Chương 1: Đất Đỏ Cà Mau", "Bờ Sông Đất Đỏ", 1, new Vector3(-8.5f, 0.05f, 0f));
+            HoaVaMauSaveSystem.SaveCurrentGameState(1, "Chương 1: Đất Đỏ Cà Mau", "Bờ Sông Đất Đỏ", 1, new Vector3(0.0f, -1.77f, 0f));
 
             // 1. State B: Team Loading Screen (Five Cows centered, Bird loader in bottom-right corner)
             capturePhase(1, "StartMenu_01_TeamLoading_FiveCowsInTheFire.png", PlanetOfLanaStartMenuSystem.MenuPhase.TeamLoadingScreen, true, 1280, 720, null);

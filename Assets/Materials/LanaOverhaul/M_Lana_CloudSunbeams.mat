@@ -27,9 +27,9 @@ Material:
     m_Floats:
     - _BeamCount: 5
     - _FalloffPower: 1.75
-    - _RayIntensity: 1.25
+    - _RayIntensity: 1.35
     - _ShimmerSpeed: 0.55
     m_Colors:
-    - _RayColor: {r: 1, g: 0.98, b: 0.88, a: 0.26}
+    - _RayColor: {r: 1, g: 0.98, b: 0.86, a: 0.28}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
