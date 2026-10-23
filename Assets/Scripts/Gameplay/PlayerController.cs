@@ -582,9 +582,19 @@ namespace HoaVaMau.Gameplay
             visualEffects.ResetScale();
         }
 
+        [Header("Debug & HUD")]
+        [SerializeField] private bool showDebugHUD = false;
+
         private void OnGUI()
         {
             if (!Application.isPlaying) return;
+
+            if (Input.GetKeyDown(KeyCode.F1))
+            {
+                showDebugHUD = !showDebugHUD;
+            }
+
+            if (!showDebugHUD) return;
 
             // 1. Current State Banner (Top Left)
             float bannerW = 280f;

@@ -25,8 +25,8 @@ namespace HoaVaMau.Gameplay
             public float playTimeSeconds = 0f;
             public string saveTimestamp = "";
             public int checkpointIndex = 0;
-            public float playerPosX = -8.5f;
-            public float playerPosY = 0.05f;
+            public float playerPosX = 0f;
+            public float playerPosY = -1.77f;
             public float playerPosZ = 0f;
 
             public string GetFormattedPlayTime()
@@ -100,8 +100,8 @@ namespace HoaVaMau.Gameplay
                     playTimeSeconds = PlayerPrefs.GetFloat($"{PrefsPrefix}Slot_{slotIndex}_PlayTime", 60f),
                     saveTimestamp = PlayerPrefs.GetString($"{PrefsPrefix}Slot_{slotIndex}_Date", DateTime.Now.ToString("dd/MM/yyyy HH:mm")),
                     checkpointIndex = PlayerPrefs.GetInt($"{PrefsPrefix}Slot_{slotIndex}_Checkpoint", 0),
-                    playerPosX = PlayerPrefs.GetFloat($"{PrefsPrefix}Slot_{slotIndex}_PosX", -8.5f),
-                    playerPosY = PlayerPrefs.GetFloat($"{PrefsPrefix}Slot_{slotIndex}_PosY", 0.05f),
+                    playerPosX = PlayerPrefs.GetFloat($"{PrefsPrefix}Slot_{slotIndex}_PosX", 0.0f),
+                    playerPosY = PlayerPrefs.GetFloat($"{PrefsPrefix}Slot_{slotIndex}_PosY", -1.77f),
                     playerPosZ = 0f
                 };
             }
@@ -122,7 +122,7 @@ namespace HoaVaMau.Gameplay
             if (slotIndex < 1 || slotIndex > MaxSlots) slotIndex = 1;
             ActiveSlotIndex = slotIndex;
 
-            Vector3 playerPos = pos.HasValue ? pos.Value : new Vector3(-8.5f, 0.05f, 0f);
+            Vector3 playerPos = pos.HasValue ? pos.Value : new Vector3(0.0f, -1.77f, 0f);
 
             var existing = GetSlotData(slotIndex);
             float totalPlayTime = (existing != null && existing.isOccupied ? existing.playTimeSeconds : 0f) + SessionPlayTimeCounter;
@@ -181,7 +181,7 @@ namespace HoaVaMau.Gameplay
             SessionPlayTimeCounter = 0f;
 
             // Commit new game slot state
-            SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(-8.5f, 0.05f, 0f));
+            SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(0.0f, -1.77f, 0f));
 
             IntroCutsceneState.MarkForNewGame();
             if (!string.IsNullOrEmpty(targetScene))

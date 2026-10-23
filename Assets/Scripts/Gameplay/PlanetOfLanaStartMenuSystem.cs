@@ -139,9 +139,10 @@ namespace HoaVaMau.Gameplay
         private Text masterVolValText;
         private Text musicVolValText;
         private Text sfxVolValText;
-        private Button[] qualityButtons = new Button[4];
-        private Text[] qualityBtnTexts = new Text[4];
         private Text fullscreenBtnText;
+        private Text vsyncBtnText;
+        private GameAction? rebindingAction = null;
+        private readonly Dictionary<GameAction, Text> keybindButtonTexts = new Dictionary<GameAction, Text>();
 
         // Zelda Breath of the Wild Style Loading Screen
         private CanvasGroup botwLoadingGroup;
@@ -831,6 +832,16 @@ namespace HoaVaMau.Gameplay
 
         private void UpdateOptionsModal(float dt)
         {
+            if (rebindingAction.HasValue)
+            {
+                if (IsCancelPressed())
+                {
+                    rebindingAction = null;
+                    RefreshKeybindButtonLabels();
+                }
+                return;
+            }
+
             if (IsCancelPressed())
             {
                 CloseOptionsDialog();
@@ -1084,6 +1095,12 @@ namespace HoaVaMau.Gameplay
         public void OpenOptionsDialog()
         {
             PlayConfirm();
+            rebindingAction = null;
+            RefreshKeybindButtonLabels();
+            if (fullscreenBtnText != null)
+                fullscreenBtnText.text = Screen.fullScreen ? "TOÀN MÀN HÌNH: [ BẬT ]" : "TOÀN MÀN HÌNH: [ TẮT ]";
+            if (vsyncBtnText != null)
+                vsyncBtnText.text = (QualitySettings.vSyncCount > 0) ? "ĐỒNG BỘ DỌC: [ BẬT ]" : "ĐỒNG BỘ DỌC: [ TẮT ]";
             SetPhase(MenuPhase.Options);
         }
 
@@ -1158,7 +1175,7 @@ namespace HoaVaMau.Gameplay
                     IntroCutsceneState.MarkForNewGame();
                     HoaVaMauSaveSystem.ActiveSlotIndex = slotIndex;
                     HoaVaMauSaveSystem.SessionPlayTimeCounter = 0f;
-                    HoaVaMauSaveSystem.SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(-8.5f, 0.05f, 0f));
+                    HoaVaMauSaveSystem.SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(0.0f, -1.77f, 0f));
                     SetPhase(MenuPhase.BotWLoadingScreen);
                 }
             }
@@ -1221,7 +1238,7 @@ namespace HoaVaMau.Gameplay
                 IntroCutsceneState.MarkForNewGame();
                 HoaVaMauSaveSystem.ActiveSlotIndex = pendingOverwriteSlot;
                 HoaVaMauSaveSystem.SessionPlayTimeCounter = 0f;
-                HoaVaMauSaveSystem.SaveCurrentGameState(pendingOverwriteSlot, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(-8.5f, 0.05f, 0f));
+                HoaVaMauSaveSystem.SaveCurrentGameState(pendingOverwriteSlot, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(0.0f, -1.77f, 0f));
                 SetPhase(MenuPhase.BotWLoadingScreen);
             }
         }
@@ -1280,10 +1297,13 @@ namespace HoaVaMau.Gameplay
             float bgmVol = PlayerPrefs.GetFloat("Settings_MusicVol", 0.65f);
             float sVol = PlayerPrefs.GetFloat("Settings_SFXVol", 0.45f);
 
+            int vsync = PlayerPrefs.GetInt("Settings_VSync", 1);
+
             AudioListener.volume = mVol;
             musicVolume = bgmVol;
             windVolume = sVol * 0.5f;
             sfxVolume = sVol;
+            QualitySettings.vSyncCount = vsync;
         }
 
         private void SavePersistedSettings()
@@ -1291,6 +1311,7 @@ namespace HoaVaMau.Gameplay
             PlayerPrefs.SetFloat("Settings_MasterVol", AudioListener.volume);
             PlayerPrefs.SetFloat("Settings_MusicVol", musicVolume);
             PlayerPrefs.SetFloat("Settings_SFXVol", sfxVolume);
+            PlayerPrefs.SetInt("Settings_VSync", QualitySettings.vSyncCount);
             PlayerPrefs.Save();
         }
 
@@ -1315,29 +1336,54 @@ namespace HoaVaMau.Gameplay
             if (sfxVolValText != null) sfxVolValText.text = $"{Mathf.RoundToInt(val * 100f)}%";
         }
 
-        private void SetQualityLevelUI(int level)
+        private void ToggleVSyncMode()
         {
-            QualitySettings.SetQualityLevel(level, true);
-            PlayerPrefs.SetInt("Settings_Quality", level);
+            PlayConfirm();
+            QualitySettings.vSyncCount = (QualitySettings.vSyncCount > 0) ? 0 : 1;
+            PlayerPrefs.SetInt("Settings_VSync", QualitySettings.vSyncCount);
             PlayerPrefs.Save();
-            HighlightSelectedQualityButton(level);
+            if (vsyncBtnText != null)
+            {
+                vsyncBtnText.text = (QualitySettings.vSyncCount > 0) ? "ĐỒNG BỘ DỌC: [ BẬT ]" : "ĐỒNG BỘ DỌC: [ TẮT ]";
+            }
         }
 
-        private void HighlightSelectedQualityButton(int activeLevel)
+        private void StartRebindingAction(GameAction action)
         {
-            for (int i = 0; i < qualityButtons.Length; i++)
+            PlayHover();
+            rebindingAction = action;
+            if (keybindButtonTexts.TryGetValue(action, out Text txt))
             {
-                if (qualityButtons[i] == null) continue;
-                var img = qualityButtons[i].GetComponent<Image>();
-                bool isCur = (i == activeLevel);
-                if (img != null)
+                txt.text = "[ BẤM PHÍM MỚI... ]";
+                txt.color = new Color(1f, 0.75f, 0.2f, 1f);
+            }
+        }
+
+        private void RefreshKeybindButtonLabels()
+        {
+            foreach (var kvp in keybindButtonTexts)
+            {
+                if (kvp.Value != null)
                 {
-                    img.color = isCur ? new Color(0.85f, 0.42f, 0.18f, 0.90f) : new Color(0.12f, 0.15f, 0.22f, 0.85f);
+                    kvp.Value.text = $"[ {KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(kvp.Key))} ]";
+                    kvp.Value.color = new Color(1f, 0.95f, 0.80f, 0.95f);
                 }
-                if (qualityBtnTexts[i] != null)
+            }
+        }
+
+        private void OnGUI()
+        {
+            if (rebindingAction.HasValue && Event.current.isKey && Event.current.type == EventType.KeyDown)
+            {
+                KeyCode pressed = Event.current.keyCode;
+                if (pressed != KeyCode.None && pressed != KeyCode.Escape)
                 {
-                    qualityBtnTexts[i].color = isCur ? Color.white : new Color(0.75f, 0.80f, 0.88f, 0.80f);
+                    KeybindingManager.SetKey(rebindingAction.Value, pressed);
+                    PlayConfirm();
                 }
+                rebindingAction = null;
+                RefreshKeybindButtonLabels();
+                Event.current.Use();
             }
         }
 
@@ -1858,91 +1904,55 @@ namespace HoaVaMau.Gameplay
             var box = CreateRect("Center_Options_Box", modalRect);
             box.anchorMin = box.anchorMax = new Vector2(0.5f, 0.5f);
             box.pivot = new Vector2(0.5f, 0.5f);
-            box.sizeDelta = new Vector2(800f, 620f);
+            box.sizeDelta = new Vector2(860f, 660f);
 
             var boxBg = box.gameObject.AddComponent<Image>();
             boxBg.color = new Color(0.07f, 0.09f, 0.14f, 0.95f);
 
             // Title
             var titleRect = CreateRect("Title", box);
-            titleRect.anchorMin = titleRect.anchorMax = new Vector2(0.5f, 0.94f);
-            titleRect.sizeDelta = new Vector2(700f, 40f);
+            titleRect.anchorMin = titleRect.anchorMax = new Vector2(0.5f, 0.95f);
+            titleRect.sizeDelta = new Vector2(700f, 36f);
             var title = titleRect.gameObject.AddComponent<Text>();
             title.font = font;
-            title.fontSize = 22;
+            title.fontSize = 20;
             title.fontStyle = FontStyle.Bold;
             title.alignment = TextAnchor.MiddleCenter;
             title.color = new Color(1.0f, 0.98f, 0.90f, 0.95f);
             title.text = "T Ù Y   C H Ỉ N H   H Ệ   T H Ố N G";
 
-            // SECTION 1: ÂM THANH (AUDIO)
-            float startY = -70f;
+            // SECTION 1: ÂM LƯỢNG (AUDIO)
+            float startY = -62f;
             CreateSectionHeader(box, "1. ÂM LƯỢNG (AUDIO)", new Vector2(40f, startY), font);
 
-            startY -= 40f;
+            startY -= 34f;
             masterVolSlider = CreateSliderRow(box, "Âm lượng Tổng", AudioListener.volume, new Vector2(40f, startY), font, out masterVolValText);
             masterVolSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
 
-            startY -= 42f;
+            startY -= 36f;
             musicVolSlider = CreateSliderRow(box, "Âm lượng Nhạc nền", musicVolume, new Vector2(40f, startY), font, out musicVolValText);
             musicVolSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
 
-            startY -= 42f;
-            sfxVolSlider = CreateSliderRow(box, "Hiệu ứng & Gió", sfxVolume, new Vector2(40f, startY), font, out sfxVolValText);
+            startY -= 36f;
+            sfxVolSlider = CreateSliderRow(box, "Hiệu ứng âm thanh (SFX)", sfxVolume, new Vector2(40f, startY), font, out sfxVolValText);
             sfxVolSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
 
             // SECTION 2: ĐỒ HỌA & HIỂN THỊ (GRAPHICS)
-            startY -= 52f;
+            startY -= 46f;
             CreateSectionHeader(box, "2. ĐỒ HỌA & HIỂN THỊ (GRAPHICS)", new Vector2(40f, startY), font);
 
-            startY -= 42f;
-            var qualContainer = CreateRect("QualityButtons_Row", box);
-            qualContainer.anchorMin = qualContainer.anchorMax = new Vector2(0f, 1f);
-            qualContainer.pivot = new Vector2(0f, 1f);
-            qualContainer.anchoredPosition = new Vector2(40f, startY);
-            qualContainer.sizeDelta = new Vector2(720f, 36f);
-
-            string[] qLabels = { "TIẾT KIỆM", "CHUẨN (URP)", "CAO", "SIÊU ĐẸP" };
-            int curQuality = PlayerPrefs.GetInt("Settings_Quality", QualitySettings.GetQualityLevel());
-            if (curQuality >= qLabels.Length) curQuality = qLabels.Length - 1;
-
-            for (int q = 0; q < qLabels.Length; q++)
-            {
-                int qIdx = q;
-                var qBtnRect = CreateRect($"Btn_Quality_{q}", qualContainer);
-                qBtnRect.anchorMin = qBtnRect.anchorMax = new Vector2(0f, 1f);
-                qBtnRect.pivot = new Vector2(0f, 1f);
-                qBtnRect.anchoredPosition = new Vector2(q * 180f, 0f);
-                qBtnRect.sizeDelta = new Vector2(170f, 34f);
-
-                var qBtn = qBtnRect.gameObject.AddComponent<Button>();
-                var qBg = qBtnRect.gameObject.AddComponent<Image>();
-                qBg.color = (q == curQuality) ? new Color(0.85f, 0.42f, 0.18f, 0.90f) : new Color(0.12f, 0.15f, 0.22f, 0.85f);
-
-                var qLblRect = CreateRect("Text", qBtnRect);
-                StretchFull(qLblRect);
-                var qLbl = qLblRect.gameObject.AddComponent<Text>();
-                qLbl.font = font;
-                qLbl.fontSize = 13;
-                qLbl.alignment = TextAnchor.MiddleCenter;
-                qLbl.color = Color.white;
-                qLbl.text = qLabels[q];
-
-                qualityButtons[q] = qBtn;
-                qualityBtnTexts[q] = qLbl;
-                qBtn.onClick.AddListener(() => SetQualityLevelUI(qIdx));
-            }
-
-            startY -= 44f;
+            startY -= 36f;
+            // Fullscreen Button
             var fsBtnRect = CreateRect("Btn_Toggle_Fullscreen", box);
             fsBtnRect.anchorMin = fsBtnRect.anchorMax = new Vector2(0f, 1f);
             fsBtnRect.pivot = new Vector2(0f, 1f);
             fsBtnRect.anchoredPosition = new Vector2(40f, startY);
-            fsBtnRect.sizeDelta = new Vector2(260f, 34f);
+            fsBtnRect.sizeDelta = new Vector2(360f, 34f);
 
             var fsBtn = fsBtnRect.gameObject.AddComponent<Button>();
             var fsImg = fsBtnRect.gameObject.AddComponent<Image>();
             fsImg.color = new Color(0.18f, 0.22f, 0.32f, 0.85f);
+            fsBtn.targetGraphic = fsImg;
 
             var fsTxtRect = CreateRect("Label", fsBtnRect);
             StretchFull(fsTxtRect);
@@ -1951,41 +1961,130 @@ namespace HoaVaMau.Gameplay
             fullscreenBtnText.fontSize = 13;
             fullscreenBtnText.alignment = TextAnchor.MiddleCenter;
             fullscreenBtnText.color = Color.white;
+            fullscreenBtnText.raycastTarget = false;
             fullscreenBtnText.text = Screen.fullScreen ? "TOÀN MÀN HÌNH: [ BẬT ]" : "TOÀN MÀN HÌNH: [ TẮT ]";
             fsBtn.onClick.AddListener(ToggleFullscreenMode);
 
-            // SECTION 3: HƯỚNG DẪN ĐIỀU KHIỂN (CONTROLS GUIDE)
-            startY -= 52f;
-            CreateSectionHeader(box, "3. BẢNG PHÍM ĐIỀU KHIỂN (CONTROLS)", new Vector2(40f, startY), font);
+            // VSync Button
+            var vsyncBtnRect = CreateRect("Btn_Toggle_VSync", box);
+            vsyncBtnRect.anchorMin = vsyncBtnRect.anchorMax = new Vector2(0f, 1f);
+            vsyncBtnRect.pivot = new Vector2(0f, 1f);
+            vsyncBtnRect.anchoredPosition = new Vector2(440f, startY);
+            vsyncBtnRect.sizeDelta = new Vector2(360f, 34f);
+
+            var vsyncBtn = vsyncBtnRect.gameObject.AddComponent<Button>();
+            var vsyncImg = vsyncBtnRect.gameObject.AddComponent<Image>();
+            vsyncImg.color = new Color(0.18f, 0.22f, 0.32f, 0.85f);
+            vsyncBtn.targetGraphic = vsyncImg;
+
+            var vsyncTxtRect = CreateRect("Label", vsyncBtnRect);
+            StretchFull(vsyncTxtRect);
+            vsyncBtnText = vsyncTxtRect.gameObject.AddComponent<Text>();
+            vsyncBtnText.font = font;
+            vsyncBtnText.fontSize = 13;
+            vsyncBtnText.alignment = TextAnchor.MiddleCenter;
+            vsyncBtnText.color = Color.white;
+            vsyncBtnText.raycastTarget = false;
+            vsyncBtnText.text = (QualitySettings.vSyncCount > 0) ? "ĐỒNG BỘ DỌC: [ BẬT ]" : "ĐỒNG BỘ DỌC: [ TẮT ]";
+            vsyncBtn.onClick.AddListener(ToggleVSyncMode);
+
+            // SECTION 3: BẢNG PHÍM ĐIỀU KHIỂN (CONTROLS REBINDING)
+            startY -= 48f;
+            CreateSectionHeader(box, "3. BẢNG PHÍM ĐIỀU KHIỂN (CONTROLS - BẤM ĐỂ ĐỔI PHÍM)", new Vector2(40f, startY), font);
 
             startY -= 34f;
-            var ctrlCard = CreateRect("Controls_Card", box);
-            ctrlCard.anchorMin = ctrlCard.anchorMax = new Vector2(0f, 1f);
-            ctrlCard.pivot = new Vector2(0f, 1f);
-            ctrlCard.anchoredPosition = new Vector2(40f, startY);
-            ctrlCard.sizeDelta = new Vector2(720f, 68f);
-            var ctrlBg = ctrlCard.gameObject.AddComponent<Image>();
-            ctrlBg.color = new Color(0.04f, 0.05f, 0.08f, 0.65f);
+            keybindButtonTexts.Clear();
+            var keyActions = new[]
+            {
+                GameAction.MoveLeft,
+                GameAction.MoveRight,
+                GameAction.Jump,
+                GameAction.Sprint,
+                GameAction.Crouch,
+                GameAction.Interact
+            };
 
-            var ctrlTxtRect = CreateRect("Text", ctrlCard);
-            StretchFull(ctrlTxtRect);
-            ctrlTxtRect.offsetMin = new Vector2(16f, 8f);
-            ctrlTxtRect.offsetMax = new Vector2(-16f, -8f);
-            var ctrlTxt = ctrlTxtRect.gameObject.AddComponent<Text>();
-            ctrlTxt.font = font;
-            ctrlTxt.fontSize = 13;
-            ctrlTxt.lineSpacing = 1.25f;
-            ctrlTxt.alignment = TextAnchor.MiddleLeft;
-            ctrlTxt.color = new Color(0.88f, 0.92f, 0.96f, 0.88f);
-            ctrlTxt.text = "[A] / [D] : Di chuyển trái / phải   •   [Space] : Nhảy cao / Bám gờ đá\n[C] : Cúi người / Ẩn náu bụi lau   •   [Left Shift] : Chạy nước rút (Sprint)\n[E] : Tương tác / Ném sỏi đánh lạc hướng   •   [Esc] : Tạm dừng";
+            for (int k = 0; k < keyActions.Length; k++)
+            {
+                var action = keyActions[k];
+                float colX = (k % 2 == 0) ? 40f : 440f;
+                float rowY = startY - (k / 2) * 38f;
 
-            // BACK BUTTON
+                var row = CreateRect($"KeyRow_{action}", box);
+                row.anchorMin = row.anchorMax = new Vector2(0f, 1f);
+                row.pivot = new Vector2(0f, 1f);
+                row.anchoredPosition = new Vector2(colX, rowY);
+                row.sizeDelta = new Vector2(380f, 32f);
+
+                var lbl = CreateRect("Label", row);
+                lbl.anchorMin = lbl.anchorMax = new Vector2(0f, 0.5f);
+                lbl.pivot = new Vector2(0f, 0.5f);
+                lbl.anchoredPosition = new Vector2(0f, 0f);
+                lbl.sizeDelta = new Vector2(210f, 30f);
+                var lTxt = lbl.gameObject.AddComponent<Text>();
+                lTxt.font = font;
+                lTxt.fontSize = 12;
+                lTxt.alignment = TextAnchor.MiddleLeft;
+                lTxt.color = new Color(0.85f, 0.90f, 0.95f, 0.85f);
+                lTxt.text = KeybindingManager.GetActionDisplayName(action);
+                lTxt.raycastTarget = false;
+
+                var btnRect = CreateRect("Btn", row);
+                btnRect.anchorMin = btnRect.anchorMax = new Vector2(1f, 0.5f);
+                btnRect.pivot = new Vector2(1f, 0.5f);
+                btnRect.anchoredPosition = new Vector2(0f, 0f);
+                btnRect.sizeDelta = new Vector2(160f, 30f);
+                var bImg = btnRect.gameObject.AddComponent<Image>();
+                bImg.color = new Color(0.12f, 0.16f, 0.24f, 0.85f);
+                var btn = btnRect.gameObject.AddComponent<Button>();
+                btn.targetGraphic = bImg;
+
+                var bTxtRect = CreateRect("Text", btnRect);
+                StretchFull(bTxtRect);
+                var bTxt = bTxtRect.gameObject.AddComponent<Text>();
+                bTxt.font = font;
+                bTxt.fontSize = 12;
+                bTxt.alignment = TextAnchor.MiddleCenter;
+                bTxt.color = new Color(1f, 0.95f, 0.80f, 0.95f);
+                bTxt.text = $"[ {KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(action))} ]";
+                bTxt.raycastTarget = false;
+
+                keybindButtonTexts[action] = bTxt;
+
+                btn.onClick.AddListener(() => StartRebindingAction(action));
+            }
+
+            // RESET TO DEFAULTS BUTTON
+            var resetBtnRect = CreateRect("Btn_Reset_Defaults", box);
+            resetBtnRect.anchorMin = resetBtnRect.anchorMax = new Vector2(0.30f, 0.055f);
+            resetBtnRect.sizeDelta = new Vector2(170f, 40f);
+            var rImg = resetBtnRect.gameObject.AddComponent<Image>();
+            rImg.color = new Color(0.24f, 0.28f, 0.36f, 0.85f);
+            var rBtn = resetBtnRect.gameObject.AddComponent<Button>();
+            rBtn.targetGraphic = rImg;
+            var rTxtRect = CreateRect("Label", resetBtnRect);
+            StretchFull(rTxtRect);
+            var rTxt = rTxtRect.gameObject.AddComponent<Text>();
+            rTxt.font = font;
+            rTxt.fontSize = 13;
+            rTxt.alignment = TextAnchor.MiddleCenter;
+            rTxt.color = Color.white;
+            rTxt.text = "MẶC ĐỊNH";
+            rTxt.raycastTarget = false;
+            rBtn.onClick.AddListener(() => {
+                KeybindingManager.ResetDefaults();
+                RefreshKeybindButtonLabels();
+                PlayConfirm();
+            });
+
+            // BACK / SAVE BUTTON
             var backBtnRect = CreateRect("Btn_Back_Options", box);
-            backBtnRect.anchorMin = backBtnRect.anchorMax = new Vector2(0.5f, 0.055f);
-            backBtnRect.sizeDelta = new Vector2(180f, 42f);
+            backBtnRect.anchorMin = backBtnRect.anchorMax = new Vector2(0.70f, 0.055f);
+            backBtnRect.sizeDelta = new Vector2(170f, 40f);
             var backBtn = backBtnRect.gameObject.AddComponent<Button>();
             var backImg = backBtnRect.gameObject.AddComponent<Image>();
             backImg.color = new Color(0.85f, 0.42f, 0.18f, 0.90f);
+            backBtn.targetGraphic = backImg;
             var backTxtRect = CreateRect("Label", backBtnRect);
             StretchFull(backTxtRect);
             var backTxt = backTxtRect.gameObject.AddComponent<Text>();
@@ -1995,6 +2094,7 @@ namespace HoaVaMau.Gameplay
             backTxt.alignment = TextAnchor.MiddleCenter;
             backTxt.color = Color.white;
             backTxt.text = "LƯU & QUAY LẠI";
+            backTxt.raycastTarget = false;
             backBtn.onClick.AddListener(CloseOptionsDialog);
         }
 
