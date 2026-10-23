@@ -31,6 +31,7 @@ namespace HoaVaMau.Gameplay
         {
             InitialStartup,       // State A: Pure black screen
             TeamLoadingScreen,    // State B: Five Cows centered, Circular Orbit Dove Spinner
+            HeadphoneScreen,      // Bước 2: Headphone Advisory (Fade-in 1s -> Hold 2s -> Fade-out 1s)
             StartMenuOpenVista,   // State C: Living vista, larger logo, BGM starts fading in
             SaveSlotSelection,    // Modal: New Game / Continue slot selection
             Options,              // Modal: Interactive Audio / Graphics / Controls settings
@@ -48,12 +49,19 @@ namespace HoaVaMau.Gameplay
 
         [Header("Startup & Timing Settings")]
         [SerializeField] private float initialStartupDuration = 0.5f;
-        [SerializeField] private float teamLoadingDuration = 3.2f;
+        [SerializeField] private float teamLogoFadeInDuration = 1.0f;
+        [SerializeField] private float teamLogoHoldDuration = 1.5f;
+        [SerializeField] private float teamLogoFadeOutDuration = 1.0f;
+        [SerializeField] private float headphoneFadeInDuration = 1.0f;
+        [SerializeField] private float headphoneHoldDuration = 2.0f;
+        [SerializeField] private float headphoneFadeOutDuration = 1.0f;
+        [SerializeField] private float teamLoadingDuration = 3.5f;
         [SerializeField] private float botwMinLoadingDuration = 3.4f;
         [SerializeField] private string targetGameplaySceneName = "New Scene 1_Overhaul";
 
         [Header("Art Assets")]
         [SerializeField] private Sprite studioLogoSprite;
+        [SerializeField] private Sprite headphoneSprite;
         [SerializeField] private Sprite gameOfficialLogoSprite;
         [SerializeField] private Sprite doveSilhouetteSprite;
         [SerializeField] private Sprite flowerBloomSprite;
@@ -96,6 +104,11 @@ namespace HoaVaMau.Gameplay
         private RectTransform teamBirdLoaderRect;
         private Image teamBirdLoaderImg;
         private readonly List<RectTransform> teamOrbitDots = new List<RectTransform>();
+
+        // Step 2 Panel (Headphone Advisory Screen)
+        private CanvasGroup headphoneGroup;
+        private RectTransform headphoneIconRect;
+        private Text headphoneText;
 
         // State C Panel (Main Menu)
         private CanvasGroup startMenuGroup;
@@ -282,7 +295,8 @@ namespace HoaVaMau.Gameplay
             Sprite dotSprite,
             AudioClip bgmClip,
             AudioClip windClip,
-            string gameplayScene = "")
+            string gameplayScene = "",
+            Sprite headphoneSpr = null)
         {
             ConfigureAssets(studioSprite, officialGameLogo, flowerSprite, doveSprite, dotSprite, null, null, bgmClip, windClip, gameplayScene);
         }
@@ -297,7 +311,8 @@ namespace HoaVaMau.Gameplay
             Sprite shipSprite,
             AudioClip bgmClip,
             AudioClip windClip,
-            string gameplayScene = "")
+            string gameplayScene = "",
+            Sprite headphoneSpr = null)
         {
             studioLogoSprite = studioSprite;
             gameOfficialLogoSprite = officialGameLogo;
@@ -306,6 +321,7 @@ namespace HoaVaMau.Gameplay
             softDotSprite = dotSprite;
             boySilhouetteSprite = boySprite;
             shipSilhouetteSprite = shipSprite;
+            if (headphoneSpr != null) headphoneSprite = headphoneSpr;
             mainMenuMusicClip = bgmClip;
             ambientWindClip = windClip;
             if (!string.IsNullOrEmpty(gameplayScene)) targetGameplaySceneName = gameplayScene;
@@ -353,6 +369,11 @@ namespace HoaVaMau.Gameplay
             if (phase == MenuPhase.TeamLoadingScreen && teamLoadingGroup != null)
             {
                 teamLoadingGroup.alpha = alpha;
+            }
+            else if (phase == MenuPhase.HeadphoneScreen && headphoneGroup != null)
+            {
+                headphoneGroup.alpha = alpha;
+                if (blackCurtainGroup != null) blackCurtainGroup.alpha = 1f;
             }
             else if (phase == MenuPhase.StartMenuOpenVista && startMenuGroup != null)
             {
@@ -426,6 +447,26 @@ namespace HoaVaMau.Gameplay
                     if (musicSource != null) musicSource.Stop();
                     break;
 
+                case MenuPhase.HeadphoneScreen:
+                    if (blackCurtainGroup != null) blackCurtainGroup.alpha = 1f;
+                    if (teamLoadingGroup != null) teamLoadingGroup.gameObject.SetActive(false);
+                    if (headphoneGroup != null)
+                    {
+                        headphoneGroup.gameObject.SetActive(true);
+                        headphoneGroup.alpha = 1f;
+                    }
+                    if (startMenuGroup != null)
+                    {
+                        startMenuGroup.alpha = 0f;
+                        startMenuGroup.interactable = false;
+                        startMenuGroup.blocksRaycasts = false;
+                    }
+                    if (saveModalGroup != null) saveModalGroup.gameObject.SetActive(false);
+                    if (optionsModalGroup != null) optionsModalGroup.gameObject.SetActive(false);
+                    if (botwLoadingGroup != null) botwLoadingGroup.gameObject.SetActive(false);
+
+                    if (musicSource != null) musicSource.Stop();
+                    break;
                 case MenuPhase.StartMenuOpenVista:
                     if (teamLoadingGroup != null) teamLoadingGroup.gameObject.SetActive(false);
                     if (saveModalGroup != null) saveModalGroup.gameObject.SetActive(false);
@@ -583,6 +624,34 @@ namespace HoaVaMau.Gameplay
 
         private void UpdateTeamLoadingScreen(float dt)
         {
+            float fadeIn = teamLogoFadeInDuration;
+            float hold = teamLogoHoldDuration;
+            float fadeOut = teamLogoFadeOutDuration;
+            float total = fadeIn + hold + fadeOut;
+
+            float alpha = 0f;
+            if (phaseTimer < fadeIn)
+            {
+                alpha = Mathf.Clamp01(phaseTimer / fadeIn);
+            }
+            else if (phaseTimer < fadeIn + hold)
+            {
+                alpha = 1.0f;
+            }
+            else if (phaseTimer < total)
+            {
+                alpha = Mathf.Clamp01(1.0f - (phaseTimer - fadeIn - hold) / fadeOut);
+            }
+            else
+            {
+                alpha = 0f;
+            }
+
+            if (teamLoadingGroup != null)
+            {
+                teamLoadingGroup.alpha = alpha;
+            }
+
             // Subtle breathing of the centered team logo
             if (teamLogoRect != null)
             {
@@ -590,58 +659,62 @@ namespace HoaVaMau.Gameplay
                 teamLogoRect.localScale = new Vector3(s, s, 1f);
             }
 
-            // Animate Circular 2.5D Orbit of the Dove Loader
-            if (teamBirdLoaderRect != null)
+            // Allow skip via keypress after 0.5s
+            if (phaseTimer >= 0.5f && (IsConfirmPressed() || IsAnyKeyPressed()))
             {
-                float angle = phaseTimer * 2.4f;
-                float rx = 26f;
-                float ry = 14f;
-                float x = Mathf.Cos(angle) * rx;
-                float y = Mathf.Sin(angle) * ry;
-                teamBirdLoaderRect.anchoredPosition = new Vector2(x, y);
-
-                float depth = Mathf.Sin(angle); // -1 (back) to +1 (front)
-                float scale = Mathf.Lerp(0.70f, 1.25f, (depth + 1f) * 0.5f);
-                teamBirdLoaderRect.localScale = new Vector3(scale, scale, 1f);
-
-                // Tangent facing so bird faces the direction of orbit
-                float tangentAngle = Mathf.Atan2(Mathf.Cos(angle) * ry, -Mathf.Sin(angle) * rx) * Mathf.Rad2Deg;
-                teamBirdLoaderRect.localRotation = Quaternion.Euler(0f, 0f, tangentAngle);
-
-                if (teamBirdLoaderImg != null)
-                {
-                    teamBirdLoaderImg.color = new Color(1.0f, 0.98f, 0.90f, Mathf.Lerp(0.40f, 1f, (depth + 1f) * 0.5f));
-                }
+                SetPhase(MenuPhase.HeadphoneScreen);
+                return;
             }
 
-            // Animate subtle pulsing of orbit track dots
-            for (int i = 0; i < teamOrbitDots.Count; i++)
+            if (phaseTimer >= total)
             {
-                var dot = teamOrbitDots[i];
-                if (dot != null)
-                {
-                    var img = dot.GetComponent<Image>();
-                    if (img != null)
-                    {
-                        float phaseOffset = (float)i / teamOrbitDots.Count * Mathf.PI * 2f;
-                        float pulse = (Mathf.Sin(phaseTimer * 3.5f - phaseOffset) + 1f) * 0.5f;
-                        img.color = new Color(1f, 0.95f, 0.85f, Mathf.Lerp(0.15f, 0.65f, pulse));
-                    }
-                }
+                SetPhase(MenuPhase.HeadphoneScreen);
+            }
+        }
+
+        private void UpdateHeadphoneScreen(float dt)
+        {
+            float fadeIn = headphoneFadeInDuration;
+            float hold = headphoneHoldDuration;
+            float fadeOut = headphoneFadeOutDuration;
+            float total = fadeIn + hold + fadeOut;
+
+            float alpha = 0f;
+            if (phaseTimer < fadeIn)
+            {
+                alpha = Mathf.Clamp01(phaseTimer / fadeIn);
+            }
+            else if (phaseTimer < fadeIn + hold)
+            {
+                alpha = 1.0f;
+            }
+            else if (phaseTimer < total)
+            {
+                alpha = Mathf.Clamp01(1.0f - (phaseTimer - fadeIn - hold) / fadeOut);
+            }
+            else
+            {
+                alpha = 0f;
             }
 
-            // Allow skip via keypress after 1.5s
-            if (phaseTimer >= 1.5f && (IsConfirmPressed() || IsAnyKeyPressed()))
+            if (headphoneGroup != null)
+            {
+                headphoneGroup.alpha = alpha;
+            }
+
+            // Allow skip via keypress after 0.5s
+            if (phaseTimer >= 0.5f && (IsConfirmPressed() || IsAnyKeyPressed()))
             {
                 SetPhase(MenuPhase.StartMenuOpenVista);
                 return;
             }
 
-            if (phaseTimer >= teamLoadingDuration)
+            if (phaseTimer >= total)
             {
                 SetPhase(MenuPhase.StartMenuOpenVista);
             }
         }
+
 
         private void UpdateStartMenuVista(float dt)
         {
@@ -1267,6 +1340,8 @@ namespace HoaVaMau.Gameplay
 
             // 2. State B Panel: Team Loading Screen (Five Cows Centered, Circular 2.5D Orbit Dove Loader)
             BuildTeamLoadingPanel(canvasGO.transform, font);
+            // 2b. Step 2 Panel: Headphone Advisory Screen
+            BuildHeadphonePanel(canvasGO.transform, font);
 
             // 3. State C Panel: Main Menu (Top-Left Anchored, enlarged logo, NO Five Cows above it)
             BuildMainMenuPanel(canvasGO.transform, font);
@@ -1285,6 +1360,46 @@ namespace HoaVaMau.Gameplay
 
             // 8. Autosave Bottom-Right Corner Widget
             BuildAutosaveWidget(canvasGO.transform, font);
+        }
+
+        private void BuildHeadphonePanel(Transform parent, Font font)
+        {
+            var panelRect = CreateRect("Panel_Step2_HeadphoneAdvisory", parent);
+            StretchFull(panelRect);
+            headphoneGroup = panelRect.gameObject.AddComponent<CanvasGroup>();
+            headphoneGroup.alpha = 0f;
+            panelRect.gameObject.SetActive(false);
+
+            var centerCluster = CreateRect("Center_HeadphoneCluster", panelRect);
+            centerCluster.anchorMin = centerCluster.anchorMax = new Vector2(0.5f, 0.5f);
+            centerCluster.pivot = new Vector2(0.5f, 0.5f);
+            centerCluster.sizeDelta = new Vector2(900f, 260f);
+
+            var iconGO = CreateRect("HeadphoneIcon", centerCluster);
+            iconGO.anchorMin = iconGO.anchorMax = new Vector2(0.5f, 0.68f);
+            iconGO.pivot = new Vector2(0.5f, 0.5f);
+            iconGO.sizeDelta = new Vector2(100f, 100f);
+            headphoneIconRect = iconGO;
+            var iconImg = iconGO.gameObject.AddComponent<Image>();
+            iconImg.sprite = headphoneSprite;
+            iconImg.preserveAspect = true;
+            iconImg.color = new Color(0.96f, 0.95f, 0.90f, 0.95f);
+
+            var textGO = CreateRect("HeadphoneText", centerCluster);
+            textGO.anchorMin = textGO.anchorMax = new Vector2(0.5f, 0.22f);
+            textGO.pivot = new Vector2(0.5f, 0.5f);
+            textGO.sizeDelta = new Vector2(850f, 50f);
+            headphoneText = textGO.gameObject.AddComponent<Text>();
+            headphoneText.font = font != null ? font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            headphoneText.fontSize = 22;
+            headphoneText.fontStyle = FontStyle.Normal;
+            headphoneText.alignment = TextAnchor.MiddleCenter;
+            headphoneText.color = new Color(0.96f, 0.95f, 0.90f, 0.95f);
+            headphoneText.text = "Trải nghiệm trọn vẹn hơn khi đeo tai nghe";
+
+            var shadow = textGO.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            shadow.effectDistance = new Vector2(1.5f, -1.5f);
         }
 
         private void BuildTeamLoadingPanel(Transform parent, Font font)

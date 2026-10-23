@@ -183,6 +183,7 @@ namespace HoaVaMau.Gameplay
             // Commit new game slot state
             SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(-8.5f, 0.05f, 0f));
 
+            IntroCutsceneState.MarkForNewGame();
             if (!string.IsNullOrEmpty(targetScene))
             {
                 Time.timeScale = 1.0f;
@@ -194,6 +195,10 @@ namespace HoaVaMau.Gameplay
         {
             ActiveSlotIndex = slotIndex;
             SessionPlayTimeCounter = 0f;
+            var slot = GetSlotData(slotIndex);
+            int cp = (slot != null && slot.isOccupied) ? slot.checkpointIndex : 0;
+            IntroCutsceneState.MarkForContinue(cp);
+
 
             if (!string.IsNullOrEmpty(targetScene))
             {
