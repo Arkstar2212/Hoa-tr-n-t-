@@ -628,42 +628,7 @@ namespace HoaVaMau.Gameplay
             string ropeHint = (nearbyRope != null && CurrentState != PlayerState.RopeGrab && CurrentState != PlayerState.RopeClimb) ? " | <color=#fb923c><b>[F] Leo dây</b></color>" : "";
             GUI.Label(new Rect(26f, 36f, bannerW - 20f, 18f), $"Tốc độ: {Velocity.x:F1} m/s | Hướng: {(FacingDirection > 0 ? "Phải" : "Trái")}{ropeHint}", subStyle);
 
-            // 2. Comprehensive Controls Guide (Top Right)
-            float panelW = 430f;
-            float panelH = 220f;
-            float px = Screen.width - panelW - 16f;
-            float py = 16f;
-
-            GUI.Box(new Rect(px, py, panelW, panelH), GUIContent.none);
-
-            GUIStyle guideTitle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 12,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = new Color(0.35f, 0.85f, 1.0f) }
-            };
-            GUI.Label(new Rect(px + 12f, py + 8f, panelW - 24f, 20f), "BẢNG ĐIỀU KHIỂN NHÂN VẬT (PLANET OF LANA 2D)", guideTitle);
-
-            GUIStyle guideText = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 11,
-                normal = { textColor = Color.white }
-            };
-
-            string controls = 
-                "• <b>[A] / [D]</b>: Đi bộ trái / phải (nhích nhẹ = đi chậm)\n" +
-                "• <b>[S] / [C] / [Ctrl]</b>: Ngồi xổm | Tự động <b>Bò trườn (Crawl)</b> qua hầm thấp\n" +
-                "• <b>[W]</b>: <b>Leo lên</b> khi bám gờ vách đá hoặc khi đang leo dây thừng\n" +
-                "• <b>[Left Shift]</b>: Chạy nước rút (Sprint) tốc độ tự nhiên (4.2 m/s)\n" +
-                "• <b>[Space]</b>: Nhảy | <b>Đặc biệt: Chạy lấy đà + [Space]</b> phóng xa vượt trội theo chiều ngang!\n" +
-                "• <b>[Giữ Chuột Trái] cạnh thùng + [A]/[D]</b>: <b>Kéo / Đẩy thùng gỗ</b> áp sát vách leo lên\n" +
-                "• <b>[E]</b>: <b>Nhặt đồ / Nhặt bóng</b> | Bấm [E] lần nữa hoặc [Chuột Phải] để đặt nhẹ xuống\n" +
-                "• <b>Cầm bóng → Giữ [Chuột Trái]</b>: <b>Canh góc & Lực ném</b> (rê chuột chỉnh tầm xa/gần, vệt Parabol)\n" +
-                "• <b>Thả [Chuột Trái]</b>: <b>Ném bóng</b> theo đúng quỹ đạo đã canh!\n" +
-                "• <b>Dây thừng</b>: Đến gần/nhảy đến bấm <b>[F]</b> để bám | <b>[W]/[S]</b> trèo | <b>[A]/[D]</b> đu đưa | <b>[Space]</b> nhảy phóng / <b>[F]</b> thả rơi\n" +
-                "• <b>Thùng gỗ vỡ</b>: Ném trúng 3 lần -> Vỡ nhiều mảnh vụn sập rơi tại chỗ (PhysX Collapse)!";
-
-            GUI.Label(new Rect(px + 12f, py + 26f, panelW - 24f, panelH - 30f), controls, guideText);
+            // F1 toggles minimalist dev stats only. Full screen text box removed in favor of Planet of Lana minimalist in-game prompts.
         }
     }
 }

@@ -204,6 +204,7 @@ namespace HoaVaMau.Gameplay
         {
             public RectTransform RootRect;
             public Button ButtonComp;
+            public Image SelectionBox;
             public Text LabelText;
             public Text LeftDots;
             public Text RightDots;
@@ -1267,13 +1268,22 @@ namespace HoaVaMau.Gameplay
             if (item == null || item.LabelText == null) return;
             if (!item.IsInteractable) return;
 
-            Color col = Color.Lerp(new Color(0.92f, 0.95f, 0.98f, 0.75f), new Color(1.0f, 0.98f, 0.88f, 1.0f), item.HoverBlend);
-            item.LabelText.color = col;
+            // Planet of Lana iconic selection behavior:
+            // Unselected: Dimmed semi-transparent silver text (alpha 0.60), no background box.
+            // Selected: Solid white rectangle overlays behind text, text font color inverts to dark background navy (#07101C).
+            if (item.SelectionBox != null)
+            {
+                item.SelectionBox.color = new Color(1f, 1f, 1f, item.HoverBlend);
+            }
 
-            float scale = Mathf.Lerp(1.0f, 1.05f, item.HoverBlend);
+            Color unselTextColor = new Color(0.92f, 0.95f, 0.98f, 0.60f);
+            Color selTextColor = new Color(0.04f, 0.08f, 0.14f, 1.0f); // Deep dark background navy
+            item.LabelText.color = Color.Lerp(unselTextColor, selTextColor, item.HoverBlend);
+
+            float scale = Mathf.Lerp(1.0f, 1.02f, item.HoverBlend);
             item.RootRect.localScale = new Vector3(scale, scale, 1f);
 
-            Color dotCol = new Color(1.0f, 0.95f, 0.80f, item.HoverBlend * 0.92f);
+            Color dotCol = new Color(0.04f, 0.08f, 0.14f, item.HoverBlend * 0.92f);
             if (item.LeftDots != null) item.LeftDots.color = dotCol;
             if (item.RightDots != null) item.RightDots.color = dotCol;
         }
@@ -1731,6 +1741,16 @@ namespace HoaVaMau.Gameplay
                 colors.pressedColor = Color.clear;
                 btn.colors = colors;
 
+                // Planet of Lana selection box: Solid white rectangle overlay behind text
+                var boxRect = CreateRect("SelectionBox", btnRect);
+                boxRect.anchorMin = new Vector2(0f, 0.1f);
+                boxRect.anchorMax = new Vector2(0.92f, 0.9f);
+                boxRect.offsetMin = Vector2.zero;
+                boxRect.offsetMax = Vector2.zero;
+                var boxImg = boxRect.gameObject.AddComponent<Image>();
+                boxImg.color = new Color(1f, 1f, 1f, 0f); // Hidden until selected
+                boxImg.raycastTarget = false;
+
                 var txtRect = CreateRect("Label", btnRect);
                 txtRect.anchorMin = new Vector2(0f, 0f);
                 txtRect.anchorMax = new Vector2(1f, 1f);
@@ -1740,7 +1760,7 @@ namespace HoaVaMau.Gameplay
                 txt.font = font;
                 txt.fontSize = 18;
                 txt.alignment = TextAnchor.MiddleLeft;
-                txt.color = new Color(0.92f, 0.95f, 0.98f, 0.75f);
+                txt.color = new Color(0.92f, 0.95f, 0.98f, 0.60f);
                 txt.text = labels[i];
 
                 var lDots = CreateRect("LeftDot", btnRect);
@@ -1762,6 +1782,7 @@ namespace HoaVaMau.Gameplay
                 {
                     RootRect = btnRect,
                     ButtonComp = btn,
+                    SelectionBox = boxImg,
                     LabelText = txt,
                     LeftDots = lTxt,
                     RightDots = null,
