@@ -448,12 +448,24 @@ namespace HoaVaMau.Gameplay
                     break;
 
                 case MenuPhase.HeadphoneScreen:
-                    if (blackCurtainGroup != null) blackCurtainGroup.alpha = 1f;
-                    if (teamLoadingGroup != null) teamLoadingGroup.gameObject.SetActive(false);
+                    if (blackCurtainGroup != null)
+                    {
+                        blackCurtainGroup.alpha = 1f;
+                        blackCurtainGroup.blocksRaycasts = false;
+                    }
+                    if (teamLoadingGroup != null)
+                    {
+                        teamLoadingGroup.alpha = 0f;
+                        teamLoadingGroup.blocksRaycasts = false;
+                        teamLoadingGroup.interactable = false;
+                        teamLoadingGroup.gameObject.SetActive(false);
+                    }
                     if (headphoneGroup != null)
                     {
                         headphoneGroup.gameObject.SetActive(true);
                         headphoneGroup.alpha = 1f;
+                        headphoneGroup.blocksRaycasts = true;
+                        headphoneGroup.interactable = true;
                     }
                     if (startMenuGroup != null)
                     {
@@ -468,7 +480,24 @@ namespace HoaVaMau.Gameplay
                     if (musicSource != null) musicSource.Stop();
                     break;
                 case MenuPhase.StartMenuOpenVista:
-                    if (teamLoadingGroup != null) teamLoadingGroup.gameObject.SetActive(false);
+                    if (teamLoadingGroup != null)
+                    {
+                        teamLoadingGroup.alpha = 0f;
+                        teamLoadingGroup.blocksRaycasts = false;
+                        teamLoadingGroup.interactable = false;
+                        teamLoadingGroup.gameObject.SetActive(false);
+                    }
+                    if (headphoneGroup != null)
+                    {
+                        headphoneGroup.alpha = 0f;
+                        headphoneGroup.blocksRaycasts = false;
+                        headphoneGroup.interactable = false;
+                        headphoneGroup.gameObject.SetActive(false);
+                    }
+                    if (blackCurtainGroup != null)
+                    {
+                        blackCurtainGroup.blocksRaycasts = false;
+                    }
                     if (saveModalGroup != null) saveModalGroup.gameObject.SetActive(false);
                     if (optionsModalGroup != null) optionsModalGroup.gameObject.SetActive(false);
                     if (overwriteDialogGroup != null) overwriteDialogGroup.gameObject.SetActive(false);
@@ -590,6 +619,9 @@ namespace HoaVaMau.Gameplay
                 case MenuPhase.TeamLoadingScreen:
                     UpdateTeamLoadingScreen(dt);
                     break;
+                case MenuPhase.HeadphoneScreen:
+                    UpdateHeadphoneScreen(dt);
+                    break;
                 case MenuPhase.StartMenuOpenVista:
                     UpdateStartMenuVista(dt);
                     break;
@@ -659,8 +691,8 @@ namespace HoaVaMau.Gameplay
                 teamLogoRect.localScale = new Vector3(s, s, 1f);
             }
 
-            // Allow skip via keypress after 0.5s
-            if (phaseTimer >= 0.5f && (IsConfirmPressed() || IsAnyKeyPressed()))
+            // Allow skip via keypress or click after 0.15s
+            if (phaseTimer >= 0.15f && (IsConfirmPressed() || IsAnyKeyPressed()))
             {
                 SetPhase(MenuPhase.HeadphoneScreen);
                 return;
@@ -702,8 +734,8 @@ namespace HoaVaMau.Gameplay
                 headphoneGroup.alpha = alpha;
             }
 
-            // Allow skip via keypress after 0.5s
-            if (phaseTimer >= 0.5f && (IsConfirmPressed() || IsAnyKeyPressed()))
+            // Allow skip via keypress or click after 0.15s
+            if (phaseTimer >= 0.15f && (IsConfirmPressed() || IsAnyKeyPressed()))
             {
                 SetPhase(MenuPhase.StartMenuOpenVista);
                 return;
@@ -1123,6 +1155,7 @@ namespace HoaVaMau.Gameplay
                 else
                 {
                     // Initialize clean slot data and transition to BotW loading screen
+                    IntroCutsceneState.MarkForNewGame();
                     HoaVaMauSaveSystem.ActiveSlotIndex = slotIndex;
                     HoaVaMauSaveSystem.SessionPlayTimeCounter = 0f;
                     HoaVaMauSaveSystem.SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(-8.5f, 0.05f, 0f));
@@ -1135,6 +1168,14 @@ namespace HoaVaMau.Gameplay
                 {
                     HoaVaMauSaveSystem.ActiveSlotIndex = slotIndex;
                     HoaVaMauSaveSystem.SessionPlayTimeCounter = 0f;
+                    if (data.checkpointIndex == 0)
+                    {
+                        IntroCutsceneState.MarkForNewGame();
+                    }
+                    else
+                    {
+                        IntroCutsceneState.MarkForContinue(data.checkpointIndex);
+                    }
                     SetPhase(MenuPhase.BotWLoadingScreen);
                 }
                 else
@@ -1177,6 +1218,7 @@ namespace HoaVaMau.Gameplay
             if (pendingOverwriteSlot > 0)
             {
                 PlayConfirm();
+                IntroCutsceneState.MarkForNewGame();
                 HoaVaMauSaveSystem.ActiveSlotIndex = pendingOverwriteSlot;
                 HoaVaMauSaveSystem.SessionPlayTimeCounter = 0f;
                 HoaVaMauSaveSystem.SaveCurrentGameState(pendingOverwriteSlot, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(-8.5f, 0.05f, 0f));
@@ -1335,8 +1377,10 @@ namespace HoaVaMau.Gameplay
             StretchFull(curtainGO);
             var cImg = curtainGO.gameObject.AddComponent<Image>();
             cImg.color = new Color(0.01f, 0.01f, 0.02f, 1.0f);
+            cImg.raycastTarget = false;
             blackCurtainGroup = curtainGO.gameObject.AddComponent<CanvasGroup>();
             blackCurtainGroup.alpha = 1f;
+            blackCurtainGroup.blocksRaycasts = false;
 
             // 2. State B Panel: Team Loading Screen (Five Cows Centered, Circular 2.5D Orbit Dove Loader)
             BuildTeamLoadingPanel(canvasGO.transform, font);
@@ -1366,8 +1410,22 @@ namespace HoaVaMau.Gameplay
         {
             var panelRect = CreateRect("Panel_Step2_HeadphoneAdvisory", parent);
             StretchFull(panelRect);
+            var bgImg = panelRect.gameObject.AddComponent<Image>();
+            bgImg.color = Color.clear;
+            bgImg.raycastTarget = true;
+            var clickBtn = panelRect.gameObject.AddComponent<Button>();
+            clickBtn.transition = Selectable.Transition.None;
+            clickBtn.onClick.AddListener(() =>
+            {
+                if (currentPhase == MenuPhase.HeadphoneScreen)
+                {
+                    SetPhase(MenuPhase.StartMenuOpenVista);
+                }
+            });
             headphoneGroup = panelRect.gameObject.AddComponent<CanvasGroup>();
             headphoneGroup.alpha = 0f;
+            headphoneGroup.blocksRaycasts = false;
+            headphoneGroup.interactable = false;
             panelRect.gameObject.SetActive(false);
 
             var centerCluster = CreateRect("Center_HeadphoneCluster", panelRect);
@@ -1384,6 +1442,7 @@ namespace HoaVaMau.Gameplay
             iconImg.sprite = headphoneSprite;
             iconImg.preserveAspect = true;
             iconImg.color = new Color(0.96f, 0.95f, 0.90f, 0.95f);
+            iconImg.raycastTarget = false;
 
             var textGO = CreateRect("HeadphoneText", centerCluster);
             textGO.anchorMin = textGO.anchorMax = new Vector2(0.5f, 0.22f);
@@ -1396,6 +1455,7 @@ namespace HoaVaMau.Gameplay
             headphoneText.alignment = TextAnchor.MiddleCenter;
             headphoneText.color = new Color(0.96f, 0.95f, 0.90f, 0.95f);
             headphoneText.text = "Trải nghiệm trọn vẹn hơn khi đeo tai nghe";
+            headphoneText.raycastTarget = false;
 
             var shadow = textGO.gameObject.AddComponent<Shadow>();
             shadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
@@ -1406,8 +1466,22 @@ namespace HoaVaMau.Gameplay
         {
             var panelRect = CreateRect("Panel_StateB_TeamLoading", parent);
             StretchFull(panelRect);
+            var bgImg = panelRect.gameObject.AddComponent<Image>();
+            bgImg.color = Color.clear;
+            bgImg.raycastTarget = true;
+            var clickBtn = panelRect.gameObject.AddComponent<Button>();
+            clickBtn.transition = Selectable.Transition.None;
+            clickBtn.onClick.AddListener(() =>
+            {
+                if (currentPhase == MenuPhase.TeamLoadingScreen)
+                {
+                    SetPhase(MenuPhase.HeadphoneScreen);
+                }
+            });
             teamLoadingGroup = panelRect.gameObject.AddComponent<CanvasGroup>();
             teamLoadingGroup.alpha = 0f;
+            teamLoadingGroup.blocksRaycasts = false;
+            teamLoadingGroup.interactable = false;
             panelRect.gameObject.SetActive(false);
 
             // Centered Team Emblem & Title
@@ -2359,32 +2433,44 @@ namespace HoaVaMau.Gameplay
         {
 #if ENABLE_INPUT_SYSTEM
             var kb = Keyboard.current;
-            return kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame);
-#else
-            return Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space);
+            if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)) return true;
 #endif
+            try
+            {
+                if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space)) return true;
+            }
+            catch {}
+            return false;
         }
 
         private static bool IsCancelPressed()
         {
 #if ENABLE_INPUT_SYSTEM
             var kb = Keyboard.current;
-            return kb != null && kb.escapeKey.wasPressedThisFrame;
-#else
-            return Input.GetKeyDown(KeyCode.Escape);
+            if (kb != null && kb.escapeKey.wasPressedThisFrame) return true;
 #endif
+            try
+            {
+                if (Input.GetKeyDown(KeyCode.Escape)) return true;
+            }
+            catch {}
+            return false;
         }
 
         private static bool IsAnyKeyPressed()
         {
 #if ENABLE_INPUT_SYSTEM
             var kb = Keyboard.current;
-            if (kb != null && kb.anyKey.wasPressedThisFrame) return true;
+            if (kb != null && (kb.anyKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame || kb.escapeKey.wasPressedThisFrame)) return true;
             var mouse = Mouse.current;
-            return mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame);
-#else
-            return Input.anyKeyDown;
+            if (mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame || mouse.middleButton.wasPressedThisFrame)) return true;
 #endif
+            try
+            {
+                if (Input.anyKeyDown || Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Escape)) return true;
+            }
+            catch {}
+            return false;
         }
     }
 }
