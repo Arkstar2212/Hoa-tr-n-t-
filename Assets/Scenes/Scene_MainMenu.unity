@@ -8586,7 +8586,7 @@ Camera:
     height: 1
   near clip plane: 0.1
   far clip plane: 5000
-  field of view: 37.5
+  field of view: 32
   orthographic: 0
   orthographic size: 10
   m_Depth: -1
@@ -8613,7 +8613,7 @@ Transform:
   m_GameObject: {fileID: 515069434}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.6, y: 0.38, z: -13.5}
+  m_LocalPosition: {x: 1.2, y: 0.85, z: -10.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -12029,9 +12029,9 @@ MonoBehaviour:
   windVolume: 0.225
   sfxVolume: 0.45
   musicSmoothInDuration: 4.5
-  menuCameraPosition: {x: 0, y: 0, z: -10}
+  menuCameraPosition: {x: 1.2, y: 0.85, z: -10.5}
   menuCameraEuler: {x: 0, y: 0, z: 0}
-  menuCameraFOV: 35.5
+  menuCameraFOV: 32
 --- !u!4 &668779245
 Transform:
   m_ObjectHideFlags: 0
