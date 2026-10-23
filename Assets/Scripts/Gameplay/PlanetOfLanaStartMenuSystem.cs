@@ -1153,7 +1153,19 @@ namespace HoaVaMau.Gameplay
                 bool isSel = (i == selectedSlotIndex);
                 if (card.CardBg != null)
                 {
-                    card.CardBg.color = isSel ? new Color(0.18f, 0.22f, 0.32f, 0.90f) : new Color(0.06f, 0.08f, 0.12f, 0.78f);
+                    card.CardBg.color = isSel ? new Color(0.96f, 0.96f, 0.98f, 0.96f) : new Color(0.06f, 0.08f, 0.12f, 0.78f);
+                }
+                if (card.SlotTitleText != null)
+                {
+                    card.SlotTitleText.color = isSel ? new Color(0.04f, 0.08f, 0.14f, 1f) : new Color(0.99f, 0.96f, 0.88f, 0.98f);
+                }
+                if (card.SlotDetailsText != null)
+                {
+                    card.SlotDetailsText.color = isSel ? new Color(0.15f, 0.18f, 0.25f, 0.95f) : new Color(0.80f, 0.85f, 0.90f, 0.80f);
+                }
+                if (card.StatusBadgeText != null)
+                {
+                    card.StatusBadgeText.color = isSel ? new Color(0.60f, 0.40f, 0.05f, 1f) : new Color(0.98f, 0.88f, 0.65f, 0.95f);
                 }
                 card.RootRect.localScale = isSel ? new Vector3(1.02f, 1.02f, 1f) : Vector3.one;
             }
@@ -1296,6 +1308,35 @@ namespace HoaVaMau.Gameplay
         private void PlayConfirm()
         {
             if (sfxSource != null && confirmSfxClip != null) sfxSource.PlayOneShot(confirmSfxClip, sfxVolume);
+        }
+
+        private void SetupButtonSolidWhiteHover(RectTransform btnRect, Image bgImg, Text labelText, Color? normalBg = null, Color? normalText = null)
+        {
+            if (btnRect == null) return;
+            Color defaultBg = normalBg ?? (bgImg != null ? bgImg.color : new Color(0.18f, 0.22f, 0.32f, 0.85f));
+            Color defaultText = normalText ?? (labelText != null ? labelText.color : Color.white);
+            Color selBg = new Color(0.98f, 0.98f, 0.98f, 0.96f);
+            Color selText = new Color(0.04f, 0.08f, 0.14f, 1f);
+
+            var trigger = btnRect.gameObject.GetComponent<EventTrigger>() ?? btnRect.gameObject.AddComponent<EventTrigger>();
+            var enterEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            enterEntry.callback.AddListener((data) =>
+            {
+                PlayHover();
+                if (bgImg != null) bgImg.color = selBg;
+                if (labelText != null) labelText.color = selText;
+                btnRect.localScale = new Vector3(1.02f, 1.02f, 1f);
+            });
+            trigger.triggers.Add(enterEntry);
+
+            var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+            exitEntry.callback.AddListener((data) =>
+            {
+                if (bgImg != null) bgImg.color = defaultBg;
+                if (labelText != null) labelText.color = defaultText;
+                btnRect.localScale = Vector3.one;
+            });
+            trigger.triggers.Add(exitEntry);
         }
 
         // =====================================================================================
@@ -1741,6 +1782,23 @@ namespace HoaVaMau.Gameplay
                 colors.pressedColor = Color.clear;
                 btn.colors = colors;
 
+                var hitImg = btnRect.gameObject.AddComponent<Image>();
+                hitImg.color = Color.clear;
+                hitImg.raycastTarget = true;
+                btn.targetGraphic = hitImg;
+
+                var trigger = btnRect.gameObject.AddComponent<EventTrigger>();
+                var hoverEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                hoverEntry.callback.AddListener((data) =>
+                {
+                    if (selectedMenuIndex != idx)
+                    {
+                        selectedMenuIndex = idx;
+                        PlayHover();
+                    }
+                });
+                trigger.triggers.Add(hoverEntry);
+
                 // Planet of Lana selection box: Solid white rectangle overlay behind text
                 var boxRect = CreateRect("SelectionBox", btnRect);
                 boxRect.anchorMin = new Vector2(0f, 0.1f);
@@ -1762,6 +1820,7 @@ namespace HoaVaMau.Gameplay
                 txt.alignment = TextAnchor.MiddleLeft;
                 txt.color = new Color(0.92f, 0.95f, 0.98f, 0.60f);
                 txt.text = labels[i];
+                txt.raycastTarget = false;
 
                 var lDots = CreateRect("LeftDot", btnRect);
                 lDots.anchorMin = new Vector2(0f, 0.5f);
@@ -1775,6 +1834,7 @@ namespace HoaVaMau.Gameplay
                 lTxt.alignment = TextAnchor.MiddleCenter;
                 lTxt.color = Color.clear;
                 lTxt.text = "•";
+                lTxt.raycastTarget = false;
 
                 btn.onClick.AddListener(() => TriggerMenuSelection(idx));
 
@@ -1849,6 +1909,20 @@ namespace HoaVaMau.Gameplay
                 var btn = cardRect.gameObject.AddComponent<Button>();
                 btn.onClick.AddListener(() => OnSlotCardClicked(slot));
 
+                int cardIdx = i;
+                var trigger = cardRect.gameObject.AddComponent<EventTrigger>();
+                var hoverEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                hoverEntry.callback.AddListener((data) =>
+                {
+                    if (selectedSlotIndex != cardIdx)
+                    {
+                        selectedSlotIndex = cardIdx;
+                        PlayHover();
+                        HighlightSelectedSlot();
+                    }
+                });
+                trigger.triggers.Add(hoverEntry);
+
                 var sTitleRect = CreateRect("SlotTitle", cardRect);
                 sTitleRect.anchorMin = new Vector2(0.04f, 0.55f);
                 sTitleRect.anchorMax = new Vector2(0.40f, 0.92f);
@@ -1909,6 +1983,7 @@ namespace HoaVaMau.Gameplay
             backTxt.color = Color.white;
             backTxt.text = "QUAY LẠI";
             backBtn.onClick.AddListener(CloseSaveModal);
+            SetupButtonSolidWhiteHover(backBtnRect, backImg, backTxt);
         }
 
         private void BuildOptionsModal(Transform parent, Font font)
@@ -1985,6 +2060,7 @@ namespace HoaVaMau.Gameplay
             fullscreenBtnText.raycastTarget = false;
             fullscreenBtnText.text = Screen.fullScreen ? "TOÀN MÀN HÌNH: [ BẬT ]" : "TOÀN MÀN HÌNH: [ TẮT ]";
             fsBtn.onClick.AddListener(ToggleFullscreenMode);
+            SetupButtonSolidWhiteHover(fsBtnRect, fsImg, fullscreenBtnText);
 
             // VSync Button
             var vsyncBtnRect = CreateRect("Btn_Toggle_VSync", box);
@@ -2008,6 +2084,7 @@ namespace HoaVaMau.Gameplay
             vsyncBtnText.raycastTarget = false;
             vsyncBtnText.text = (QualitySettings.vSyncCount > 0) ? "ĐỒNG BỘ DỌC: [ BẬT ]" : "ĐỒNG BỘ DỌC: [ TẮT ]";
             vsyncBtn.onClick.AddListener(ToggleVSyncMode);
+            SetupButtonSolidWhiteHover(vsyncBtnRect, vsyncImg, vsyncBtnText);
 
             // SECTION 3: BẢNG PHÍM ĐIỀU KHIỂN (CONTROLS REBINDING)
             startY -= 48f;
@@ -2073,6 +2150,7 @@ namespace HoaVaMau.Gameplay
                 keybindButtonTexts[action] = bTxt;
 
                 btn.onClick.AddListener(() => StartRebindingAction(action));
+                SetupButtonSolidWhiteHover(btnRect, bImg, bTxt);
             }
 
             // RESET TO DEFAULTS BUTTON
@@ -2097,6 +2175,7 @@ namespace HoaVaMau.Gameplay
                 RefreshKeybindButtonLabels();
                 PlayConfirm();
             });
+            SetupButtonSolidWhiteHover(resetBtnRect, rImg, rTxt);
 
             // BACK / SAVE BUTTON
             var backBtnRect = CreateRect("Btn_Back_Options", box);
@@ -2117,6 +2196,7 @@ namespace HoaVaMau.Gameplay
             backTxt.text = "LƯU & QUAY LẠI";
             backTxt.raycastTarget = false;
             backBtn.onClick.AddListener(CloseOptionsDialog);
+            SetupButtonSolidWhiteHover(backBtnRect, backImg, backTxt, new Color(0.85f, 0.42f, 0.18f, 0.90f), Color.white);
         }
 
         private static void CreateSectionHeader(RectTransform parent, string title, Vector2 pos, Font font)
