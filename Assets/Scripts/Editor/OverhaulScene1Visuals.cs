@@ -295,18 +295,49 @@ namespace HoaVaMau.Editor
         private static Sprite LoadOrEnsureSpriteAsset(string path, Vector2 pivot)
         {
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (importer != null && importer.textureType != TextureImporterType.Sprite)
+            if (importer != null)
             {
-                importer.textureType = TextureImporterType.Sprite;
-                importer.spriteImportMode = SpriteImportMode.Single;
-                importer.alphaIsTransparency = true;
-                importer.mipmapEnabled = false;
                 var settings = new TextureImporterSettings();
                 importer.ReadTextureSettings(settings);
-                settings.spriteAlignment = (int)SpriteAlignment.Custom;
-                settings.spritePivot = pivot;
-                importer.SetTextureSettings(settings);
-                importer.SaveAndReimport();
+                bool needsReimport = false;
+
+                if (importer.textureType != TextureImporterType.Sprite)
+                {
+                    importer.textureType = TextureImporterType.Sprite;
+                    needsReimport = true;
+                }
+                if (importer.spriteImportMode != SpriteImportMode.Single)
+                {
+                    importer.spriteImportMode = SpriteImportMode.Single;
+                    needsReimport = true;
+                }
+                if (!importer.alphaIsTransparency)
+                {
+                    importer.alphaIsTransparency = true;
+                    needsReimport = true;
+                }
+                if (importer.mipmapEnabled)
+                {
+                    importer.mipmapEnabled = false;
+                    needsReimport = true;
+                }
+                if (settings.spriteMeshType != SpriteMeshType.FullRect)
+                {
+                    settings.spriteMeshType = SpriteMeshType.FullRect;
+                    needsReimport = true;
+                }
+                if (settings.spriteAlignment != (int)SpriteAlignment.Custom || Vector2.Distance(settings.spritePivot, pivot) > 0.001f)
+                {
+                    settings.spriteAlignment = (int)SpriteAlignment.Custom;
+                    settings.spritePivot = pivot;
+                    needsReimport = true;
+                }
+
+                if (needsReimport)
+                {
+                    importer.SetTextureSettings(settings);
+                    importer.SaveAndReimport();
+                }
             }
 
             var spr = AssetDatabase.LoadAssetAtPath<Sprite>(path);
@@ -374,7 +405,7 @@ namespace HoaVaMau.Editor
 
             // Panel 1 (Zone A - B: Daytime Cumulus Sky & Distant Green Hills/Plains)
             SpawnVistaPanel("Vista_01_PlainsHills_Day", texDayPlains,
-                centerX: 2.0f, centerY: 2.40f, z: 9.4f, height: 12.6f,
+                centerX: 1.5f, centerY: 2.20f, z: 9.8f, height: 18.0f,
                 leftFeather: 0.0f, rightFeather: 0.0f, renderQueueOffset: 1);
 
             // Panel 2 (Zone C - D: Coastal Mangrove Bay, Turquoise Water & Sailboats)
@@ -1012,8 +1043,18 @@ namespace HoaVaMau.Editor
                 if (prefabCurvedTreeV2 == null) return null;
                 var inst = (GameObject)PrefabUtility.InstantiatePrefab(prefabCurvedTreeV2, treesGroup.transform);
                 inst.name = name;
-                inst.transform.position = pos;
+                // Root tree trunk directly and firmly into the meadow terrain surface
+                inst.transform.position = new Vector3(pos.x, pos.y - 1.22f * scale, pos.z);
                 inst.transform.localScale = new Vector3(flipX ? -scale : scale, scale, 1.0f);
+
+                // Strip the artificial flat-bottomed test mound so the tree grows directly out of the 3D meadow!
+                foreach (var tr in inst.GetComponentsInChildren<Transform>(true))
+                {
+                    if (tr != null && tr.gameObject != null && tr.gameObject.name.Contains("Mound"))
+                    {
+                        Object.DestroyImmediate(tr.gameObject);
+                    }
+                }
 
                 foreach (var sr in inst.GetComponentsInChildren<SpriteRenderer>(true))
                 {
@@ -1121,7 +1162,7 @@ namespace HoaVaMau.Editor
             // ZONE A & B (-6m to 18m): MEADOW, HERO TREES & RIGHT ROCKY OUTCROP (Reference 1 & Scene_Tree_Test)
             // =====================================================================================
             // 1. Left Entrance Framing Grove (-5.5m to -1.5m)
-            SpawnLushHandDrawnHeroTree("ZoneA_HeroTree_LeftMain", new Vector3(-3.2f, SampleTerrainSurfaceY(-3.2f) - 0.25f, 1.45f), 0.88f, false, dayFoliageTint);
+            SpawnCurvedHeroTreeV2("ZoneA_HeroTree_LeftMain", new Vector3(-3.4f, SampleTerrainSurfaceY(-3.4f) + 0.12f, 1.45f), 0.82f, false, dayFoliageTint);
             SpawnCurvedHeroTreeV2("ZoneA_CurvedTree_LeftBack",    new Vector3(-5.4f, SampleTerrainSurfaceY(-5.4f) + 0.10f, 1.85f), 0.58f, true, bushMidGreen);
 
             SpawnMossyBoulder("ZoneA_LeftBoulder_Main", new Vector3(-2.4f, SampleTerrainSurfaceY(-2.4f) - 0.02f, 1.18f), new Vector3(1.35f, 0.65f, 1.15f), 25f);

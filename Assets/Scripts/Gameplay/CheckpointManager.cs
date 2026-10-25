@@ -16,10 +16,10 @@ namespace HoaVaMau.Gameplay
         public static CheckpointManager Instance { get; private set; }
 
         [Header("Respawn Settings")]
-        [SerializeField] private Vector3 currentCheckpointPos = new Vector3(-8.5f, 0.05f, 0f);
+        [SerializeField] private Vector3 currentCheckpointPos = new Vector3(0.0f, -1.77f, 0f);
         [SerializeField] private float fallDeathY = -1.5f; // Immediately triggers respawn on falling below platform ground (0.0)
 
-        private Vector3 initialSpawnPosition = new Vector3(-8.5f, 0.05f, 0f);
+        private Vector3 initialSpawnPosition = new Vector3(0.0f, -1.77f, 0f);
         private int currentCheckpointIndex = 0;
         private PlayerController player;
         private EnemyController[] enemies;

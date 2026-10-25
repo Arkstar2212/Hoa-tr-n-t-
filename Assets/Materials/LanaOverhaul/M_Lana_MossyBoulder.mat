@@ -29,10 +29,12 @@ Material:
     - _GoldenStartX: 43
     - _GrassNormalThreshold: 0.42
     - _IsGrassCap: 0.5
+    - _ShadowStrength: 0.58
     m_Colors:
     - _GrassGoldMidColor: {r: 0.48, g: 0.44, b: 0.2, a: 1}
     - _GrassGoldTopColor: {r: 0.73, g: 0.65, b: 0.3, a: 1}
     - _GrassMidColor: {r: 0.26, g: 0.43, b: 0.19, a: 1}
+    - _GrassShadowColor: {r: 0.14999998, g: 0.29999998, b: 0.23999995, a: 1}
     - _GrassTopColor: {r: 0.42, g: 0.62, b: 0.28, a: 1}
     - _RockDarkColor: {r: 0.08, g: 0.11, b: 0.16, a: 1}
     - _RockLightColor: {r: 0.24, g: 0.3, b: 0.38, a: 1}

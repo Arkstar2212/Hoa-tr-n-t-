@@ -8,7 +8,7 @@ namespace HoaVaMau.Gameplay
     /// <summary>
     /// SOLID - Single Responsibility Principle:
     /// Chuyên trách đọc tín hiệu từ thiết bị ngoại vi (Bàn phím, Chuột, Gamepad)
-    /// và cung cấp dữ liệu sạch cho các hệ thống gameplay khác.
+    /// tích hợp với KeybindingManager để hỗ trợ tùy chỉnh phím linh hoạt.
     /// </summary>
     public class PlayerInputReader : IPlayerInput
     {
@@ -43,29 +43,39 @@ namespace HoaVaMau.Gameplay
             MouseRightPressed = false;
             RopeGrabPressed = false;
 
+            // 1. Đọc phím theo cấu hình KeybindingManager
+            if (KeybindingManager.IsActionHeld(GameAction.MoveLeft)) Horizontal -= 1f;
+            if (KeybindingManager.IsActionHeld(GameAction.MoveRight)) Horizontal += 1f;
+            if (KeybindingManager.IsActionHeld(GameAction.MoveUp)) Vertical += 1f;
+            if (KeybindingManager.IsActionHeld(GameAction.MoveDown))
+            {
+                Vertical -= 1f;
+                CrouchPressed = true;
+            }
+
+            if (KeybindingManager.IsActionHeld(GameAction.Sprint)) SprintHeld = true;
+            if (KeybindingManager.IsActionPressed(GameAction.Crouch) || KeybindingManager.IsActionHeld(GameAction.Crouch)) CrouchPressed = true;
+
+            if (KeybindingManager.IsActionPressed(GameAction.Jump)) JumpPressed = true;
+            if (KeybindingManager.IsActionHeld(GameAction.Jump)) JumpHeld = true;
+
+            if (KeybindingManager.IsActionPressed(GameAction.Interact)) InteractPressed = true;
+            if (KeybindingManager.IsActionHeld(GameAction.Interact)) GrabCrateHeld = true;
+
+            if (KeybindingManager.IsActionPressed(GameAction.RopeGrab)) RopeGrabPressed = true;
+
+            // 2. Fallback cho New Input System nếu có
 #if ENABLE_INPUT_SYSTEM
             var kb = Keyboard.current;
             if (kb != null)
             {
-                if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) Horizontal -= 1f;
-                if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) Horizontal += 1f;
-                if (kb.wKey.isPressed || kb.upArrowKey.isPressed) Vertical += 1f;
-                if (kb.sKey.isPressed || kb.downArrowKey.isPressed)
-                {
-                    Vertical -= 1f;
-                    CrouchPressed = true;
-                }
-
-                if (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed) SprintHeld = true;
-                if (kb.cKey.isPressed || kb.leftCtrlKey.isPressed) CrouchPressed = true;
-
+                if (kb.leftArrowKey.isPressed) Horizontal = Mathf.Clamp(Horizontal - 1f, -1f, 1f);
+                if (kb.rightArrowKey.isPressed) Horizontal = Mathf.Clamp(Horizontal + 1f, -1f, 1f);
+                if (kb.upArrowKey.isPressed) Vertical = Mathf.Clamp(Vertical + 1f, -1f, 1f);
+                if (kb.downArrowKey.isPressed) { Vertical = Mathf.Clamp(Vertical - 1f, -1f, 1f); CrouchPressed = true; }
                 if (kb.spaceKey.wasPressedThisFrame) JumpPressed = true;
-                JumpHeld = kb.spaceKey.isPressed;
-
-                if (kb.eKey.wasPressedThisFrame) InteractPressed = true;
-                if (kb.eKey.isPressed) GrabCrateHeld = true;
-
-                if (kb.fKey.wasPressedThisFrame) RopeGrabPressed = true;
+                if (kb.spaceKey.isPressed) JumpHeld = true;
+                if (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed) SprintHeld = true;
             }
 
             var mouse = Mouse.current;
@@ -78,26 +88,6 @@ namespace HoaVaMau.Gameplay
                 if (mouse.rightButton.isPressed) AimThrowHeld = true;
             }
 #else
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) Horizontal -= 1f;
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) Horizontal += 1f;
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) Vertical += 1f;
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
-            {
-                Vertical -= 1f;
-                CrouchPressed = true;
-            }
-
-            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) SprintHeld = true;
-            if (Input.GetKey(KeyCode.C) || Input.GetKey(KeyCode.LeftControl)) CrouchPressed = true;
-
-            if (Input.GetKeyDown(KeyCode.Space)) JumpPressed = true;
-            JumpHeld = Input.GetKey(KeyCode.Space);
-
-            if (Input.GetKeyDown(KeyCode.E)) InteractPressed = true;
-            if (Input.GetKey(KeyCode.E)) GrabCrateHeld = true;
-
-            if (Input.GetKeyDown(KeyCode.F)) RopeGrabPressed = true;
-
             MouseLeftPressed = Input.GetMouseButton(0);
             MouseLeftReleasedThisFrame = Input.GetMouseButtonUp(0);
             MousePosition = Input.mousePosition;

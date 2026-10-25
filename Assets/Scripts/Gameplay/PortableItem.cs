@@ -138,9 +138,10 @@ namespace HoaVaMau.Gameplay
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (wasThrown || collision.relativeVelocity.magnitude > 2.8f)
+            var destructible = collision.gameObject.GetComponentInParent<DestructibleCrate>();
+            float speedThreshold = (destructible != null) ? destructible.MinImpactSpeed : 2.8f;
+            if (wasThrown || collision.relativeVelocity.magnitude >= speedThreshold)
             {
-                var destructible = collision.gameObject.GetComponentInParent<DestructibleCrate>();
                 if (destructible != null && !destructible.IsDestroyed)
                 {
                     Vector3 contactPt = collision.contacts.Length > 0 ? collision.contacts[0].point : transform.position;
