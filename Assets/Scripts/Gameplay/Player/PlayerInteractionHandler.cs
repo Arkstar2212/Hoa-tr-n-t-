@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace HoaVaMau.Gameplay
 {
@@ -194,9 +194,6 @@ namespace HoaVaMau.Gameplay
 
             isAiming = false;
 
-            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
-            if (meshyAnim != null) meshyAnim.OnPickupStarted(itemGroundPos, carrySocket);
-
             var anAnim = transform.GetComponent<AnAnimationController>();
             if (anAnim != null) anAnim.OnPickupStarted(itemGroundPos, carrySocket);
         }
@@ -216,9 +213,6 @@ namespace HoaVaMau.Gameplay
 
             UpdateCarrySocketTransform(player.FacingDirection);
 
-            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
-            if (meshyAnim != null) meshyAnim.OnAimThrowCancelled();
-
             var anAnim = transform.GetComponent<AnAnimationController>();
             if (anAnim != null) anAnim.OnAimThrowCancelled();
         }
@@ -230,9 +224,6 @@ namespace HoaVaMau.Gameplay
             if (carriedItem == null) return;
             isAiming = true;
             player.SetState(PlayerState.AimingThrow);
-
-            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
-            if (meshyAnim != null) meshyAnim.OnAimThrowStarted(carrySocket);
 
             var anAnim = transform.GetComponent<AnAnimationController>();
             if (anAnim != null) anAnim.OnAimThrowStarted(carrySocket);
@@ -349,9 +340,6 @@ namespace HoaVaMau.Gameplay
 
             UpdateCarrySocketTransform(player.FacingDirection);
 
-            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
-            if (meshyAnim != null) meshyAnim.OnThrowReleased();
-
             var anAnim = transform.GetComponent<AnAnimationController>();
             if (anAnim != null) anAnim.OnThrowReleased();
         }
@@ -370,9 +358,6 @@ namespace HoaVaMau.Gameplay
             }
 
             UpdateCarrySocketTransform(player.FacingDirection);
-
-            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
-            if (meshyAnim != null) meshyAnim.OnAimThrowCancelled();
 
             var anAnim = transform.GetComponent<AnAnimationController>();
             if (anAnim != null) anAnim.OnAimThrowCancelled();

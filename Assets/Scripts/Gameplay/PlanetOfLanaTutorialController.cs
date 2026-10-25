@@ -31,7 +31,6 @@ namespace HoaVaMau.Gameplay
         private float moveTime = 0f;
         private bool moveTutorialDismissed = false;
 
-        private bool hasSprintedOrJumped = false;
         private bool jumpTutorialTriggered = false;
         private bool jumpTutorialDismissed = false;
 
@@ -133,7 +132,6 @@ namespace HoaVaMau.Gameplay
             {
                 if (player.CurrentState == PlayerState.Airborne || player.IsSprinting || x > 23f)
                 {
-                    hasSprintedOrJumped = true;
                     jumpTutorialDismissed = true;
                     HidePrompt();
                 }

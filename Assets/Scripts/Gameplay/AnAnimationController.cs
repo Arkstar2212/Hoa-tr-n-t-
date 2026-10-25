@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -12,15 +12,19 @@ namespace HoaVaMau.Gameplay
         ForceRun = 2,
         ForceClimb = 3,
         ForceCrouch = 4,
-        ForceCrawl = 5
+        ForceCrawl = 5,
+        ForceCrouchWalk = 6,
+        ForceLedgeHang = 7
     }
 
     /// <summary>
     /// Component điều khiển Animation mượt mà và trực quan cho nhân vật An (Nhân vật chính):
     /// - Sử dụng Avatar và Animation chính thức từ thư viện dự án (Assets/Animations/Hero).
-    /// - Không sử dụng bất kỳ mô hình AI gen hay phụ kiện giả lập nào.
-    /// - Xoay mặt mượt mà (Smooth RotateTowards 720 deg/s).
-    /// - Kết nối trực tiếp với PlayerController để cập nhật Speed, Ledge Grab, Leo dây, Bò trườn.
+    /// - Phân tách rõ:
+    ///     * Ngồi tại chỗ (Crouch -> Hero_Stealth_Crouch_Idle_Loop)
+    ///     * Ngồi tiến về trước (CrouchWalk -> Hero_Stealth_Crouch_Walk_Fwd_IP)
+    ///     * Bám trên vách đá (LedgeHang -> Hero_Traverse_Hanging_Idle_Loop)
+    ///     * Đồng bộ Bám vách đá (LedgeHang) -> Leo lên (Climb) khớp vị trí bàn tay và quỹ đạo cơ học.
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(Animator))]
@@ -31,7 +35,7 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private AnAnimationMode mode = AnAnimationMode.Auto;
 
         [Header("Tùy chọn phím tắt test nhanh (Play Mode)")]
-        [Tooltip("Bấm 1 (Walk), 2 (Run), 3 (Climb), 4 (Crouch), 5 (Crawl), 0 (Auto Gameplay)")]
+        [Tooltip("Bấm 1 (Walk), 2 (Run), 3 (Climb), 4 (Crouch), 5 (Crawl), 6 (LedgeHang), 7 (CrouchWalk), 0 (Auto)")]
         [SerializeField] private bool enableKeyShortcuts = true;
 
         [Header("Hiển thị giao diện điều khiển trên màn hình (OnScreen GUI)")]
@@ -44,38 +48,64 @@ namespace HoaVaMau.Gameplay
         private enum ThrowAnimPhase
         {
             None = 0,
-            Pickup = 1,       // Khúc đầu (0.00 -> 0.37): Cúi xuống nhặt vật từ mặt đất lên tay
-            AimWindup = 2,    // Khúc chuẩn bị ném (0.37 -> 0.45): Đưa tay ra sau ngắm ném và giữ nguyên tư thế
-            Release = 3       // Khúc cuối (0.45 -> 0.88): Vung tay ném mạnh về phía trước và thu tay về
+            Pickup = 1,
+            AimWindup = 2,
+            Release = 3
         }
 
         private const float ThrowPickupStartNorm = 0.00f;
-        private const float ThrowPickupGrabNorm = 0.21f;  // Frame 31: tay chạm vật dưới đất
-        private const float ThrowPickupEndNorm = 0.37f;   // Frame 54: đứng thẳng dậy cầm vật trước ngực
-        private const float ThrowAimHoldNorm = 0.45f;     // Frame 66: tay phải kéo ra sau đầu chuẩn bị ném
-        private const float ThrowReleaseEndNorm = 0.88f;  // Frame 128: hoàn tất vung tay ném và thu tay về
+        private const float ThrowPickupGrabNorm = 0.21f;
+        private const float ThrowPickupEndNorm = 0.37f;
+        private const float ThrowAimHoldNorm = 0.45f;
+        private const float ThrowReleaseEndNorm = 0.88f;
+
+        private const float ClimbHangStartNorm = 0.0f;
+        private const float ClimbStandEndNorm = 0.985f;
 
         private Animator animator;
         private CharacterController characterController;
         private PlayerController playerController;
         private Transform hipsBone;
+        private Transform spineBone;
+        private Transform chestBone;
+        private Transform upperChestBone;
+        private Transform neckBone;
+        private Transform headBone;
+        private Transform leftUpperLegBone;
+        private Transform leftLowerLegBone;
+        private Transform leftFootBone;
+        private Transform rightUpperLegBone;
+        private Transform rightLowerLegBone;
+        private Transform rightFootBone;
+        private Transform leftUpperArmBone;
+        private Transform leftLowerArmBone;
+        private Transform leftHandBone;
+        private Transform rightUpperArmBone;
+        private Transform rightLowerArmBone;
         private Transform rightHandBone;
+
         private Transform activeCarrySocket;
         private Vector3 pickupGroundWorldPos;
         private ThrowAnimPhase throwPhase = ThrowAnimPhase.None;
         private float throwNormTime = 0f;
         private float standingHipOffsetY = 0.63f;
+        private float lastHangHipWorldY = 0f;
+        private bool hasValidHangHipY = false;
+        private float forceClimbPreviewTimer = 0f;
         private float currentSmoothSpeed = 0f;
         private float speedVelocity = 0f;
-        private float targetFacingAngle = 90f; // 90 = Right, -90 = Left
+        private float targetFacingAngle = 90f;
         private string currentPlayingState = "Idle";
 
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
         private static readonly int IsClimbingHash = Animator.StringToHash("IsClimbing");
+        private static readonly int IsLedgeHangingHash = Animator.StringToHash("IsLedgeHanging");
         private static readonly int IsCrouchingHash = Animator.StringToHash("IsCrouching");
         private static readonly int IsCrawlingHash = Animator.StringToHash("IsCrawling");
 
         public AnAnimationMode CurrentMode => mode;
+        public AnAnimationMode Mode { get => mode; set => mode = value; }
+        public void SetMode(AnAnimationMode newMode) { mode = newMode; }
         public string ActiveStateName => currentPlayingState;
 
         private void Awake()
@@ -107,11 +137,13 @@ namespace HoaVaMau.Gameplay
 
             if (animator.applyRootMotion) animator.applyRootMotion = false;
 
-            if (!Application.isPlaying) return;
-
-            if (throwPhase == ThrowAnimPhase.None && animator.speed != 1f)
+            if (!Application.isPlaying)
             {
-                animator.speed = 1f;
+                if (mode != AnAnimationMode.Auto)
+                {
+                    UpdateAnimationLogic();
+                }
+                return;
             }
 
             if (enableKeyShortcuts)
@@ -125,57 +157,83 @@ namespace HoaVaMau.Gameplay
 
         private void OnAnimatorMove()
         {
-            // Chặn hoàn toàn Root Motion tự động của Animator để CharacterController và PlayerLedgeClimber
-            // làm chủ 100% vị trí vật lý, không bao giờ xảy ra xung đột giật lùi.
         }
+
+        public void ManualLateUpdate() => LateUpdate();
 
         private void LateUpdate()
         {
-            if (!Application.isPlaying || animator == null) return;
+            if (animator == null) return;
 
-            if (hipsBone == null && animator.isHuman)
-            {
-                hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
-            }
-            if (rightHandBone == null && animator.isHuman)
-            {
-                rightHandBone = animator.GetBoneTransform(HumanBodyBones.RightHand);
-            }
+            CacheHumanBones();
+
+            // Mecanim hoàn toàn làm chủ tư thế nhân vật (Crouch, Walk, Run, Idle, Jump).
+            // Tuyệt đối không can thiệp thủ công vào xương hông hay góc xoay xương khi Crouch.
 
             if (hipsBone != null)
             {
-                Vector3 rootPos = transform.position;
-                Vector3 hipPos = hipsBone.position;
-
-                if (currentPlayingState == "Idle" || currentPlayingState == "Walk")
+                // Khi Bám trên vách đá (LedgeHang): Khóa bàn tay bám chuẩn xác vào mép gờ vách
+                if (currentPlayingState == "LedgeHang")
                 {
-                    float currentOffsetY = hipPos.y - rootPos.y;
-                    if (currentOffsetY > 0.25f && currentOffsetY < 1.5f)
+                    if (playerController != null && playerController.LedgeClimber != null &&
+                        playerController.CurrentState == PlayerState.LedgeGrab)
                     {
-                        standingHipOffsetY = Mathf.Lerp(standingHipOffsetY, currentOffsetY, Time.deltaTime * 10f);
+                        Vector3 hipPos = hipsBone.position;
+                        float facing = playerController.FacingDirection;
+                        float wallX = playerController.LedgeClimber.LedgeWallX;
+                        float topY = playerController.LedgeClimber.LedgeTopY;
+
+                        if (leftHandBone != null && rightHandBone != null)
+                        {
+                            float avgHandY = 0.5f * (leftHandBone.position.y + rightHandBone.position.y);
+                            float hipToHandY = Mathf.Max(0.35f, avgHandY - hipPos.y);
+                            hipPos.y = topY - 0.03f - hipToHandY;
+                        }
+                        else
+                        {
+                            hipPos.y = topY - 0.62f;
+                        }
+
+                        hipPos.x = wallX - facing * 0.24f;
+                        lastHangHipWorldY = hipPos.y;
+                        hasValidHangHipY = true;
+                        hipsBone.position = hipPos;
                     }
                 }
-
-                // Khóa hoàn toàn trục X và Z của xương Hips theo vị trí thực của nhân vật (100% In-Place)
-                // Ngăn chặn triệt để hiện tượng mesh chạy tiến ra trước Collider rồi bị giật lùi lại khi lặp vòng
-                hipPos.x = rootPos.x;
-                hipPos.z = rootPos.z;
-
-                // Khi đang leo trèo (Climb), quỹ đạo độ cao Y đã được PlayerLedgeClimber.EvaluateClimbTrajectory điều khiển mượt mà
-                if (currentPlayingState == "Climb")
+                // Khi Leo lên vách đá (Climb): Đồng bộ vị trí Hips chuyển tiếp từ vị trí LedgeHang lên sàn đứng
+                else if (currentPlayingState == "Climb")
                 {
-                    float climbT = (playerController != null && playerController.LedgeClimber != null)
-                        ? Mathf.Clamp01(playerController.LedgeClimber.ClimbProgress)
-                        : 1f;
-                    float facing = (playerController != null) ? playerController.FacingDirection : 1f;
+                    if (playerController != null && playerController.LedgeClimber != null &&
+                        playerController.CurrentState == PlayerState.LedgeClimb)
+                    {
+                        Vector3 hipPos = hipsBone.position;
+                        float climbT = Mathf.Clamp01(playerController.LedgeClimber.ClimbProgress);
+                        float facing = playerController.FacingDirection;
+                        float wallX = playerController.LedgeClimber.LedgeWallX;
+                        float topY = playerController.LedgeClimber.LedgeTopY;
+                        Vector3 endPos = playerController.LedgeClimber.ClimbEndPos;
 
-                    // Khi đang đu và vượt gờ (t = 0 -> 1), áp nhẹ thân người sát vào mép tường và trả về 0 tuyệt đối ở t = 1
-                    float wallHugArc = Mathf.Sin(climbT * Mathf.PI);
-                    hipPos.x = rootPos.x + facing * 0.08f * wallHugArc;
-                    hipPos.y = rootPos.y + standingHipOffsetY - 0.10f * wallHugArc;
+                        float startHipY = hasValidHangHipY ? lastHangHipWorldY : (topY - 0.58f);
+                        float edgeMantleHipY = topY + standingHipOffsetY * 0.55f;
+                        float finalStandHipY = topY + standingHipOffsetY;
+
+                        if (climbT <= 0.45f)
+                        {
+                            float subT = climbT / 0.45f;
+                            float easeY = Mathf.SmoothStep(0f, 1f, subT);
+                            hipPos.y = Mathf.Lerp(startHipY, edgeMantleHipY, easeY);
+                            hipPos.x = Mathf.Lerp(wallX - facing * 0.24f, wallX - facing * 0.08f, subT * subT);
+                        }
+                        else
+                        {
+                            float subT = (climbT - 0.45f) / 0.55f;
+                            float ease = Mathf.SmoothStep(0f, 1f, subT);
+                            hipPos.y = Mathf.Lerp(edgeMantleHipY, finalStandHipY, ease);
+                            hipPos.x = Mathf.Lerp(wallX - facing * 0.08f, endPos.x, ease);
+                        }
+                        hipsBone.position = hipPos;
+                    }
                 }
-
-                hipsBone.position = hipPos;
             }
 
             // Đồng bộ vị trí vật cầm trên tay theo từng pha Nhặt (Pickup) và Chuẩn bị ném (AimWindup)
@@ -188,12 +246,10 @@ namespace HoaVaMau.Gameplay
                 {
                     if (throwNormTime < ThrowPickupGrabNorm)
                     {
-                        // Khi tay đang cúi xuống: giữ vật nằm yên trên mặt đất cho tới lúc tay chạm vào vật
                         activeCarrySocket.position = new Vector3(pickupGroundWorldPos.x, pickupGroundWorldPos.y, 0f);
                     }
                     else
                     {
-                        // Khi tay nhấc vật từ đất lên ngực: đi theo bàn tay phải và hòa vào vị trí cầm trước ngực
                         float liftT = Mathf.Clamp01((throwNormTime - ThrowPickupGrabNorm) / (ThrowPickupEndNorm - ThrowPickupGrabNorm));
                         Vector3 handPos = (rightHandBone != null)
                             ? new Vector3(rightHandBone.position.x, rightHandBone.position.y, 0f)
@@ -203,10 +259,36 @@ namespace HoaVaMau.Gameplay
                 }
                 else if (throwPhase == ThrowAnimPhase.AimWindup && rightHandBone != null)
                 {
-                    // Khi giơ tay ra sau chuẩn bị ném: đặt vật nằm trên bàn tay phải đang vung ra sau
                     activeCarrySocket.position = new Vector3(rightHandBone.position.x, rightHandBone.position.y + 0.05f, 0f);
                 }
             }
+        }
+
+        private void CacheHumanBones()
+        {
+            if (animator == null || !animator.isHuman) return;
+            if (hipsBone == null) hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
+            if (spineBone == null) spineBone = animator.GetBoneTransform(HumanBodyBones.Spine);
+            if (chestBone == null) chestBone = animator.GetBoneTransform(HumanBodyBones.Chest);
+            if (upperChestBone == null) upperChestBone = animator.GetBoneTransform(HumanBodyBones.UpperChest);
+            if (neckBone == null) neckBone = animator.GetBoneTransform(HumanBodyBones.Neck);
+            if (headBone == null) headBone = animator.GetBoneTransform(HumanBodyBones.Head);
+
+            if (leftUpperLegBone == null) leftUpperLegBone = animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
+            if (leftLowerLegBone == null) leftLowerLegBone = animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg);
+            if (leftFootBone == null) leftFootBone = animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+
+            if (rightUpperLegBone == null) rightUpperLegBone = animator.GetBoneTransform(HumanBodyBones.RightUpperLeg);
+            if (rightLowerLegBone == null) rightLowerLegBone = animator.GetBoneTransform(HumanBodyBones.RightLowerLeg);
+            if (rightFootBone == null) rightFootBone = animator.GetBoneTransform(HumanBodyBones.RightFoot);
+
+            if (leftUpperArmBone == null) leftUpperArmBone = animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
+            if (leftLowerArmBone == null) leftLowerArmBone = animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
+            if (leftHandBone == null) leftHandBone = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+
+            if (rightUpperArmBone == null) rightUpperArmBone = animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
+            if (rightLowerArmBone == null) rightLowerArmBone = animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
+            if (rightHandBone == null) rightHandBone = animator.GetBoneTransform(HumanBodyBones.RightHand);
         }
 
         public void SetupComponents()
@@ -219,11 +301,7 @@ namespace HoaVaMau.Gameplay
             {
                 animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                 animator.applyRootMotion = false;
-                if (animator.isHuman)
-                {
-                    if (hipsBone == null) hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
-                    if (rightHandBone == null) rightHandBone = animator.GetBoneTransform(HumanBodyBones.RightHand);
-                }
+                CacheHumanBones();
             }
 
             var smrList = GetComponentsInChildren<SkinnedMeshRenderer>(true);
@@ -268,6 +346,8 @@ namespace HoaVaMau.Gameplay
             bool key3 = false;
             bool key4 = false;
             bool key5 = false;
+            bool key6 = false;
+            bool key7 = false;
             bool key0 = false;
 
 #if ENABLE_INPUT_SYSTEM
@@ -279,6 +359,8 @@ namespace HoaVaMau.Gameplay
                 if (kb.digit3Key.wasPressedThisFrame || kb.numpad3Key.wasPressedThisFrame) key3 = true;
                 if (kb.digit4Key.wasPressedThisFrame || kb.numpad4Key.wasPressedThisFrame) key4 = true;
                 if (kb.digit5Key.wasPressedThisFrame || kb.numpad5Key.wasPressedThisFrame) key5 = true;
+                if (kb.digit6Key.wasPressedThisFrame || kb.numpad6Key.wasPressedThisFrame) key6 = true;
+                if (kb.digit7Key.wasPressedThisFrame || kb.numpad7Key.wasPressedThisFrame) key7 = true;
                 if (kb.digit0Key.wasPressedThisFrame || kb.numpad0Key.wasPressedThisFrame || kb.backspaceKey.wasPressedThisFrame) key0 = true;
             }
 #else
@@ -287,6 +369,8 @@ namespace HoaVaMau.Gameplay
             if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) key3 = true;
             if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) key4 = true;
             if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5)) key5 = true;
+            if (Input.GetKeyDown(KeyCode.Alpha6) || Input.GetKeyDown(KeyCode.Keypad6)) key6 = true;
+            if (Input.GetKeyDown(KeyCode.Alpha7) || Input.GetKeyDown(KeyCode.Keypad7)) key7 = true;
             if (Input.GetKeyDown(KeyCode.Alpha0) || Input.GetKeyDown(KeyCode.Keypad0) || Input.GetKeyDown(KeyCode.Backspace)) key0 = true;
 #endif
 
@@ -295,6 +379,8 @@ namespace HoaVaMau.Gameplay
             else if (key3) ForceClimb();
             else if (key4) ForceCrouch();
             else if (key5) ForceCrawl();
+            else if (key6) ForceLedgeHang();
+            else if (key7) ForceCrouchWalk();
             else if (key0) SetAutoMode();
         }
 
@@ -331,7 +417,9 @@ namespace HoaVaMau.Gameplay
 
             if (mode == AnAnimationMode.ForceWalk)
             {
+                animator.speed = 1f;
                 animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsLedgeHangingHash, false);
                 animator.SetBool(IsCrouchingHash, false);
                 animator.SetBool(IsCrawlingHash, false);
                 animator.SetFloat(SpeedHash, 2.0f);
@@ -340,32 +428,63 @@ namespace HoaVaMau.Gameplay
             }
             if (mode == AnAnimationMode.ForceRun)
             {
+                animator.speed = 1f;
                 animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsLedgeHangingHash, false);
                 animator.SetBool(IsCrouchingHash, false);
                 animator.SetBool(IsCrawlingHash, false);
                 animator.SetFloat(SpeedHash, 5.5f);
                 CrossFadeToState("Run", 0.15f);
                 return;
             }
+            if (mode == AnAnimationMode.ForceLedgeHang)
+            {
+                animator.speed = 1f;
+                animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsLedgeHangingHash, true);
+                animator.SetBool(IsCrouchingHash, false);
+                animator.SetBool(IsCrawlingHash, false);
+                CrossFadeToState("LedgeHang", 0.12f);
+                return;
+            }
             if (mode == AnAnimationMode.ForceClimb)
             {
                 animator.SetBool(IsClimbingHash, true);
+                animator.SetBool(IsLedgeHangingHash, false);
                 animator.SetBool(IsCrouchingHash, false);
                 animator.SetBool(IsCrawlingHash, false);
-                CrossFadeToState("Climb", 0.08f);
+                forceClimbPreviewTimer = (forceClimbPreviewTimer + dt / 1.15f) % 1.0f;
+                float syncedNorm = Mathf.Lerp(ClimbHangStartNorm, ClimbStandEndNorm, forceClimbPreviewTimer);
+                currentPlayingState = "Climb";
+                animator.speed = 0f;
+                animator.Play("Climb", 0, syncedNorm);
                 return;
             }
             if (mode == AnAnimationMode.ForceCrouch)
             {
+                animator.speed = 1f;
                 animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsLedgeHangingHash, false);
                 animator.SetBool(IsCrouchingHash, true);
                 animator.SetBool(IsCrawlingHash, false);
                 CrossFadeToState("Crouch", 0.15f);
                 return;
             }
+            if (mode == AnAnimationMode.ForceCrouchWalk)
+            {
+                animator.speed = 1f;
+                animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsLedgeHangingHash, false);
+                animator.SetBool(IsCrouchingHash, true);
+                animator.SetBool(IsCrawlingHash, false);
+                CrossFadeToState("CrouchWalk", 0.15f);
+                return;
+            }
             if (mode == AnAnimationMode.ForceCrawl)
             {
+                animator.speed = 1f;
                 animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsLedgeHangingHash, false);
                 animator.SetBool(IsCrouchingHash, true);
                 animator.SetBool(IsCrawlingHash, true);
                 CrossFadeToState("Crawl", 0.12f);
@@ -373,6 +492,7 @@ namespace HoaVaMau.Gameplay
             }
 
             // Chế độ Tự Động (Auto Gameplay)
+            bool isLedgeHanging = false;
             bool isClimbing = false;
             bool isCrouching = false;
             bool isCrawling = false;
@@ -380,10 +500,13 @@ namespace HoaVaMau.Gameplay
 
             if (playerController != null)
             {
-                if (playerController.CurrentState == PlayerState.LedgeClimb || 
-                    playerController.CurrentState == PlayerState.RopeClimb ||
-                    playerController.CurrentState == PlayerState.LedgeGrab ||
-                    playerController.CurrentState == PlayerState.RopeGrab)
+                if (playerController.CurrentState == PlayerState.LedgeGrab)
+                {
+                    isLedgeHanging = true;
+                }
+                else if (playerController.CurrentState == PlayerState.LedgeClimb || 
+                         playerController.CurrentState == PlayerState.RopeClimb ||
+                         playerController.CurrentState == PlayerState.RopeGrab)
                 {
                     isClimbing = true;
                 }
@@ -409,29 +532,58 @@ namespace HoaVaMau.Gameplay
 
             currentSmoothSpeed = Mathf.SmoothDamp(currentSmoothSpeed, targetSpeed, ref speedVelocity, 0.08f, Mathf.Infinity, dt);
 
+            animator.SetBool(IsLedgeHangingHash, isLedgeHanging);
             animator.SetBool(IsClimbingHash, isClimbing);
             animator.SetBool(IsCrouchingHash, isCrouching);
             animator.SetBool(IsCrawlingHash, isCrawling);
             animator.SetFloat(SpeedHash, currentSmoothSpeed);
 
-            if (isClimbing)
+            if (isLedgeHanging)
             {
                 throwPhase = ThrowAnimPhase.None;
                 animator.speed = 1f;
-                if (currentPlayingState != "Climb")
-                {
-                    currentPlayingState = "Climb";
-                    animator.Play("Climb", 0, 0f);
-                }
+                CrossFadeToState("LedgeHang", 0.10f);
+                return;
             }
-            else if (throwPhase == ThrowAnimPhase.Pickup)
+
+            if (isClimbing)
             {
-                // Pha 1 (Khi bấm E nhặt vật): Chạy khúc đầu của animation Throw (0.00 -> 0.37: cúi xuống nhặt vật lên ngực)
+                throwPhase = ThrowAnimPhase.None;
+
+                if (playerController != null && playerController.CurrentState == PlayerState.LedgeClimb && playerController.LedgeClimber != null)
+                {
+                    float climbT = Mathf.Clamp01(playerController.LedgeClimber.ClimbProgress);
+                    float syncedNorm = Mathf.Lerp(ClimbHangStartNorm, ClimbStandEndNorm, climbT);
+
+                    if (climbT < 0.12f && animator.IsInTransition(0))
+                    {
+                        float clipDuration = 2.8f;
+                        float climbDur = Mathf.Max(0.2f, playerController.LedgeClimber.ClimbDuration);
+                        animator.speed = ((ClimbStandEndNorm - ClimbHangStartNorm) * clipDuration) / climbDur;
+                        currentPlayingState = "Climb";
+                    }
+                    else
+                    {
+                        currentPlayingState = "Climb";
+                        animator.speed = 0f;
+                        animator.Play("Climb", 0, syncedNorm);
+                    }
+                }
+                else
+                {
+                    bool movingOnRope = (playerController != null && playerController.CurrentState == PlayerState.RopeClimb);
+                    animator.speed = movingOnRope ? 1f : 0f;
+                    CrossFadeToState("Climb", 0.12f);
+                }
+                return;
+            }
+
+            if (throwPhase == ThrowAnimPhase.Pickup)
+            {
                 currentPlayingState = "Throw";
                 animator.speed = 0f;
                 throwNormTime += (ThrowPickupEndNorm / 0.72f) * dt;
 
-                // Cho phép ngắt sớm pha đứng dậy nếu người chơi bắt đầu di chuyển sau khi đã nhặt vật lên tay
                 if (throwNormTime >= ThrowPickupEndNorm || (throwNormTime >= 0.30f && currentSmoothSpeed > 0.35f))
                 {
                     ResetCarrySocketOffset();
@@ -444,10 +596,10 @@ namespace HoaVaMau.Gameplay
                 {
                     animator.Play("Throw", 0, Mathf.Clamp(throwNormTime, ThrowPickupStartNorm, ThrowPickupEndNorm));
                 }
+                return;
             }
-            else if (throwPhase == ThrowAnimPhase.AimWindup || (playerController != null && playerController.CurrentState == PlayerState.AimingThrow))
+            if (throwPhase == ThrowAnimPhase.AimWindup || (playerController != null && playerController.CurrentState == PlayerState.AimingThrow))
             {
-                // Pha 2 (Chuẩn bị ném / Giữ Chuột Trái): Bỏ qua đoạn nhặt đồ, lấy khúc chuẩn bị ném (0.37 -> 0.45) và giữ nguyên tư thế giơ tay ngắm
                 if (throwPhase != ThrowAnimPhase.AimWindup)
                 {
                     throwPhase = ThrowAnimPhase.AimWindup;
@@ -457,10 +609,10 @@ namespace HoaVaMau.Gameplay
                 animator.speed = 0f;
                 throwNormTime = Mathf.MoveTowards(throwNormTime, ThrowAimHoldNorm, (0.08f / 0.18f) * dt);
                 animator.Play("Throw", 0, throwNormTime);
+                return;
             }
-            else if (throwPhase == ThrowAnimPhase.Release)
+            if (throwPhase == ThrowAnimPhase.Release)
             {
-                // Pha 3 (Thả Chuột Trái ném): Chạy khúc cuối của animation Throw (0.45 -> 0.88: vung tay ném mạnh và thu tay về)
                 currentPlayingState = "Throw";
                 animator.speed = 0f;
                 throwNormTime += ((ThrowReleaseEndNorm - ThrowAimHoldNorm) / 0.50f) * dt;
@@ -476,8 +628,12 @@ namespace HoaVaMau.Gameplay
                 {
                     animator.Play("Throw", 0, Mathf.Clamp(throwNormTime, ThrowAimHoldNorm, ThrowReleaseEndNorm));
                 }
+                return;
             }
-            else if (playerController != null && playerController.CurrentState == PlayerState.PushPull)
+
+            animator.speed = 1f;
+
+            if (playerController != null && playerController.CurrentState == PlayerState.PushPull)
             {
                 CrossFadeToState("PushPull", 0.15f);
             }
@@ -505,15 +661,27 @@ namespace HoaVaMau.Gameplay
             }
             else if (isCrawling)
             {
+                bool isMovingCrawl = (playerController != null && Mathf.Abs(playerController.HorizontalInput) > 0.08f) || currentSmoothSpeed > 0.12f;
+                animator.speed = isMovingCrawl ? Mathf.Clamp(currentSmoothSpeed / 1.2f, 0.70f, 1.25f) : 0f;
                 CrossFadeToState("Crawl", 0.12f);
             }
             else if (isCrouching)
             {
-                CrossFadeToState("Crouch", 0.15f);
+                bool isMovingWhileCrouched = (playerController != null && Mathf.Abs(playerController.HorizontalInput) > 0.08f) || currentSmoothSpeed > 0.14f;
+                if (isMovingWhileCrouched)
+                {
+                    animator.speed = Mathf.Clamp(currentSmoothSpeed / 1.75f, 0.75f, 1.25f);
+                    CrossFadeToState("CrouchWalk", 0.14f);
+                }
+                else
+                {
+                    animator.speed = 1f;
+                    CrossFadeToState("Crouch", 0.14f);
+                }
             }
             else
             {
-                if (currentPlayingState == "Climb" || currentPlayingState == "Jump" || currentPlayingState == "Fall" || currentPlayingState == "Throw")
+                if (currentPlayingState == "Climb" || currentPlayingState == "LedgeHang" || currentPlayingState == "Jump" || currentPlayingState == "Fall" || currentPlayingState == "Throw")
                 {
                     string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
                     CrossFadeToState(next, 0.12f);
@@ -546,7 +714,7 @@ namespace HoaVaMau.Gameplay
             if (animator == null) return;
             activeCarrySocket = carrySocketTransform;
             throwPhase = ThrowAnimPhase.AimWindup;
-            throwNormTime = ThrowPickupEndNorm; // Bắt đầu ngay tại mốc chuẩn bị ném (0.37), bỏ qua hoàn toàn đoạn nhặt đồ
+            throwNormTime = ThrowPickupEndNorm;
             currentPlayingState = "Throw";
             animator.speed = 0f;
             animator.Play("Throw", 0, throwNormTime);
@@ -557,7 +725,7 @@ namespace HoaVaMau.Gameplay
             if (animator == null) return;
             ResetCarrySocketOffset();
             throwPhase = ThrowAnimPhase.Release;
-            throwNormTime = ThrowAimHoldNorm; // Chạy từ tư thế giơ tay ngắm (0.45) hết khúc cuối vung tay ném (0.88)
+            throwNormTime = ThrowAimHoldNorm;
             currentPlayingState = "Throw";
             animator.speed = 0f;
             animator.Play("Throw", 0, throwNormTime);
@@ -584,21 +752,37 @@ namespace HoaVaMau.Gameplay
             }
         }
 
+        public void OnLedgeHangStarted()
+        {
+            if (animator == null) return;
+            throwPhase = ThrowAnimPhase.None;
+            hasValidHangHipY = false;
+            animator.speed = 1f;
+            currentPlayingState = "LedgeHang";
+            animator.SetBool(IsLedgeHangingHash, true);
+            animator.SetBool(IsClimbingHash, false);
+            animator.CrossFadeInFixedTime("LedgeHang", 0.08f);
+        }
+
         public void OnClimbStarted()
         {
             if (animator == null) return;
             throwPhase = ThrowAnimPhase.None;
-            animator.speed = 1f;
             currentPlayingState = "Climb";
+            animator.SetBool(IsLedgeHangingHash, false);
             animator.SetBool(IsClimbingHash, true);
-            animator.CrossFadeInFixedTime("Climb", 0.08f);
+            animator.speed = 1f;
+            animator.CrossFadeInFixedTime("Climb", 0.10f, 0, ClimbHangStartNorm);
         }
 
         public void OnClimbFinished()
         {
             if (animator == null) return;
+            hasValidHangHipY = false;
+            animator.speed = 1f;
             string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
             currentPlayingState = next;
+            animator.SetBool(IsLedgeHangingHash, false);
             animator.SetBool(IsClimbingHash, false);
             animator.CrossFadeInFixedTime(next, 0.12f);
         }
@@ -620,7 +804,14 @@ namespace HoaVaMau.Gameplay
             }
 
             currentPlayingState = stateName;
-            animator.CrossFadeInFixedTime(stateName, duration);
+            if (Application.isPlaying)
+            {
+                animator.CrossFadeInFixedTime(stateName, duration);
+            }
+            else
+            {
+                animator.Play(stateName, 0, 0f);
+            }
         }
 
         public void ForceWalk()
@@ -628,7 +819,9 @@ namespace HoaVaMau.Gameplay
             mode = AnAnimationMode.ForceWalk;
             if (animator != null)
             {
+                animator.speed = 1f;
                 animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsLedgeHangingHash, false);
                 animator.SetBool(IsCrouchingHash, false);
                 animator.SetBool(IsCrawlingHash, false);
                 animator.SetFloat(SpeedHash, 2.0f);
@@ -641,7 +834,9 @@ namespace HoaVaMau.Gameplay
             mode = AnAnimationMode.ForceRun;
             if (animator != null)
             {
+                animator.speed = 1f;
                 animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsLedgeHangingHash, false);
                 animator.SetBool(IsCrouchingHash, false);
                 animator.SetBool(IsCrawlingHash, false);
                 animator.SetFloat(SpeedHash, 5.5f);
@@ -649,10 +844,30 @@ namespace HoaVaMau.Gameplay
             CrossFadeToState("Run", 0.12f);
         }
 
+        public void ForceLedgeHang()
+        {
+            mode = AnAnimationMode.ForceLedgeHang;
+            if (animator != null)
+            {
+                animator.speed = 1f;
+                animator.SetBool(IsClimbingHash, false);
+                animator.SetBool(IsLedgeHangingHash, true);
+                animator.SetBool(IsCrouchingHash, false);
+                animator.SetBool(IsCrawlingHash, false);
+            }
+            CrossFadeToState("LedgeHang", 0.12f);
+        }
+
         public void ForceClimb()
         {
             mode = AnAnimationMode.ForceClimb;
-            CrossFadeToState("Climb", 0.15f);
+            forceClimbPreviewTimer = 0f;
+            if (animator != null)
+            {
+                animator.SetBool(IsClimbingHash, true);
+                animator.SetBool(IsLedgeHangingHash, false);
+            }
+            CrossFadeToState("Climb", 0.10f);
         }
 
         public void ForceCrouch()
@@ -660,10 +875,23 @@ namespace HoaVaMau.Gameplay
             mode = AnAnimationMode.ForceCrouch;
             if (animator != null)
             {
+                animator.speed = 1f;
                 animator.SetBool(IsCrouchingHash, true);
                 animator.SetBool(IsCrawlingHash, false);
             }
             CrossFadeToState("Crouch", 0.15f);
+        }
+
+        public void ForceCrouchWalk()
+        {
+            mode = AnAnimationMode.ForceCrouchWalk;
+            if (animator != null)
+            {
+                animator.speed = 1f;
+                animator.SetBool(IsCrouchingHash, true);
+                animator.SetBool(IsCrawlingHash, false);
+            }
+            CrossFadeToState("CrouchWalk", 0.15f);
         }
 
         public void ForceCrawl()
@@ -671,6 +899,7 @@ namespace HoaVaMau.Gameplay
             mode = AnAnimationMode.ForceCrawl;
             if (animator != null)
             {
+                animator.speed = 1f;
                 animator.SetBool(IsCrouchingHash, true);
                 animator.SetBool(IsCrawlingHash, true);
             }
@@ -680,13 +909,14 @@ namespace HoaVaMau.Gameplay
         public void SetAutoMode()
         {
             mode = AnAnimationMode.Auto;
+            if (animator != null) animator.speed = 1f;
         }
 
         private void OnGUI()
         {
             if (!showOnScreenGui || !Application.isPlaying) return;
 
-            GUILayout.BeginArea(new Rect(20, 20, 360, 280), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(20, 20, 380, 320), GUI.skin.box);
             GUILayout.Label("<color=#38bdf8><b>🎮 ĐIỀU KHIỂN NHÂN VẬT AN (HOA VÀ MÁU)</b></color>", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 14 });
             GUILayout.Space(2);
 
@@ -696,7 +926,7 @@ namespace HoaVaMau.Gameplay
             GUILayout.Label($"Trạng thái hiện tại: <b>{modeText}</b>", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 13 });
             GUILayout.Space(4);
 
-            GUILayout.Label("• <b>A / D</b>: Đi bộ (Walk)\n• <b>Shift + A/D</b>: Chạy nhanh (Run)\n• <b>C / Ctrl / S</b>: Ngồi xổm (Crouch)\n• <b>Chui hang</b>: Tự động Bò trườn (Crawl)\n• <b>W khi bám gờ</b>: Leo trèo (Climb)", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 11 });
+            GUILayout.Label("• <b>A / D</b>: Đi bộ (Walk) | <b>Shift + A/D</b>: Chạy (Run)\n• <b>C / Ctrl / S</b>: Ngồi tại chỗ (Crouch)\n• <b>Ngồi + A/D</b>: Ngồi tiến về trước (CrouchWalk)\n• <b>Nhảy vào mép đá</b>: Bám vách đá (LedgeHang)\n• <b>W / Space khi bám vách</b>: Đồng bộ Leo lên (Climb)", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 11 });
             GUILayout.Space(6);
 
             GUILayout.BeginHorizontal();
@@ -714,8 +944,16 @@ namespace HoaVaMau.Gameplay
             GUI.backgroundColor = (mode == AnAnimationMode.ForceCrouch) ? Color.yellow : Color.white;
             if (GUILayout.Button("4: Crouch (Ngồi)")) ForceCrouch();
 
+            GUI.backgroundColor = (mode == AnAnimationMode.ForceCrouchWalk) ? Color.yellow : Color.white;
+            if (GUILayout.Button("7: Ngồi đi tới")) ForceCrouchWalk();
+
             GUI.backgroundColor = (mode == AnAnimationMode.ForceCrawl) ? Color.yellow : Color.white;
             if (GUILayout.Button("5: Crawl (Bò)")) ForceCrawl();
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUI.backgroundColor = (mode == AnAnimationMode.ForceLedgeHang) ? Color.yellow : Color.white;
+            if (GUILayout.Button("6: LedgeHang (Bám vách đá)")) ForceLedgeHang();
             GUILayout.EndHorizontal();
 
             GUI.backgroundColor = (mode == AnAnimationMode.Auto) ? Color.cyan : Color.white;
@@ -731,11 +969,17 @@ namespace HoaVaMau.Gameplay
         [ContextMenu("Ép chạy: Run (Chạy nhanh)")]
         public void ContextMenu_PlayRun() => ForceRun();
 
+        [ContextMenu("Ép chạy: LedgeHang (Bám vách đá)")]
+        public void ContextMenu_PlayLedgeHang() => ForceLedgeHang();
+
         [ContextMenu("Ép chạy: Climb (Leo trèo)")]
         public void ContextMenu_PlayClimb() => ForceClimb();
 
-        [ContextMenu("Ép chạy: Crouch (Ngồi)")]
+        [ContextMenu("Ép chạy: Crouch (Ngồi tại chỗ)")]
         public void ContextMenu_PlayCrouch() => ForceCrouch();
+
+        [ContextMenu("Ép chạy: CrouchWalk (Ngồi tiến về trước)")]
+        public void ContextMenu_PlayCrouchWalk() => ForceCrouchWalk();
 
         [ContextMenu("Ép chạy: Crawl (Bò trườn)")]
         public void ContextMenu_PlayCrawl() => ForceCrawl();

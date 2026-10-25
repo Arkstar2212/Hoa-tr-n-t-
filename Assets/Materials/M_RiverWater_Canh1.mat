@@ -14,7 +14,6 @@ Material:
   m_ValidKeywords:
   - _ENABLECAUSTICS
   - _ENABLENORMAL
-  - _ENABLEPLANERREFLECTION
   - _ENABLEREFRACTION
   - _ENABLESHORELINE
   m_InvalidKeywords:
@@ -209,14 +208,14 @@ Material:
     - _Caustics_Pan: 1.4
     - _Caustics_Scale: 2.2
     - _Caustics_Start: 5
-    - _Caustics_Strength: 1.6
+    - _Caustics_Strength: 0.6
     - _ConformToGeometry: 1
     - _Cull: 2
     - _Depth_Distance: 1.26
     - _DistanceMaskFade: 10
     - _DistanceMaskStart: 15
-    - _DistanceMask_Fade: 10
-    - _DistanceMask_Start: 5
+    - _DistanceMask_Fade: 80
+    - _DistanceMask_Start: 80
     - _DistanceNormalStrength: 0
     - _DistanceNormalTile: 5.54
     - _DistortionScale: 2
@@ -224,7 +223,7 @@ Material:
     - _ENABLECAUSTICS: 1
     - _ENABLEINTERSECTION: 0
     - _ENABLENORMAL: 1
-    - _ENABLEPLANERREFLECTION: 1
+    - _ENABLEPLANERREFLECTION: 0
     - _ENABLEREFRACTION: 1
     - _ENABLESHORELINE: 1
     - _ENABLESURFACEFOAM: 0
@@ -293,7 +292,7 @@ Material:
     - _ReflectionFresnelStrength: 0.3
     - _Reflection_Distortion: 1.25
     - _Reflection_Fresnel: 6
-    - _Reflection_Strength: 0.875
+    - _Reflection_Strength: 0
     - _RefractionFadeDistance: 0.5
     - _RefractionStrength: 1
     - _Refraction_Distace_Mask: 10
@@ -407,8 +406,8 @@ Material:
     m_Colors:
     - _1st_Wave_Direction: {r: 1, g: 0, b: 0, a: 0}
     - _2nd_Wave_Direction: {r: -1, g: 0, b: 1, a: 0}
-    - _Color_Deep: {r: 0, g: 0.22, b: 0.52, a: 0.95}
-    - _Color_Shallow: {r: 0.04, g: 0.85, b: 0.98, a: 0.45}
+    - _Color_Deep: {r: 0.08, g: 0.25, b: 0.35, a: 0.95}
+    - _Color_Shallow: {r: 0.14, g: 0.38, b: 0.45, a: 0.8}
     - _Deep_Color: {r: 0, g: 0.09093038, b: 0.674, a: 0.95686275}
     - _DistanceColor: {r: 1, g: 1, b: 1, a: 1}
     - _FarColor: {r: 0.15966535, g: 0.6787135, b: 0.8679245, a: 0}
