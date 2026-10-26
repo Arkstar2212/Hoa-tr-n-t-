@@ -454,19 +454,25 @@ namespace HoaVaMau.Gameplay
                 }
                 else if (playerController.CurrentState == PlayerState.RopeGrab || playerController.CurrentState == PlayerState.RopeClimb)
                 {
-                    // Đang bám hoặc leo dây thừng
+                    // Đang bám hoặc leo dây thừng (Rope mechanics)
                     throwPhase = ThrowAnimPhase.None;
                     float vertInput = (playerController.InputReader != null) ? playerController.InputReader.Vertical : 0f;
-                    CrossFadeToState("RopeClimb", 0.10f);
 
-                    if (Mathf.Abs(vertInput) > 0.1f)
+                    if (vertInput > 0.1f)
                     {
-                        animator.speed = Mathf.Sign(vertInput) * 1.25f;
+                        CrossFadeToState("RopeClimbUp", 0.12f);
+                        animator.speed = 1.15f;
+                    }
+                    else if (vertInput < -0.1f)
+                    {
+                        CrossFadeToState("RopeClimbDown", 0.12f);
+                        animator.speed = 1.15f;
                     }
                     else
                     {
-                        // Giữ nguyên tư thế bám dây khi đung đưa
-                        animator.speed = 0f;
+                        // Bám lơ lửng / đung đưa trên dây thừng: chạy RopeHang tự nhiên, không bao giờ đóng băng speed = 0
+                        CrossFadeToState("RopeHang", 0.15f);
+                        animator.speed = 1.0f;
                     }
                     return;
                 }
@@ -594,7 +600,7 @@ namespace HoaVaMau.Gameplay
             }
             else
             {
-                if (currentPlayingState == "Climb" || currentPlayingState == "Jump" || currentPlayingState == "Fall" || currentPlayingState == "Throw" || currentPlayingState == "Land" || currentPlayingState == "LedgeHang" || currentPlayingState == "RopeClimb")
+                if (currentPlayingState == "Climb" || currentPlayingState == "Jump" || currentPlayingState == "Fall" || currentPlayingState == "Throw" || currentPlayingState == "Land" || currentPlayingState == "LedgeHang" || currentPlayingState == "RopeClimb" || currentPlayingState == "RopeHang" || currentPlayingState == "RopeClimbUp" || currentPlayingState == "RopeClimbDown")
                 {
                     string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
                     CrossFadeToState(next, 0.12f);

@@ -81,10 +81,13 @@ namespace HoaVaMau.Editor
 
             AudioClip track1 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Phat_Hien_Binh_Yen.mp3");
             AudioClip track2 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Pastoral_Alien.mp3");
+            AudioClip track3 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Breath of the World.mp3");
+            AudioClip track4 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haru Haru (Piano Cover).mp3");
             var musicList = new List<AudioClip>();
             if (track1 != null) musicList.Add(track1);
             if (track2 != null) musicList.Add(track2);
-            if (bgmClip != null && !musicList.Contains(bgmClip)) musicList.Add(bgmClip);
+            if (track3 != null) musicList.Add(track3);
+            if (track4 != null) musicList.Add(track4);
             sys.SetRandomMenuMusicClips(musicList.ToArray());
 
             CaptureStartMenuVerificationScreenshots(sys);
@@ -264,13 +267,24 @@ namespace HoaVaMau.Editor
             // 4. Unified Planet of Lana Borderless Framing Foliage & Drifting Sky Clouds on Start Menu
             DecorateStartMenuVistaWithLanaFoliage(oceanMaster.transform);
 
-            // Setup Start Menu System UI
+            // Setup Start Menu System UI with Verified Random DJ Mix Playlist
+            AudioClip track1 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Phat_Hien_Binh_Yen.mp3");
+            AudioClip track2 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Pastoral_Alien.mp3");
+            AudioClip track3 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Breath of the World.mp3");
+            AudioClip track4 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haru Haru (Piano Cover).mp3");
+            var menuPlaylist = new List<AudioClip>();
+            if (track1 != null) menuPlaylist.Add(track1);
+            if (track2 != null) menuPlaylist.Add(track2);
+            if (track3 != null) menuPlaylist.Add(track3);
+            if (track4 != null) menuPlaylist.Add(track4);
+
             var menuGO = GameObject.Find("00_UI_PlanetOfLana_StartMenu");
             if (menuGO != null) Object.DestroyImmediate(menuGO);
             menuGO = new GameObject("00_UI_PlanetOfLana_StartMenu");
 
             var sys = menuGO.AddComponent<PlanetOfLanaStartMenuSystem>();
-            sys.ConfigureAssets(studioLogoSpr, officialLogoSpr, flowerSpr, doveSpr, softDotSpr, boySpr, shipSpr, bgmClip, windClip, "New Scene 1_Overhaul", headphoneSpr);
+            sys.ConfigureAssets(studioLogoSpr, officialLogoSpr, flowerSpr, doveSpr, softDotSpr, boySpr, shipSpr, bgmClip, windClip, "New Scene 1_Overhaul", headphoneSpr, menuPlaylist.ToArray());
+            sys.SetRandomMenuMusicClips(menuPlaylist.ToArray());
             sys.SetMenuCameraSettings(new Vector3(0f, 0f, -10.0f), Vector3.zero, 35.5f);
             sys.RebuildUIImmediate();
 
@@ -1111,7 +1125,18 @@ namespace HoaVaMau.Editor
                 AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_HillsFields_Sunset.jpg")
             };
             sys.SetFallbackSlotThumbnails(fallbackThumbs);
-            sys.ConfigureAssets(studioLogoSpr, officialLogoSpr, flowerSpr, doveSpr, softDotSpr, boySpr, shipSpr, bgmClip, windClip, targetScene);
+            AudioClip track1 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Phat_Hien_Binh_Yen.mp3");
+            AudioClip track2 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Pastoral_Alien.mp3");
+            AudioClip track3 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Breath of the World.mp3");
+            AudioClip track4 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haru Haru (Piano Cover).mp3");
+            var menuPlaylist = new List<AudioClip>();
+            if (track1 != null) menuPlaylist.Add(track1);
+            if (track2 != null) menuPlaylist.Add(track2);
+            if (track3 != null) menuPlaylist.Add(track3);
+            if (track4 != null) menuPlaylist.Add(track4);
+
+            sys.ConfigureAssets(studioLogoSpr, officialLogoSpr, flowerSpr, doveSpr, softDotSpr, boySpr, shipSpr, bgmClip, windClip, targetScene, null, menuPlaylist.ToArray());
+            sys.SetRandomMenuMusicClips(menuPlaylist.ToArray());
             sys.RebuildUIImmediate();
             sys.SetPreviewState(PlanetOfLanaStartMenuSystem.MenuPhase.StartMenuOpenVista);
 

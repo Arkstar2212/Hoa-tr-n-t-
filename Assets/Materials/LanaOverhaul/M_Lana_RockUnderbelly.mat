@@ -36,8 +36,8 @@ Material:
     - _GrassMidColor: {r: 0.32999998, g: 0.45999992, b: 0.26999995, a: 1}
     - _GrassShadowColor: {r: 0.14999998, g: 0.29999998, b: 0.23999995, a: 1}
     - _GrassTopColor: {r: 0.7687868, g: 0.9924528, b: 0.589854, a: 1}
-    - _RockDarkColor: {r: 0.18, g: 0.22, b: 0.28, a: 1}
-    - _RockLightColor: {r: 0.44, g: 0.5, b: 0.56, a: 1}
-    - _RockMidColor: {r: 0.28, g: 0.34, b: 0.4, a: 1}
+    - _RockDarkColor: {r: 0.04, g: 0.05, b: 0.08, a: 1}
+    - _RockLightColor: {r: 0.12, g: 0.15, b: 0.2, a: 1}
+    - _RockMidColor: {r: 0.08, g: 0.1, b: 0.14, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

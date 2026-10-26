@@ -80,7 +80,9 @@ namespace HoaVaMau.Gameplay
         [SerializeField, Range(0f, 1f)] private float musicVolume = 0.65f;
         [SerializeField, Range(0f, 1f)] private float windVolume = 0.22f;
         [SerializeField, Range(0f, 1f)] private float sfxVolume = 0.45f;
-        [SerializeField] private float musicSmoothInDuration = 4.5f;
+        [SerializeField] private float musicSmoothInDuration = 3.5f;
+        [SerializeField] private float autoCrossfadeLeadDuration = 4.0f;
+        [SerializeField] private float musicCrossfadeDuration = 3.0f;
 
         [Header("Scenic Camera Settings")]
         [SerializeField] private Vector3 menuCameraPosition = new Vector3(0f, 0f, -10.0f);
@@ -92,10 +94,25 @@ namespace HoaVaMau.Gameplay
         private float currentMusicFadeVol = 0f;
         private bool isMusicPlaying = false;
 
-        // Audio Sources
-        private AudioSource musicSource;
+        // Dual Music Sources for True Seamless DJ Crossfading & Shuffle
+        private AudioSource musicSourceA;
+        private AudioSource musicSourceB;
+        private bool isUsingSourceA = true;
+        private Coroutine activeCrossfadeCoroutine;
+        private bool isCrossfading = false;
+        private readonly List<AudioClip> activePlaylist = new List<AudioClip>();
+        private int currentTrackIndex = -1;
+
         private AudioSource windSource;
         private AudioSource sfxSource;
+
+        private AudioSource ActiveMusicSource => isUsingSourceA ? musicSourceA : musicSourceB;
+        private AudioSource InactiveMusicSource => isUsingSourceA ? musicSourceB : musicSourceA;
+
+        // Now Playing Toast Widget
+        private CanvasGroup toastGroup;
+        private Text toastText;
+        private float toastTimer = 0f;
 
         // Runtime Canvas & Panels
         private Canvas rootCanvas;
@@ -280,72 +297,339 @@ namespace HoaVaMau.Gameplay
 
         private void SetupAudioSources()
         {
-            if (musicSource == null)
+            var sources = GetComponents<AudioSource>();
+
+            // Assign or create exactly 4 AudioSources:
+            // 0: musicSourceA (DJ deck 1)
+            // 1: musicSourceB (DJ deck 2)
+            // 2: windSource (ambient wind loop)
+            // 3: sfxSource (UI clicks & chimes)
+            musicSourceA = sources.Length > 0 ? sources[0] : gameObject.AddComponent<AudioSource>();
+            musicSourceB = sources.Length > 1 ? sources[1] : gameObject.AddComponent<AudioSource>();
+            windSource   = sources.Length > 2 ? sources[2] : gameObject.AddComponent<AudioSource>();
+            sfxSource    = sources.Length > 3 ? sources[3] : gameObject.AddComponent<AudioSource>();
+
+            // Clean up any extra redundant AudioSources if count > 4 to prevent clutter
+            if (sources.Length > 4)
             {
-                musicSource = gameObject.AddComponent<AudioSource>();
-                musicSource.loop = false; // Allow smooth transition/cycling between playlist tracks
-                musicSource.playOnAwake = false;
-                musicSource.volume = 0f;
+                for (int i = 4; i < sources.Length; i++)
+                {
+                    if (Application.isPlaying) Destroy(sources[i]);
+                    else DestroyImmediate(sources[i]);
+                }
             }
 
-            if (windSource == null)
-            {
-                windSource = gameObject.AddComponent<AudioSource>();
-                windSource.loop = true;
-                windSource.playOnAwake = false;
-                windSource.volume = 0f;
-            }
+            ConfigureAudioSource(musicSourceA, loop: false, volume: 0f);
+            ConfigureAudioSource(musicSourceB, loop: false, volume: 0f);
+            ConfigureAudioSource(windSource, loop: true, volume: 0f);
+            ConfigureAudioSource(sfxSource, loop: false, volume: sfxVolume);
 
-            if (sfxSource == null)
-            {
-                sfxSource = gameObject.AddComponent<AudioSource>();
-                sfxSource.playOnAwake = false;
-            }
-
-            SelectRandomMenuMusic();
-
-            if (mainMenuMusicClip != null) musicSource.clip = mainMenuMusicClip;
             if (ambientWindClip != null) windSource.clip = ambientWindClip;
+
+            BuildActivePlaylist();
+            PrepareNextTrackImmediate(isFirstStartup: true);
+        }
+
+        private void ConfigureAudioSource(AudioSource src, bool loop, float volume)
+        {
+            if (src == null) return;
+            src.loop = loop;
+            src.playOnAwake = false;
+            src.volume = volume;
+        }
+
+        public void BuildActivePlaylist()
+        {
+            activePlaylist.Clear();
+
+            // 1. Add explicitly serialized randomMenuMusicClips
+            if (randomMenuMusicClips != null && randomMenuMusicClips.Length > 0)
+            {
+                for (int i = 0; i < randomMenuMusicClips.Length; i++)
+                {
+                    var clip = randomMenuMusicClips[i];
+                    if (clip != null && !activePlaylist.Contains(clip))
+                    {
+                        activePlaylist.Add(clip);
+                    }
+                }
+            }
+
+#if UNITY_EDITOR
+            // 2. Editor & Play Mode Guarantee: Automatically discover official tracks if missing
+            if (activePlaylist.Count < 2)
+            {
+                string[] searchPaths = new[]
+                {
+                    "Assets/Audio/Phat_Hien_Binh_Yen.mp3",
+                    "Assets/Audio/Pastoral_Alien.mp3",
+                    "Assets/Audio/Breath of the World.mp3",
+                    "Assets/Audio/Haru Haru (Piano Cover).mp3"
+                };
+                foreach (var path in searchPaths)
+                {
+                    var c = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                    if (c != null && !activePlaylist.Contains(c))
+                    {
+                        activePlaylist.Add(c);
+                    }
+                }
+                if (randomMenuMusicClips == null || randomMenuMusicClips.Length == 0)
+                {
+                    randomMenuMusicClips = activePlaylist.ToArray();
+                }
+            }
+#endif
+
+            // Fallback to mainMenuMusicClip if playlist still empty
+            if (activePlaylist.Count == 0 && mainMenuMusicClip != null)
+            {
+                activePlaylist.Add(mainMenuMusicClip);
+            }
         }
 
         public void SetRandomMenuMusicClips(AudioClip[] clips)
         {
             randomMenuMusicClips = clips;
-            SelectRandomMenuMusic();
+            BuildActivePlaylist();
+            PrepareNextTrackImmediate(isFirstStartup: true);
         }
 
-        private void SelectRandomMenuMusic()
+        private AudioClip GetNextRandomClip(out int newIndex, bool isInitial = false)
         {
-            if (randomMenuMusicClips != null && randomMenuMusicClips.Length > 0)
+            if (activePlaylist.Count == 0) BuildActivePlaylist();
+
+            if (activePlaylist.Count == 0)
             {
-                var valid = new List<AudioClip>();
-                for (int i = 0; i < randomMenuMusicClips.Length; i++)
-                {
-                    if (randomMenuMusicClips[i] != null) valid.Add(randomMenuMusicClips[i]);
-                }
-                if (valid.Count > 0)
-                {
-                    int idx = UnityEngine.Random.Range(0, valid.Count);
-                    mainMenuMusicClip = valid[idx];
-                    if (musicSource != null) musicSource.clip = mainMenuMusicClip;
-                    return;
-                }
+                newIndex = -1;
+                return mainMenuMusicClip;
             }
 
-#if UNITY_EDITOR
-            var track1 = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Phat_Hien_Binh_Yen.mp3");
-            var track2 = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Pastoral_Alien.mp3");
-            var list = new List<AudioClip>();
-            if (track1 != null) list.Add(track1);
-            if (track2 != null) list.Add(track2);
-            if (list.Count > 0)
+            if (activePlaylist.Count == 1)
             {
-                randomMenuMusicClips = list.ToArray();
-                mainMenuMusicClip = list[UnityEngine.Random.Range(0, list.Count)];
-                if (musicSource != null) musicSource.clip = mainMenuMusicClip;
+                newIndex = 0;
+                return activePlaylist[0];
+            }
+
+            // Shuffle rule: Must NEVER play the same track back-to-back!
+            int nextIdx;
+            int attempts = 0;
+            do
+            {
+                nextIdx = UnityEngine.Random.Range(0, activePlaylist.Count);
+                attempts++;
+            } while (nextIdx == currentTrackIndex && attempts < 30);
+
+            if (nextIdx == currentTrackIndex)
+            {
+                nextIdx = (currentTrackIndex + 1) % activePlaylist.Count;
+            }
+
+            newIndex = nextIdx;
+            return activePlaylist[nextIdx];
+        }
+
+        private void PrepareNextTrackImmediate(bool isFirstStartup = false)
+        {
+            AudioClip clip = GetNextRandomClip(out currentTrackIndex, isInitial: isFirstStartup);
+            if (clip != null)
+            {
+                mainMenuMusicClip = clip;
+                var src = ActiveMusicSource;
+                if (src != null)
+                {
+                    src.clip = clip;
+                    src.time = 0f;
+                    src.volume = 0f;
+                    src.loop = false;
+                }
+            }
+        }
+
+        public void StartPlayingMenuMusic()
+        {
+            if (isMusicPlaying) return;
+
+            var activeSrc = ActiveMusicSource;
+            if (activeSrc == null) return;
+
+            if (activeSrc.clip == null)
+            {
+                PrepareNextTrackImmediate(isFirstStartup: true);
+            }
+
+            if (activeSrc.clip != null)
+            {
+                activeSrc.volume = 0f;
+                activeSrc.time = 0f;
+                activeSrc.loop = false;
+                activeSrc.Play();
+                isMusicPlaying = true;
+                currentMusicFadeVol = 0f;
+
+                ShowNowPlayingToast(GetTrackDisplayName(activeSrc.clip));
+                Debug.Log($"<color=#38bdf8>[StartMenu Audio]</color> <b>Playing Initial Random Track:</b> {activeSrc.clip.name} ({activeSrc.clip.length:F1}s)");
+            }
+        }
+
+        public void CrossfadeToNextRandomTrack(float duration = -1f)
+        {
+            if (duration <= 0f) duration = musicCrossfadeDuration;
+
+            if (!gameObject.activeInHierarchy || !enabled)
+            {
+                var nextClip = GetNextRandomClip(out currentTrackIndex);
+                var activeSrc = ActiveMusicSource;
+                if (activeSrc != null && nextClip != null)
+                {
+                    activeSrc.clip = nextClip;
+                    activeSrc.Play();
+                    activeSrc.volume = musicVolume;
+                    mainMenuMusicClip = nextClip;
+                }
                 return;
             }
+
+            if (activeCrossfadeCoroutine != null)
+            {
+                StopCoroutine(activeCrossfadeCoroutine);
+            }
+            activeCrossfadeCoroutine = StartCoroutine(CrossfadeRoutine(duration));
+        }
+
+        private IEnumerator CrossfadeRoutine(float duration)
+        {
+            isCrossfading = true;
+
+            var fromSource = ActiveMusicSource;
+            var toSource = InactiveMusicSource;
+
+            AudioClip nextClip = GetNextRandomClip(out currentTrackIndex);
+            if (nextClip == null || toSource == null)
+            {
+                isCrossfading = false;
+                activeCrossfadeCoroutine = null;
+                yield break;
+            }
+
+            mainMenuMusicClip = nextClip;
+            toSource.clip = nextClip;
+            toSource.time = 0f;
+            toSource.volume = 0f;
+            toSource.loop = false;
+            toSource.Play();
+
+            ShowNowPlayingToast(GetTrackDisplayName(nextClip));
+            Debug.Log($"<color=#10b981>[StartMenu Audio DJ Mix]</color> <b>Crossfading To Next Random Track:</b> {nextClip.name} ({nextClip.length:F1}s) over {duration:F1}s");
+
+            float timer = 0f;
+            float fromStartVol = fromSource != null ? fromSource.volume : 0f;
+
+            while (timer < duration)
+            {
+                timer += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(timer / duration);
+
+                if (fromSource != null && fromSource.isPlaying)
+                {
+                    fromSource.volume = Mathf.Lerp(fromStartVol, 0f, t);
+                }
+
+                if (toSource != null)
+                {
+                    toSource.volume = Mathf.Lerp(0f, musicVolume, Mathf.SmoothStep(0f, 1f, t));
+                }
+
+                yield return null;
+            }
+
+            if (fromSource != null)
+            {
+                fromSource.Stop();
+                fromSource.volume = 0f;
+            }
+
+            if (toSource != null)
+            {
+                toSource.volume = musicVolume;
+            }
+
+            // Swap active source
+            isUsingSourceA = !isUsingSourceA;
+            isCrossfading = false;
+            activeCrossfadeCoroutine = null;
+        }
+
+        private void StopAllMenuMusicImmediate()
+        {
+            if (activeCrossfadeCoroutine != null)
+            {
+                StopCoroutine(activeCrossfadeCoroutine);
+                activeCrossfadeCoroutine = null;
+            }
+            isCrossfading = false;
+
+            if (musicSourceA != null)
+            {
+                musicSourceA.Stop();
+                musicSourceA.volume = 0f;
+            }
+            if (musicSourceB != null)
+            {
+                musicSourceB.Stop();
+                musicSourceB.volume = 0f;
+            }
+            isMusicPlaying = false;
+            currentMusicFadeVol = 0f;
+        }
+
+        private void ApplyMusicVolumeToSources()
+        {
+            if (musicSourceA != null && musicSourceA.isPlaying)
+            {
+                musicSourceA.volume = isCrossfading ? musicSourceA.volume : (isUsingSourceA ? musicVolume * currentMusicFadeVol : 0f);
+            }
+            if (musicSourceB != null && musicSourceB.isPlaying)
+            {
+                musicSourceB.volume = isCrossfading ? musicSourceB.volume : (!isUsingSourceA ? musicVolume * currentMusicFadeVol : 0f);
+            }
+        }
+
+        public void ShowNowPlayingToast(string title)
+        {
+            if (toastText != null)
+            {
+                toastText.text = $"♪  {title}   <size=11><color=#a3a3a3>[N: Đổi bài]</color></size>";
+            }
+            toastTimer = 5.0f;
+        }
+
+        private string GetTrackDisplayName(AudioClip clip)
+        {
+            if (clip == null) return "";
+            string n = clip.name;
+            if (n.Contains("Phat_Hien_Binh_Yen") || n.Contains("Phát Hiện Bình Yên")) return "Phát Hiện Bình Yên";
+            if (n.Contains("Pastoral_Alien") || n.Contains("Pastoral Alien")) return "Pastoral Alien";
+            if (n.Contains("Breath of the World")) return "Breath of the World";
+            if (n.Contains("Haru Haru")) return "Haru Haru (Piano Cover)";
+            return n.Replace('_', ' ');
+        }
+
+        private bool IsNextTrackHotkeyPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.nKey.wasPressedThisFrame || Keyboard.current.mKey.wasPressedThisFrame) return true;
+            }
+            if (Gamepad.current != null)
+            {
+                if (Gamepad.current.rightShoulder.wasPressedThisFrame) return true;
+            }
+#else
+            if (Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.M)) return true;
 #endif
+            return false;
         }
 
         public void ConfigureAssets(
@@ -359,7 +643,7 @@ namespace HoaVaMau.Gameplay
             string gameplayScene = "",
             Sprite headphoneSpr = null)
         {
-            ConfigureAssets(studioSprite, officialGameLogo, flowerSprite, doveSprite, dotSprite, null, null, bgmClip, windClip, gameplayScene);
+            ConfigureAssets(studioSprite, officialGameLogo, flowerSprite, doveSprite, dotSprite, null, null, bgmClip, windClip, gameplayScene, headphoneSpr, null);
         }
 
         public void ConfigureAssets(
@@ -373,7 +657,8 @@ namespace HoaVaMau.Gameplay
             AudioClip bgmClip,
             AudioClip windClip,
             string gameplayScene = "",
-            Sprite headphoneSpr = null)
+            Sprite headphoneSpr = null,
+            AudioClip[] playlistClips = null)
         {
             studioLogoSprite = studioSprite;
             gameOfficialLogoSprite = officialGameLogo;
@@ -385,6 +670,7 @@ namespace HoaVaMau.Gameplay
             if (headphoneSpr != null) headphoneSprite = headphoneSpr;
             mainMenuMusicClip = bgmClip;
             ambientWindClip = windClip;
+            if (playlistClips != null && playlistClips.Length > 0) randomMenuMusicClips = playlistClips;
             if (!string.IsNullOrEmpty(gameplayScene)) targetGameplaySceneName = gameplayScene;
 
             SetupAudioSources();
@@ -491,13 +777,7 @@ namespace HoaVaMau.Gameplay
                     if (overwriteDialogGroup != null) overwriteDialogGroup.gameObject.SetActive(false);
                     if (botwLoadingGroup != null) botwLoadingGroup.gameObject.SetActive(false);
 
-                    if (musicSource != null)
-                    {
-                        musicSource.Stop();
-                        musicSource.volume = 0f;
-                    }
-                    isMusicPlaying = false;
-                    currentMusicFadeVol = 0f;
+                    StopAllMenuMusicImmediate();
                     break;
 
                 case MenuPhase.TeamLoadingScreen:
@@ -517,7 +797,7 @@ namespace HoaVaMau.Gameplay
                     if (optionsModalGroup != null) optionsModalGroup.gameObject.SetActive(false);
                     if (botwLoadingGroup != null) botwLoadingGroup.gameObject.SetActive(false);
 
-                    if (musicSource != null) musicSource.Stop();
+                    StopAllMenuMusicImmediate();
                     break;
 
                 case MenuPhase.HeadphoneScreen:
@@ -550,7 +830,7 @@ namespace HoaVaMau.Gameplay
                     if (optionsModalGroup != null) optionsModalGroup.gameObject.SetActive(false);
                     if (botwLoadingGroup != null) botwLoadingGroup.gameObject.SetActive(false);
 
-                    if (musicSource != null) musicSource.Stop();
+                    StopAllMenuMusicImmediate();
                     break;
                 case MenuPhase.StartMenuOpenVista:
                     if (teamLoadingGroup != null)
@@ -585,12 +865,7 @@ namespace HoaVaMau.Gameplay
 
                     RefreshContinueButtonState();
 
-                    if (musicSource != null && !musicSource.isPlaying && mainMenuMusicClip != null)
-                    {
-                        musicSource.volume = 0f;
-                        musicSource.Play();
-                        isMusicPlaying = true;
-                    }
+                    StartPlayingMenuMusic();
                     if (windSource != null && !windSource.isPlaying && ambientWindClip != null)
                     {
                         windSource.volume = windVolume * 0.7f;
@@ -720,6 +995,7 @@ namespace HoaVaMau.Gameplay
             }
 
             UpdateAudioLifecycle(dt);
+            UpdateMusicToast(dt);
             UpdateAutosaveWidget(dt);
             UpdateScenicCamera(dt);
         }
@@ -997,49 +1273,75 @@ namespace HoaVaMau.Gameplay
                 blackCurtainGroup.alpha = Mathf.MoveTowards(blackCurtainGroup.alpha, 1f, dt * 1.8f);
             }
 
-            if (musicSource != null)
-            {
-                musicSource.volume = Mathf.MoveTowards(musicSource.volume, 0f, dt * (musicVolume / 1.2f));
-            }
+            if (musicSourceA != null) musicSourceA.volume = Mathf.MoveTowards(musicSourceA.volume, 0f, dt * (musicVolume / 1.2f));
+            if (musicSourceB != null) musicSourceB.volume = Mathf.MoveTowards(musicSourceB.volume, 0f, dt * (musicVolume / 1.2f));
         }
 
         private void UpdateAudioLifecycle(float dt)
         {
             if (currentPhase == MenuPhase.StartMenuOpenVista || currentPhase == MenuPhase.SaveSlotSelection || currentPhase == MenuPhase.Options)
             {
-                if (isMusicPlaying && musicSource != null)
+                if (isMusicPlaying)
                 {
-                    if (!musicSource.isPlaying && musicSource.clip != null)
+                    var currentSource = ActiveMusicSource;
+                    if (currentSource != null && currentSource.clip != null)
                     {
-                        // Track naturally ended; select next random track and start playing
-                        SelectRandomMenuMusic();
-                        if (musicSource.clip != null)
+                        // Auto-advance check: when nearing end of track or if playback stalled/ended
+                        if (!isCrossfading)
                         {
-                            currentMusicFadeVol = 0.25f;
-                            musicSource.volume = 0f;
-                            musicSource.Play();
+                            if (currentSource.isPlaying)
+                            {
+                                float remaining = currentSource.clip.length - currentSource.time;
+                                if (remaining <= autoCrossfadeLeadDuration && currentSource.time > 10.0f)
+                                {
+                                    CrossfadeToNextRandomTrack(musicCrossfadeDuration);
+                                }
+                            }
+                            else if (currentSource.time >= currentSource.clip.length - 0.5f || currentSource.time == 0f)
+                            {
+                                CrossfadeToNextRandomTrack(1.5f);
+                            }
+                        }
+
+                        // Smooth initial volume fade in
+                        if (!isCrossfading)
+                        {
+                            currentMusicFadeVol = Mathf.MoveTowards(currentMusicFadeVol, 1f, dt / Mathf.Max(0.1f, musicSmoothInDuration));
+                            currentSource.volume = musicVolume * Mathf.SmoothStep(0f, 1f, currentMusicFadeVol);
                         }
                     }
-
-                    currentMusicFadeVol = Mathf.MoveTowards(currentMusicFadeVol, 1f, dt / Mathf.Max(0.1f, musicSmoothInDuration));
-                    musicSource.volume = musicVolume * Mathf.SmoothStep(0f, 1f, currentMusicFadeVol);
                 }
 
                 if (windSource != null && windSource.isPlaying)
                 {
                     windSource.volume = windVolume;
                 }
+
+                // Hotkey: Check for 'N' or 'M' to skip to next random track anytime!
+                if (IsNextTrackHotkeyPressed())
+                {
+                    CrossfadeToNextRandomTrack(1.5f);
+                }
             }
-            else if (currentPhase == MenuPhase.BotWLoadingScreen)
+            else if (currentPhase == MenuPhase.BotWLoadingScreen || currentPhase == MenuPhase.TransitionToGameplay)
             {
-                if (musicSource != null)
-                {
-                    musicSource.volume = Mathf.MoveTowards(musicSource.volume, 0f, dt * 0.6f);
-                }
-                if (windSource != null)
-                {
-                    windSource.volume = Mathf.MoveTowards(windSource.volume, 0f, dt * 0.6f);
-                }
+                if (musicSourceA != null) musicSourceA.volume = Mathf.MoveTowards(musicSourceA.volume, 0f, dt * 0.8f);
+                if (musicSourceB != null) musicSourceB.volume = Mathf.MoveTowards(musicSourceB.volume, 0f, dt * 0.8f);
+                if (windSource != null) windSource.volume = Mathf.MoveTowards(windSource.volume, 0f, dt * 0.8f);
+            }
+        }
+
+        private void UpdateMusicToast(float dt)
+        {
+            if (toastGroup == null) return;
+            if (toastTimer > 0f)
+            {
+                toastTimer -= dt;
+                toastGroup.alpha = Mathf.MoveTowards(toastGroup.alpha, 0.95f, dt * 3.5f);
+            }
+            else
+            {
+                toastGroup.alpha = Mathf.MoveTowards(toastGroup.alpha, 0f, dt * 1.5f);
             }
         }
 
@@ -1524,7 +1826,7 @@ namespace HoaVaMau.Gameplay
         private void OnMusicVolumeChanged(float val)
         {
             musicVolume = val;
-            if (musicSource != null) musicSource.volume = musicVolume * currentMusicFadeVol;
+            ApplyMusicVolumeToSources();
             if (musicVolValText != null) musicVolValText.text = $"{Mathf.RoundToInt(val * 100f)}%";
         }
 
@@ -2016,6 +2318,31 @@ namespace HoaVaMau.Gameplay
                 if (i == 1) continueButtonItem = item;
                 menuButtons.Add(item);
             }
+
+            // Now Playing Toast Widget (Bottom-Left Corner)
+            var toastGO = CreateRect("Music_NowPlaying_Toast", panelRect);
+            toastGO.anchorMin = toastGO.anchorMax = new Vector2(0f, 0f);
+            toastGO.pivot = new Vector2(0f, 0f);
+            toastGO.anchoredPosition = new Vector2(40f, 32f);
+            toastGO.sizeDelta = new Vector2(500f, 36f);
+
+            toastGroup = toastGO.gameObject.AddComponent<CanvasGroup>();
+            toastGroup.alpha = 0f;
+            toastGroup.blocksRaycasts = false;
+            toastGroup.interactable = false;
+
+            var toastTxtGO = CreateRect("ToastText", toastGO);
+            StretchFull(toastTxtGO);
+            toastText = toastTxtGO.gameObject.AddComponent<Text>();
+            toastText.font = font;
+            toastText.fontSize = 13;
+            toastText.fontStyle = FontStyle.Normal;
+            toastText.alignment = TextAnchor.MiddleLeft;
+            toastText.color = new Color(0.96f, 0.94f, 0.88f, 0.90f);
+            toastText.text = "";
+            var toastShadow = toastTxtGO.gameObject.AddComponent<Shadow>();
+            toastShadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            toastShadow.effectDistance = new Vector2(1f, -1f);
         }
 
         private void BuildSaveSlotModal(Transform parent, Font font)
