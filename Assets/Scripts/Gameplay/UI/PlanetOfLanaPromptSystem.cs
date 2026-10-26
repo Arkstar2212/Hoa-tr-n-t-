@@ -74,7 +74,7 @@ namespace HoaVaMau.Gameplay
             // If tracking an in-world object, project to screen coordinates
             if (trackedWorldTarget != null && Camera.main != null)
             {
-                Vector3 screenPos = Camera.main.WorldToScreenPoint(trackedWorldTarget.position + screenOffset * 0.01f);
+                Vector3 screenPos = Camera.main.WorldToScreenPoint(trackedWorldTarget.position + Vector3.up * 1.5f) + screenOffset;
                 if (screenPos.z > 0)
                 {
                     promptRootRect.position = screenPos;
@@ -205,7 +205,12 @@ namespace HoaVaMau.Gameplay
             fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            Font arialFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            Font promptFont = null;
+            try { promptFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); } catch { }
+            if (promptFont == null)
+            {
+                try { promptFont = Resources.GetBuiltinResource<Font>("Arial.ttf"); } catch { }
+            }
 
             // 1. Key Badge (Solid White Pill with Dark Key Icon)
             GameObject keyBadgeGo = new GameObject("KeyBadge", typeof(Image), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter));
@@ -223,7 +228,7 @@ namespace HoaVaMau.Gameplay
             GameObject keyTextGo = new GameObject("KeyText", typeof(Text));
             keyTextGo.transform.SetParent(keyBadgeGo.transform, false);
             keyCapText = keyTextGo.GetComponent<Text>();
-            keyCapText.font = arialFont;
+            keyCapText.font = promptFont;
             keyCapText.fontSize = 15;
             keyCapText.fontStyle = FontStyle.Bold;
             keyCapText.alignment = TextAnchor.MiddleCenter;
@@ -246,7 +251,7 @@ namespace HoaVaMau.Gameplay
             GameObject actTextGo = new GameObject("ActionText", typeof(Text));
             actTextGo.transform.SetParent(actionGo.transform, false);
             actionLabelText = actTextGo.GetComponent<Text>();
-            actionLabelText.font = arialFont;
+            actionLabelText.font = promptFont;
             actionLabelText.fontSize = 14;
             actionLabelText.alignment = TextAnchor.MiddleCenter;
             actionLabelText.color = new Color(0.95f, 0.95f, 0.95f, 0.95f);
@@ -254,3 +259,4 @@ namespace HoaVaMau.Gameplay
         }
     }
 }
+

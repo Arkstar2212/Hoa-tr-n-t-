@@ -112,20 +112,25 @@ namespace HoaVaMau.Gameplay
             lineRenderer = GetComponent<LineRenderer>();
             if (lineRenderer == null) lineRenderer = gameObject.AddComponent<LineRenderer>();
 
-            Shader litShader = Shader.Find("Universal Render Pipeline/Lit");
-            if (litShader == null) litShader = Shader.Find("Standard");
+            Shader ropeShader = Shader.Find("Universal Render Pipeline/Unlit")
+                             ?? Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                             ?? Shader.Find("Sprites/Default");
 
             if (ropeMaterial == null)
             {
-                ropeMaterial = new Material(litShader) { name = "Mat_RopeHemp", color = ropeColor };
+                ropeMaterial = new Material(ropeShader) { name = "Mat_RopeHemp" };
+                if (ropeMaterial.HasProperty("_BaseColor")) ropeMaterial.SetColor("_BaseColor", ropeColor);
+                if (ropeMaterial.HasProperty("_Color")) ropeMaterial.SetColor("_Color", ropeColor);
             }
 
             lineRenderer.material = ropeMaterial;
+            lineRenderer.sharedMaterial = ropeMaterial;
             lineRenderer.startWidth = ropeVisualWidth;
-            lineRenderer.endWidth = ropeVisualWidth * 0.85f;
+            lineRenderer.endWidth = ropeVisualWidth * 0.88f;
             lineRenderer.startColor = ropeColor;
-            lineRenderer.endColor = ropeColor * 0.9f;
+            lineRenderer.endColor = ropeColor;
             lineRenderer.useWorldSpace = true;
+            lineRenderer.sortingOrder = 25;
             lineRenderer.numCapVertices = 6;
             lineRenderer.numCornerVertices = 4;
             lineRenderer.positionCount = nodeCount;

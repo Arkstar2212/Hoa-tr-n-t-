@@ -69,9 +69,23 @@ namespace HoaVaMau.Editor
             }
             else
             {
+                Texture2D[] fallbackThumbs = new Texture2D[] {
+                    AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_MainSkyHills_Official.png"),
+                    AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_CoastalBay_Day.jpg"),
+                    AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_HillsFields_Sunset.jpg")
+                };
+                sys.SetFallbackSlotThumbnails(fallbackThumbs);
                 sys.ConfigureAssets(studioLogoSpr, officialLogoSpr, flowerSpr, doveSpr, softDotSpr, boySpr, shipSpr, bgmClip, windClip, "New Scene 1_Overhaul");
                 sys.RebuildUIImmediate();
             }
+
+            AudioClip track1 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Phat_Hien_Binh_Yen.mp3");
+            AudioClip track2 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Pastoral_Alien.mp3");
+            var musicList = new List<AudioClip>();
+            if (track1 != null) musicList.Add(track1);
+            if (track2 != null) musicList.Add(track2);
+            if (bgmClip != null && !musicList.Contains(bgmClip)) musicList.Add(bgmClip);
+            sys.SetRandomMenuMusicClips(musicList.ToArray());
 
             CaptureStartMenuVerificationScreenshots(sys);
             sys.SetPreviewState(PlanetOfLanaStartMenuSystem.MenuPhase.StartMenuOpenVista);
@@ -1091,6 +1105,12 @@ namespace HoaVaMau.Editor
             rootGO.transform.SetAsFirstSibling();
 
             var sys = rootGO.AddComponent<PlanetOfLanaStartMenuSystem>();
+            Texture2D[] fallbackThumbs = new Texture2D[] {
+                AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_MainSkyHills_Official.png"),
+                AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_CoastalBay_Day.jpg"),
+                AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_HillsFields_Sunset.jpg")
+            };
+            sys.SetFallbackSlotThumbnails(fallbackThumbs);
             sys.ConfigureAssets(studioLogoSpr, officialLogoSpr, flowerSpr, doveSpr, softDotSpr, boySpr, shipSpr, bgmClip, windClip, targetScene);
             sys.RebuildUIImmediate();
             sys.SetPreviewState(PlanetOfLanaStartMenuSystem.MenuPhase.StartMenuOpenVista);
@@ -1189,8 +1209,8 @@ namespace HoaVaMau.Editor
                 Debug.Log($"<color=#38bdf8>[StartMenu Capture]</color> Saved verification screenshot: {fileName}");
             };
 
-            // Ensure dummy save slot data exists for realistic Continue and Save selection preview
-            HoaVaMauSaveSystem.SaveCurrentGameState(1, "Chương 1: Đất Đỏ Cà Mau", "Rừng Sớm Cà Mau", 0, new Vector3(-4.0f, -1.85f, 0f));
+            // Ensure dummy save slot data exists for realistic Continue and Save selection preview (without capturing in edit mode)
+            HoaVaMauSaveSystem.SaveCurrentGameState(1, "Chương 1: Đất Đỏ Cà Mau", "Rừng Sớm Cà Mau", 0, new Vector3(-4.0f, -1.85f, 0f), captureThumbnail: false);
 
             // 1. State B: Team Loading Screen (Five Cows centered, Bird loader in bottom-right corner)
             capturePhase(1, "StartMenu_01_TeamLoading_FiveCowsInTheFire.png", PlanetOfLanaStartMenuSystem.MenuPhase.TeamLoadingScreen, true, 1280, 720, null);

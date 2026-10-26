@@ -42,7 +42,7 @@ namespace HoaVaMau
 
         [Header("Global Settings")]
         [Tooltip("Base reference camera position where backgrounds are perfectly aligned.")]
-        [SerializeField] private Vector3 referenceCameraPosition = new Vector3(-0.20f, 0.35f, -13.5f);
+        [SerializeField] private Vector3 referenceCameraPosition = new Vector3(0.0f, 0.35f, -13.5f);
         [SerializeField] private bool useCurrentCameraAsReferenceOnStart = false;
 
         [Header("Parallax Layers (Sky, Vistas, Clouds)")]
@@ -90,8 +90,11 @@ namespace HoaVaMau
             {
                 if (layer != null && layer.layerTransform != null)
                 {
-                    layer.initialWorldPos = layer.layerTransform.position;
-                    layer.initialLocalPos = layer.layerTransform.localPosition;
+                    // Keep initialWorldPos anchored to offset if already configured
+                    if (layer.initialWorldPos == Vector3.zero && layer.offset != Vector3.zero)
+                    {
+                        layer.initialWorldPos = layer.offset;
+                    }
                 }
             }
 
@@ -103,6 +106,8 @@ namespace HoaVaMau
             if (t == null) return;
             if (layers == null) layers = new List<LayerSettings>();
 
+            t.position = customOffset;
+
             // Avoid duplicates
             for (int i = 0; i < layers.Count; i++)
             {
@@ -112,6 +117,8 @@ namespace HoaVaMau
                     layers[i].followFactorX = factorX;
                     layers[i].followFactorY = factorY;
                     layers[i].offset = customOffset;
+                    layers[i].initialWorldPos = customOffset;
+                    layers[i].initialLocalPos = customOffset;
                     return;
                 }
             }
@@ -123,8 +130,8 @@ namespace HoaVaMau
                 followFactorX = factorX,
                 followFactorY = factorY,
                 offset = customOffset,
-                initialWorldPos = t.position,
-                initialLocalPos = t.localPosition
+                initialWorldPos = customOffset,
+                initialLocalPos = customOffset
             };
             layers.Add(newLayer);
         }

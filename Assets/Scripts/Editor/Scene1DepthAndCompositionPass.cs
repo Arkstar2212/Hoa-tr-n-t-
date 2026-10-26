@@ -204,10 +204,10 @@ namespace HoaVaMau.Editor
             AddRepoussoir(bush02, new Vector3(-6.70f, -2.25f, -1.75f), new Vector3(0.95f, 0.90f, 1.0f), -4f, darkSilhouette, 29);
 
             // 2. Top-Left Arching Canopy Silhouette: frames the sky view from above left
-            AddRepoussoir(tree01, new Vector3(-6.50f, 4.40f, -1.80f), new Vector3(0.60f, 0.60f, 1.0f), -20f, branchSilhouette, 31);
+            // Removed inverted full-tree repoussoir to prevent rectangular shadow bounding artifacts
 
             // 3. Top-Right Arching Branch Silhouette
-            AddRepoussoir(tree01, new Vector3(2.80f, 4.30f, -1.80f), new Vector3(0.52f, 0.52f, 1.0f), 25f, branchSilhouette, 31);
+            // Clean overhanging branches handled via lineless sprite in OverhaulScene1Visuals
 
             // 4. Bottom-Right Subtle Framing Shrub
             AddRepoussoir(bush02, new Vector3(2.40f, -2.35f, -1.80f), new Vector3(0.90f, 0.85f, 1.0f), 12f, darkSilhouette, 29);
@@ -244,3 +244,4 @@ namespace HoaVaMau.Editor
     }
 }
 #endif
+

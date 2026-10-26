@@ -19,8 +19,8 @@ namespace HoaVaMau.Editor
     /// - Entry: Sky-to-Forest Cloud Descent over official background ("22ffd054-1ca7-406c-9d11-0b93ba28b71a.png")
     ///   through multi-layer parallax clouds and foreground bushes into the forest clearing where An is playing with companions.
     /// - Zone 1 (X: -10m .. +35.5m): Forest Clearing & 4-Step Planet of Lana Manual Obstacle Course:
-    ///     1. 3D Verlet Rope climb & swing up a 3.1m 3D rock cliff (X = 7.45m -> 8.4m, Y = -1.85m -> +1.25m).
-    ///     2. Jump across a 2.6m rocky ravine gap (X = 14.6m -> 17.2m, Y = +1.25m).
+    ///     1. 3D Verlet Rope climb & swing up a 3D rock cliff (X = 4.88m, Y = -1.95m -> -0.55m), hanging in free air with zero platform obstruction.
+    ///     2. Jump / Swing across the deep rocky ravine chasm (X = 14.6m -> 17.6m, floor at Y = -3.80m) via a 4.6m swing rope.
     ///     3. Climb down stepped ledges & crawl under a low fallen tree trunk (X = 23.8m -> 26.4m, Y = -1.10m).
     ///     4. Push/pull 3D wooden crate (InteractableCrate) to the cliff corner at X = 34.6m to climb onto the High Platform (Y = +2.15m).
     /// - Zone 2 (X: +35.5m .. +62.0m): High Cliff Overlook (seeing the hill & village below) -> Smooth Downhill Slope (Y: +2.15m -> -1.85m).
@@ -50,13 +50,13 @@ namespace HoaVaMau.Editor
             // 2. Create unified Planet of Lana materials (3D Ledges, Boulders, Timber, and Default Sprite Material)
             var mats = CreateOrUpdateLanaMaterials();
 
-            // 3. Build Official Painted Backgrounds ("22ffd054-1ca7-406c-9d11-0b93ba28b71a.png") & Sky-to-Forest Cloud Descent Layers
+            // 3. Build Official Painted Backgrounds ("22ffd054-1ca7-406c-9d11-0b93ba28b71a.png") & Seamless Sky + Multi-Layer Cloudscape
             BuildOfficialBackgroundsAndCloudDescent(mats);
 
             // 4. Build 3D Sculpted Terrain Ledges & Exact Physics Colliders across all 4 Zones (-12m to +138m)
             BuildSculpted3DLedgesAndPhysics(mats);
 
-            // 5. Build Forest Manual Obstacle Course (Rope Cliff, Ravine Gap, Fallen Tree Trunk Crawl, Push/Pull Crate, Panorama Overlook)
+            // 5. Build Forest Manual Obstacle Course (Free-Air Rope Cliff, Deep Ravine Swing, Fallen Tree Crawl, Push/Pull Crate, Panorama Overlook)
             BuildForestManualObstaclesAndGameplay(mats);
 
             // 6. Populate 100% Unified Borderless Planet of Lana 2D Ecosystem (Forest, Hill Slope, Golden Rice Field, Village)
@@ -65,7 +65,7 @@ namespace HoaVaMau.Editor
             // 7. Build Living 3D Stilted-House Village, Wide-Zoom Cutscene & Rigged Animated 3D NPCs
             BuildLivingVillageAndRiggedNPCs(mats);
 
-            // 8. Configure Cameras (VCam_IntroSky at Y=+21.5m, CM_VirtualCamera_2.5D, VCam_VillageArrivalWide), Cutscene & Lighting
+            // 8. Configure Cameras (VCam_IntroSky at Y=+36.5m, CM_VirtualCamera_2.5D, VCam_VillageArrivalWide), Cutscene & Lighting
             ConfigureLightingCamerasAndCutscenes();
 
             // Save Scene & Assets
@@ -82,16 +82,17 @@ namespace HoaVaMau.Editor
         public static void UpdateAtmosphereAndIntroCutscene()
         {
             var scene = EditorSceneManager.GetActiveScene();
-            Debug.Log($"<color=#38bdf8>[LanaOverhaul]</color> Fast updating Atmosphere, Cosmic Sky, and Cutscene in: {scene.name}");
+            Debug.Log($"<color=#38bdf8>[LanaOverhaul]</color> Fast updating Atmosphere, Seamless Sky, Clouds, and Cutscene in: {scene.name}");
 
-            // Clean previous background vista and cloud descent groups
             var bgRoot = GameObject.Find("07_Background");
             if (bgRoot != null)
             {
                 var vista = bgRoot.transform.Find("Lana_Painted_Vistas");
                 if (vista != null) UnityEngine.Object.DestroyImmediate(vista.gameObject);
-                var clouds = bgRoot.transform.Find("IntroSky_CloudDescentGroup");
+                var clouds = bgRoot.transform.Find("PlanetOfLana_RichCloudscape");
                 if (clouds != null) UnityEngine.Object.DestroyImmediate(clouds.gameObject);
+                var oldClouds = bgRoot.transform.Find("IntroSky_CloudDescentGroup");
+                if (oldClouds != null) UnityEngine.Object.DestroyImmediate(oldClouds.gameObject);
             }
 
             var mats = CreateOrUpdateLanaMaterials();
@@ -99,7 +100,7 @@ namespace HoaVaMau.Editor
             ConfigureLightingCamerasAndCutscenes();
 
             EditorSceneManager.MarkSceneDirty(scene);
-            Debug.Log("<color=#4ade80>[LanaOverhaul]</color> <b>Atmosphere, Cosmic Zenith Sky, Clouds, and Inverted Keycap Cutscene UI updated successfully!</b>");
+            Debug.Log("<color=#4ade80>[LanaOverhaul]</color> <b>Atmosphere, Seamless Sky, Rich Cloudscape, and Cutscene updated successfully!</b>");
         }
 
         // =========================================================================================
@@ -188,12 +189,12 @@ namespace HoaVaMau.Editor
             set.GrassCapMat.SetColor("_RockDarkColor", new Color(0.05f, 0.07f, 0.11f, 1f));
             EditorUtility.SetDirty(set.GrassCapMat);
 
-            // 2. Deep Navy-Slate Rock Cross-Section & Cliff Material
+            // 2. Stratified Slate Rock Cross-Section & Cliff Material
             set.RockUnderbellyMat = GetOrCreateMat($"{GenAssetsDir}/M_Lana_RockUnderbelly.mat", ledgeShader);
             set.RockUnderbellyMat.SetFloat("_IsGrassCap", 0.0f);
-            set.RockUnderbellyMat.SetColor("_RockLightColor", new Color(0.23f, 0.29f, 0.37f, 1f));
-            set.RockUnderbellyMat.SetColor("_RockMidColor", new Color(0.13f, 0.17f, 0.23f, 1f));
-            set.RockUnderbellyMat.SetColor("_RockDarkColor", new Color(0.05f, 0.07f, 0.11f, 1f));
+            set.RockUnderbellyMat.SetColor("_RockLightColor", new Color(0.44f, 0.50f, 0.56f, 1f));
+            set.RockUnderbellyMat.SetColor("_RockMidColor", new Color(0.28f, 0.34f, 0.40f, 1f));
+            set.RockUnderbellyMat.SetColor("_RockDarkColor", new Color(0.18f, 0.22f, 0.28f, 1f));
             EditorUtility.SetDirty(set.RockUnderbellyMat);
 
             // 3. Moss-Crowned Slate Boulder Material
@@ -211,7 +212,7 @@ namespace HoaVaMau.Editor
             set.MossyBoulderMat.SetColor("_RockDarkColor", new Color(0.08f, 0.11f, 0.16f, 1f));
             EditorUtility.SetDirty(set.MossyBoulderMat);
 
-            // 4. URP 2D Sprite Unlit Material so every 2D sprite renders its own clean texture without legacy batch bleeding
+            // 4. URP 2D Sprite Unlit Material
             Shader urpSpriteShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default") ?? Shader.Find("Sprites/Default");
             set.SpriteDefaultMat = GetOrCreateMat($"{GenAssetsDir}/M_Lana_URPSpriteDefault.mat", urpSpriteShader);
 
@@ -316,7 +317,7 @@ namespace HoaVaMau.Editor
         }
 
         // =========================================================================================
-        // 3. OFFICIAL USER BACKGROUND ("22ffd054-1ca7-406c-9d11-0b93ba28b71a.png") & SKY-TO-FOREST CLOUD DESCENT
+        // 3. SEAMLESS UNIFIED SKY, PAINTED VISTAS & RICH MULTI-LAYER CLOUDSCAPE
         // =========================================================================================
         private static void BuildOfficialBackgroundsAndCloudDescent(LanaMaterialSet mats)
         {
@@ -326,25 +327,23 @@ namespace HoaVaMau.Editor
 
             Shader bgShader = Shader.Find("HoaVaMau/LanaBackgroundBlend") ?? Shader.Find("Universal Render Pipeline/Unlit");
 
-            // Load user's official Planet of Lana background ("C:\Users\Arkstarz\Pictures\22ffd054-1ca7-406c-9d11-0b93ba28b71a.png")
             var texOfficialMain = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_MainSkyHills_Official.png");
             if (texOfficialMain == null)
             {
                 texOfficialMain = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_PlainsHills_Day.png");
             }
+            var texPlains = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_PlainsHills_Day.png");
 
-            void SpawnVistaPanel(string name, Texture2D tex, float centerX, float centerY, float z, float height, float leftFeather, float rightFeather, int queueOffset, Color tint, bool flipY = false)
+            void SpawnVistaPanel(string name, Texture2D tex, float centerX, float centerY, float z, float width, float height, float leftFeather, float rightFeather, int queueOffset, Color tint, bool flipY = false, float topFeather = 0.0f)
             {
                 if (tex == null) return;
-                float aspect = (float)tex.width / Mathf.Max(1, tex.height);
-                float width = Mathf.Abs(height) * aspect; // 100% native aspect ratio, zero cropping!
-
                 var mat = GetOrCreateMat($"{GenAssetsDir}/M_{name}.mat", bgShader);
                 mat.SetTexture("_MainTex", tex);
                 mat.SetColor("_Color", tint);
                 mat.SetFloat("_LeftFeather", leftFeather);
                 mat.SetFloat("_RightFeather", rightFeather);
                 mat.SetFloat("_BottomFeather", 0.0f);
+                mat.SetFloat("_TopFeather", topFeather);
                 mat.renderQueue = 2900 + queueOffset;
                 EditorUtility.SetDirty(mat);
 
@@ -361,132 +360,89 @@ namespace HoaVaMau.Editor
                 UnityEngine.Object.DestroyImmediate(quad.GetComponent<Collider>());
             }
 
-            // Attach dynamic Parallax Background Follower so the painted background naturally follows the character!
-            // Background moves WITH the camera across 145m horizontally (0.88f), with near-zero vertical drift (0.02f)
-            // so mountains and horizon stay anchored realistically, without exposing lower bounds or water during vertical pans!
             var follower = bgRoot.GetComponent<LanaParallaxBackgroundFollower>() ?? bgRoot.AddComponent<LanaParallaxBackgroundFollower>();
             follower.ClearLayers();
 
-            // Exact 1:1 background framing for reference painting (50_User_Reference_Forest_Vista.jpg)
-            // BG_Lana_MainSkyHills_Official.png (2560x1080 / 1940x810).
-            // panelHeight = 16.0f -> panelWidth = panelHeight * aspect.
-            // Center is aligned at X = +2.50m so that the distant river delta, rolling mountains, and open sky
-            // are framed DEAD-CENTER in the opening vista between the hero center tree (X = -1.1m) and the right cliff (X = +5.2m)!
-            // vistaCenterY = 3.65f calibrates mountain peaks (V = 0.18) right at Y = -0.75m above the meadow dip!
+            // 1. SINGLE CONTINUOUS SEAMLESS SKY BACKDROP QUAD SPANNING 220 METERS HORIZONTALLY!
+            // Generated with 100% horizontally-uniform pixel rows: mathematically ZERO horizontal color differences and ZERO vertical seams!
+            Texture2D texSeamlessSky = BuildOrLoadSeamlessSkyTexture();
+            SpawnVistaPanel("Sky_Continuous_Backdrop", texSeamlessSky, 65.0f, 21.0f, 18.0f, 220.0f, 52.0f, 0.0f, 0.0f, 0, Color.white);
+
+            // 2. ZONE 1 OPENING FOREST MOUNTAIN VISTA (Placed ONCE at X = 2.50m, feathered smoothly on top and right edge)
+            // Soft bilateral feathering blends seamlessly into the continuous sky backdrop
             const float bgDepthZ = 16.0f;
-            float panelHeight = 16.0f;
+            float panelHeight = 18.0f;
             float aspect = (float)texOfficialMain.width / Mathf.Max(1, texOfficialMain.height);
             float panelWidth = panelHeight * aspect;
-            float vistaCenterY = 3.65f;
+            float vistaCenterY = 4.20f;
+            SpawnVistaPanel("Vista_Opening_Forest", texOfficialMain, 2.50f, vistaCenterY, bgDepthZ, panelWidth, panelHeight, 0.00f, 0.22f, 1, Color.white, false, 0.25f);
 
-            // 1. Lower Mountain & River Delta Vista Panels across the full 145m level
-            SpawnVistaPanel("Vista_Center", texOfficialMain, 2.50f, vistaCenterY, bgDepthZ, panelHeight, 0.00f, 0.00f, 1, Color.white);
-            SpawnVistaPanel("Vista_Right1", texOfficialMain, 2.50f + panelWidth, vistaCenterY, bgDepthZ, panelHeight, 0.05f, 0.00f, 1, Color.white);
-            SpawnVistaPanel("Vista_Right2", texOfficialMain, 2.50f + panelWidth * 2f, vistaCenterY, bgDepthZ, panelHeight, 0.05f, 0.00f, 1, Color.white);
-            SpawnVistaPanel("Vista_Left",   texOfficialMain, 2.50f - panelWidth, vistaCenterY, bgDepthZ, panelHeight, 0.00f, 0.05f, 1, Color.white);
+            // 3. ZONE 2 & 3 ROLLING HILLS & PLAINS VISTA (Placed at X = 80.0m with soft bilateral & top feathering)
+            if (texPlains != null)
+            {
+                float plainsAspect = (float)texPlains.width / Mathf.Max(1, texPlains.height);
+                float plainsWidth = panelHeight * plainsAspect;
+                SpawnVistaPanel("Vista_RollingHills_Plains", texPlains, 80.0f, 3.20f, bgDepthZ + 0.5f, plainsWidth, panelHeight, 0.25f, 0.25f, 1, new Color(0.96f, 0.98f, 1.0f, 0.95f), false, 0.28f);
+            }
 
-            // 2. Seamless Upper Cosmic Sky Extension directly touching top edge at Y = +11.65m
-            float skyPanelHeight = 36.0f;
-            float skyCenterY = vistaCenterY + (panelHeight * 0.5f) + (skyPanelHeight * 0.5f); // 3.65 + 8.0 + 18.0 = 29.65f
-            Texture2D texUpperSky = BuildOrLoadSeamlessUpperSkyTexture(texOfficialMain);
-            float skyAspect = (float)texUpperSky.width / Mathf.Max(1, texUpperSky.height);
-            float skyPanelWidth = skyPanelHeight * skyAspect;
-            SpawnVistaPanel("UpperSky_Center", texUpperSky, 2.50f, skyCenterY, bgDepthZ, skyPanelHeight, 0.00f, 0.00f, 0, Color.white, false);
-            SpawnVistaPanel("UpperSky_Right",  texUpperSky, 2.50f + skyPanelWidth, skyCenterY, bgDepthZ, skyPanelHeight, 0.05f, 0.00f, 0, Color.white, false);
-            SpawnVistaPanel("UpperSky_Left",   texUpperSky, 2.50f - skyPanelWidth, skyCenterY, bgDepthZ, skyPanelHeight, 0.00f, 0.05f, 0, Color.white, false);
-
-            // Register with dynamic parallax follower:
-            // 0.92f followFactorX keeps the mountain panorama moving smoothly with the camera across the level
-            // 0.02f followFactorY keeps the horizon steady during jumps and vertical descent
             follower.RegisterLayer("Lana_Painted_Vistas", vistaGroup.transform, 0.92f, 0.02f);
 
-            // Multi-layered Parallax Cloud Descent Group (Only high stratosphere and upper cumulus for the intro descent!)
-            var cloudGroup = new GameObject("IntroSky_CloudDescentGroup");
-            cloudGroup.transform.SetParent(bgRoot.transform, false);
-
-            const string CloudBaseDir = "Assets/Art/Environment/Sky/Clouds";
-            Sprite sprHero01     = LoadSprite($"{CloudBaseDir}/Foreground/T_Cloud_Hero_Descent01.png", new Vector2(0.5f, 0.5f));
-            Sprite sprDistLayer  = LoadSprite($"{CloudBaseDir}/Distant/T_Cloud_Distant_Layer02.png", new Vector2(0.5f, 0.5f));
-
-            void SpawnCloudLayer(string name, Sprite spr, Vector3 pos, Vector2 scale, Color col, int sortOrder, bool flipX = false)
-            {
-                if (spr == null) return;
-                var go = new GameObject(name);
-                go.transform.SetParent(cloudGroup.transform, false);
-                go.transform.position = pos;
-                go.transform.localScale = new Vector3(scale.x, scale.y, 1f);
-                var sr = go.AddComponent<SpriteRenderer>();
-                sr.sprite = spr;
-                sr.sharedMaterial = GetOrCreateSpriteMat(spr, mats.SpriteDefaultMat);
-                sr.color = col;
-                sr.sortingOrder = sortOrder;
-                sr.flipX = flipX;
-            }
-
-            // 1. High Stratosphere Wisps for Cutscene Zenith (Y = +33.0m)
-            SpawnCloudLayer("Descent_01_ZenithWisp", sprDistLayer, new Vector3(-3.2f, 33.5f, 10.0f), new Vector2(2.5f, 2.5f), new Color(0.90f, 0.94f, 1.0f, 0.85f), 1);
-
-            // 2. Hero Upper Sky Cumulus passed through during camera descent (Y = +22.0m)
-            SpawnCloudLayer("Descent_02_HeroHigh", sprHero01, new Vector3(-2.0f, 22.0f, 9.5f), new Vector2(2.6f, 2.6f), new Color(0.98f, 0.99f, 1.0f, 0.95f), 2);
-
-            // Register clouds with parallax follower
-            follower.RegisterLayer("IntroSky_CloudDescentGroup", cloudGroup.transform, 0.88f, 0.05f);
+            // 4. POPULATE RICH 25-CLOUD MULTI-LAYER CLOUDSCAPE
+            PopulateRichPlanetOfLanaCloudscape(bgRoot.transform, mats);
         }
 
-        private static Texture2D BuildOrLoadSeamlessUpperSkyTexture(Texture2D officialBg)
+        private static Texture2D BuildOrLoadSeamlessSkyTexture()
         {
             string outPath = "Assets/Textures/Backgrounds_Lana/T_Lana_ContinuousCosmicSky_Seamless.png";
-            if (officialBg == null) return null;
+            int w = 256;
+            int h = 1024;
+            var skyTex = new Texture2D(w, h, TextureFormat.RGB24, false);
 
-            string bgAssetPath = AssetDatabase.GetAssetPath(officialBg);
-            if (string.IsNullOrEmpty(bgAssetPath) || !File.Exists(bgAssetPath)) return officialBg;
+            // Planet of Lana / Studio Ghibli vertical sky gradient palette:
+            // v = 0.00 .. 0.12: Warm horizon pale cyan-white (matching distant haze / mountains)
+            Color cHorizonMist  = new Color(0.68f, 0.78f, 0.86f, 1f);
+            // v = 0.12 .. 0.32: Soft daytime cyan-cerulean
+            Color cLowerSky     = new Color(0.38f, 0.62f, 0.82f, 1f);
+            // v = 0.32 .. 0.58: Pure Planet of Lana cobalt blue
+            Color cMidSky       = new Color(0.12f, 0.38f, 0.66f, 1f);
+            // v = 0.58 .. 0.82: Deep cosmic midnight cobalt
+            Color cUpperSky     = new Color(0.045f, 0.145f, 0.300f, 1f);
+            // v = 0.82 .. 1.00: Cosmic zenith galaxy black-blue
+            Color cGalaxyZenith = new Color(0.015f, 0.045f, 0.115f, 1f);
 
-            var rawTex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            rawTex.LoadImage(File.ReadAllBytes(bgAssetPath));
-
-            int w = rawTex.width;
-            int h = rawTex.height;
-            int sampleY = Mathf.Clamp(h - 3, 0, h - 1);
-
-            int outH = 1024;
-            var skyTex = new Texture2D(w, outH, TextureFormat.RGB24, false);
-            Color[] rowCols = new Color[w];
-            for (int x = 0; x < w; x++)
+            Color[] pixels = new Color[w * h];
+            for (int y = 0; y < h; y++)
             {
-                rowCols[x] = rawTex.GetPixel(x, sampleY);
-            }
-            UnityEngine.Object.DestroyImmediate(rawTex);
+                float v = (float)y / Mathf.Max(1, h - 1);
+                Color rowCol;
+                if (v < 0.12f)
+                {
+                    float t = Mathf.SmoothStep(0f, 1f, v / 0.12f);
+                    rowCol = Color.Lerp(cHorizonMist, cLowerSky, t);
+                }
+                else if (v < 0.32f)
+                {
+                    float t = Mathf.SmoothStep(0f, 1f, (v - 0.12f) / 0.20f);
+                    rowCol = Color.Lerp(cLowerSky, cMidSky, t);
+                }
+                else if (v < 0.58f)
+                {
+                    float t = Mathf.SmoothStep(0f, 1f, (v - 0.32f) / 0.26f);
+                    rowCol = Color.Lerp(cMidSky, cUpperSky, t);
+                }
+                else
+                {
+                    float t = Mathf.SmoothStep(0f, 1f, (v - 0.58f) / 0.42f);
+                    rowCol = Color.Lerp(cUpperSky, cGalaxyZenith, t);
+                }
 
-            Color cCerulean       = new Color(0.075f, 0.235f, 0.440f, 1f);
-            Color cMidnightCobalt = new Color(0.045f, 0.145f, 0.300f, 1f);
-            Color cGalaxyZenith   = new Color(0.015f, 0.045f, 0.115f, 1f);
-
-            Color[] outPixels = new Color[w * outH];
-            for (int y = 0; y < outH; y++)
-            {
-                float v = (float)y / Mathf.Max(1, outH - 1);
+                // 100% identical horizontal pixels -> zero horizontal seam!
                 for (int x = 0; x < w; x++)
                 {
-                    Color col;
-                    if (v < 0.28f)
-                    {
-                        float t = Mathf.SmoothStep(0f, 1f, v / 0.28f);
-                        col = Color.Lerp(rowCols[x], cCerulean, t);
-                    }
-                    else if (v < 0.65f)
-                    {
-                        float t = Mathf.SmoothStep(0f, 1f, (v - 0.28f) / 0.37f);
-                        col = Color.Lerp(cCerulean, cMidnightCobalt, t);
-                    }
-                    else
-                    {
-                        float t = Mathf.SmoothStep(0f, 1f, (v - 0.65f) / 0.35f);
-                        col = Color.Lerp(cMidnightCobalt, cGalaxyZenith, t);
-                    }
-                    outPixels[y * w + x] = col;
+                    pixels[y * w + x] = rowCol;
                 }
             }
-            skyTex.SetPixels(outPixels);
+            skyTex.SetPixels(pixels);
             skyTex.Apply();
 
             File.WriteAllBytes(outPath, skyTex.EncodeToPNG());
@@ -504,13 +460,101 @@ namespace HoaVaMau.Editor
             return AssetDatabase.LoadAssetAtPath<Texture2D>(outPath);
         }
 
+        private static void PopulateRichPlanetOfLanaCloudscape(Transform bgParent, LanaMaterialSet mats)
+        {
+            var cloudGroup = new GameObject("PlanetOfLana_RichCloudscape");
+            cloudGroup.transform.SetParent(bgParent, false);
+
+            const string CloudBaseDir = "Assets/Art/Environment/Sky/Clouds";
+            const string LanaCloudDir = "Assets/Textures/Lana_Unified_Art/Clouds";
+            const string TexturesCloudDir = "Assets/Textures/Clouds";
+
+            Sprite sprHeroDescent01 = LoadSprite($"{CloudBaseDir}/Foreground/T_Cloud_Hero_Descent01.png");
+            Sprite sprHeroDescent02 = LoadSprite($"{CloudBaseDir}/Foreground/T_Cloud_Hero_Descent02.png");
+            Sprite sprMidCumulusBank= LoadSprite($"{CloudBaseDir}/Midground/T_Cloud_Mid_CumulusBank01.png");
+            Sprite sprMidCluster02  = LoadSprite($"{CloudBaseDir}/Midground/T_Cloud_Mid_Cluster02.png");
+            Sprite sprMidSoftBank03 = LoadSprite($"{CloudBaseDir}/Midground/T_Cloud_Mid_SoftBank03.png");
+            Sprite sprDistantHorizon= LoadSprite($"{CloudBaseDir}/Distant/T_Cloud_Distant_Horizon03.png");
+            Sprite sprDistantLayer02= LoadSprite($"{CloudBaseDir}/Distant/T_Cloud_Distant_Layer02.png");
+            Sprite sprDistantWisp01 = LoadSprite($"{CloudBaseDir}/Distant/T_Cloud_Distant_Wisp01.png");
+
+            Sprite sprLanaHeroCumulus= LoadSprite($"{LanaCloudDir}/T_Lana_Cloud_01_CumulusHero.png") ?? sprHeroDescent01;
+            Sprite sprLanaWideBank   = LoadSprite($"{LanaCloudDir}/T_Lana_Cloud_02_WideBank.png") ?? sprMidCumulusBank;
+            Sprite sprLanaHighWisps  = LoadSprite($"{LanaCloudDir}/T_Lana_Cloud_03_HighWisps.png") ?? sprDistantWisp01;
+            Sprite sprLanaGoldenHoriz= LoadSprite($"{LanaCloudDir}/T_Lana_Cloud_04_GoldenHorizon.png") ?? sprDistantHorizon;
+
+            Sprite sprLanaCloud01    = LoadSprite($"{TexturesCloudDir}/lana_cloud_01.png") ?? sprHeroDescent01;
+            Sprite sprLanaCloud02    = LoadSprite($"{TexturesCloudDir}/lana_cloud_02.png") ?? sprMidCluster02;
+            Sprite sprLanaCloud03    = LoadSprite($"{TexturesCloudDir}/lana_cloud_03.png") ?? sprMidSoftBank03;
+
+            void SpawnCloud(string name, Sprite spr, Vector3 pos, Vector2 scale, Color col, int sortOrder, bool flipX = false, float driftSpeed = 0.35f)
+            {
+                if (spr == null) return;
+                var go = new GameObject(name);
+                go.transform.SetParent(cloudGroup.transform, false);
+                go.transform.position = pos;
+                go.transform.localScale = new Vector3(scale.x, scale.y, 1f);
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = spr;
+                sr.sharedMaterial = GetOrCreateSpriteMat(spr, mats.SpriteDefaultMat);
+                sr.color = col;
+                sr.sortingOrder = sortOrder;
+                sr.flipX = flipX;
+
+                var sway = go.AddComponent<PlanetOfLanaFoliageSway>();
+                var so = new SerializedObject(sway);
+                so.FindProperty("maxRotationAngle").floatValue = 0.15f;
+                so.FindProperty("swaySpeed").floatValue = driftSpeed;
+                so.FindProperty("useWorldPositionOffset").boolValue = true;
+                so.FindProperty("manualPhaseOffset").floatValue = pos.x * 0.1f;
+                so.FindProperty("scaleBreathing").floatValue = 0.015f;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            // 1. HIGH STRATOSPHERE WISPS (Y = 28.0m .. 38.0m, Z = 11.0m .. 14.0m)
+            SpawnCloud("Cloud_Zenith_Wisp01", sprLanaHighWisps,  new Vector3(-12.0f, 35.5f, 13.0f), new Vector2(3.2f, 2.5f), new Color(0.92f, 0.95f, 1.0f, 0.85f), 1);
+            SpawnCloud("Cloud_Zenith_Wisp02", sprDistantWisp01,  new Vector3( -3.0f, 36.5f, 12.5f), new Vector2(3.6f, 2.8f), new Color(0.95f, 0.97f, 1.0f, 0.90f), 1);
+            SpawnCloud("Cloud_Zenith_Wisp03", sprDistantLayer02, new Vector3(  8.5f, 34.0f, 13.5f), new Vector2(4.0f, 2.6f), new Color(0.88f, 0.93f, 1.0f, 0.80f), 1, true);
+            SpawnCloud("Cloud_Zenith_Wisp04", sprLanaHighWisps,  new Vector3( 24.0f, 35.0f, 13.0f), new Vector2(3.5f, 2.5f), new Color(0.90f, 0.94f, 1.0f, 0.85f), 1);
+            SpawnCloud("Cloud_Zenith_Wisp05", sprDistantWisp01,  new Vector3( 45.0f, 36.0f, 13.0f), new Vector2(3.8f, 2.7f), new Color(0.90f, 0.94f, 1.0f, 0.85f), 1);
+
+            // 2. MID-SKY BILLOWY CUMULUS (Y = 14.0m .. 26.0m, Z = 9.5m .. 12.0m)
+            SpawnCloud("Cloud_Mid_HeroDescent01", sprHeroDescent01,   new Vector3( -2.5f, 22.5f, 10.5f), new Vector2(2.8f, 2.8f), new Color(0.98f, 0.99f, 1.0f, 0.96f), 2);
+            SpawnCloud("Cloud_Mid_HeroDescent02", sprHeroDescent02,   new Vector3(  6.0f, 20.0f, 11.0f), new Vector2(3.0f, 2.6f), new Color(0.96f, 0.98f, 1.0f, 0.92f), 2, true);
+            SpawnCloud("Cloud_Mid_Cumulus01",     sprLanaHeroCumulus, new Vector3(-16.0f, 18.5f, 10.5f), new Vector2(3.2f, 2.8f), new Color(0.97f, 0.98f, 1.0f, 0.94f), 2);
+            SpawnCloud("Cloud_Mid_Cumulus02",     sprMidCumulusBank,  new Vector3( 18.0f, 17.5f, 11.2f), new Vector2(3.6f, 2.7f), new Color(0.95f, 0.97f, 1.0f, 0.92f), 2);
+            SpawnCloud("Cloud_Mid_Cumulus03",     sprMidCluster02,    new Vector3( 32.0f, 21.0f, 10.8f), new Vector2(3.4f, 2.6f), new Color(0.96f, 0.98f, 1.0f, 0.93f), 2, true);
+            SpawnCloud("Cloud_Mid_Cumulus04",     sprLanaCloud01,     new Vector3( 50.0f, 18.0f, 11.5f), new Vector2(3.5f, 2.8f), new Color(0.95f, 0.97f, 1.0f, 0.92f), 2);
+            SpawnCloud("Cloud_Mid_Cumulus05",     sprHeroDescent01,   new Vector3( 68.0f, 19.5f, 10.5f), new Vector2(3.2f, 2.7f), new Color(0.96f, 0.98f, 1.0f, 0.94f), 2, true);
+            SpawnCloud("Cloud_Mid_Cumulus06",     sprMidCumulusBank,  new Vector3( 88.0f, 17.0f, 11.2f), new Vector2(3.8f, 2.9f), new Color(0.95f, 0.97f, 1.0f, 0.92f), 2);
+            SpawnCloud("Cloud_Mid_Cumulus07",     sprLanaHeroCumulus, new Vector3(108.0f, 20.0f, 10.8f), new Vector2(3.4f, 2.8f), new Color(0.96f, 0.98f, 1.0f, 0.93f), 2);
+            SpawnCloud("Cloud_Mid_Cumulus08",     sprMidCluster02,    new Vector3(128.0f, 18.5f, 11.5f), new Vector2(3.6f, 2.7f), new Color(0.95f, 0.97f, 1.0f, 0.92f), 2, true);
+
+            // 3. LOW HORIZON CUMULUS BANKS (Y = 2.0m .. 9.0m, Z = 12.0m .. 15.0m)
+            SpawnCloud("Cloud_Horizon_Opening01", sprLanaHeroCumulus, new Vector3(  3.6f,  4.8f, 12.5f), new Vector2(3.6f, 2.6f), new Color(1.0f, 1.0f, 1.0f, 0.96f), 3, true);
+            SpawnCloud("Cloud_Horizon_Bank02",    sprLanaWideBank,    new Vector3( 14.5f,  6.2f, 13.5f), new Vector2(4.2f, 2.8f), new Color(0.98f, 0.99f, 1.0f, 0.92f), 3);
+            SpawnCloud("Cloud_Horizon_Bank03",    sprDistantHorizon,  new Vector3( 28.0f,  5.5f, 14.0f), new Vector2(4.5f, 2.9f), new Color(0.96f, 0.98f, 1.0f, 0.90f), 3, true);
+            SpawnCloud("Cloud_Horizon_Bank04",    sprMidSoftBank03,   new Vector3( 42.0f,  6.8f, 13.2f), new Vector2(3.9f, 2.7f), new Color(0.97f, 0.98f, 1.0f, 0.92f), 3);
+            SpawnCloud("Cloud_Horizon_Bank05",    sprLanaGoldenHoriz, new Vector3( 58.0f,  5.8f, 14.2f), new Vector2(4.6f, 3.0f), new Color(0.98f, 0.97f, 0.92f, 0.92f), 3);
+            SpawnCloud("Cloud_Horizon_Bank06",    sprLanaWideBank,    new Vector3( 74.0f,  6.5f, 13.8f), new Vector2(4.4f, 2.8f), new Color(1.0f, 0.98f, 0.90f, 0.94f), 3, true);
+            SpawnCloud("Cloud_Horizon_Bank07",    sprDistantHorizon,  new Vector3( 90.0f,  5.8f, 14.5f), new Vector2(4.8f, 3.1f), new Color(1.0f, 0.97f, 0.88f, 0.93f), 3);
+            SpawnCloud("Cloud_Horizon_Bank08",    sprLanaGoldenHoriz, new Vector3(106.0f,  6.2f, 14.0f), new Vector2(4.5f, 2.9f), new Color(1.0f, 0.98f, 0.94f, 0.94f), 3, true);
+            SpawnCloud("Cloud_Horizon_Bank09",    sprLanaWideBank,    new Vector3(122.0f,  6.8f, 13.8f), new Vector2(4.4f, 2.8f), new Color(1.0f, 0.97f, 0.88f, 0.92f), 3);
+            SpawnCloud("Cloud_Horizon_Bank10",    sprMidSoftBank03,   new Vector3(138.0f,  5.5f, 14.2f), new Vector2(4.2f, 2.7f), new Color(0.98f, 0.97f, 0.90f, 0.92f), 3, true);
+
+            var follower = bgParent.GetComponent<LanaParallaxBackgroundFollower>();
+            if (follower != null)
+            {
+                follower.RegisterLayer("PlanetOfLana_RichCloudscape", cloudGroup.transform, 0.88f, 0.04f);
+            }
+        }
+
         // =========================================================================================
         // 4. 3D SCULPTED TERRAIN LEDGES & ROCK-SOLID PHYSICS COLLIDERS (-12m to +138m)
         // =========================================================================================
         public static float SampleTerrainSurfaceY(float x)
         {
             // Zone 1A: Forest Clearing (-12.0m to +5.2m) — matches exact reference 50_User_Reference_Forest_Vista.jpg
-            // Left embankment stepped at Y = -0.85m, sloping down into sunlit meadow (-1.75m .. -2.05m at the cliff base)
             if (x < -3.8f)
             {
                 float t = Mathf.Clamp01((x - (-5.5f)) / 1.7f);
@@ -519,35 +563,35 @@ namespace HoaVaMau.Editor
             if (x >= -3.8f && x < 5.2f)
             {
                 float t = (x - (-3.8f)) / 9.0f;
-                return Mathf.Lerp(-1.75f, -2.05f, t);
+                return Mathf.Lerp(-1.75f, -1.95f, t);
             }
-            // Zone 1B: Right Cliff Plateau (+5.2m to +14.6m) -> Y = -0.55m (overlooking the vast valley)
+            // Zone 1B: Right Cliff Plateau (+5.2m to +14.6m) -> Y = -0.55m
             if (x >= 5.2f && x <= 14.6f)
             {
-                return -0.55f + Mathf.Sin(x * 0.8f) * 0.02f;
+                return -0.55f;
             }
-            // Zone 1C: Rocky Ravine Gap (+14.6m to +17.2m) -> Ravine floor at Y = -1.10m
-            if (x > 14.6f && x < 17.2f)
+            // Zone 1C: Rocky Ravine Chasm (+14.6m to +17.6m) -> Floor at Y = -3.80m (deep chasm for swing rope puzzle)
+            if (x > 14.6f && x < 17.6f)
             {
-                return -1.10f;
+                return -3.80f;
             }
-            // Zone 1D: East Ravine Plateau (+17.2m to +20.6m) -> Y = +1.25m
-            if (x >= 17.2f && x < 20.6f)
+            // Zone 1D: East Ravine Landing Plateau (+17.6m to +20.6m) -> Y = -0.55m
+            if (x >= 17.6f && x < 20.6f)
             {
-                return 1.25f;
+                return -0.55f;
             }
-            // Zone 1E: Stepped Descent to Fallen Tree Trunk (+20.6m to +22.0m) -> Steps from +1.25m to -1.10m
+            // Zone 1E: Stepped Descent to Fallen Tree Trunk (+20.6m to +22.0m) -> Steps from -0.55m to -1.10m
             if (x >= 20.6f && x < 22.0f)
             {
                 float t = (x - 20.6f) / 1.4f;
-                return Mathf.Lerp(1.25f, -1.10f, SmoothCos(t));
+                return Mathf.Lerp(-0.55f, -1.10f, SmoothCos(t));
             }
-            // Zone 1F: Fallen Tree Crawl & Crate Push/Pull Arena (+22.0m to +35.5m) -> Strictly flat at Y = -1.10m for smooth crate physics!
+            // Zone 1F: Fallen Tree Crawl & Crate Push/Pull Arena (+22.0m to +35.5m) -> Strictly flat at Y = -1.10m for crate physics
             if (x >= 22.0f && x < 35.5f)
             {
                 return -1.10f;
             }
-            // Zone 2A: High Cliff Vista Overlook (+35.5m to +43.5m) -> Y = +2.15m ("đi tới một vách thấy được đồi ở dưới, thấy được làng ở dưới")
+            // Zone 2A: High Cliff Vista Overlook (+35.5m to +43.5m) -> Y = +2.15m
             if (x >= 35.5f && x < 43.5f)
             {
                 return 2.15f;
@@ -559,7 +603,7 @@ namespace HoaVaMau.Editor
                 return Mathf.Lerp(2.15f, -1.85f, SmoothCos(t));
             }
             // Zone 3 & Zone 4: Golden Rice Field (+62.0m to +95.0m) & Living Village (+95.0m to +138.0m)
-            // Strictly 100% flat & horizontal ("lúc đó platform sẽ phẳng lại và ngang hàng") at Y = -1.85m!
+            // Strictly 100% flat & horizontal at Y = -1.85m
             return -1.85f;
         }
 
@@ -575,24 +619,31 @@ namespace HoaVaMau.Editor
             var ledgesGroup = new GameObject("Lana_Sculpted_Ledges");
             ledgesGroup.transform.SetParent(terrainRoot.transform, false);
 
-            // Build discrete sculpted 3D ledge sections with backZ = 5.40f so all background trees (Z = 2.0m..4.6m) & 3D village houses
-            // stand directly ON the 3D grass/golden-meadow turf with zero sky gap underneath!
             CreateLanaLedgeSection(ledgesGroup.transform, "Ledge_01_ForestStart",
-                -12.0f, 5.20f, 75, -1.75f, 5.40f, -9.5f, SampleTerrainSurfaceY, mats, true);
+                -12.0f, 5.20f, 75, -0.35f, 4.80f, -9.5f, SampleTerrainSurfaceY, mats, true);
 
             CreateLanaLedgeSection(ledgesGroup.transform, "Ledge_02_RopeCliffPlateau",
-                5.20f, 14.60f, 48, -1.75f, 5.40f, -9.5f, x => -0.55f + Mathf.Sin(x * 0.8f) * 0.02f, mats, true);
+                5.20f, 14.60f, 48, -0.35f, 4.80f, -9.5f, SampleTerrainSurfaceY, mats, true);
 
             CreateLanaLedgeSection(ledgesGroup.transform, "Ledge_03_RavineFloor",
-                14.40f, 17.40f, 16, -1.60f, 5.40f, -9.5f, x => -1.10f, mats, false);
+                14.50f, 17.70f, 20, -0.35f, 4.80f, -9.5f, SampleTerrainSurfaceY, mats, false);
+
+            // Dark rocky chasm backdrop wall closing the ravine gorge
+            var gorgeBackGO = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            gorgeBackGO.name = "Ravine_Chasm_BackdropWall";
+            gorgeBackGO.transform.SetParent(terrainRoot.transform, false);
+            gorgeBackGO.transform.position = new Vector3(16.10f, -2.50f, 2.50f);
+            gorgeBackGO.transform.localScale = new Vector3(4.80f, 4.20f, 1.0f);
+            gorgeBackGO.GetComponent<MeshRenderer>().sharedMaterial = mats.RockUnderbellyMat;
+            UnityEngine.Object.DestroyImmediate(gorgeBackGO.GetComponent<Collider>());
 
             CreateLanaLedgeSection(ledgesGroup.transform, "Ledge_04_RavineEastToCrate",
-                17.20f, 35.52f, 96, -1.75f, 5.40f, -9.5f, SampleTerrainSurfaceY, mats, true);
+                17.60f, 35.52f, 96, -0.35f, 4.80f, -9.5f, SampleTerrainSurfaceY, mats, true);
 
             CreateLanaLedgeSection(ledgesGroup.transform, "Ledge_05_HighOverlook_Hill_Rice_And_Village",
-                35.50f, 138.0f, 420, -1.75f, 5.40f, -9.5f, SampleTerrainSurfaceY, mats, true);
+                35.50f, 138.0f, 420, -0.35f, 4.80f, -9.5f, SampleTerrainSurfaceY, mats, true);
 
-            // Build precision physics colliders for CharacterController, LedgeGrabDetector & InteractableCrate
+            // Build precision physics colliders
             var physGroup = new GameObject("PhysicsWalkway_And_Cliffs_145m");
             physGroup.transform.SetParent(terrainRoot.transform, false);
 
@@ -613,24 +664,22 @@ namespace HoaVaMau.Editor
             AddBoxCol("Col_01_ForestStart", -10.5f, 5.20f, -8.0f, -1.95f);
             AddBoxCol("Col_01_LeftEmbankment", -10.5f, -4.50f, -8.0f, -0.85f);
 
-            // 2. Right Cliff Plateau (+5.20m .. +14.60m, topY = -0.55m — vertical wall at X = 5.20m for LedgeGrabDetector!)
+            // 2. Right Cliff Plateau (+5.20m .. +14.60m, topY = -0.55m — vertical wall starts at X = 5.20m)
             AddBoxCol("Col_02_RopeCliffPlateau", 5.20f, 14.60f, -8.0f, -0.55f);
 
-            // 3. Ravine Floor (+14.60m .. +17.20m, topY = -1.10m) + Stepping Boulders inside Ravine
-            AddBoxCol("Col_03_RavineFloor", 14.60f, 17.20f, -8.0f, -1.10f);
-            AddBoxCol("Col_03b_RavineStepStone", 15.45f, 16.35f, -1.10f, 0.05f);
+            // 3. Ravine Chasm Floor (+14.60m .. +17.60m, topY = -3.80m)
+            AddBoxCol("Col_03_RavineFloor", 14.60f, 17.60f, -8.0f, -3.80f);
 
-            // 4. East Ravine Plateau (+17.20m .. +20.60m, topY = +1.25m — vertical wall at X = 17.20m for LedgeGrabDetector!)
-            AddBoxCol("Col_04_RavineEastPlateau", 17.20f, 20.60f, -8.0f, 1.25f);
+            // 4. East Ravine Plateau (+17.60m .. +20.60m, topY = -0.55m — vertical wall at X = 17.60m)
+            AddBoxCol("Col_04_RavineEastPlateau", 17.60f, 20.60f, -8.0f, -0.55f);
 
             // 5. Stepped Descent to Fallen Tree (+20.60m .. +22.00m)
-            AddBoxCol("Col_05a_StepDownMid", 20.60f, 21.35f, -8.0f, 0.45f);
-            AddBoxCol("Col_05b_StepDownLow", 21.35f, 22.00f, -8.0f, -0.35f);
+            AddBoxCol("Col_05_StepDown", 20.60f, 22.00f, -8.0f, -0.85f);
 
             // 6. Fallen Tree Crawl & Crate Push/Pull Floor (+22.00m .. +35.50m, topY = -1.10m)
             AddBoxCol("Col_06_CrawlAndCrateFloor", 22.00f, 35.50f, -8.0f, -1.10f);
 
-            // 7. High Cliff Overlook Plateau (+35.50m .. +43.50m, topY = +2.15m — vertical wall at X = 35.50m for Crate + LedgeClimb!)
+            // 7. High Cliff Overlook Plateau (+35.50m .. +43.50m, topY = +2.15m)
             AddBoxCol("Col_07_HighOverlookPlateau", 35.50f, 43.50f, -8.0f, 2.15f);
 
             // 8. Smooth Downhill Slope (+43.50m .. +62.00m, Y: +2.15m -> -1.85m)
@@ -658,18 +707,18 @@ namespace HoaVaMau.Editor
                 bc.size = new Vector3(len + 0.08f, 1.0f, 4.0f);
             }
 
-            // 9. Perfectly Flat Horizontal Golden Rice Field & Living Village Platform (+62.00m .. +138.00m, topY = -1.85m)
+            // 9. Flat Horizontal Golden Rice Field & Living Village Platform (+62.00m .. +138.00m, topY = -1.85m)
             AddBoxCol("Col_09_FlatRiceAndVillagePlatform", 61.90f, 138.0f, -8.0f, -1.85f);
         }
 
         // =========================================================================================
-        // 5. FOREST MANUAL OBSTACLES & GAMEPLAY (ROPE, RAVINE, FALLEN TREE CRAWL, CRATE, PANORAMA)
+        // 5. FOREST MANUAL OBSTACLES & GAMEPLAY (UNBLOCKED CLIFF ROPE, RAVINE SWING, CRAWL, CRATE)
         // =========================================================================================
         private static void BuildForestManualObstaclesAndGameplay(LanaMaterialSet mats)
         {
             var gpRoot = GameObject.Find("02_Gameplay") ?? new GameObject("02_Gameplay");
 
-            // A. Position Player (An) at the Forest Start Clearing (X = -2.2m, Y = -1.82m, Z = 0m)
+            // Position Player (An) at Forest Start Clearing (X = -2.2m, Y = -1.82m, Z = 0m)
             var playerGO = GameObject.Find("PF_Player_Minh") ?? GameObject.Find("Character_An");
             if (playerGO != null)
             {
@@ -686,14 +735,12 @@ namespace HoaVaMau.Editor
                 }
             }
 
-            // Move Exit Goal Trigger to the far eastern end of the Village (X = 132.5m)
             var exitTrig = GameObject.Find("Scene1_ExitGoalTrigger_60m");
             if (exitTrig != null)
             {
                 exitTrig.transform.position = new Vector3(132.5f, -0.50f, 0f);
             }
 
-            // Remove legacy tutorial controller to prevent duplicate prompts with PlanetOfLanaPromptSystem
             var oldTut = GameObject.Find("00_UI_PlanetOfLana_TutorialController");
             if (oldTut != null) UnityEngine.Object.DestroyImmediate(oldTut);
 
@@ -721,44 +768,87 @@ namespace HoaVaMau.Editor
                 return inst;
             }
 
-            // --- OBSTACLE 1: 3D VERLET ROPE HANGING IN FRONT OF THE X = 5.2m CLIFF (MATCHES 50_User_Reference_Forest_Vista.jpg) ---
-            Spawn3DBoulder("RopeCliff_TopLipBoulder", obstaclesRoot.transform, new Vector3(5.35f, -0.45f, 0.35f), new Vector3(1.35f, 0.55f, 1.15f), 25f, false);
-            Spawn3DBoulder("RopeCliff_WallSlab_Lower",obstaclesRoot.transform, new Vector3(5.15f, -1.35f, 0.30f), new Vector3(1.15f, 0.85f, 1.00f), 205f, false);
+            // --- OBSTACLE 1: NATURAL TREE BOUGH ROPE CLIMB IN FRONT OF ROCK CLIFF (X = 4.85m) ---
+            // As in Planet of Lana (media_1792981759724_01eb70a4.jpg):
+            // An ancient banyan/oak tree stands on the cliff ridge (X = 5.6m, Y = -0.55m, Z = 0.85m).
+            // A heavy, natural curved tree bough reaches out over the cliff at Y = +3.65m.
+            // The climbing rope hangs naturally from this bough in free air in front of the stratified rock cliff,
+            // leaving ~35cm clearance from the cliff face (X = 5.20m) for climbing and swinging.
 
-            // Anchored directly to the natural rock lip of the cliff at X = 5.25m, Y = -0.45m
+            var sprTreeBough = LoadSprite("Assets/Textures/Lana_Unified_Art/Branches/T_Lana_Branch_01_Overhanging.png", new Vector2(0.85f, 0.45f))
+                            ?? LoadSprite("Assets/Textures/unsure/Cropped_And_Mock/T_Cutout_FramingBranch_01.png", new Vector2(0.85f, 0.45f));
+            if (sprTreeBough != null)
+            {
+                var boughGO = new GameObject("Obstacle01_NaturalTreeBough_Overhang");
+                boughGO.transform.SetParent(obstaclesRoot.transform, false);
+                boughGO.transform.position = new Vector3(5.15f, 3.80f, -0.15f);
+                boughGO.transform.localScale = new Vector3(1.35f, 1.20f, 1.0f);
+                var srBough = boughGO.AddComponent<SpriteRenderer>();
+                srBough.sprite = sprTreeBough;
+                srBough.sharedMaterial = GetOrCreateSpriteMat(sprTreeBough, mats.SpriteDefaultMat);
+                srBough.color = new Color(0.92f, 0.94f, 0.90f, 1f);
+                srBough.sortingOrder = 18;
+            }
+
+            // Stacked stratified rock boulders composing the cliff face (media_1792981610035_0a37bbf7.jpg)
+            Spawn3DBoulder("RopeCliff_TopLipBoulder", obstaclesRoot.transform, new Vector3(5.85f, -0.48f, 0.65f), new Vector3(1.35f, 0.60f, 1.15f), 25f, false);
+            Spawn3DBoulder("RopeCliff_WallSlab_Lower", obstaclesRoot.transform, new Vector3(5.65f, -1.35f, 0.60f), new Vector3(1.25f, 0.95f, 1.05f), 205f, false);
+            Spawn3DBoulder("RopeCliff_BaseOutcrop", obstaclesRoot.transform, new Vector3(5.15f, -1.90f, 0.50f), new Vector3(1.10f, 0.65f, 0.95f), 15f, false);
+
             var ropeAnchorGO = new GameObject("RopeAnchor_Transform");
             ropeAnchorGO.transform.SetParent(obstaclesRoot.transform, false);
-            ropeAnchorGO.transform.position = new Vector3(5.25f, -0.45f, 0.12f);
+            ropeAnchorGO.transform.position = new Vector3(4.85f, 3.65f, -0.15f);
 
             var ropeGO = new GameObject("Obstacle01_CliffRope");
             ropeGO.transform.SetParent(obstaclesRoot.transform, false);
-            ropeGO.transform.position = new Vector3(5.25f, -0.45f, 0f);
+            ropeGO.transform.position = new Vector3(4.85f, 3.65f, -0.15f);
             var ropeCtrl = ropeGO.AddComponent<RopeController>();
             var ropeSO = new SerializedObject(ropeCtrl);
-            ropeSO.FindProperty("totalLength").floatValue = 1.45f;
-            ropeSO.FindProperty("nodeCount").intValue = 10;
-            ropeSO.FindProperty("ropeVisualWidth").floatValue = 0.065f;
+            ropeSO.FindProperty("totalLength").floatValue = 4.60f;
+            ropeSO.FindProperty("nodeCount").intValue = 18;
+            ropeSO.FindProperty("ropeVisualWidth").floatValue = 0.085f;
             ropeSO.ApplyModifiedPropertiesWithoutUndo();
             ropeCtrl.InitializeRope();
 
-            // --- OBSTACLE 2: ROCKY RAVINE STEPPING STONE VISUALS (X = 14.6m .. 17.2m) ---
-            Spawn3DBoulder("Obstacle02_RavineStepBoulder", obstaclesRoot.transform, new Vector3(15.90f, -0.35f, 0.0f), new Vector3(1.15f, 0.85f, 1.10f), 40f, false);
-            Spawn3DBoulder("Obstacle02_RavineWestLipRock", obstaclesRoot.transform, new Vector3(14.35f, 1.22f, 0.85f), new Vector3(1.10f, 0.45f, 0.90f), 15f, false);
-            Spawn3DBoulder("Obstacle02_RavineEastLipRock", obstaclesRoot.transform, new Vector3(17.45f, 1.22f, 0.85f), new Vector3(1.10f, 0.45f, 0.90f), 165f, false);
+            // --- OBSTACLE 2: ROCKY RAVINE CHASM & 4.6M SWING ROPE (X = 14.6m .. 17.6m) ---
+            // West lip at X = 14.60m, Y = -0.55m. East lip at X = 17.60m, Y = -0.55m.
+            // Ravine chasm floor is deep at Y = -3.80m.
+            // An overhanging branch at X = 16.10m, Y = 3.55m holds a 4.60m swing rope hanging into the ravine.
 
-            // --- OBSTACLE 3: FALLEN TREE TRUNK & ROOTS CRAWL TUNNEL ("leo xuống dưới một gốc cây đổ", X = 23.8m .. 26.4m) ---
+            var ravineBranchGO = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            ravineBranchGO.name = "Obstacle02_RavineOverhang_Branch";
+            ravineBranchGO.transform.SetParent(obstaclesRoot.transform, false);
+            ravineBranchGO.transform.position = new Vector3(16.10f, 3.55f, -0.20f);
+            ravineBranchGO.transform.rotation = Quaternion.Euler(0f, 0f, 85f);
+            ravineBranchGO.transform.localScale = new Vector3(0.20f, 1.80f, 0.20f);
+            ravineBranchGO.GetComponent<MeshRenderer>().sharedMaterial = mats.TimberDarkMat;
+            UnityEngine.Object.DestroyImmediate(ravineBranchGO.GetComponent<Collider>());
+
+            var swingRopeGO = new GameObject("Obstacle02_RavineSwingRope");
+            swingRopeGO.transform.SetParent(obstaclesRoot.transform, false);
+            swingRopeGO.transform.position = new Vector3(16.10f, 3.50f, -0.20f);
+            var swingRopeCtrl = swingRopeGO.AddComponent<RopeController>();
+            var swingRopeSO = new SerializedObject(swingRopeCtrl);
+            swingRopeSO.FindProperty("totalLength").floatValue = 4.60f;
+            swingRopeSO.FindProperty("nodeCount").intValue = 16;
+            swingRopeSO.FindProperty("ropeVisualWidth").floatValue = 0.085f;
+            swingRopeSO.ApplyModifiedPropertiesWithoutUndo();
+            swingRopeCtrl.InitializeRope();
+
+            Spawn3DBoulder("Obstacle02_RavineWestLipRock", obstaclesRoot.transform, new Vector3(14.40f, -0.55f, 0.45f), new Vector3(1.10f, 0.55f, 0.90f), 15f, false);
+            Spawn3DBoulder("Obstacle02_RavineEastLipRock", obstaclesRoot.transform, new Vector3(17.70f, -0.55f, 0.45f), new Vector3(1.10f, 0.55f, 0.90f), 165f, false);
+
+            // --- OBSTACLE 3: FALLEN TREE TRUNK & ROOTS CRAWL TUNNEL (X = 23.8m .. 26.4m) ---
             var fallenTreeRoot = new GameObject("Obstacle03_FallenTreeTrunk_Crawl");
             fallenTreeRoot.transform.SetParent(obstaclesRoot.transform, false);
             fallenTreeRoot.transform.position = new Vector3(25.10f, -1.10f, 0f);
 
-            // Ceiling BoxCollider blocking standing player (bottom at Y = -0.18m, which is 0.92m above the Y = -1.10m floor -> requires Crouch/Crawl!)
             var trunkColGO = new GameObject("FallenTrunk_LowCeilingCollider");
             trunkColGO.transform.SetParent(fallenTreeRoot.transform, false);
             trunkColGO.transform.localPosition = new Vector3(0f, 1.65f, 0f);
             var trunkBC = trunkColGO.AddComponent<BoxCollider>();
-            trunkBC.size = new Vector3(2.50f, 1.45f, 3.20f); // Bottom of box = -1.10 + 1.65 - 0.725 = -0.175m (0.925m clearance above -1.10m floor)
+            trunkBC.size = new Vector3(2.50f, 1.45f, 3.20f);
 
-            // 3D Fallen Log nestled naturally inside 3D Mossy Rock Pillars on both ends
             var logMeshGO = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             logMeshGO.name = "FallenTrunk_3DLog";
             logMeshGO.transform.SetParent(fallenTreeRoot.transform, false);
@@ -889,31 +979,77 @@ namespace HoaVaMau.Editor
                 promptTrig.ShowOnceOnly = true;
             }
 
-            // 0. Initial Forest Clearing Movement
+            // 0. Forest Clearing Movement
             SpawnPromptTrigger("Prompt_00_Move_ForestClearing", new Vector3(-3.0f, -1.20f, 0f), new Vector3(4.5f, 3.5f, 4.0f), PlanetOfLanaPromptSystem.PromptType.Move);
 
-            // 1. Obstacle 1: Cliff Rope Grab
-            SpawnPromptTrigger("Prompt_01_RopeGrab_Cliff", new Vector3(4.50f, -0.85f, 0f), new Vector3(3.2f, 3.5f, 4.0f), PlanetOfLanaPromptSystem.PromptType.RopeGrab);
+            // 1. Cliff Rope Grab (Centered at X = 4.80m, Y = -0.85m in free air)
+            SpawnPromptTrigger("Prompt_01_RopeGrab_Cliff", new Vector3(4.80f, -0.85f, 0f), new Vector3(3.2f, 3.5f, 4.0f), PlanetOfLanaPromptSystem.PromptType.RopeGrab);
 
-            // 2. Obstacle 2: Rocky Ravine Jump
-            SpawnPromptTrigger("Prompt_02_Jump_RockyRavine", new Vector3(13.60f, 2.05f, 0f), new Vector3(3.2f, 3.5f, 4.0f), PlanetOfLanaPromptSystem.PromptType.Jump);
+            // 2. Rocky Ravine Jump / Swing (West lip at X = 14.0m)
+            SpawnPromptTrigger("Prompt_02_Jump_RockyRavine", new Vector3(14.0f, -0.20f, 0f), new Vector3(3.2f, 3.5f, 4.0f), PlanetOfLanaPromptSystem.PromptType.Jump);
 
-            // 3. Obstacle 3: Fallen Tree Trunk Crawl
+            // 3. Fallen Tree Trunk Crawl
             SpawnPromptTrigger("Prompt_03_Crawl_FallenTrunk", new Vector3(22.80f, -0.40f, 0f), new Vector3(3.2f, 3.5f, 4.0f), PlanetOfLanaPromptSystem.PromptType.Crawl);
 
-            // 4. Obstacle 4: Push/Pull Wooden Crate
+            // 4. Push/Pull Wooden Crate
             SpawnPromptTrigger("Prompt_04_PushPull_WoodenCrate", new Vector3(30.20f, -0.45f, 0f), new Vector3(3.5f, 3.5f, 4.0f), PlanetOfLanaPromptSystem.PromptType.PushPull);
 
-            // 5. Obstacle 5: High Cliff Ledge Climb
+            // 5. High Cliff Ledge Climb
             SpawnPromptTrigger("Prompt_05_ClimbLedge_HighCliff", new Vector3(34.20f, 1.25f, 0f), new Vector3(2.5f, 3.5f, 4.0f), PlanetOfLanaPromptSystem.PromptType.ClimbLedge);
 
             // 6. Zone 4 Village Interaction
             SpawnPromptTrigger("Prompt_06_Talk_VillagerNPC", new Vector3(99.50f, -0.80f, 0f), new Vector3(3.5f, 3.5f, 4.0f), PlanetOfLanaPromptSystem.PromptType.Interact);
         }
 
+        private static void SetupWarScorchedEmberVFX()
+        {
+            var vfxRoot = GameObject.Find("09_VFX") ?? new GameObject("09_VFX");
+            var oldEmber = vfxRoot.transform.Find("WarScorched_EmberMotes");
+            if (oldEmber != null) UnityEngine.Object.DestroyImmediate(oldEmber.gameObject);
+
+            var emberGO = new GameObject("WarScorched_EmberMotes");
+            emberGO.transform.SetParent(vfxRoot.transform, false);
+            emberGO.transform.position = new Vector3(-0.5f, -1.80f, 0.5f);
+
+            var ps = emberGO.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.startLifetime = 4.5f;
+            main.startSpeed = 0.45f;
+            main.startSize = 0.06f;
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1.0f, 0.45f, 0.15f, 0.85f), new Color(1.0f, 0.75f, 0.25f, 0.65f));
+            main.maxParticles = 65;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var emission = ps.emission;
+            emission.rateOverTime = 12f;
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(9.5f, 0.35f, 2.5f);
+
+            var velOverLifetime = ps.velocityOverLifetime;
+            velOverLifetime.enabled = true;
+            velOverLifetime.x = new ParticleSystem.MinMaxCurve(-0.15f, 0.25f);
+            velOverLifetime.y = new ParticleSystem.MinMaxCurve(0.20f, 0.65f);
+            velOverLifetime.z = new ParticleSystem.MinMaxCurve(-0.10f, 0.10f);
+
+            var colorOverLifetime = ps.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            var grad = new Gradient();
+            grad.SetKeys(
+                new GradientColorKey[] { new GradientColorKey(new Color(1f, 0.6f, 0.2f), 0f), new GradientColorKey(new Color(1f, 0.3f, 0.1f), 0.7f), new GradientColorKey(new Color(0.3f, 0.3f, 0.3f), 1f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.85f, 0.2f), new GradientAlphaKey(0.6f, 0.6f), new GradientAlphaKey(0f, 1f) }
+            );
+            colorOverLifetime.color = grad;
+
+            var psr = emberGO.GetComponent<ParticleSystemRenderer>();
+            psr.sharedMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Particle.mat");
+            psr.sortingOrder = 22;
+        }
+
         // =========================================================================================
         // 6. POPULATE 100% UNIFIED BORDERLESS PLANET OF LANA 2D ECOSYSTEM
-        //    (Strictly using Lana_VN_Pack + Lana_Unified_Art — ZERO Krita/outlined trees!)
+        //    (Strictly grounded via SampleTerrainSurfaceY, standardized proportional scales, zero floating props)
         // =========================================================================================
         private static void PopulateUnifiedPlanetOfLanaEcosystem(LanaMaterialSet mats)
         {
@@ -932,7 +1068,7 @@ namespace HoaVaMau.Editor
             var fgDescentGroup = new GameObject("FG_SkyToForest_DescentBushes");
             fgDescentGroup.transform.SetParent(fgRoot.transform, false);
 
-            // Authentic High-Fidelity Painterly Planet of Lana Trees & Landscape Silhouettes
+            // Tree Sprites
             Sprite sprTreeFullIsolated = LoadSprite("Assets/Textures/Tree/Tree_Full_Isolated.png", new Vector2(0.5f, 0.02f));
             Sprite sprCurvedTreeV2Full = LoadSprite("Assets/Textures/Tree/Curved_Tree_V2_Full.png", new Vector2(0.5f, 0.02f));
             Sprite sprTreeSlenderHigh  = LoadSprite("Assets/Textures/Tree/Tree_Lana_SlenderHigh.png", new Vector2(0.5f, 0.02f));
@@ -941,20 +1077,10 @@ namespace HoaVaMau.Editor
             Sprite sprMidgroundHills   = LoadSprite("Assets/Textures/Tree/sau 1.png", new Vector2(0.5f, 0.10f));
             Sprite sprRepoussoirTop    = LoadSprite("Assets/Textures/Tree/repoussoir_tree_framing.png", new Vector2(0.5f, 0.5f));
 
-            // Unified & Pack Sprites
-            Sprite sprTreeHeroBanyan   = sprTreeFullIsolated ?? LoadSprite($"{UnifiedTexRoot}/Trees/T_Lana_Tree_01_HeroBanyan.png", new Vector2(0.5f, 0.02f));
-            Sprite sprTreeWindblown    = sprCurvedTreeV2Full ?? LoadSprite($"{UnifiedTexRoot}/Trees/T_Lana_Tree_02_WindblownCurved.png", new Vector2(0.5f, 0.02f));
-            Sprite sprTreeSlender      = sprTreeSlenderHigh  ?? LoadSprite($"{UnifiedTexRoot}/Trees/T_Lana_Tree_03_SlenderForest.png", new Vector2(0.5f, 0.02f));
-            Sprite sprCurvedTreeV2     = sprCurvedTreeV2Full;
-            Sprite sprTreeIsolated     = sprTreeFullIsolated;
             Sprite sprBranchOver       = LoadSprite($"{UnifiedTexRoot}/Branches/T_Lana_Branch_01_Overhanging.png", new Vector2(0.5f, 0.5f));
-            Sprite sprCanopyTop        = sprRepoussoirTop ?? sprBranchOver;
-            Sprite sprCanopyFraming    = sprRepoussoirTop ?? sprBranchOver;
-            Sprite sprFoliageLeft      = sprRepoussoirTop ?? sprBranchOver;
-            Sprite sprFoliageRight     = sprRepoussoirTop ?? sprBranchOver;
             Sprite sprFallenTrunkMossy = LoadSprite($"{UnifiedTexRoot}/Branches/T_Lana_FallenTrunk_Mossy.png", new Vector2(0.5f, 0.1f));
 
-            // Authentic Hand-Painted Lana VN Pack Trees matching 50_User_Reference_Forest_Vista.jpg 1:1
+            // Lana VN Pack Trees matching 50_User_Reference_Forest_Vista.jpg 1:1
             Sprite sprTree01Large   = LoadSprite($"{PackTexRoot}/Trees/T_LanaVN_Tree_01_LargeCanopy.png", new Vector2(0.5f, 0.02f)) ?? sprTreeFullIsolated;
             Sprite sprTree02Medium  = LoadSprite($"{PackTexRoot}/Trees/T_LanaVN_Tree_02_Medium.png", new Vector2(0.5f, 0.02f)) ?? sprCurvedTreeV2Full;
             Sprite sprTree03Small   = LoadSprite($"{PackTexRoot}/Trees/T_LanaVN_Tree_03_SmallBushTree.png", new Vector2(0.5f, 0.02f)) ?? sprTreeSlenderHigh;
@@ -963,7 +1089,7 @@ namespace HoaVaMau.Editor
             Sprite sprTree06Coconut = LoadSprite($"{PackTexRoot}/Trees/T_LanaVN_Tree_06_Coconut.png", new Vector2(0.45f, 0.02f));
             Sprite sprTree07Bamboo  = LoadSprite($"{PackTexRoot}/Trees/T_LanaVN_Tree_07_BambooGrove.png", new Vector2(0.5f, 0.02f));
 
-            // Authentic Hand-Painted Lana VN Rocks matching 50_User_Reference_Forest_Vista.jpg 1:1
+            // Lana VN Rocks matching 50_User_Reference_Forest_Vista.jpg 1:1
             Sprite sprRock01Large   = LoadSprite($"{PackTexRoot}/Rocks/T_LanaVN_Rock_01_LargeOutcrop.png", new Vector2(0.5f, 0.10f));
             Sprite sprRock02MossyTop= LoadSprite($"{PackTexRoot}/Rocks/T_LanaVN_Rock_02_MossyMediumTop.png", new Vector2(0.5f, 0.10f));
             Sprite sprRock03MossyBot= LoadSprite($"{PackTexRoot}/Rocks/T_LanaVN_Rock_03_MossyMediumBot.png", new Vector2(0.5f, 0.10f));
@@ -972,16 +1098,17 @@ namespace HoaVaMau.Editor
             Sprite sprRock06PebblesTop = LoadSprite($"{PackTexRoot}/Rocks/T_LanaVN_Rock_06_PebbleGroupTop.png", new Vector2(0.5f, 0.10f));
             Sprite sprRock07PebblesBot = LoadSprite($"{PackTexRoot}/Rocks/T_LanaVN_Rock_07_PebbleGroupBot.png", new Vector2(0.5f, 0.10f));
 
-            // Atmospheric Cloud for Opening Vista Overlook
-            Sprite sprCloudHero     = LoadSprite("Assets/Textures/Lana_Unified_Art/Clouds/T_Lana_Cloud_01_CumulusHero.png", new Vector2(0.5f, 0.5f))
-                                   ?? LoadSprite("Assets/Textures/Clouds/lana_cloud_01.png", new Vector2(0.5f, 0.5f));
-
             Sprite sprTreeGold01    = LoadSprite($"{UnifiedTexRoot}/Trees/T_Lana_Tree_GoldenVillage_01.png", new Vector2(0.5f, 0.02f)) ?? sprTreeFullIsolated;
             Sprite sprTreeGold02    = LoadSprite($"{UnifiedTexRoot}/Trees/T_Lana_Tree_GoldenVillage_02.png", new Vector2(0.5f, 0.02f)) ?? sprCurvedTreeV2Full;
 
-            Sprite sprBushMound1    = LoadSprite($"{UnifiedTexRoot}/Bushes/T_Lana_Bush_01_LushMound.png", new Vector2(0.5f, 0.08f));
-            Sprite sprBushMound2    = LoadSprite($"{UnifiedTexRoot}/Bushes/T_Lana_Bush_02_WideCluster.png", new Vector2(0.5f, 0.08f));
-            Sprite sprBushFlower3   = LoadSprite($"{UnifiedTexRoot}/Bushes/T_Lana_Bush_03_Flowering.png", new Vector2(0.5f, 0.08f));
+            // Authentic Planet of Lana War-Scorched, Cliff & Repoussoir Assets
+            Sprite sprTreeDefoliated = LoadSprite("Assets/Textures/unsure/Cropped_And_Mock/T_Tree_Defoliated_Alpha.png", new Vector2(0.5f, 0.02f));
+            Sprite sprTrunkModular   = LoadSprite($"{UnifiedTexRoot}/Trees/T_Lana_Tree_Modular_Trunk.png", new Vector2(0.5f, 0.02f));
+            Sprite sprCutoutBranch1  = LoadSprite("Assets/Textures/unsure/Cropped_And_Mock/T_Cutout_FramingBranch_01.png", new Vector2(0.5f, 0.5f));
+            Sprite sprCutoutBranch2  = LoadSprite("Assets/Textures/unsure/Cropped_And_Mock/T_Cutout_FramingBranch_02.png", new Vector2(0.5f, 0.5f));
+            Sprite sprCliffShelf     = LoadSprite("Assets/Textures/Environment/cliff_shelf.png", new Vector2(0.5f, 0.5f));
+            Sprite sprHDRock01Large  = LoadSprite("Assets/Textures/Environment/Lana_Concept_Assets/Rocks/T_HD_Rock_01_LargeCliffOutcrop.png", new Vector2(0.5f, 0.10f)) ?? sprRock01Large;
+            Sprite sprHDRock04Flat   = LoadSprite("Assets/Textures/Environment/Lana_Concept_Assets/Rocks/T_HD_Rock_04_FlatSlab.png", new Vector2(0.5f, 0.10f)) ?? sprRock04FlatSlab;
 
             Sprite[] sprBushes = new[]
             {
@@ -989,18 +1116,15 @@ namespace HoaVaMau.Editor
                 LoadSprite($"{PackTexRoot}/Bushes/T_LanaVN_Bush_Low_02_Flower.png", new Vector2(0.5f, 0.04f)),
                 LoadSprite($"{PackTexRoot}/Bushes/T_LanaVN_Bush_Low_03.png", new Vector2(0.5f, 0.04f)),
                 LoadSprite($"{PackTexRoot}/Bushes/T_LanaVN_Bush_Low_04.png", new Vector2(0.5f, 0.04f)),
-                sprBushMound1 ?? LoadSprite($"{PackTexRoot}/Bushes/T_LanaVN_Bush_Broadleaf_01.png", new Vector2(0.5f, 0.04f)),
-                sprBushMound2 ?? LoadSprite($"{PackTexRoot}/Bushes/T_LanaVN_Bush_Broadleaf_02.png", new Vector2(0.5f, 0.04f))
+                LoadSprite($"{PackTexRoot}/Bushes/T_LanaVN_Bush_Broadleaf_01.png", new Vector2(0.5f, 0.04f)),
+                LoadSprite($"{PackTexRoot}/Bushes/T_LanaVN_Bush_Broadleaf_02.png", new Vector2(0.5f, 0.04f))
             };
             Sprite sprBushBroad1 = LoadSprite($"{PackTexRoot}/Bushes/T_LanaVN_Bush_Broadleaf_01.png", new Vector2(0.5f, 0.04f));
             Sprite sprBushBroad2 = LoadSprite($"{PackTexRoot}/Bushes/T_LanaVN_Bush_Broadleaf_02.png", new Vector2(0.5f, 0.04f));
             Sprite sprBushGold01 = LoadSprite($"{UnifiedTexRoot}/Bushes/T_Lana_Bush_GoldenVillage_01.png", new Vector2(0.5f, 0.04f)) ?? sprBushes[0];
             Sprite sprBushGold02 = LoadSprite($"{UnifiedTexRoot}/Bushes/T_Lana_Bush_GoldenVillage_02.png", new Vector2(0.5f, 0.04f)) ?? sprBushes[2];
 
-            Sprite sprGrassTuft1 = LoadSprite($"{UnifiedTexRoot}/Foliage/T_Lana_Grass_01_SoftTuft.png", new Vector2(0.5f, 0.08f));
-            Sprite sprGrassTuft2 = LoadSprite($"{UnifiedTexRoot}/Foliage/T_Lana_Grass_02_WindsweptClump.png", new Vector2(0.5f, 0.08f));
-
-            // Use only tapered organic grass carpets (03, 04, 05_Dense, 06_Shrubby) so there are zero hard rectangular crop edges!
+            // Only tapered organic grass carpets so there are zero hard rectangular cutoffs
             Sprite[] sprGrassCarpets = new[]
             {
                 LoadSprite($"{PackTexRoot}/Grass_Vines/T_LanaVN_GrassCarpet_03.png", new Vector2(0.5f, 0.05f)),
@@ -1022,7 +1146,7 @@ namespace HoaVaMau.Editor
             Sprite sprVineCreep   = LoadSprite($"{PackTexRoot}/Grass_Vines/T_LanaVN_VineLeaf_04_CreepingVine.png", new Vector2(0.5f, 0.75f));
             Sprite sprVineCluster = LoadSprite($"{PackTexRoot}/Grass_Vines/T_LanaVN_VineLeaf_02_Cluster.png", new Vector2(0.5f, 0.50f));
 
-            // Golden Rice Field Sprites (derived from cleaned Lana_VN_Pack + Lana_Unified_Art so brushwork is 100% identical!)
+            // Golden Rice Field Sprites
             Sprite sprRiceCarpet1 = LoadSprite($"{UnifiedTexRoot}/Rice/T_Lana_Rice_Carpet_01_TallSway.png", new Vector2(0.5f, 0.05f));
             Sprite sprRiceCarpet2 = LoadSprite($"{UnifiedTexRoot}/Rice/T_Lana_Rice_Carpet_02_Medium.png", new Vector2(0.5f, 0.05f));
             Sprite sprRiceCarpet3 = LoadSprite($"{UnifiedTexRoot}/Rice/T_Lana_Rice_Carpet_03_DenseHead.png", new Vector2(0.5f, 0.05f));
@@ -1076,49 +1200,40 @@ namespace HoaVaMau.Editor
                 foreach (var col in inst.GetComponentsInChildren<Collider>(true)) col.enabled = false;
             }
 
-            // Parallax depth color palettes (Planet of Lana atmospheric depth layering: Far -> Mid -> Near)
-            Color farForestCol  = new Color(0.70f, 0.84f, 0.80f, 0.94f);
-            Color midForestCol  = new Color(0.86f, 0.95f, 0.86f, 1.00f);
-            Color nearForestCol = new Color(0.98f, 1.00f, 0.95f, 1.00f);
-            Color fgShadowCol   = new Color(0.14f, 0.24f, 0.22f, 0.95f);
+            // Calibrated muted watercolor historical palette: soft atmospheric haze, no harsh neon greens
+            Color farForestCol  = new Color(0.65f, 0.78f, 0.78f, 0.94f);
+            Color midForestCol  = new Color(0.78f, 0.88f, 0.80f, 1.00f);
+            Color nearForestCol = new Color(0.92f, 0.96f, 0.90f, 1.00f);
+            Color fgShadowCol   = new Color(0.12f, 0.20f, 0.18f, 0.96f);
 
             // =====================================================================================
             // A. SKY-TO-FOREST ENTRY CORNER FRAMING (REPOUSSOIR)
-            //    Matches exact reference 50_User_Reference_Forest_Vista.jpg:
-            //    - Top-Left: High overhanging framing branches and dark repoussoir foliage.
-            //    - Bottom-Left: Dark repoussoir bush silhouette.
-            //    - Top-Right: Framing canopy branch framing above the right cliff.
             // =====================================================================================
-            // Top-Left Corner Silhouette Branch & Foliage
-            SpawnSprite("Repoussoir_TopLeft_HighBranch", fgDescentGroup.transform, sprRepoussoirTop ?? sprBranchOver,
-                new Vector3(-7.2f, 4.35f, -1.55f), new Vector2(1.30f, 1.25f), fgShadowCol, 28, 0.8f, 0.7f);
+            // 1. MASSIVE FOREGROUND DARK SILHOUETTE FRAMING TRUNKS (media_1792981597148_cf8bf183.png & media_1792982003302_435c07e3.jpg)
+            // Left towering dark silhouette trunk reaching past top & bottom of camera
+            SpawnSprite("Repoussoir_Left_MassiveHeroTrunk", fgDescentGroup.transform, sprCurvedTreeV2Full ?? sprTrunkModular,
+                new Vector3(-8.20f, 1.00f, -1.85f), new Vector2(2.10f, 3.20f), fgShadowCol, 29, 0.3f, 0.5f);
 
-            // Overhanging top foliage branches hanging strictly from the upper-left leaning tree
-            SpawnSprite("Overhang_Left_Branch1", treesGroup.transform, sprBranchOver,
-                new Vector3(-6.2f, 4.25f, 0.85f), new Vector2(1.15f, 1.10f), nearForestCol, 15, 0.8f, 0.7f, false, -8f);
+            // Slender charred fork branch framing An in near foreground (media_1792982003302_435c07e3.jpg)
+            SpawnSprite("Repoussoir_Near_CharredFork", fgDescentGroup.transform, sprTreeDefoliated ?? sprBranchOver,
+                new Vector3(-5.10f, -1.25f, -1.65f), new Vector2(0.85f, 1.15f), new Color(0.12f, 0.14f, 0.18f, 0.98f), 28, 0.4f, 0.5f);
 
-            // Left corner foreground ground bush
-            SpawnSprite("Repoussoir_BottomLeft_Bush", fgDescentGroup.transform, sprBushBroad1,
-                new Vector3(-7.2f, -1.90f, -1.95f), new Vector2(1.10f, 1.05f), fgShadowCol, 27, 1.4f, 1.2f);
+            // Right massive dark silhouette tree framing the right screen edge beyond cliff
+            SpawnSprite("Repoussoir_Right_MassiveHeroTrunk", fgDescentGroup.transform, sprTreeFullIsolated ?? sprTrunkModular,
+                new Vector3(7.80f, 1.40f, -1.85f), new Vector2(2.20f, 3.40f), fgShadowCol, 29, 0.3f, 0.5f);
 
-            // Right corner foreground ground bush
-            SpawnSprite("Repoussoir_BottomRight_Bush", fgDescentGroup.transform, sprBushBroad1,
-                new Vector3(8.0f, -1.85f, -1.95f), new Vector2(0.95f, 0.90f), fgShadowCol, 27, 1.4f, 1.2f, true);
+            // Overhead framing foliage canopy (top corners)
+            SpawnSprite("Repoussoir_TopLeft_HighCanopy", fgDescentGroup.transform, sprRepoussoirTop ?? sprBranchOver,
+                new Vector3(-6.80f, 4.80f, -1.55f), new Vector2(1.25f, 1.15f), fgShadowCol, 28, 0.6f, 0.6f);
+            SpawnSprite("Repoussoir_TopRight_HighCanopy", fgDescentGroup.transform, sprBranchOver,
+                new Vector3(6.80f, 4.80f, -1.55f), new Vector2(1.25f, 1.15f), fgShadowCol, 28, 0.6f, 0.6f, true);
 
-            // Bottom foreground shadow grass blades framing the entire lower screen edge (matches 50_User_Reference_Forest_Vista.jpg)
-            float[] fgGrassXs = new float[] { -7.5f, -6.0f, -4.5f, -3.0f, -1.5f, 0.2f, 1.8f, 3.5f, 5.0f, 6.8f, 8.2f };
-            for (int fgIdx = 0; fgIdx < fgGrassXs.Length; fgIdx++)
-            {
-                float fgX = fgGrassXs[fgIdx];
-                bool isCorner = (fgX < -3.5f || fgX > 5.0f);
-                float fgY = SampleTerrainSurfaceY(fgX) - (isCorner ? 0.12f : 0.28f);
-                Sprite fgGrassSpr = isCorner ? ((fgIdx % 2 == 0) ? sprFlowers[1] : sprGrassCarpets[3]) : sprGrassCarpets[1];
-                Vector2 fgScale = isCorner ? new Vector2(0.95f, 0.80f) : new Vector2(0.85f, 0.45f);
-                SpawnSprite($"Repoussoir_Bottom_Grass_{fgIdx:D2}", fgDescentGroup.transform, fgGrassSpr,
-                    new Vector3(fgX, fgY, -2.05f), fgScale, fgShadowCol, 27, 1.2f, 1.0f, (fgIdx % 2 == 1));
-            }
+            // Dark silhouette foreground ground corner accents (cleanly out of the character's path)
+            SpawnSprite("Repoussoir_Bottom_LeftRock", fgDescentGroup.transform, sprHDRock04Flat ?? sprRock04FlatSlab,
+                new Vector3(-7.80f, -2.60f, -1.95f), new Vector2(1.30f, 0.80f), fgShadowCol, 29, 0f, 0f);
+            SpawnSprite("Repoussoir_Bottom_RightRock", fgDescentGroup.transform, sprHDRock04Flat ?? sprRock04FlatSlab,
+                new Vector3(7.50f, -2.60f, -1.95f), new Vector2(1.30f, 0.80f), fgShadowCol, 29, 0f, 0f, true);
 
-            // Landmark framing branches at the Cliff & Ravine edges
             if (sprBranchOver != null)
             {
                 SpawnSprite("Cliff_Framing_Branch", fgDescentGroup.transform, sprBranchOver,
@@ -1128,150 +1243,176 @@ namespace HoaVaMau.Editor
             }
 
             // =====================================================================================
-            // B. ZONE 1 (-12m to +35.5m): 3-PLANE PLANET OF LANA ANCIENT FOREST
-            //    RECREATED 1:1 TO MATCH EXACT REFERENCE: 50_User_Reference_Forest_Vista.jpg
+            // B. ZONE 1 (-12m to +35.5m): WAR-SCORCHED FOREST CLEARING & BOMB CRATER BASIN
             // =====================================================================================
-            // 0. Distant Midground Forest Ridge (strictly skipping X in [-8.0m, +18.0m] to keep the negative space vista completely unobstructed!)
+            // 0. Distant Midground Forest Ridge (negative space between X = -8m .. 18m left clear for vista)
             float[] ridgeXs = new float[] { -12.0f, -8.5f, 18.5f, 25.5f, 33.5f };
             for (int rIdx = 0; rIdx < ridgeXs.Length; rIdx++)
             {
                 float rx = ridgeXs[rIdx];
-                float ry = (rx >= 8.0f && rx <= 21.0f) ? 0.35f : ((rx > 21.0f) ? -0.85f : -1.45f);
+                float ry = SampleTerrainSurfaceY(rx) + 0.90f;
                 float rz = 6.5f + (rIdx % 2) * 0.3f;
                 SpawnSprite($"Forest_MidRidge_{rIdx:D2}", treesGroup.transform, sprMidgroundHills,
-                    new Vector3(rx, ry, rz), new Vector2(2.8f, 2.3f), new Color(0.65f, 0.80f, 0.78f, 0.94f), 4, 0.5f, 0.6f, (rIdx % 2 == 1));
+                    new Vector3(rx, ry, rz), new Vector2(2.5f, 2.1f), farForestCol, 4, 0.5f, 0.6f, (rIdx % 2 == 1));
             }
 
-            // 1. Soft Atmospheric Background Silhouettes (Z = 5.2m .. 5.8m, muted teal haze)
-            //    Negative space between X = -8.5m and +18.0m is kept 100% CLEAR of background trees!
+            // 1. Atmospheric Background Trees (Z = 5.2m .. 5.8m, proportional scale 1.35f - 1.55f)
             float[] bgTreeXs = new float[] { -11.5f, -9.0f, 18.5f, 24.0f, 30.0f };
             for (int tIdx = 0; tIdx < bgTreeXs.Length; tIdx++)
             {
                 float bx = bgTreeXs[tIdx];
-                float by = (bx >= 7.5f && bx <= 21.0f) ? 0.95f : ((bx > 21.0f) ? -1.35f : -2.18f);
+                float by = SampleTerrainSurfaceY(bx) - 0.05f;
                 Sprite bTreeSpr = (tIdx % 3 == 0) ? sprTreeWideCanopy : ((tIdx % 3 == 1) ? sprTreePoplarTall : sprTreeSlenderHigh);
-                Vector2 bScale = (tIdx % 3 == 0) ? new Vector2(1.8f, 1.8f) : ((tIdx % 3 == 1) ? new Vector2(1.9f, 1.9f) : new Vector2(2.1f, 2.1f));
+                Vector2 bScale = new Vector2(1.45f, 1.45f);
                 float bZ = 5.2f + (tIdx % 3) * 0.25f;
                 SpawnSprite($"Forest_BG_Tree_{tIdx:D2}", treesGroup.transform, bTreeSpr,
                     new Vector3(bx, by, bZ), bScale, farForestCol, 5, 0.8f, 0.9f, (tIdx % 2 == 1));
             }
 
-            // 2. HERO COMPOSITION MATCHING 50_User_Reference_Forest_Vista.jpg 1:1:
+            // 2. HERO COMPOSITION - WAR-SCORCHED FOREST BASIN & STEPPING STONES (media_1792982003302_435c07e3.jpg & media_1792981682225_11f78aa3.jpg):
             // --- A. LEFT EMBANKMENT (X = -8.5m .. -4.0m) ---
-            // Leaning giant tree arching over the rocks into the glade (Z = 0.70m, rooted in embankment)
+            float tree01Y = SampleTerrainSurfaceY(-5.80f) - 0.05f;
             SpawnSprite("Opening_Tree01_LargeCanopy_HeroLeaning", treesGroup.transform, sprTree01Large,
-                new Vector3(-5.80f, -0.70f, 0.70f), new Vector2(1.35f, 1.35f), nearForestCol, 14, 0.8f, 0.8f, false, -12.0f);
+                new Vector3(-5.80f, tree01Y, 0.70f), new Vector2(1.25f, 1.25f), nearForestCol, 14, 0.8f, 0.8f, false, -12.0f);
 
-            // Layered receding forest wall behind the embankment
+            float bgLeft1Y = SampleTerrainSurfaceY(-8.2f) + 0.10f;
             SpawnSprite("Opening_BG_Tree_Left1", treesGroup.transform, sprTreeWideCanopy,
-                new Vector3(-8.2f, -0.20f, 3.2f), new Vector2(1.7f, 1.7f), farForestCol, 5, 0.7f, 0.8f);
+                new Vector3(-8.2f, bgLeft1Y, 3.2f), new Vector2(1.45f, 1.45f), farForestCol, 5, 0.7f, 0.8f);
+
+            float bgLeft2Y = SampleTerrainSurfaceY(-6.8f) + 0.10f;
             SpawnSprite("Opening_BG_Tree_Left2", treesGroup.transform, sprTreeSlenderHigh,
-                new Vector3(-6.8f, 0.40f, 3.8f), new Vector2(1.8f, 1.8f), farForestCol, 4, 0.7f, 0.8f);
+                new Vector3(-6.8f, bgLeft2Y, 3.8f), new Vector2(1.40f, 1.40f), farForestCol, 4, 0.7f, 0.8f);
 
             // Stacked mossy rock outcrop at the base of the embankment
             SpawnSprite("Opening_Rock01_LargeOutcrop", rocksGroup.transform, sprRock01Large,
-                new Vector3(-5.80f, -0.90f, 0.85f), new Vector2(1.20f, 1.20f), nearForestCol, 12, 0f, 0f);
+                new Vector3(-5.80f, SampleTerrainSurfaceY(-5.80f) - 0.05f, 0.85f), new Vector2(1.15f, 1.15f), nearForestCol, 12, 0f, 0f);
             SpawnSprite("Opening_Rock02_MossyMediumTop", rocksGroup.transform, sprRock02MossyTop,
-                new Vector3(-4.50f, -1.45f, 0.65f), new Vector2(0.95f, 0.95f), nearForestCol, 12, 0f, 0f);
+                new Vector3(-4.50f, SampleTerrainSurfaceY(-4.50f) - 0.04f, 0.65f), new Vector2(0.95f, 0.95f), nearForestCol, 12, 0f, 0f);
             SpawnSprite("Opening_Rock05_SmallMossy_Embankment", rocksGroup.transform, sprRock05Small,
-                new Vector3(-3.80f, -1.75f, 0.45f), new Vector2(0.85f, 0.85f), nearForestCol, 12, 0f, 0f);
+                new Vector3(-3.80f, SampleTerrainSurfaceY(-3.80f) - 0.04f, 0.45f), new Vector2(0.85f, 0.85f), nearForestCol, 12, 0f, 0f);
 
-            // --- B. CENTER MEADOW CLEARING (X = -4.0m .. +5.2m) ---
-            // Tree A (left of center): Slender midground tree
-            SpawnSprite("Opening_Tree03_SmallBushTree_MidLeft", treesGroup.transform, sprTree03Small,
-                new Vector3(-3.60f, -1.78f, 2.20f), new Vector2(0.92f, 0.92f), nearForestCol, 10, 1.0f, 1.0f);
+            // --- B. WAR-SCORCHED MEADOW CLEARING & STEPPING STONES (X = -4.0m .. +5.2m) ---
+            // 1. Authentic Stepping Stone Slabs leading An across the basin floor to the cliff (media_1792981682225_11f78aa3.jpg)
+            float[] pathSlabXs = new float[] { -3.40f, -2.10f, -0.80f, 0.60f, 1.90f, 3.20f, 4.30f };
+            for (int sIdx = 0; sIdx < pathSlabXs.Length; sIdx++)
+            {
+                float sx = pathSlabXs[sIdx];
+                float sy = SampleTerrainSurfaceY(sx) - 0.03f;
+                SpawnSprite($"Path_SteppingStone_{sIdx:D2}", rocksGroup.transform, sprHDRock04Flat ?? sprRock04FlatSlab,
+                    new Vector3(sx, sy, 0.25f), new Vector2(0.95f, 0.65f), nearForestCol, 13, 0f, 0f, (sIdx % 2 == 1));
+            }
 
-            // Tree B (Center Hero Tree): Iconic Dual-Bough Branching Tree with sunlit canopy against the blue sky
-            SpawnSprite("Opening_Tree02_Medium_CenterHero", treesGroup.transform, sprTree02Medium,
-                new Vector3(-1.10f, -1.88f, 1.85f), new Vector2(0.95f, 0.95f), nearForestCol, 10, 0.9f, 0.9f);
+            // 2. Charred Tree Skeletons rising jaggedly from the war-scorched basin (media_1792982003302_435c07e3.jpg)
+            Color charredTreeCol = new Color(0.24f, 0.27f, 0.30f, 0.98f);
+            Color charredTreeDistantCol = new Color(0.38f, 0.42f, 0.45f, 0.95f);
 
-            // Path surface pebbles
+            SpawnSprite("WarScorched_BareTree_Left", treesGroup.transform, sprTreeDefoliated ?? sprTree04Tall,
+                new Vector3(-4.40f, SampleTerrainSurfaceY(-4.40f) - 0.05f, 1.45f), new Vector2(1.20f, 1.35f), charredTreeCol, 9, 0.5f, 0.6f);
+
+            SpawnSprite("WarScorched_BareTree_CenterCrater", treesGroup.transform, sprTreeDefoliated ?? sprTree04Tall,
+                new Vector3(-1.10f, SampleTerrainSurfaceY(-1.10f) - 0.05f, 2.50f), new Vector2(1.40f, 1.50f), charredTreeDistantCol, 7, 0.4f, 0.5f);
+
+            SpawnSprite("WarScorched_BareTree_RightSlope", treesGroup.transform, sprTreeDefoliated ?? sprTree04Tall,
+                new Vector3(1.65f, SampleTerrainSurfaceY(1.65f) - 0.05f, 1.60f), new Vector2(1.15f, 1.25f), charredTreeCol, 9, 0.5f, 0.6f, true);
+
+            // 3. Fallen Charred Logs crossing the crater rim
+            Color charredLogCol = new Color(0.18f, 0.20f, 0.22f, 1.0f);
+            SpawnSprite("WarScorched_FallenLog_01", treesGroup.transform, sprFallenTrunkMossy ?? sprCutoutBranch1,
+                new Vector3(-2.60f, SampleTerrainSurfaceY(-2.60f) - 0.06f, 0.55f), new Vector2(0.95f, 0.75f), charredLogCol, 12, 0f, 0f, false, 5f);
+            SpawnSprite("WarScorched_FallenLog_02", treesGroup.transform, sprFallenTrunkMossy ?? sprCutoutBranch2,
+                new Vector3(0.40f, SampleTerrainSurfaceY(0.40f) - 0.06f, 0.65f), new Vector2(0.90f, 0.70f), charredLogCol, 12, 0f, 0f, true, -4f);
+            SpawnSprite("WarScorched_FallenLog_03", treesGroup.transform, sprFallenTrunkMossy ?? sprCutoutBranch1,
+                new Vector3(2.80f, SampleTerrainSurfaceY(2.80f) - 0.06f, 0.55f), new Vector2(0.85f, 0.65f), charredLogCol, 12, 0f, 0f, false, 8f);
+
+            // 4. Subtle Ash & Smoldering Ember VFX in 09_VFX
+            SetupWarScorchedEmberVFX();
+
+            // Ground pebbles firmly touching the surface
             SpawnSprite("Opening_Pebbles_01", rocksGroup.transform, sprRock06PebblesTop,
-                new Vector3(-2.80f, -1.82f, 0.35f), new Vector2(0.70f, 0.70f), nearForestCol, 13, 0f, 0f);
+                new Vector3(-2.80f, SampleTerrainSurfaceY(-2.80f) - 0.02f, 0.35f), new Vector2(0.65f, 0.65f), nearForestCol, 13, 0f, 0f);
             SpawnSprite("Opening_Pebbles_02", rocksGroup.transform, sprRock07PebblesBot,
-                new Vector3( 0.80f, -1.95f, 0.35f), new Vector2(0.70f, 0.70f), nearForestCol, 13, 0f, 0f);
+                new Vector3( 0.80f, SampleTerrainSurfaceY( 0.80f) - 0.02f, 0.35f), new Vector2(0.65f, 0.65f), nearForestCol, 13, 0f, 0f);
             SpawnSprite("Opening_Rock05_PathDip", rocksGroup.transform, sprRock05Small,
-                new Vector3( 2.20f, -2.00f, 0.35f), new Vector2(0.65f, 0.65f), nearForestCol, 13, 0f, 0f);
+                new Vector3( 2.20f, SampleTerrainSurfaceY( 2.20f) - 0.02f, 0.35f), new Vector2(0.60f, 0.60f), nearForestCol, 13, 0f, 0f);
 
-            // Weathered angled deadwood stump at X = 3.8m
-            SpawnSprite("Opening_Deadwood_Stump", treesGroup.transform, sprFallenTrunkMossy ?? sprBranchOver,
-                new Vector3(3.80f, -1.95f, 0.60f), new Vector2(0.55f, 0.55f), nearForestCol, 11, 0f, 0f, false, 18f);
+            // --- C. STRATIFIED ROCK CLIFF FACE & OVERLOOK (X >= 5.0m, media_1792981610035_0a37bbf7.jpg) ---
+            SpawnSprite("Cliff_Stratified_LargeOutcrop", rocksGroup.transform, sprHDRock01Large ?? sprRock01Large,
+                new Vector3(5.50f, -1.10f, 0.25f), new Vector2(1.35f, 1.25f), nearForestCol, 14, 0f, 0f);
+            SpawnSprite("Cliff_Shelf_MidTier", rocksGroup.transform, sprCliffShelf ?? sprRock01Large,
+                new Vector3(5.85f, -0.65f, 0.35f), new Vector2(1.40f, 1.10f), nearForestCol, 14, 0f, 0f);
+            SpawnSprite("Cliff_Rock_BaseFooting", rocksGroup.transform, sprRock03MossyBot,
+                new Vector3(5.05f, -1.82f, 0.20f), new Vector2(1.15f, 1.00f), nearForestCol, 15, 0f, 0f);
+            SpawnSprite("Cliff_Rock_TopLedgeCap", rocksGroup.transform, sprHDRock04Flat ?? sprRock04FlatSlab,
+                new Vector3(5.40f, -0.52f, 0.10f), new Vector2(1.10f, 0.75f), nearForestCol, 16, 0f, 0f);
 
-            // --- C. RIGHT CLIFF PLATEAU & OVERLOOK (X >= 5.20m) ---
-            // Hand-painted rock cliff face strata & base mossy rocks (Z = 0.05m..0.10m, in front of 3D ledge mesh!)
-            SpawnSprite("Cliff_Rock04_FlatSlab_Face", rocksGroup.transform, sprRock04FlatSlab,
-                new Vector3(5.60f, -1.15f, 0.05f), new Vector2(1.25f, 1.15f), nearForestCol, 16, 0f, 0f);
-            SpawnSprite("Cliff_Rock03_MossyBase", rocksGroup.transform, sprRock03MossyBot,
-                new Vector3(5.15f, -1.75f, 0.10f), new Vector2(1.10f, 1.00f), nearForestCol, 16, 0f, 0f);
-            SpawnSprite("Cliff_Rock05_Small_Edge", rocksGroup.transform, sprRock05Small,
-                new Vector3(5.35f, -0.45f, 0.05f), new Vector2(0.85f, 0.85f), nearForestCol, 16, 0f, 0f);
+            // Overhanging Ivy Vines cascading down the rock face
+            SpawnSprite("Cliff_Ivy_Vines_01", bushesGroup.transform, sprVineCreep ?? sprBranchOver,
+                new Vector3(5.30f, -0.45f, -0.10f), new Vector2(1.05f, 1.15f), nearForestCol, 17, 1.2f, 1.0f);
+            SpawnSprite("Cliff_Ivy_Vines_02", bushesGroup.transform, sprVineCluster ?? sprVineCreep,
+                new Vector3(5.75f, -0.70f, 0.05f), new Vector2(0.95f, 1.05f), nearForestCol, 17, 1.0f, 0.9f);
 
-            // Plateau edge trees overlooking the valley (matching reference painting)
+            // Ancient Hero Tree rooted on the plateau ridge holding the rope bough (media_1792981759724_01eb70a4.jpg)
+            SpawnSprite("Cliff_RopeHeroTree_Plateau", treesGroup.transform, sprTreeFullIsolated ?? sprTree01Large,
+                new Vector3(5.85f, SampleTerrainSurfaceY(5.85f) - 0.05f, 1.20f), new Vector2(1.35f, 1.35f), nearForestCol, 11, 0.7f, 0.8f);
+
+            // Plateau edge trees firmly grounded at Y = -0.55m
             SpawnSprite("Cliff_Tree03_PlateauEdge", treesGroup.transform, sprTree03Small,
-                new Vector3(6.50f, -0.45f, 1.80f), new Vector2(0.85f, 0.85f), nearForestCol, 10, 0.9f, 0.9f);
+                new Vector3(6.50f, SampleTerrainSurfaceY(6.50f) - 0.04f, 1.80f), new Vector2(0.95f, 0.95f), nearForestCol, 10, 0.9f, 0.9f);
             SpawnSprite("Cliff_Tree04_SlenderTall", treesGroup.transform, sprTree04Tall,
-                new Vector3(7.80f, -0.45f, 1.50f), new Vector2(0.88f, 0.88f), nearForestCol, 10, 1.0f, 1.0f);
+                new Vector3(7.80f, SampleTerrainSurfaceY(7.80f) - 0.04f, 1.50f), new Vector2(0.95f, 0.95f), nearForestCol, 10, 1.0f, 1.0f);
 
-            // --- D. DISTANT NEGATIVE SPACE VISTA & PUFFY CUMULUS CLOUD (X in [0.0m, 5.2m]) ---
-            // Magnificent puffy white cumulus cloud bank rising on the right side of the opening vista (matching 50_User_Reference_Forest_Vista.jpg 1:1)
-            SpawnSprite("Vista_HeroCumulusCloud_Right", ecoRoot.transform, sprCloudHero,
-                new Vector3(3.50f, 1.35f, 8.50f), new Vector2(3.80f, 2.60f), new Color(1.0f, 1.0f, 1.0f, 0.98f), 3, 0f, 0f, true);
-
-            // Zone 1 Landmark Trees: Cliff, Ravine, Crawlway
+            // Zone 1 Landmark Trees: Cliff, Ravine, Crawlway (All strictly grounded on SampleTerrainSurfaceY with proportional scale!)
             SpawnSprite("Cliff_HeroTree_Base", treesGroup.transform, sprTreeFullIsolated,
-                new Vector3(11.5f, 1.02f, 2.40f), new Vector2(0.56f, 0.56f), nearForestCol, 10, 0.8f, 0.9f);
+                new Vector3(11.5f, SampleTerrainSurfaceY(11.5f) - 0.05f, 2.40f), new Vector2(1.05f, 1.05f), nearForestCol, 10, 0.8f, 0.9f);
             SpawnSprite("Ravine_HeroTree_Edge", treesGroup.transform, sprCurvedTreeV2Full,
-                new Vector3(19.2f, 1.02f, 2.30f), new Vector2(0.85f, 0.85f), nearForestCol, 10, 0.9f, 0.9f, true);
+                new Vector3(19.2f, SampleTerrainSurfaceY(19.2f) - 0.05f, 2.30f), new Vector2(1.10f, 1.10f), nearForestCol, 10, 0.9f, 0.9f, true);
             SpawnSprite("Crawl_HeroTree_Overhang", treesGroup.transform, sprTreeWideCanopy,
-                new Vector3(27.8f, -1.25f, 2.20f), new Vector2(1.8f, 1.8f), nearForestCol, 9, 0.9f, 1.0f);
+                new Vector3(27.8f, SampleTerrainSurfaceY(27.8f) - 0.05f, 2.20f), new Vector2(1.35f, 1.35f), nearForestCol, 9, 0.9f, 1.0f);
             SpawnSprite("CrateWall_HeroTree_End", treesGroup.transform, sprTreeSlenderHigh,
-                new Vector3(33.5f, -1.25f, 2.20f), new Vector2(2.1f, 2.1f), nearForestCol, 10, 1.0f, 1.0f);
+                new Vector3(33.5f, SampleTerrainSurfaceY(33.5f) - 0.05f, 2.20f), new Vector2(1.35f, 1.35f), nearForestCol, 10, 1.0f, 1.0f);
 
-            // 3. Opening Clearing Mossy Boulders
-            SpawnBoulder("Forest_ClearBoulder_Ravine", new Vector3(12.5f, 1.05f, 1.35f), new Vector3(1.35f, 0.60f, 1.0f), 30f);
-            SpawnBoulder("Forest_ClearBoulder_Crawl",  new Vector3(21.8f, 0.45f, 1.35f), new Vector3(1.20f, 0.52f, 0.95f), 140f);
+            // Grounded Mossy Boulders (No floating props!)
+            SpawnBoulder("Forest_ClearBoulder_Ravine", new Vector3(12.5f, SampleTerrainSurfaceY(12.5f) - 0.08f, 1.35f), new Vector3(1.35f, 0.60f, 1.0f), 30f);
+            SpawnBoulder("Forest_ClearBoulder_Crawl",  new Vector3(21.8f, SampleTerrainSurfaceY(21.8f) - 0.08f, 1.35f), new Vector3(1.20f, 0.52f, 0.95f), 140f);
 
-            // 4. Upper Rope Cliff, Vines & Ravine Dressing
-            SpawnSprite("Cliff_Vine_RopeWall", bushesGroup.transform, sprVineCreep,   new Vector3( 5.55f, -0.45f, -0.8f), new Vector2(1.10f, 1.10f), nearForestCol, 16, 1.8f, 1.5f);
-            SpawnSprite("Cliff_Vine_RavineW",  bushesGroup.transform, sprVineCreep,   new Vector3(14.55f, 1.15f, -0.8f), new Vector2(1.00f, 1.00f), nearForestCol, 16, 1.8f, 1.5f);
-            SpawnSprite("Cliff_Vine_RavineE",  bushesGroup.transform, sprVineCreep,   new Vector3(17.25f, 1.15f, -0.8f), new Vector2(1.00f, 1.00f), nearForestCol, 16, 1.8f, 1.5f, true);
+            // Wall Creeping Vines firmly anchored to cliff & ravine lips
+            SpawnSprite("Cliff_Vine_RopeWall", bushesGroup.transform, sprVineCreep,   new Vector3( 5.35f, SampleTerrainSurfaceY( 5.35f), -0.2f), new Vector2(0.95f, 0.95f), nearForestCol, 16, 1.8f, 1.5f);
+            SpawnSprite("Cliff_Vine_RavineW",  bushesGroup.transform, sprVineCreep,   new Vector3(14.55f, SampleTerrainSurfaceY(14.55f), -0.2f), new Vector2(0.95f, 0.95f), nearForestCol, 16, 1.8f, 1.5f);
+            SpawnSprite("Cliff_Vine_RavineE",  bushesGroup.transform, sprVineCreep,   new Vector3(17.65f, SampleTerrainSurfaceY(17.65f), -0.2f), new Vector2(0.95f, 0.95f), nearForestCol, 16, 1.8f, 1.5f, true);
 
-            // 5. Fallen Tree Crawl & Crate Hollow (+22.0m to +35.5m, Y = -1.10m)
-            SpawnSprite("FallenTree_TopBush1",  bushesGroup.transform, sprBushBroad1,  new Vector3(24.5f,  0.42f, -0.25f), new Vector2(0.75f, 0.72f), nearForestCol, 16, 1.5f, 1.4f);
-            SpawnSprite("FallenTree_TopBush2",  bushesGroup.transform, sprBushes[1],   new Vector3(25.6f,  0.48f, -0.20f), new Vector2(0.85f, 0.80f), nearForestCol, 17, 1.6f, 1.5f);
-            SpawnSprite("FallenTree_HangVine1", bushesGroup.transform, sprVineCreep,   new Vector3(24.3f,  0.15f, -0.45f), new Vector2(0.82f, 0.75f), nearForestCol, 18, 2.0f, 1.7f);
-            SpawnSprite("FallenTree_HangVine2", bushesGroup.transform, sprVineCluster, new Vector3(25.4f,  0.22f, -0.45f), new Vector2(0.78f, 0.75f), nearForestCol, 18, 2.0f, 1.7f);
-            SpawnSprite("CrateWall_HangVine",   bushesGroup.transform, sprVineCreep,   new Vector3(35.45f, 2.05f, -0.8f), new Vector2(1.15f, 1.15f), nearForestCol, 16, 1.8f, 1.5f);
+            // Fallen Tree Crawl dressing
+            SpawnSprite("FallenTree_TopBush1",  bushesGroup.transform, sprBushBroad1,  new Vector3(24.5f,  0.42f, -0.25f), new Vector2(0.70f, 0.68f), nearForestCol, 16, 1.5f, 1.4f);
+            SpawnSprite("FallenTree_TopBush2",  bushesGroup.transform, sprBushes[1],   new Vector3(25.6f,  0.48f, -0.20f), new Vector2(0.75f, 0.72f), nearForestCol, 17, 1.6f, 1.5f);
+            SpawnSprite("FallenTree_HangVine1", bushesGroup.transform, sprVineCreep,   new Vector3(24.3f,  0.15f, -0.45f), new Vector2(0.75f, 0.70f), nearForestCol, 18, 2.0f, 1.7f);
+            SpawnSprite("FallenTree_HangVine2", bushesGroup.transform, sprVineCluster, new Vector3(25.4f,  0.22f, -0.45f), new Vector2(0.72f, 0.70f), nearForestCol, 18, 2.0f, 1.7f);
+            SpawnSprite("CrateWall_HangVine",   bushesGroup.transform, sprVineCreep,   new Vector3(35.45f, 2.05f, -0.8f), new Vector2(1.10f, 1.10f), nearForestCol, 16, 1.8f, 1.5f);
 
             // =====================================================================================
-            // C. ZONE 2 (+35.5m to +62.0m): HIGH CLIFF OVERLOOK & DOWNHILL SLOPE ("đi xuống dốc đồi")
+            // C. ZONE 2 (+35.5m to +62.0m): HIGH CLIFF OVERLOOK & DOWNHILL SLOPE
             // =====================================================================================
-            // Hero Tree crowning the High Cliff Overlook (X = 37.2m, Y = +2.15m) + Mossy Slabs
-            SpawnBoulder("Overlook_CliffBoulder_1", new Vector3(37.0f, 2.13f, 1.35f), new Vector3(1.85f, 0.72f, 1.25f), 25f);
-            SpawnBoulder("Overlook_CliffBoulder_2", new Vector3(41.8f, 2.13f, 1.40f), new Vector3(1.55f, 0.58f, 1.15f), 145f);
-            SpawnSprite("Overlook_HeroTree_Crown",  treesGroup.transform, sprTree01Large, new Vector3(37.4f, 1.92f, 2.2f), new Vector2(0.62f, 0.62f), nearForestCol, 10, 0.9f, 1.0f);
+            SpawnBoulder("Overlook_CliffBoulder_1", new Vector3(37.0f, SampleTerrainSurfaceY(37.0f) - 0.08f, 1.35f), new Vector3(1.75f, 0.68f, 1.20f), 25f);
+            SpawnBoulder("Overlook_CliffBoulder_2", new Vector3(41.8f, SampleTerrainSurfaceY(41.8f) - 0.08f, 1.40f), new Vector3(1.45f, 0.55f, 1.10f), 145f);
+            SpawnSprite("Overlook_HeroTree_Crown",  treesGroup.transform, sprTree01Large, new Vector3(37.4f, SampleTerrainSurfaceY(37.4f) - 0.05f, 2.2f), new Vector2(1.15f, 1.15f), nearForestCol, 10, 0.9f, 1.0f);
 
-            // Trees & Boulders along the Downhill Slope (X = 44m..61m), kept at Z >= 2.8m so the view of the hill & village below stays open!
-            SpawnBoulder("HillSlope_Boulder_1", new Vector3(47.5f, SampleTerrainSurfaceY(47.5f) - 0.04f, 1.45f), new Vector3(1.40f, 0.55f, 1.10f), 35f);
-            SpawnBoulder("HillSlope_Boulder_2", new Vector3(53.5f, SampleTerrainSurfaceY(53.5f) - 0.04f, 1.45f), new Vector3(1.25f, 0.50f, 1.00f), 120f);
-            SpawnBoulder("HillSlope_Boulder_3", new Vector3(59.0f, SampleTerrainSurfaceY(59.0f) - 0.04f, 1.45f), new Vector3(1.50f, 0.60f, 1.15f), 200f);
+            SpawnBoulder("HillSlope_Boulder_1", new Vector3(47.5f, SampleTerrainSurfaceY(47.5f) - 0.08f, 1.45f), new Vector3(1.35f, 0.52f, 1.05f), 35f);
+            SpawnBoulder("HillSlope_Boulder_2", new Vector3(53.5f, SampleTerrainSurfaceY(53.5f) - 0.08f, 1.45f), new Vector3(1.20f, 0.48f, 0.95f), 120f);
+            SpawnBoulder("HillSlope_Boulder_3", new Vector3(59.0f, SampleTerrainSurfaceY(59.0f) - 0.08f, 1.45f), new Vector3(1.40f, 0.55f, 1.10f), 200f);
 
-            SpawnSprite("HillSlope_Tree_1", treesGroup.transform, sprTreeSlenderHigh,  new Vector3(48.2f, SampleTerrainSurfaceY(48.2f) - 0.25f, 3.0f), new Vector2(1.8f, 1.8f), midForestCol, 7, 1.2f, 1.2f);
-            SpawnSprite("HillSlope_Tree_2", treesGroup.transform, sprTreeGold02,   new Vector3(55.8f, SampleTerrainSurfaceY(55.8f) - 0.28f, 3.2f), new Vector2(0.52f, 0.52f), nearForestCol, 7, 1.1f, 1.1f);
-            SpawnSprite("HillSlope_Palm_3", treesGroup.transform, sprTree05Banana, new Vector3(60.5f, SampleTerrainSurfaceY(60.5f) - 0.25f, 2.6f), new Vector2(0.48f, 0.48f), nearForestCol, 9, 1.5f, 1.3f);
+            SpawnSprite("HillSlope_Tree_1", treesGroup.transform, sprTreeSlenderHigh,  new Vector3(48.2f, SampleTerrainSurfaceY(48.2f) - 0.10f, 3.0f), new Vector2(1.35f, 1.35f), midForestCol, 7, 1.2f, 1.2f);
+            SpawnSprite("HillSlope_Tree_2", treesGroup.transform, sprTreeGold02,       new Vector3(55.8f, SampleTerrainSurfaceY(55.8f) - 0.10f, 3.2f), new Vector2(1.05f, 1.05f), nearForestCol, 7, 1.1f, 1.1f);
+            SpawnSprite("HillSlope_Palm_3", treesGroup.transform, sprTree05Banana,     new Vector3(60.5f, SampleTerrainSurfaceY(60.5f) - 0.10f, 2.6f), new Vector2(0.95f, 0.95f), nearForestCol, 9, 1.5f, 1.3f);
 
             // =====================================================================================
             // D. CLEAN, RHYTHMIC PLANET OF LANA MEADOW & GROUND FLORA (-11.5m to +62.0m)
-            //    Spacious 2.2m step intervals for clean walkable paths, zero clutter or object spam!
             // =====================================================================================
             int carpetIdx = 0;
             for (float x = -11.5f; x <= 61.5f; x += 2.2f)
             {
-                if (x > 14.0f && x < 17.8f) continue; // Skip ravine chasm
+                if (x > 14.0f && x < 18.0f) continue; // Skip ravine chasm entirely
 
                 float y = SampleTerrainSurfaceY(x);
                 float slopeRotZ = 0f;
-                if (x >= 43.5f && x < 62.0f) slopeRotZ = -11.5f; // Align grass carpets with hill slope
+                if (x >= 43.5f && x < 62.0f) slopeRotZ = -11.5f;
 
                 float goldBlend = Mathf.InverseLerp(48.0f, 62.0f, x);
                 Color grassCol = Color.Lerp(new Color(0.92f, 0.98f, 0.88f, 1f), new Color(0.98f, 0.92f, 0.72f, 1f), goldBlend);
@@ -1279,47 +1420,47 @@ namespace HoaVaMau.Editor
 
                 float scaleJitter = 0.95f + Mathf.Abs(Mathf.Sin(x * 3.7f)) * 0.15f;
 
-                // 1. Midground Soft Grass Carpet behind walking path (Z = 0.88m)
+                // Midground Soft Grass Carpet behind walking path (Z = 0.88m)
                 bool inOpeningClearing = (x >= -3.0f && x <= 4.8f);
                 Sprite gSpr = inOpeningClearing ? sprGrassCarpets[0] : sprGrassCarpets[carpetIdx % sprGrassCarpets.Length];
-                float backScaleY = inOpeningClearing ? 0.65f : 1.15f;
+                float backScaleY = inOpeningClearing ? 0.65f : 1.05f;
                 SpawnSprite($"MeadowCarpet_Back_{carpetIdx:D2}", grassGroup.transform, gSpr,
-                    new Vector3(x, y - 0.02f, 0.88f), new Vector2(1.10f * scaleJitter, backScaleY * scaleJitter), grassCol, 12, 1.8f, 1.6f, (carpetIdx % 2 == 0), slopeRotZ);
+                    new Vector3(x, y - 0.02f, 0.88f), new Vector2(1.05f * scaleJitter, backScaleY * scaleJitter), grassCol, 12, 1.8f, 1.6f, (carpetIdx % 2 == 0), slopeRotZ);
 
-                // 2. Front Lip Low Grass Carpet (Z = -1.96m)
-                if (x < 29.2f || x > 32.5f)
+                // Front Lip Low Grass Carpet (Z = -1.96m, skip near cliff edge and crate zone)
+                if ((x < 4.8f || x > 5.5f) && (x < 29.2f || x > 32.5f))
                 {
                     Sprite fgSpr = inOpeningClearing ? sprGrassCarpets[1] : sprGrassCarpets[(carpetIdx + 1) % sprGrassCarpets.Length];
-                    float frontScaleY = inOpeningClearing ? 0.45f : 0.85f;
+                    float frontScaleY = inOpeningClearing ? 0.45f : 0.75f;
                     SpawnSprite($"MeadowCarpet_Front_{carpetIdx:D2}", grassGroup.transform, fgSpr,
-                        new Vector3(x + 0.3f, y - 0.16f, -1.96f), new Vector2(1.00f * scaleJitter, frontScaleY * scaleJitter), frontGrassCol, 22, 1.8f, 1.6f, (carpetIdx % 2 == 0), slopeRotZ);
+                        new Vector3(x + 0.3f, y - 0.16f, -1.96f), new Vector2(0.95f * scaleJitter, frontScaleY * scaleJitter), frontGrassCol, 22, 1.8f, 1.6f, (carpetIdx % 2 == 0), slopeRotZ);
                 }
 
                 carpetIdx++;
             }
 
-            // Intentional Compositional Rounded Bushes (anchored near trees, boulders & slopes)
+            // Proportional bushes (scale 0.45f - 0.55f) grounded on SampleTerrainSurfaceY
             void SpawnAnchoredBush(string name, float bx, float bz, Sprite spr, float scale, Color col, float rotZ = 0f)
             {
                 if (spr == null) return;
                 float by = SampleTerrainSurfaceY(bx);
                 SpawnSprite(name, bushesGroup.transform, spr,
-                    new Vector3(bx, by - 0.06f, bz), new Vector2(scale, scale), col, 11, 1.4f, 1.2f, false, rotZ);
+                    new Vector3(bx, by - 0.04f, bz), new Vector2(scale, scale), col, 11, 1.4f, 1.2f, false, rotZ);
             }
 
-            SpawnAnchoredBush("Opening_Bush_EmbankmentFoot",-6.4f, 1.60f, sprBushBroad1,                 0.55f, nearForestCol);
-            SpawnAnchoredBush("Opening_Bush_MidLeftTree",   -3.6f, 1.55f, sprBushBroad1,                 0.48f, nearForestCol);
-            SpawnAnchoredBush("Opening_Bush_CenterHero",    -1.1f, 1.60f, sprBushBroad1,                 0.45f, nearForestCol);
-            SpawnAnchoredBush("Opening_Bush_DeadwoodStump",  3.8f, 1.55f, sprBushes[0],                  0.48f, nearForestCol);
-            SpawnAnchoredBush("Opening_Bush_CliffBase",      5.2f, 1.60f, sprBushBroad2,                 0.54f, nearForestCol);
-            SpawnAnchoredBush("Zone1_Bush_CliffPlateau",     6.6f, 1.55f, sprBushes[0],                  0.55f, nearForestCol);
-            SpawnAnchoredBush("Zone1_Bush_RavineEdge",       19.0f, 1.55f, sprBushMound2 ?? sprBushes[2], 0.52f, nearForestCol);
-            SpawnAnchoredBush("Zone1_Bush_CrawlEntrance",    27.2f, 1.55f, sprBushBroad1,                 0.50f, nearForestCol);
-            SpawnAnchoredBush("Zone2_Bush_SlopeUpper",       46.5f, 1.55f, sprBushGold01,                 0.52f, nearForestCol, -11.5f);
-            SpawnAnchoredBush("Zone2_Bush_SlopeMid",         53.0f, 1.55f, sprBushGold02,                 0.50f, nearForestCol, -11.5f);
-            SpawnAnchoredBush("Zone2_Bush_SlopeLower",       58.5f, 1.55f, sprBushGold01,                 0.52f, nearForestCol, -11.5f);
+            SpawnAnchoredBush("Opening_Bush_EmbankmentFoot",-6.4f, 1.60f, sprBushBroad1, 0.52f, nearForestCol);
+            SpawnAnchoredBush("Opening_Bush_MidLeftTree",   -3.6f, 1.55f, sprBushBroad1, 0.46f, nearForestCol);
+            SpawnAnchoredBush("Opening_Bush_CenterHero",    -1.1f, 1.60f, sprBushBroad1, 0.45f, nearForestCol);
+            SpawnAnchoredBush("Opening_Bush_DeadwoodStump",  3.8f, 1.55f, sprBushes[0],  0.46f, nearForestCol);
+            SpawnAnchoredBush("Opening_Bush_CliffBase",      5.2f, 1.60f, sprBushBroad2, 0.50f, nearForestCol);
+            SpawnAnchoredBush("Zone1_Bush_CliffPlateau",     6.6f, 1.55f, sprBushes[0],  0.48f, nearForestCol);
+            SpawnAnchoredBush("Zone1_Bush_RavineEdge",       19.0f, 1.55f, sprBushes[2],  0.48f, nearForestCol);
+            SpawnAnchoredBush("Zone1_Bush_CrawlEntrance",    27.2f, 1.55f, sprBushBroad1, 0.48f, nearForestCol);
+            SpawnAnchoredBush("Zone2_Bush_SlopeUpper",       46.5f, 1.55f, sprBushGold01, 0.48f, nearForestCol, -11.5f);
+            SpawnAnchoredBush("Zone2_Bush_SlopeMid",         53.0f, 1.55f, sprBushGold02, 0.46f, nearForestCol, -11.5f);
+            SpawnAnchoredBush("Zone2_Bush_SlopeLower",       58.5f, 1.55f, sprBushGold01, 0.48f, nearForestCol, -11.5f);
 
-            // Intentional Clustered Wildflowers (daisies, chamomile, yellow blossoms nestled by rocks & tree roots)
+            // Delicate wild vegetation (scale 0.35f - 0.45f, zero giant buttercups!)
             void SpawnAnchoredFlower(string name, float fx, float fz, Sprite spr, float scale, float rotZ = 0f)
             {
                 if (spr == null) return;
@@ -1328,19 +1469,18 @@ namespace HoaVaMau.Editor
                     new Vector3(fx, fy - 0.02f, fz), new Vector2(scale, scale), Color.white, 14, 2.2f, 1.8f, false, rotZ);
             }
 
-            // Natural grass tufts & subtle blossoms (neutral wild vegetation matching 50_User_Reference_Forest_Vista.jpg, zero neon yellow flower clusters)
-            SpawnAnchoredFlower("Opening_GrassTuft_Left",    -3.6f, 1.05f, sprFlowers[1], 0.55f);
-            SpawnAnchoredFlower("Opening_GrassTuft_Center",  -1.1f, 1.05f, sprFlowers[0], 0.50f);
-            SpawnAnchoredFlower("Opening_Flower_SmallSprig",  1.5f, 1.05f, sprFlowers[5], 0.45f);
-            SpawnAnchoredFlower("Opening_Flower_CliffBloss",  5.6f, 1.10f, sprFlowers[2], 0.55f);
-            SpawnAnchoredFlower("Zone1_Flower_Cliff",        12.0f, 1.10f, sprFlowers[3], 0.85f);
-            SpawnAnchoredFlower("Zone1_Flower_Ravine",       20.2f, 1.10f, sprFlowers[4], 0.80f);
-            SpawnAnchoredFlower("Zone2_Flower_Slope1",       48.0f, 1.10f, sprFlowers[4], 0.80f, -11.5f);
-            SpawnAnchoredFlower("Zone2_Flower_Slope2",       54.5f, 1.10f, sprFlowers[3], 0.85f, -11.5f);
+            SpawnAnchoredFlower("Opening_GrassTuft_Left",    -3.6f, 1.05f, sprFlowers[1], 0.42f);
+            SpawnAnchoredFlower("Opening_GrassTuft_Center",  -1.1f, 1.05f, sprFlowers[0], 0.40f);
+            SpawnAnchoredFlower("Opening_Flower_SmallSprig",  1.5f, 1.05f, sprFlowers[5], 0.36f);
+            SpawnAnchoredFlower("Opening_Flower_CliffBloss",  5.6f, 1.10f, sprFlowers[2], 0.40f);
+            SpawnAnchoredFlower("Zone1_Flower_Cliff",        12.0f, 1.10f, sprFlowers[3], 0.42f);
+            SpawnAnchoredFlower("Zone1_Flower_Ravine",       20.2f, 1.10f, sprFlowers[4], 0.42f);
+            SpawnAnchoredFlower("Zone2_Flower_Slope1",       48.0f, 1.10f, sprFlowers[4], 0.42f, -11.5f);
+            SpawnAnchoredFlower("Zone2_Flower_Slope2",       54.5f, 1.10f, sprFlowers[3], 0.42f, -11.5f);
 
             // =====================================================================================
             // E. ZONE 3 (+62.0m to +95.0m) & ZONE 4 SURROUNDINGS (+95.0m to +134.0m):
-            //    VAST GOLDEN RICE FIELD ("đi ngang một cánh đồng lúa và lúc đó platform sẽ phẳng lại và ngang hàng")
+            //    VAST GOLDEN RICE FIELD
             // =====================================================================================
             int riceIdx = 0;
             Color goldFrontCol = new Color(0.88f, 0.74f, 0.28f, 1f);
@@ -1351,7 +1491,7 @@ namespace HoaVaMau.Editor
             {
                 bool inMainRiceField = (rx <= 96.5f);
 
-                // Layer 1: Front Verge Low Golden Rice (Z = -1.96f, ankle-to-shin height ~0.45m so An is 100% visible)
+                // Layer 1: Front Verge Low Golden Rice (Z = -1.96f)
                 if (inMainRiceField || riceIdx % 2 == 0)
                 {
                     Sprite frontRice = (riceIdx % 2 == 0) ? sprRiceCarpet1 : sprRiceCarpet2;
@@ -1359,7 +1499,7 @@ namespace HoaVaMau.Editor
                         new Vector3(rx, -1.92f, -1.96f), new Vector2(0.38f, 0.35f), goldFrontCol, 22, 2.8f, 2.1f, (riceIdx % 2 == 0));
                 }
 
-                // Layer 2: Midground Golden Rice Paddy Carpet behind walking path (knee-to-waist height ~0.75m)
+                // Layer 2: Midground Golden Rice Paddy Carpet behind walking path
                 Sprite midRice = (riceIdx % 3 == 0) ? sprRiceCarpet3 : ((riceIdx % 2 == 0) ? sprRiceCarpet1 : sprRiceCarpet2);
                 SpawnSprite($"Rice_MidPaddy_{riceIdx:D3}", riceGroup.transform, midRice,
                     new Vector3(rx + 0.25f, -1.82f, 0.78f), new Vector2(0.42f, 0.40f), goldMidCol, 14, 2.6f, 2.0f, (riceIdx % 3 == 0));
@@ -1379,11 +1519,11 @@ namespace HoaVaMau.Editor
                 riceIdx++;
             }
 
-            // Distant Horizon Coconut Palms, Bamboo Groves & Golden Trees along the Rice Field (Z = 3.6m .. 4.4m, scaled to 0.48..0.58)
-            SpawnSprite("RiceField_Horizon_Coconut1", treesGroup.transform, sprTree06Coconut, new Vector3(67.5f, -2.15f, 3.8f), new Vector2(0.52f, 0.52f), farForestCol, 5, 1.4f, 1.1f);
-            SpawnSprite("RiceField_Horizon_Bamboo1",  treesGroup.transform, sprTree07Bamboo,  new Vector3(76.0f, -2.15f, 4.0f), new Vector2(0.55f, 0.55f), farForestCol, 5, 1.4f, 1.2f);
-            SpawnSprite("RiceField_Horizon_GoldTree", treesGroup.transform, sprTreeGold01,    new Vector3(85.5f, -2.15f, 3.8f), new Vector2(0.56f, 0.56f), midForestCol, 6, 1.0f, 1.0f);
-            SpawnSprite("RiceField_Horizon_Coconut2", treesGroup.transform, sprTree06Coconut, new Vector3(92.0f, -2.15f, 3.8f), new Vector2(0.54f, 0.54f), midForestCol, 6, 1.4f, 1.1f, true);
+            // Distant Horizon Coconut Palms, Bamboo Groves & Golden Trees along the Rice Field (Z = 3.6m .. 4.4m, scale 0.85f - 1.05f)
+            SpawnSprite("RiceField_Horizon_Coconut1", treesGroup.transform, sprTree06Coconut, new Vector3(67.5f, -2.05f, 3.8f), new Vector2(0.90f, 0.90f), farForestCol, 5, 1.4f, 1.1f);
+            SpawnSprite("RiceField_Horizon_Bamboo1",  treesGroup.transform, sprTree07Bamboo,  new Vector3(76.0f, -2.05f, 4.0f), new Vector2(0.95f, 0.95f), farForestCol, 5, 1.4f, 1.2f);
+            SpawnSprite("RiceField_Horizon_GoldTree", treesGroup.transform, sprTreeGold01,    new Vector3(85.5f, -2.05f, 3.8f), new Vector2(1.05f, 1.05f), midForestCol, 6, 1.0f, 1.0f);
+            SpawnSprite("RiceField_Horizon_Coconut2", treesGroup.transform, sprTree06Coconut, new Vector3(92.0f, -2.05f, 3.8f), new Vector2(0.92f, 0.92f), midForestCol, 6, 1.4f, 1.1f, true);
         }
 
         // =========================================================================================
@@ -1397,10 +1537,8 @@ namespace HoaVaMau.Editor
             var villageRoot = new GameObject("Zone4_LivingVillage_RachGoc");
             villageRoot.transform.SetParent(mgRoot.transform, false);
 
-            // 1. Build Shared Humanoid AnimatorController for all Living 3D NPCs ("AC_Lana_LivingVillager.controller")
             RuntimeAnimatorController npcAnimController = BuildOrLoadVillagerAnimatorController();
 
-            // 2. Spawn 3D Stilted Houses, 2.5D Gourd Trellises, Boulders & Village Props (X = 96m .. 132m)
             var pfHouseThatched1 = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/PF_StiltedHouse_Thatched.prefab");
             var pfHouseWood1     = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/PF_StiltedHouse_Wood.prefab");
             var pfNhaSanGo       = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/NhaSanGo.prefab");
@@ -1420,13 +1558,11 @@ namespace HoaVaMau.Editor
                 inst.transform.position = Vector3.zero;
                 inst.transform.rotation = Quaternion.Euler(0f, yaw, 0f) * prefab.transform.localRotation;
 
-                // Disable any building colliders that might jut into Z=0 walking path
                 foreach (var col in inst.GetComponentsInChildren<Collider>(true))
                 {
                     col.enabled = false;
                 }
 
-                // Measure combined world Renderer.bounds, scale to targetHeightMeters, and snap base onto groundPos!
                 var renderers = inst.GetComponentsInChildren<Renderer>(true);
                 if (renderers.Length > 0)
                 {
@@ -1439,7 +1575,6 @@ namespace HoaVaMau.Editor
                         inst.transform.localScale = inst.transform.localScale * factor;
                     }
 
-                    // Re-measure bounds after scaling and snap center X/Z & min Y to groundPos
                     b = renderers[0].bounds;
                     for (int i = 1; i < renderers.Length; i++) b.Encapsulate(renderers[i].bounds);
 
@@ -1456,14 +1591,12 @@ namespace HoaVaMau.Editor
                 }
             }
 
-            // 5 Authentic 3D Vietnamese Stilted Houses & Thatched Homes arranged with depth (Z = 2.6m .. 3.4m, height = 4.2m .. 4.8m)
             SpawnNormalizedVillageStructure("Village_House01_EntranceThatched", pfHouseThatched1, new Vector3(100.8f, -1.85f, 2.8f), 175f, 4.45f);
             SpawnNormalizedVillageStructure("Village_House02_CentralWood",      pfHouseWood1,     new Vector3(109.2f, -1.85f, 3.1f), 184f, 4.65f);
             SpawnNormalizedVillageStructure("Village_House03_MaAnThatchedHome", pfHouseThatched1, new Vector3(117.8f, -1.85f, 2.9f), 178f, 4.55f);
             SpawnNormalizedVillageStructure("Village_House04_EastNhaSanGo",     pfNhaSanGo ?? pfHouseWood1, new Vector3(125.2f, -1.85f, 3.0f), 172f, 4.50f);
             SpawnNormalizedVillageStructure("Village_House05_ThatchedPavilion", pfWaitingShelter ?? pfThatchedHut, new Vector3(131.5f, -1.85f, 2.8f), 180f, 3.90f);
 
-            // 2.5D Gourd Trellises (Dàn Bầu Bí) in the village yards
             if (pfGourdTrellis != null)
             {
                 var tr1 = (GameObject)PrefabUtility.InstantiatePrefab(pfGourdTrellis, villageRoot.transform);
@@ -1475,7 +1608,6 @@ namespace HoaVaMau.Editor
                 tr2.transform.position = new Vector3(121.4f, -1.85f, 1.85f);
             }
 
-            // Authentic 3D Village Harvest Props (Rice Sacks, Bamboo Baskets, Salt Fish Barrels, 3D Boulders)
             SpawnNormalizedVillageStructure("Village_RiceSacks_Entrance", pfRiceSacks,    new Vector3( 98.0f, -1.85f, 1.45f),  15f, 0.85f);
             SpawnNormalizedVillageStructure("Village_BambooBasket_1",     pfBambooBasket, new Vector3(103.2f, -1.85f, 1.35f),   0f, 0.65f);
             SpawnNormalizedVillageStructure("Village_RiceSacks_Center",   pfRiceSacks,    new Vector3(112.5f, -1.85f, 1.45f), -20f, 0.90f);
@@ -1497,7 +1629,6 @@ namespace HoaVaMau.Editor
                 }
             }
 
-            // Village Golden Trees, Banana Palms, Coconut Palms & Bamboo Groves (scaled to 0.48..0.58 and placed at Z = 3.8..4.4m behind the houses!)
             Sprite sprTreeGold1 = LoadSprite($"{UnifiedTexRoot}/Trees/T_Lana_Tree_GoldenVillage_01.png", new Vector2(0.5f, 0.02f));
             Sprite sprTreeGold2 = LoadSprite($"{UnifiedTexRoot}/Trees/T_Lana_Tree_GoldenVillage_02.png", new Vector2(0.5f, 0.02f));
             Sprite sprBanana    = LoadSprite($"{PackTexRoot}/Trees/T_LanaVN_Tree_05_Banana.png", new Vector2(0.5f, 0.02f));
@@ -1525,19 +1656,18 @@ namespace HoaVaMau.Editor
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
 
-            SpawnVillageFoliage("Village_Tree_EntranceGold", sprTreeGold1, new Vector3( 97.2f, -2.15f, 3.8f), new Vector2(0.56f, 0.56f), 6);
-            SpawnVillageFoliage("Village_Tree_Banana1",      sprBanana,    new Vector3(105.0f, -2.12f, 3.6f), new Vector2(0.50f, 0.50f), 7);
-            SpawnVillageFoliage("Village_Tree_CenterGold",   sprTreeGold2, new Vector3(113.5f, -2.15f, 4.0f), new Vector2(0.58f, 0.58f), 6, true);
-            SpawnVillageFoliage("Village_Tree_Coconut1",     sprCoconut,   new Vector3(121.5f, -2.15f, 3.9f), new Vector2(0.54f, 0.54f), 6);
-            SpawnVillageFoliage("Village_Tree_BambooEast",   sprBamboo,    new Vector3(128.5f, -2.15f, 3.8f), new Vector2(0.54f, 0.54f), 6);
-            SpawnVillageFoliage("Village_Tree_EastCanopy",   sprTreeGold1, new Vector3(134.0f, -2.15f, 3.8f), new Vector2(0.58f, 0.58f), 6);
+            SpawnVillageFoliage("Village_Tree_EntranceGold", sprTreeGold1, new Vector3( 97.2f, -2.05f, 3.8f), new Vector2(1.05f, 1.05f), 6);
+            SpawnVillageFoliage("Village_Tree_Banana1",      sprBanana,    new Vector3(105.0f, -2.05f, 3.6f), new Vector2(0.95f, 0.95f), 7);
+            SpawnVillageFoliage("Village_Tree_CenterGold",   sprTreeGold2, new Vector3(113.5f, -2.05f, 4.0f), new Vector2(1.05f, 1.05f), 6, true);
+            SpawnVillageFoliage("Village_Tree_Coconut1",     sprCoconut,   new Vector3(121.5f, -2.05f, 3.9f), new Vector2(0.95f, 0.95f), 6);
+            SpawnVillageFoliage("Village_Tree_BambooEast",   sprBamboo,    new Vector3(128.5f, -2.05f, 3.8f), new Vector2(0.95f, 0.95f), 6);
+            SpawnVillageFoliage("Village_Tree_EastCanopy",   sprTreeGold1, new Vector3(134.0f, -2.05f, 3.8f), new Vector2(1.05f, 1.05f), 6);
 
             for (float bx = 98.0f; bx <= 131.0f; bx += 5.5f)
             {
-                SpawnVillageFoliage($"Village_Bush_{bx:F0}", sprBushG1, new Vector3(bx, -1.92f, 1.65f), new Vector2(0.78f, 0.78f), 11);
+                SpawnVillageFoliage($"Village_Bush_{bx:F0}", sprBushG1, new Vector3(bx, -1.90f, 1.65f), new Vector2(0.70f, 0.70f), 11);
             }
 
-            // 3. Spawn Rigged & Animated 3D NPCs in the Forest Clearing (2 companions playing with An) & in the Village (7 villagers)
             var npcsRoot = new GameObject("Living_Rigged_3D_NPCs");
             npcsRoot.transform.SetParent(gpRoot.transform, false);
 
@@ -1555,7 +1685,6 @@ namespace HoaVaMau.Editor
                 inst.transform.position = pos;
                 inst.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
 
-                // Normalize scale so NPC matches An's world scale (~1.35m for children, ~1.65m for adults)
                 var rend = inst.GetComponentInChildren<Renderer>();
                 if (rend != null && rend.bounds.size.y > 0.1f)
                 {
@@ -1564,7 +1693,6 @@ namespace HoaVaMau.Editor
                     inst.transform.localScale = Vector3.one * s;
                 }
 
-                // Assign URP Lit material with verified BaseColor texture so NPC never renders untextured/grey
                 if (!string.IsNullOrEmpty(texPath))
                 {
                     Texture2D tex = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
@@ -1592,12 +1720,10 @@ namespace HoaVaMau.Editor
                 {
                     anim.runtimeAnimatorController = npcAnimController;
                     anim.applyRootMotion = false;
-                    // Evaluate initial pose in Edit Mode so no NPC ever appears in a T-pose in the Editor or screenshots!
                     anim.Play(defaultState, 0, 0.25f);
                     anim.Update(0.05f);
                 }
 
-                // Re-snap feet to pos.y after Animator pose evaluation
                 var rendAfter = inst.GetComponentInChildren<Renderer>();
                 if (rendAfter != null)
                 {
@@ -1614,7 +1740,7 @@ namespace HoaVaMau.Editor
                 return inst;
             }
 
-            // --- A. Village Children playing in the Golden Rice Field Village (X = 101.5m & X = 111.0m) ---
+            // Children playing in village
             SpawnRigged3DNPC(
                 "VillageChild_01_Ti",
                 "Assets/Models/Characters/NPCs/Character_NPC_06.fbx",
@@ -1643,7 +1769,7 @@ namespace HoaVaMau.Editor
                 "Idle2"
             );
 
-            // --- B. 7 Living Villager NPCs across the Golden Rice Field Village (X = 98m .. 129m) ---
+            // 7 Living Villager NPCs
             var welcomerGO = SpawnRigged3DNPC(
                 "VillageNPC_01_BacBaWelcomer",
                 "Assets/Models/Characters/NPCs/Character_NPC_01.fbx",
@@ -1743,7 +1869,6 @@ namespace HoaVaMau.Editor
                 "Idle2"
             );
 
-            // 4. Create Wide-Zoom Village Arrival Cutscene Trigger & Virtual Camera at X = 94.0m
             var camRoot = GameObject.Find("01_Camera") ?? new GameObject("01_Camera");
             var playerGO = GameObject.Find("PF_Player_Minh") ?? GameObject.Find("Character_An");
 
@@ -1844,7 +1969,7 @@ namespace HoaVaMau.Editor
         }
 
         // =========================================================================================
-        // 8. LIGHTING, CAMERAS (SKY-TO-FOREST DESCENT) & CUTSCENE CONFIGURATION
+        // 8. LIGHTING, CAMERAS & CUTSCENE CONFIGURATION
         // =========================================================================================
         private static void ConfigureLightingCamerasAndCutscenes()
         {
@@ -1877,8 +2002,7 @@ namespace HoaVaMau.Editor
                 camRootObj.transform.localScale = Vector3.one;
             }
 
-            // Configure VCam_IntroSky high in the deep cosmic zenith sky (X = -3.2m, Y = +36.5m, Z = -13.5m)
-            // so Phase 3 pans down from galaxy edge deep blue sky -> clouds -> lower sky -> foreground bushes -> An playing in the forest!
+            // VCam_IntroSky at zenith cosmic sky (X = -3.2m, Y = +36.5m, Z = -13.5m)
             var vcamSky = GameObject.Find("VCam_IntroSky");
             if (vcamSky != null)
             {
@@ -1897,8 +2021,6 @@ namespace HoaVaMau.Editor
 
             var playerGO = GameObject.Find("PF_Player_Minh") ?? GameObject.Find("Character_An");
 
-            // Configure Gameplay Virtual Camera & Main Camera at An's starting clearing
-            // Camera centered at X = -0.20m, Y = +0.35m, Z = -13.5m matching 50_User_Reference_Forest_Vista.jpg 1:1
             var vcam = GameObject.Find("01_Camera/CM_VirtualCamera_2.5D") ?? GameObject.Find("CM_VirtualCamera_2.5D");
             if (vcam != null)
             {
@@ -1908,7 +2030,7 @@ namespace HoaVaMau.Editor
                 if (cmCam != null)
                 {
                     if (playerGO != null) cmCam.Follow = playerGO.transform;
-                    cmCam.LookAt = null; // Pure 2.5D Planet of Lana horizontal tracking — zero camera tilt!
+                    cmCam.LookAt = null;
                     var lens = cmCam.Lens;
                     lens.FieldOfView = 38.0f;
                     cmCam.Lens = lens;
@@ -1917,14 +2039,12 @@ namespace HoaVaMau.Editor
                 if (posComposer != null)
                 {
                     posComposer.CameraDistance = 13.5f;
-                    // Player at X = -2.2f, Y = -1.82f. Camera desired at X = -0.20f, Y = 0.35f -> Offset: (2.0f, 2.17f, 0f)
                     posComposer.TargetOffset = new Vector3(2.0f, 2.17f, 0.0f);
                     var comp = posComposer.Composition;
                     comp.ScreenPosition = Vector2.zero;
                     posComposer.Composition = comp;
                     EditorUtility.SetDirty(posComposer);
                 }
-                // Remove any rotation composer that would tilt the camera
                 var rotComposer = vcam.GetComponent<CinemachineRotationComposer>();
                 if (rotComposer != null) UnityEngine.Object.DestroyImmediate(rotComposer);
                 var hardLook = vcam.GetComponent<CinemachineHardLookAt>();
@@ -1947,7 +2067,6 @@ namespace HoaVaMau.Editor
                 }
             }
 
-            // Destroy any rogue embedded FBX cameras or lights (e.g. Blender Camera inside SM_WoodenCrate.fbx)
             foreach (var cam in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include))
             {
                 if (mainCam != null && cam.gameObject == mainCam) continue;
@@ -1960,7 +2079,6 @@ namespace HoaVaMau.Editor
                 UnityEngine.Object.DestroyImmediate(cam.gameObject);
             }
 
-            // Ensure PauseMenuController has official logo assigned
             var pauseCtrl = UnityEngine.Object.FindAnyObjectByType<PauseMenuController>();
             if (pauseCtrl != null)
             {
@@ -1972,11 +2090,9 @@ namespace HoaVaMau.Editor
                 EditorUtility.SetDirty(pauseCtrl);
             }
 
-            // Ensure default save slot 1 starts at the Forest Clearing (-2.2, -1.82, 0) with checkpointIndex = 0
             HoaVaMauSaveSystem.SaveCurrentGameState(1, "Chương 1: Đất Đỏ Cà Mau", "Rừng Sớm Cà Mau", 0, new Vector3(-2.2f, -1.82f, 0f));
             IntroCutsceneState.MarkForNewGame();
 
-            // Ensure IntroCutsceneController has its upgraded 35mm Vintage Film Canvas & 6.0s Sky-to-Forest descent configured with verified historical slide sprites
             var introCtrl = UnityEngine.Object.FindAnyObjectByType<IntroCutsceneController>();
             if (introCtrl != null)
             {
@@ -2283,27 +2399,40 @@ namespace HoaVaMau.Editor
             // 0. Cosmic Zenith Stratosphere (Deep Galaxy Blue & High Wisps)
             capture("Verify_00_ZenithCosmicSky.png", new Vector3(-3.2f, 34.5f, -13.5f), Vector3.zero, 38f);
 
-            // 1. Sky-to-Forest Cloud Descent View (Descending through voluminous billowy cumulus clouds)
+            // 1. Sky-to-Forest Cloud Descent View (Descending through billowy cumulus clouds)
             capture("Verify_01_SkyToCloudsDescent.png", new Vector3(-3.2f, 22.5f, -13.5f), Vector3.zero, 38f);
 
-            // 2. Forest Clearing Start (Recreated 1:1 to exact user reference painting 50_User_Reference_Forest_Vista.jpg)
+            // 2. Forest Clearing Start & Cliff Rope (Recreated 1:1 to exact user reference painting 50_User_Reference_Forest_Vista.jpg)
             capture("Verify_02_ForestClearingAndRope.png", new Vector3(-0.20f, 0.35f, -13.5f), Vector3.zero, 38f);
 
-            // 3. Ravine Gap, Fallen Tree Crawl & Push/Pull Crate to High Platform
-            capture("Verify_03_FallenTreeAndCratePuzzle.png", new Vector3(28.0f, 0.85f, -14.5f), Vector3.zero, 38f);
+            // 3. Cliff Rope Close-Up (Clearance in free air in front of platform collider)
+            capture("Verify_03_CliffRopeClearance.png", new Vector3(4.50f, -1.00f, -7.5f), Vector3.zero, 36f);
 
-            // 4. High Cliff Overlook & Downhill Slope ("thấy được đồi ở dưới, thấy được làng ở dưới thì đi xuống dốc đồi")
-            capture("Verify_04_HillOverlookAndDescent.png", new Vector3(45.0f, 2.25f, -16.0f), Vector3.zero, 38f);
+            // 4. Rocky Ravine Chasm & 4.6m Swing Rope
+            capture("Verify_04_RavineChasmSwingRope.png", new Vector3(16.10f, 0.20f, -11.5f), Vector3.zero, 38f);
 
-            // 5. Flat Horizontal Golden Rice Field ("đi ngang một cánh đồng lúa và lúc đó platform sẽ phẳng lại và ngang hàng")
-            capture("Verify_05_FlatGoldenRiceField.png", new Vector3(78.0f, 0.15f, -13.5f), Vector3.zero, 38f);
+            // 5. Fallen Tree Crawl & Push/Pull Crate to High Platform
+            capture("Verify_05_FallenTreeAndCratePuzzle.png", new Vector3(28.0f, 0.85f, -14.5f), Vector3.zero, 38f);
 
-            // 6. Wide-Zoom Village Arrival Cutscene & Living Animated NPC Village surrounded by Golden Rice Fields
-            capture("Verify_06_LivingVillageWideZoom.png", new Vector3(108.0f, 1.85f, -21.5f), new Vector3(4f, 0f, 0f), 42f);
+            // 6. High Cliff Overlook & Downhill Slope
+            capture("Verify_06_HillOverlookAndDescent.png", new Vector3(45.0f, 2.25f, -16.0f), Vector3.zero, 38f);
+
+            // 7. Flat Horizontal Golden Rice Field
+            capture("Verify_07_FlatGoldenRiceField.png", new Vector3(78.0f, 0.15f, -13.5f), Vector3.zero, 38f);
+
+            // 8. Wide-Zoom Village Arrival Cutscene & Living Animated NPC Village
+            capture("Verify_08_LivingVillageWideZoom.png", new Vector3(108.0f, 1.85f, -21.5f), new Vector3(4f, 0f, 0f), 42f);
 
             cam.transform.position = origPos;
             cam.transform.rotation = origRot;
             cam.fieldOfView = origFov;
+
+            var endFollower = UnityEngine.Object.FindAnyObjectByType<LanaParallaxBackgroundFollower>();
+            if (endFollower != null)
+            {
+                endFollower.TargetCamera = cam.transform;
+                endFollower.LateUpdate();
+            }
         }
     }
 }

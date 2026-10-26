@@ -7,6 +7,7 @@ Shader "HoaVaMau/LanaBackgroundBlend"
         _LeftFeather ("Left Edge Feather Width", Range(0.0, 0.45)) = 0.0
         _RightFeather ("Right Edge Feather Width", Range(0.0, 0.45)) = 0.0
         _BottomFeather ("Bottom Edge Feather Width", Range(0.0, 0.35)) = 0.0
+        _TopFeather ("Top Edge Feather Width", Range(0.0, 0.45)) = 0.0
 
         [Header(Cloud Radiance and Sky Clarity)]
         _CloudRadianceColor ("Cloud Rim Radiance Color", Color) = (1.0, 0.98, 0.90, 1.0)
@@ -57,6 +58,7 @@ Shader "HoaVaMau/LanaBackgroundBlend"
                 half _LeftFeather;
                 half _RightFeather;
                 half _BottomFeather;
+                half _TopFeather;
                 half4 _CloudRadianceColor;
                 half _CloudRadianceIntensity;
                 half _SunbeamIntensity;
@@ -114,6 +116,10 @@ Shader "HoaVaMau/LanaBackgroundBlend"
                 if (_BottomFeather > 0.001h)
                 {
                     alpha *= smoothstep(0.0h, _BottomFeather, IN.uv.y);
+                }
+                if (_TopFeather > 0.001h)
+                {
+                    alpha *= smoothstep(0.0h, _TopFeather, 1.0h - IN.uv.y);
                 }
 
                 col.a = alpha;

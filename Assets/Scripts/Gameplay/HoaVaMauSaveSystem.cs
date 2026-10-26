@@ -55,6 +55,77 @@ namespace HoaVaMau.Gameplay
             return Path.Combine(dir, $"save_slot_{slot}.json");
         }
 
+        public static string GetThumbnailFilePath(int slot)
+        {
+            string dir = Path.Combine(Application.persistentDataPath, "Saves");
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            return Path.Combine(dir, $"save_slot_{slot}_thumb.png");
+        }
+
+        public static Texture2D LoadThumbnailTexture(int slot)
+        {
+            string path = GetThumbnailFilePath(slot);
+            if (File.Exists(path))
+            {
+                try
+                {
+                    byte[] bytes = File.ReadAllBytes(path);
+                    Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                    if (tex.LoadImage(bytes))
+                    {
+                        return tex;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[HoaVaMauSaveSystem] Error reading thumbnail for slot {slot}: {ex.Message}");
+                }
+            }
+            return null;
+        }
+
+        public static void CaptureAndSaveThumbnail(int slot, Camera targetCam = null)
+        {
+            if (!Application.isPlaying) return;
+            if (targetCam == null) targetCam = Camera.main;
+            if (targetCam == null) return;
+
+            try
+            {
+                int width = 360;
+                int height = 640;
+                RenderTexture rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+                RenderTexture prevTarget = targetCam.targetTexture;
+                RenderTexture prevActive = RenderTexture.active;
+
+                targetCam.targetTexture = rt;
+                targetCam.Render();
+
+                RenderTexture.active = rt;
+                Texture2D tex = new Texture2D(width, height, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                tex.Apply();
+
+                targetCam.targetTexture = prevTarget;
+                RenderTexture.active = prevActive;
+                UnityEngine.Object.Destroy(rt);
+
+                byte[] bytes = tex.EncodeToPNG();
+                UnityEngine.Object.Destroy(tex);
+
+                string path = GetThumbnailFilePath(slot);
+                File.WriteAllBytes(path, bytes);
+                Debug.Log($"[HoaVaMauSaveSystem] Captured and saved thumbnail for slot {slot} at {path}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[HoaVaMauSaveSystem] Failed capturing thumbnail for slot {slot}: {ex.Message}");
+            }
+        }
+
         public static bool HasAnySaveData()
         {
             for (int i = 1; i <= MaxSlots; i++)
@@ -117,7 +188,7 @@ namespace HoaVaMau.Gameplay
             };
         }
 
-        public static bool SaveCurrentGameState(int slotIndex, string chapter = "Chương 1: Đất Đỏ Cà Mau", string location = "Bờ Sông Đất Đỏ", int checkpoint = 0, Vector3? pos = null)
+        public static bool SaveCurrentGameState(int slotIndex, string chapter = "Chương 1: Đất Đỏ Cà Mau", string location = "Bờ Sông Đất Đỏ", int checkpoint = 0, Vector3? pos = null, bool captureThumbnail = true)
         {
             if (slotIndex < 1 || slotIndex > MaxSlots) slotIndex = 1;
             ActiveSlotIndex = slotIndex;
@@ -149,6 +220,12 @@ namespace HoaVaMau.Gameplay
                 string json = JsonUtility.ToJson(data, true);
                 File.WriteAllText(path, json);
                 diskWriteOk = true;
+
+                // Also attempt to capture camera thumbnail snapshot if in active gameplay
+                if (captureThumbnail && Application.isPlaying && Camera.main != null)
+                {
+                    CaptureAndSaveThumbnail(slotIndex, Camera.main);
+                }
             }
             catch (Exception ex)
             {
@@ -213,6 +290,8 @@ namespace HoaVaMau.Gameplay
             {
                 string path = GetSaveFilePath(slotIndex);
                 if (File.Exists(path)) File.Delete(path);
+                string thumbPath = GetThumbnailFilePath(slotIndex);
+                if (File.Exists(thumbPath)) File.Delete(thumbPath);
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_Occupied");
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_Chapter");
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_Location");
