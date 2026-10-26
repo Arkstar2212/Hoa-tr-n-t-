@@ -81,3 +81,7 @@ test-results.xml
 /*.blend
 /*.blend1
 /*.blend@
+
+# Local scene backups
+Assets/Scenes/Backups/
+Assets/Scenes/Backups.meta

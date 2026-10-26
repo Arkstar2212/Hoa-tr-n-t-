@@ -9,9 +9,10 @@ namespace HoaVaMau.Test3D
     public class Player3DController : MonoBehaviour
     {
         [Header("Movement")]
-        [SerializeField] private float moveSpeed = 5.0f;
-        [SerializeField] private float sprintSpeed = 8.0f;
-        [SerializeField] private float rotationSpeed = 12.0f;
+        [SerializeField] private float moveSpeed = 4.5f;
+        [SerializeField] private float sprintSpeed = 7.5f;
+        [SerializeField] private float jumpHeight = 1.2f;
+        [SerializeField] private float rotationSpeed = 14.0f;
         [SerializeField] private float gravity = 20.0f;
         [SerializeField] private float pushPower = 3.5f;
 
@@ -25,7 +26,7 @@ namespace HoaVaMau.Test3D
         private float verticalVelocity = 0f;
 
         private static readonly int SpeedParam = Animator.StringToHash("Speed");
-        private static readonly int IsMovingParam = Animator.StringToHash("IsMoving");
+        private static readonly int IsGroundedParam = Animator.StringToHash("IsGrounded");
 
         private void Awake()
         {
@@ -68,9 +69,15 @@ namespace HoaVaMau.Test3D
                 animator.applyRootMotion = false;
             }
 
+            if (cameraTransform == null && Camera.main != null)
+            {
+                cameraTransform = Camera.main.transform;
+            }
+
             float horizontal = 0f;
             float vertical = 0f;
             bool isSprint = false;
+            bool isJump = false;
 
 #if ENABLE_INPUT_SYSTEM
             var kb = Keyboard.current;
@@ -81,6 +88,7 @@ namespace HoaVaMau.Test3D
                 if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) horizontal -= 1f;
                 if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) horizontal += 1f;
                 if (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed) isSprint = true;
+                if (kb.spaceKey.wasPressedThisFrame) isJump = true;
             }
             var gp = Gamepad.current;
             if (gp != null)
@@ -91,11 +99,13 @@ namespace HoaVaMau.Test3D
                     horizontal += stick.x;
                     vertical += stick.y;
                 }
+                if (gp.buttonSouth.wasPressedThisFrame) isJump = true;
             }
 #else
             horizontal = Input.GetAxisRaw("Horizontal");
             vertical = Input.GetAxisRaw("Vertical");
             isSprint = Input.GetKey(KeyCode.LeftShift);
+            isJump = Input.GetKeyDown(KeyCode.Space);
 #endif
 
             Vector3 inputDir = new Vector3(horizontal, 0f, vertical).normalized;
@@ -125,6 +135,10 @@ namespace HoaVaMau.Test3D
             if (controller.isGrounded)
             {
                 verticalVelocity = -1.0f;
+                if (isJump)
+                {
+                    verticalVelocity = Mathf.Sqrt(2f * jumpHeight * gravity);
+                }
             }
             else
             {
@@ -140,7 +154,7 @@ namespace HoaVaMau.Test3D
             {
                 float planarSpeed = new Vector3(velocity.x, 0, velocity.z).magnitude;
                 animator.SetFloat(SpeedParam, planarSpeed);
-                animator.SetBool(IsMovingParam, planarSpeed > 0.15f);
+                animator.SetBool(IsGroundedParam, controller.isGrounded);
             }
         }
 
