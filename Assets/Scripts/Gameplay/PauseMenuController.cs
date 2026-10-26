@@ -873,6 +873,8 @@ namespace HoaVaMau.Gameplay
                 bTxt.font = font;
                 bTxt.fontSize = 12;
                 bTxt.alignment = TextAnchor.MiddleCenter;
+                bTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+                bTxt.verticalOverflow = VerticalWrapMode.Overflow;
                 bTxt.color = new Color(1f, 0.95f, 0.80f, 0.95f);
                 bTxt.text = $"[ {KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(action))} ]";
                 bTxt.raycastTarget = false;

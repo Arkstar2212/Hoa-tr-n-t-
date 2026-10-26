@@ -69,6 +69,9 @@ namespace HoaVaMau.Gameplay
         private float speedVelocity = 0f;
         private float targetFacingAngle = 90f; // 90 = Right, -90 = Left
         private string currentPlayingState = "Idle";
+        private bool isLanding = false;
+        private float landingTimer = 0f;
+        private const float DefaultLandingDuration = 0.35f;
 
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
         private static readonly int IsClimbingHash = Animator.StringToHash("IsClimbing");
@@ -390,6 +393,26 @@ namespace HoaVaMau.Gameplay
                 return;
             }
 
+            // 0. Xử lý trạng thái Tiếp Đất (Landing) sau khi rơi
+            if (isLanding)
+            {
+                landingTimer -= dt;
+                // Nếu người chơi bắt đầu chạy hoặc hết thời gian tiếp đất, chuyển mượt sang locomotion
+                if (currentSmoothSpeed > 0.25f && landingTimer < (DefaultLandingDuration - 0.14f))
+                {
+                    isLanding = false;
+                }
+                else if (landingTimer <= 0f)
+                {
+                    isLanding = false;
+                }
+                else
+                {
+                    CrossFadeToState("Land", 0.08f);
+                    return;
+                }
+            }
+
             // 2. Chế độ Tự Động (Auto Gameplay)
             bool isClimbing = false;
             bool isCrouching = false;
@@ -398,13 +421,45 @@ namespace HoaVaMau.Gameplay
 
             if (playerController != null)
             {
-                // Kiểm tra trạng thái leo trèo
-                if (playerController.CurrentState == PlayerState.LedgeClimb || 
-                    playerController.CurrentState == PlayerState.RopeClimb ||
-                    playerController.CurrentState == PlayerState.LedgeGrab ||
-                    playerController.CurrentState == PlayerState.RopeGrab)
+                if (playerController.CurrentState == PlayerState.LedgeGrab)
                 {
-                    isClimbing = true;
+                    // Đang bám treo tay vào gờ vách đá (chờ bấm W/Up để trèo lên)
+                    throwPhase = ThrowAnimPhase.None;
+                    currentPlayingState = "LedgeHang";
+                    animator.Play("Climb", 0, 0f);
+                    animator.speed = 0f;
+                    return;
+                }
+                else if (playerController.CurrentState == PlayerState.LedgeClimb)
+                {
+                    // Đang thực hiện động tác kéo người trèo lên đỉnh vách
+                    throwPhase = ThrowAnimPhase.None;
+                    animator.speed = 1f;
+                    animator.SetBool(IsClimbingHash, true);
+                    if (currentPlayingState != "Climb")
+                    {
+                        currentPlayingState = "Climb";
+                        animator.Play("Climb", 0, 0f);
+                    }
+                    return;
+                }
+                else if (playerController.CurrentState == PlayerState.RopeGrab || playerController.CurrentState == PlayerState.RopeClimb)
+                {
+                    // Đang bám hoặc leo dây thừng
+                    throwPhase = ThrowAnimPhase.None;
+                    float vertInput = (playerController.InputReader != null) ? playerController.InputReader.Vertical : 0f;
+                    CrossFadeToState("RopeClimb", 0.10f);
+
+                    if (Mathf.Abs(vertInput) > 0.1f)
+                    {
+                        animator.speed = Mathf.Sign(vertInput) * 1.25f;
+                    }
+                    else
+                    {
+                        // Giữ tư thế bám dây tự nhiên, không đóng băng hoàn toàn animator
+                        animator.speed = 0.12f;
+                    }
+                    return;
                 }
                 else
                 {
@@ -434,17 +489,7 @@ namespace HoaVaMau.Gameplay
             animator.SetBool(IsCrawlingHash, isCrawling);
             animator.SetFloat(SpeedHash, currentSmoothSpeed);
 
-            if (isClimbing)
-            {
-                throwPhase = ThrowAnimPhase.None;
-                animator.speed = 1f;
-                if (currentPlayingState != "Climb")
-                {
-                    currentPlayingState = "Climb";
-                    animator.Play("Climb", 0, 0f);
-                }
-            }
-            else if (throwPhase == ThrowAnimPhase.Pickup)
+            if (throwPhase == ThrowAnimPhase.Pickup)
             {
                 // Pha 1 (Khi bấm E nhặt vật): Chạy khúc đầu của animation Throw (0.00 -> 0.37: cúi xuống nhặt vật lên ngực)
                 currentPlayingState = "Throw";
@@ -514,7 +559,8 @@ namespace HoaVaMau.Gameplay
             }
             else if (playerController != null && playerController.CurrentState == PlayerState.Airborne)
             {
-                if (playerController.Velocity.y > 0.2f)
+                isLanding = false;
+                if (playerController.Velocity.y > 0.4f)
                 {
                     CrossFadeToState("Jump", 0.12f);
                 }
@@ -529,13 +575,19 @@ namespace HoaVaMau.Gameplay
             }
             else if (isCrouching)
             {
-                CrossFadeToState("Crouch", 0.15f);
+                if (currentSmoothSpeed > 0.12f)
+                {
+                    CrossFadeToState("Crouch", 0.15f);
+                }
+                else
+                {
+                    CrossFadeToState("CrouchIdle", 0.15f);
+                }
             }
             else
             {
-                if (currentPlayingState == "Climb" || currentPlayingState == "Jump" || currentPlayingState == "Fall" || currentPlayingState == "Throw")
+                if (currentPlayingState == "Climb" || currentPlayingState == "Jump" || currentPlayingState == "Fall" || currentPlayingState == "Throw" || currentPlayingState == "Land" || currentPlayingState == "LedgeHang" || currentPlayingState == "RopeClimb")
                 {
-                    // Vừa hoàn tất leo trèo, nhảy hoặc ném, chuyển mượt mà sang Idle/Walk
                     string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
                     CrossFadeToState(next, 0.12f);
                 }
@@ -603,6 +655,34 @@ namespace HoaVaMau.Gameplay
                 float facing = (playerController != null) ? playerController.FacingDirection : 1f;
                 activeCarrySocket.localPosition = new Vector3(facing * 0.44f, 1.05f, 0f);
             }
+        }
+
+        public void OnLanded(float impactVelocity)
+        {
+            if (animator == null) return;
+            throwPhase = ThrowAnimPhase.None;
+            animator.speed = 1f;
+            isLanding = true;
+            landingTimer = DefaultLandingDuration;
+            CrossFadeToState("Land", 0.08f);
+        }
+
+        public void OnLedgeHangStarted()
+        {
+            if (animator == null) return;
+            throwPhase = ThrowAnimPhase.None;
+            currentPlayingState = "LedgeHang";
+            animator.Play("Climb", 0, 0f);
+            animator.speed = 0f;
+        }
+
+        public void OnClimbCancelled()
+        {
+            if (animator == null) return;
+            animator.speed = 1f;
+            currentPlayingState = "Fall";
+            animator.SetBool(IsClimbingHash, false);
+            CrossFadeToState("Fall", 0.12f);
         }
 
         public void OnClimbStarted()

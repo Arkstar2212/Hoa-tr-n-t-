@@ -357,6 +357,7 @@ MonoBehaviour:
   showOnScreenGui: 1
   smoothFacing: 1
   turnSpeed: 720
+  isCutsceneActive: 0
 --- !u!114 &5157432560309562316
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -395,12 +396,13 @@ MonoBehaviour:
   pullLeanAngle: -11
   climbDuration: 1.05
   maxClimbForwardLean: 24
-  autoClimbOnLedgeGrab: 1
+  autoClimbOnLedgeGrab: 0
   carrySocket: {fileID: 4050149011516317745}
   trajectoryPredictor: {fileID: 2361046213026597568}
   minThrowSpeed: 5
   maxThrowSpeed: 14.5
   throwChargeRate: 8.5
+  showDebugHUD: 0
 --- !u!114 &1748984168476028523
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -419,6 +421,7 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  wallHangOffset: 0.28
   platformLandForward: 0.42
 --- !u!114 &9152849726772279026
 MonoBehaviour:

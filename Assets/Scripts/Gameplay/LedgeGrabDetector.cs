@@ -65,17 +65,17 @@ namespace HoaVaMau.Gameplay
 
             float topY = ledgeHit.point.y;
 
-            // Chỉ bám gờ khi mép tường nằm đúng tầm tay với (cao hơn bàn chân từ 0.45m đến 1.55m)
+            // Chỉ bám gờ khi mép tường nằm đúng tầm tay với khi nhảy / rơi (cao hơn bàn chân từ 0.6m đến 2.35m)
             float ledgeHeightAboveFeet = topY - origin.y;
-            if (ledgeHeightAboveFeet < 0.45f || ledgeHeightAboveFeet > 1.55f)
+            if (ledgeHeightAboveFeet < 0.6f || ledgeHeightAboveFeet > 2.35f)
             {
                 return false;
             }
 
             // Vị trí bắt đầu bám (hangPos): Áp sát ngay mặt trước của vách tường (wallX - facingDir * wallHangOffset),
-            // giữ nguyên độ cao tiếp xúc tự nhiên dưới mép gờ để tay bám đúng vào góc gờ (wallX, topY) mà không bị dịch chuyển tức thời.
+            // với hai tay vươn thẳng bám đúng vào góc gờ (topY). Gốc tọa độ chân nằm cách mép gờ 1.70m về phía dưới.
             float hangX = wallX - facingDir * wallHangOffset;
-            float hangY = Mathf.Clamp(origin.y, topY - 1.05f, topY - 0.50f);
+            float hangY = topY - 1.70f;
             hangPos = new Vector3(hangX, hangY, 0f);
 
             // Vị trí kết thúc trèo (platformLandPos): Đứng vững trên mặt phẳng đỉnh platform, cách mép gờ 0.42m

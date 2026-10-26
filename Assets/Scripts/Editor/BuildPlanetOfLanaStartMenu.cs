@@ -94,11 +94,13 @@ namespace HoaVaMau.Editor
                 }
             }
 
-            // Remove any old 3D level objects (Minh, An, terrain, old lights, etc.)
+            // Remove any old 3D level objects (Minh, An, terrain, old lights, Cinemachine virtual cameras, pause UI, etc.)
             string[] objectsToRemove = {
                 "02_Gameplay", "03_Terrain", "04_Foreground", "05_Midground",
                 "06_Water", "07_Background", "08_Lighting", "09_VFX", "10_EnvironmentSystems",
-                "PF_Player_Minh", "Character_An", "CinematicVirtualCameras", "Directional Light"
+                "PF_Player_Minh", "Character_An", "CinematicVirtualCameras", "Directional Light",
+                "01_Camera/CM_VirtualCamera_2.5D", "CM_VirtualCamera_2.5D", "VCam_IntroSky",
+                "00_UI_PauseMenuController", "PlanetOfLana_Prompt_System"
             };
             foreach (var name in objectsToRemove)
             {
@@ -108,6 +110,7 @@ namespace HoaVaMau.Editor
 
             // Load UI Sprites and Audio
             Sprite studioLogoSpr   = ImportAndLoadUISprite("Assets/Textures/UI/T_Logo_FiveCowsInTheFire_BW.png");
+            Sprite headphoneSpr    = ImportAndLoadUISprite("Assets/Textures/UI/T_Icon_Headphone_BW.png");
             Sprite officialLogoSpr = ImportAndLoadUISprite("Assets/Textures/UI/T_Logo_HoaTrenDatDo.png");
             Sprite flowerSpr       = ImportAndLoadUISprite("Assets/Textures/UI/T_Flower_Minimalist_BW.png");
             Sprite doveSpr         = ImportAndLoadUISprite("Assets/Textures/UI/T_Dove_Minimalist_BW.png");
@@ -126,19 +129,26 @@ namespace HoaVaMau.Editor
             Sprite waterShimSpr = ImportAndLoadOceanSprite("Assets/Textures/Environment/T_Camau_Water_Shimmer.png", 100.0f, TextureWrapMode.Repeat);
             Sprite waterWakeSpr = ImportAndLoadOceanSprite("Assets/Textures/Environment/T_Camau_Boat_WaterWake.png", 100.0f);
 
-            // Setup Cinematic Camera
+            // Setup Cinematic Camera (Remove any leftover CinemachineBrain so nothing overrides the Start Menu camera!)
             Camera mainCam = Camera.main;
             if (mainCam == null)
             {
-                var camGO = GameObject.Find("01_Camera/CinematicMainCamera") ?? GameObject.Find("Main Camera");
+                var camGO = GameObject.Find("01_Camera/CinematicMainCamera") ?? GameObject.Find("01_Camera/Main Camera") ?? GameObject.Find("Main Camera");
                 if (camGO == null) camGO = new GameObject("CinematicMainCamera");
                 mainCam = camGO.GetComponent<Camera>() ?? camGO.AddComponent<Camera>();
                 camGO.tag = "MainCamera";
                 if (camGO.GetComponent<AudioListener>() == null) camGO.AddComponent<AudioListener>();
             }
+            var leftoverBrain = mainCam.GetComponent("CinemachineBrain");
+            if (leftoverBrain != null) Object.DestroyImmediate(leftoverBrain);
+            for (int c = mainCam.transform.childCount - 1; c >= 0; c--)
+            {
+                Object.DestroyImmediate(mainCam.transform.GetChild(c).gameObject);
+            }
             mainCam.transform.position = new Vector3(0f, 0f, -10.0f);
             mainCam.transform.rotation = Quaternion.identity;
             mainCam.fieldOfView = 35.5f;
+            mainCam.depth = 10f;
             mainCam.clearFlags = CameraClearFlags.SolidColor;
             mainCam.backgroundColor = new Color(0.20f, 0.48f, 0.68f, 1.0f);
 
@@ -149,12 +159,12 @@ namespace HoaVaMau.Editor
             var oceanMaster = new GameObject("01_LivingOcean_CaMau_Master");
             oceanMaster.transform.position = Vector3.zero;
 
-            // Background Quad (15.2m x 6.4m)
+            // Background Quad (16.2m x 6.85m — preserves exact aspect ratio while providing generous bleed for camera drift)
             var bgQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
             bgQuad.name = "Background_Ocean_Clean";
             bgQuad.transform.SetParent(oceanMaster.transform, false);
             bgQuad.transform.localPosition = new Vector3(0f, 0f, 0f);
-            bgQuad.transform.localScale = new Vector3(15.2f, 6.4f, 1.0f);
+            bgQuad.transform.localScale = new Vector3(16.2f, 6.85f, 1.0f);
             Object.DestroyImmediate(bgQuad.GetComponent<Collider>());
 
             string bgMatPath = $"{GenAssetsDir}/M_Camau_Ocean_Background_Clean.mat";
@@ -237,25 +247,30 @@ namespace HoaVaMau.Editor
                 dust.transform.localPosition = new Vector3(0.5f, -0.2f, -1.8f);
             }
 
+            // 4. Unified Planet of Lana Borderless Framing Foliage & Drifting Sky Clouds on Start Menu
+            DecorateStartMenuVistaWithLanaFoliage(oceanMaster.transform);
+
             // Setup Start Menu System UI
             var menuGO = GameObject.Find("00_UI_PlanetOfLana_StartMenu");
             if (menuGO != null) Object.DestroyImmediate(menuGO);
             menuGO = new GameObject("00_UI_PlanetOfLana_StartMenu");
 
             var sys = menuGO.AddComponent<PlanetOfLanaStartMenuSystem>();
-            sys.ConfigureAssets(studioLogoSpr, officialLogoSpr, flowerSpr, doveSpr, softDotSpr, boySpr, shipSpr, bgmClip, windClip, "New Scene 1_Overhaul");
+            sys.ConfigureAssets(studioLogoSpr, officialLogoSpr, flowerSpr, doveSpr, softDotSpr, boySpr, shipSpr, bgmClip, windClip, "New Scene 1_Overhaul", headphoneSpr);
             sys.SetMenuCameraSettings(new Vector3(0f, 0f, -10.0f), Vector3.zero, 35.5f);
             sys.RebuildUIImmediate();
-            sys.SetPreviewState(PlanetOfLanaStartMenuSystem.MenuPhase.StartMenuOpenVista);
 
-            // Save Scene
+            // Capture Verification Screenshots first, then rebuild clean ScreenSpaceOverlay UI & save scene!
+            CaptureStartMenuVerificationScreenshots(sys);
+
+            sys.RebuildUIImmediate();
+            sys.SetPreviewState(PlanetOfLanaStartMenuSystem.MenuPhase.StartMenuOpenVista, 1.0f);
+
+            // Save Scene AFTER screenshots so Canvas is saved cleanly in ScreenSpaceOverlay mode with scale (1,1,1)
             AssetDatabase.SaveAssets();
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, MainMenuScenePath);
             RegisterScenesInBuildSettings();
-
-            // Capture Screenshots
-            CaptureStartMenuVerificationScreenshots(sys);
 
             Debug.Log("<color=#10b981>[LivingOcean StartMenu]</color> <b>LIVING OCEAN CÀ MAU SCENE BUILT & VERIFIED SUCCESSFULLY!</b>");
         }
@@ -537,6 +552,95 @@ namespace HoaVaMau.Editor
         }
 
         // =========================================================================================
+        // DECORATE START MENU VISTA WITH BORDERLESS PLANET OF LANA FOLIAGE & CLOUDS
+        // =========================================================================================
+        private static void DecorateStartMenuVistaWithLanaFoliage(Transform parent)
+        {
+            var existing = parent.Find("02_StartMenu_LanaFramingFoliage");
+            if (existing != null) Object.DestroyImmediate(existing.gameObject);
+
+            var root = new GameObject("02_StartMenu_LanaFramingFoliage");
+            root.transform.SetParent(parent, false);
+
+            string spriteMatDir = $"{GenAssetsDir}/SpriteMats";
+            if (!Directory.Exists(spriteMatDir)) Directory.CreateDirectory(spriteMatDir);
+            Shader urpSpriteShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default") ?? Shader.Find("Sprites/Default");
+
+            Material GetMenuSpriteMat(Sprite s)
+            {
+                if (s == null || s.texture == null) return AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");
+                string mPath = $"{spriteMatDir}/M_Spr_{s.texture.name}.mat";
+                var m = AssetDatabase.LoadAssetAtPath<Material>(mPath);
+                if (m == null)
+                {
+                    m = new Material(urpSpriteShader);
+                    AssetDatabase.CreateAsset(m, mPath);
+                }
+                else if (urpSpriteShader != null) m.shader = urpSpriteShader;
+                if (m.HasProperty("_MainTex")) m.SetTexture("_MainTex", s.texture);
+                if (m.HasProperty("_BaseMap")) m.SetTexture("_BaseMap", s.texture);
+                m.mainTexture = s.texture;
+                EditorUtility.SetDirty(m);
+                return m;
+            }
+
+            Sprite sprCloud1  = ImportAndLoadFoliageSprite("Assets/Textures/Lana_Unified_Art/Clouds/T_Lana_Cloud_01_CumulusHero.png", new Vector2(0.5f, 0.5f));
+            Sprite sprCloud3  = ImportAndLoadFoliageSprite("Assets/Textures/Lana_Unified_Art/Clouds/T_Lana_Cloud_03_HighWisps.png", new Vector2(0.5f, 0.5f));
+            Sprite sprCoconut = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_06_Coconut.png", new Vector2(0.45f, 0.02f));
+            Sprite sprBush1   = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Bushes/T_LanaVN_Bush_Low_01.png", new Vector2(0.5f, 0.04f));
+            Sprite sprBush2   = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Bushes/T_LanaVN_Bush_Low_02_Flower.png", new Vector2(0.5f, 0.04f));
+            Sprite sprGrass1  = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Grass_Vines/T_LanaVN_GrassCarpet_03.png", new Vector2(0.5f, 0.05f));
+            Sprite sprGrass2  = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Grass_Vines/T_LanaVN_GrassCarpet_05_Dense.png", new Vector2(0.5f, 0.05f));
+            Sprite sprReeds   = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Wildflowers/T_LanaVN_Wildflower_01_Reeds.png", new Vector2(0.5f, 0.04f));
+            Sprite sprFlYellow= ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Wildflowers/T_LanaVN_Wildflower_05_YellowBlossom.png", new Vector2(0.5f, 0.04f));
+
+            void SpawnMenuSprite(string name, Sprite spr, Vector3 localPos, Vector2 scale, Color tint, int order, float swayAngle, float speed, bool flipX = false)
+            {
+                if (spr == null) return;
+                var go = new GameObject(name);
+                go.transform.SetParent(root.transform, false);
+                go.transform.localPosition = localPos;
+                go.transform.localScale = new Vector3(scale.x, scale.y, 1f);
+
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = spr;
+                sr.sharedMaterial = GetMenuSpriteMat(spr);
+                sr.color = tint;
+                sr.sortingOrder = order;
+                sr.flipX = flipX;
+
+                if (swayAngle > 0.01f)
+                {
+                    var sway = go.AddComponent<PlanetOfLanaFoliageSway>();
+                    var so = new SerializedObject(sway);
+                    so.FindProperty("maxRotationAngle").floatValue = swayAngle;
+                    so.FindProperty("swaySpeed").floatValue = speed;
+                    so.FindProperty("useWorldPositionOffset").boolValue = true;
+                    so.FindProperty("manualPhaseOffset").floatValue = localPos.x * 0.5f;
+                    so.FindProperty("scaleBreathing").floatValue = 0.01f;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
+
+            // Soft drifting upper-right clouds
+            SpawnMenuSprite("Menu_Cloud_UpperRight", sprCloud1, new Vector3(3.6f, 2.05f, -0.05f), new Vector2(0.85f, 0.80f), new Color(1f, 0.99f, 0.95f, 0.52f), 4, 0.4f, 0.5f);
+            SpawnMenuSprite("Menu_Cloud_HighWisp",   sprCloud3, new Vector3(0.4f, 2.40f, -0.05f), new Vector2(0.75f, 0.70f), new Color(1f, 0.99f, 0.96f, 0.40f), 3, 0.3f, 0.4f);
+
+            // Right-side coastal bank framing (Coconut palm, bushes, reeds, grass carpets)
+            SpawnMenuSprite("Menu_FG_Coconut_Right",  sprCoconut,  new Vector3(5.65f, -3.25f, -0.45f), new Vector2(0.58f, 0.58f), new Color(0.14f, 0.25f, 0.22f, 0.96f), 20, 1.4f, 1.1f, true);
+            SpawnMenuSprite("Menu_FG_Bush_Right1",    sprBush1,    new Vector3(5.10f, -3.10f, -0.48f), new Vector2(0.62f, 0.62f), new Color(0.16f, 0.28f, 0.24f, 0.96f), 22, 1.8f, 1.4f);
+            SpawnMenuSprite("Menu_FG_Bush_Right2",    sprBush2,    new Vector3(3.95f, -3.18f, -0.50f), new Vector2(0.52f, 0.52f), new Color(0.20f, 0.34f, 0.26f, 0.95f), 23, 1.9f, 1.5f);
+            SpawnMenuSprite("Menu_FG_Reeds_Right",    sprReeds,    new Vector3(4.55f, -3.12f, -0.52f), new Vector2(0.56f, 0.56f), new Color(0.24f, 0.38f, 0.28f, 0.95f), 24, 2.5f, 1.8f);
+            SpawnMenuSprite("Menu_FG_Grass_Right",    sprGrass1,   new Vector3(4.80f, -3.22f, -0.54f), new Vector2(0.65f, 0.60f), new Color(0.18f, 0.32f, 0.24f, 0.96f), 25, 2.2f, 1.7f);
+            SpawnMenuSprite("Menu_FG_Flower_Right",   sprFlYellow, new Vector3(3.55f, -3.15f, -0.55f), new Vector2(0.50f, 0.50f), new Color(0.95f, 0.92f, 0.78f, 0.95f), 26, 2.4f, 1.9f);
+
+            // Bottom-left subtle coastal reeds & grass carpet below the menu buttons
+            SpawnMenuSprite("Menu_FG_Bush_Left",      sprBush1,    new Vector3(-5.55f, -3.18f, -0.48f), new Vector2(0.56f, 0.56f), new Color(0.14f, 0.25f, 0.22f, 0.95f), 22, 1.7f, 1.4f, true);
+            SpawnMenuSprite("Menu_FG_Reeds_Left",     sprReeds,    new Vector3(-4.75f, -3.15f, -0.52f), new Vector2(0.52f, 0.52f), new Color(0.20f, 0.34f, 0.26f, 0.94f), 24, 2.4f, 1.8f, true);
+            SpawnMenuSprite("Menu_FG_Grass_Left",     sprGrass2,   new Vector3(-5.15f, -3.24f, -0.54f), new Vector2(0.62f, 0.58f), new Color(0.16f, 0.29f, 0.22f, 0.96f), 25, 2.1f, 1.6f);
+        }
+
+        // =========================================================================================
         // DECORATE LANA TREES FOR DEPTH ("CHIỀU SÂU & RỪNG RẬP")
         // =========================================================================================
         private static void DecorateLanaTreesInScene()
@@ -549,7 +653,6 @@ namespace HoaVaMau.Editor
             var treesGroup = ecoRoot.Find("HandDrawn_HeroTrees");
             if (treesGroup == null) return;
 
-            // Deactivate old cut-off hero trees so pristine authentic Lana trees take pride of place
             var oldLeftTree = treesGroup.Find("ZoneA_HeroTree_LeftMain");
             if (oldLeftTree != null) oldLeftTree.gameObject.SetActive(false);
             var oldLeftBack = treesGroup.Find("ZoneA_CurvedTree_LeftBack");
@@ -557,12 +660,12 @@ namespace HoaVaMau.Editor
 
             var treeMat = AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");
 
-            Sprite sprWideCanopy  = ImportAndLoadFoliageSprite("Assets/Textures/Tree/Tree_Lana_WideCanopy.png", new Vector2(0.5f, 0.05f));
-            Sprite sprBananaPalm  = ImportAndLoadFoliageSprite("Assets/Textures/Tree/Tree_Lana_BananaPalm.png", new Vector2(0.5f, 0.05f));
-            Sprite sprBambooGrove = ImportAndLoadFoliageSprite("Assets/Textures/Tree/Tree_Lana_BambooGrove.png", new Vector2(0.5f, 0.05f));
-            Sprite sprCoconutPalm = ImportAndLoadFoliageSprite("Assets/Textures/Tree/Tree_Lana_CoconutPalm.png", new Vector2(0.5f, 0.05f));
-            Sprite sprPoplarTall  = ImportAndLoadFoliageSprite("Assets/Textures/Tree/Tree_Lana_PoplarTall.png", new Vector2(0.5f, 0.05f));
-            Sprite sprFlowers     = ImportAndLoadFoliageSprite("Assets/Textures/Tree/Foliage_Lana_WildFlowers.png", new Vector2(0.5f, 0.05f));
+            Sprite sprWideCanopy  = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_01_LargeCanopy.png", new Vector2(0.5f, 0.02f));
+            Sprite sprBananaPalm  = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_05_Banana.png", new Vector2(0.5f, 0.02f));
+            Sprite sprBambooGrove = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_07_BambooGrove.png", new Vector2(0.5f, 0.02f));
+            Sprite sprCoconutPalm = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_06_Coconut.png", new Vector2(0.45f, 0.02f));
+            Sprite sprPoplarTall  = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_04_SlenderTall.png", new Vector2(0.5f, 0.02f));
+            Sprite sprFlowers     = ImportAndLoadFoliageSprite("Assets/Textures/Environment/Lana_VN_Pack/Wildflowers/T_LanaVN_Wildflower_04_DaisySprig.png", new Vector2(0.5f, 0.04f));
 
             void SpawnTree(string name, Sprite spr, Vector3 pos, Vector2 scale, Color tint, int order, float swayAngle, float speed)
             {
@@ -1087,7 +1190,7 @@ namespace HoaVaMau.Editor
             };
 
             // Ensure dummy save slot data exists for realistic Continue and Save selection preview
-            HoaVaMauSaveSystem.SaveCurrentGameState(1, "Chương 1: Đất Đỏ Cà Mau", "Bờ Sông Đất Đỏ", 1, new Vector3(0.0f, -1.77f, 0f));
+            HoaVaMauSaveSystem.SaveCurrentGameState(1, "Chương 1: Đất Đỏ Cà Mau", "Rừng Sớm Cà Mau", 0, new Vector3(-4.0f, -1.85f, 0f));
 
             // 1. State B: Team Loading Screen (Five Cows centered, Bird loader in bottom-right corner)
             capturePhase(1, "StartMenu_01_TeamLoading_FiveCowsInTheFire.png", PlanetOfLanaStartMenuSystem.MenuPhase.TeamLoadingScreen, true, 1280, 720, null);
@@ -1126,6 +1229,7 @@ namespace HoaVaMau.Editor
             {
                 canvas.gameObject.SetActive(true);
                 canvas.renderMode = prevMode;
+                canvas.transform.localScale = Vector3.one;
             }
 
             // Restore character state if needed

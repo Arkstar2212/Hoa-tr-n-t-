@@ -6,12 +6,16 @@ using UnityEngine.UI;
 namespace HoaVaMau.Gameplay
 {
     /// <summary>
-    /// Planet of Lana Style Diegetic / Cinematic Tutorial Prompts for Scene 1.
-    /// Characteristics:
-    /// - Minimalist, non-intrusive floating HUD capsules at bottom-center.
-    /// - Beautiful key glyphs [A] [D] [Space] [Shift] [E] matching KeybindingManager.
-    /// - Smooth Alpha fade-in (0.8s), hold, and fade-out (0.8s).
-    /// - Naturally dismisses once the player executes the instructed action.
+    /// Authentic Planet of Lana Minimalist Diegetic Key Glyph Tutorial Controller.
+    /// Strictly follows user specification:
+    /// - ONLY a translucent single-color key symbol/icon ("chỉ có biểu tượng chữ trong suốt một màu").
+    /// - ZERO text boxes, ZERO instruction paragraphs, ZERO dark background pills ("không hiện một cái box text để guide người chơi").
+    /// - Guides the player through the complete Forest Manual Obstacle Course:
+    ///   1. Walk (A / D)
+    ///   2. Grab & Climb/Swing Rope up the Cliff (F -> W / A D / SPACE)
+    ///   3. Jump across the Rocky Ravine Gap (SPACE)
+    ///   4. Climb down & Crawl under the Fallen Tree Trunk (C / S)
+    ///   5. Push/Pull the Wooden Crate to the cliff corner & Climb to the High Platform (E -> A / D -> SPACE)
     /// </summary>
     [DisallowMultipleComponent]
     public class PlanetOfLanaTutorialController : MonoBehaviour
@@ -19,26 +23,26 @@ namespace HoaVaMau.Gameplay
         public static PlanetOfLanaTutorialController Instance { get; private set; }
 
         private Canvas tutorialCanvas;
-        private CanvasGroup promptCanvasGroup;
-        private Text promptTitleText;
-        private Text promptKeysText;
-        private Text promptDescText;
+        private CanvasGroup glyphCanvasGroup;
+        private RectTransform glyphClusterRect;
+        private readonly List<GameObject> activeKeyCapObjects = new List<GameObject>();
+        private Font glyphFont;
 
         private PlayerController player;
+        private RopeController forestRope;
+        private InteractableCrate forestCrate;
 
-        // Tutorial Progression State
-        private bool hasMoved = false;
-        private float moveTime = 0f;
-        private bool moveTutorialDismissed = false;
+        private string currentDisplayedSignature = "";
+        private Vector3 currentWorldAnchorOffset = new Vector3(0f, 2.25f, 0f);
+        private Transform currentCustomWorldTarget = null;
 
-        private bool hasSprintedOrJumped = false;
-        private bool jumpTutorialTriggered = false;
-        private bool jumpTutorialDismissed = false;
+        private float walkTimer = 0f;
+        private bool walkDone = false;
 
-        private bool interactTutorialTriggered = false;
-        private bool interactTutorialDismissed = false;
-
-        private Coroutine activeFadeRoutine;
+        // Monochromatic translucent off-white palette (Planet of Lana signature)
+        private static readonly Color GlyphSingleColor = new Color(1.0f, 1.0f, 1.0f, 0.72f);
+        private static readonly Color GlyphBorderColor = new Color(1.0f, 1.0f, 1.0f, 0.48f);
+        private static readonly Color GlyphFillColor   = new Color(1.0f, 1.0f, 1.0f, 0.08f);
 
         private void Awake()
         {
@@ -48,48 +52,17 @@ namespace HoaVaMau.Gameplay
                 return;
             }
             Instance = this;
-
-            BuildTutorialUI();
+            BuildMinimalistGlyphCanvas();
         }
 
         private void Start()
         {
             player = Object.FindAnyObjectByType<PlayerController>();
-            KeybindingManager.OnKeybindingsChanged += RefreshCurrentPromptKeys;
-
-            // Wait a small delay after scene start / intro cutscene before showing the first move hint
-            StartCoroutine(InitialPromptRoutine());
+            forestRope = Object.FindAnyObjectByType<RopeController>();
+            forestCrate = Object.FindAnyObjectByType<InteractableCrate>();
         }
 
-        private void OnDestroy()
-        {
-            KeybindingManager.OnKeybindingsChanged -= RefreshCurrentPromptKeys;
-        }
-
-        private IEnumerator InitialPromptRoutine()
-        {
-            // Give time for intro cutscene or player to settle
-            yield return new WaitForSeconds(1.5f);
-
-            // Wait until player controller is enabled (cutscene done or bypassed)
-            while (player != null && !player.enabled)
-            {
-                yield return null;
-            }
-
-            yield return new WaitForSeconds(0.6f);
-
-            if (!moveTutorialDismissed && !hasMoved)
-            {
-                ShowPrompt(
-                    "HƯỚNG DẪN DI CHUYỂN",
-                    $"[ {KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveLeft))} ]   [ {KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveRight))} ]",
-                    "Nhấn để bước đi trong bóng râm"
-                );
-            }
-        }
-
-        private void Update()
+        private void LateUpdate()
         {
             if (player == null)
             {
@@ -97,202 +70,311 @@ namespace HoaVaMau.Gameplay
                 if (player == null) return;
             }
 
-            if (!player.enabled) return;
+            // Hide all tutorial glyphs while cutscene is running or player is disabled
+            if (!player.enabled || (IntroCutsceneControllerExistsAndRunning()))
+            {
+                FadeGlyphAlpha(0f);
+                return;
+            }
 
-            float x = player.transform.position.x;
+            if (forestRope == null) forestRope = Object.FindAnyObjectByType<RopeController>();
+            if (forestCrate == null) forestCrate = Object.FindAnyObjectByType<InteractableCrate>();
 
-            // 1. Monitor Movement Tutorial
-            if (!moveTutorialDismissed)
+            EvaluateContextualGlyphState( out string[] keysToDisplay, out Transform anchorTarget, out Vector3 worldOffset);
+
+            if (keysToDisplay == null || keysToDisplay.Length == 0)
+            {
+                FadeGlyphAlpha(0f);
+                currentDisplayedSignature = "";
+            }
+            else
+            {
+                string sig = string.Join("|", keysToDisplay);
+                if (sig != currentDisplayedSignature)
+                {
+                    currentDisplayedSignature = sig;
+                    RebuildKeyCapGlyphs(keysToDisplay);
+                }
+
+                currentCustomWorldTarget = anchorTarget != null ? anchorTarget : player.transform;
+                currentWorldAnchorOffset = worldOffset;
+
+                UpdateWorldToScreenPosition();
+                FadeGlyphAlpha(1f);
+            }
+        }
+
+        private bool IntroCutsceneControllerExistsAndRunning()
+        {
+            var intro = Object.FindAnyObjectByType<IntroCutsceneController>();
+            return intro != null && intro.IsCutsceneRunning;
+        }
+
+        private void EvaluateContextualGlyphState(out string[] keys, out Transform target, out Vector3 offset)
+        {
+            keys = null;
+            target = player.transform;
+            offset = new Vector3(0f, 2.35f, 0f);
+
+            Vector3 pPos = player.transform.position;
+            float x = pPos.x;
+
+            // 1. Movement (A / D) at Forest Clearing Start
+            if (!walkDone)
             {
                 if (Mathf.Abs(player.HorizontalInput) > 0.1f)
                 {
-                    moveTime += Time.deltaTime;
-                    if (moveTime > 1.4f)
+                    walkTimer += Time.deltaTime;
+                    if (walkTimer >= 1.1f) walkDone = true;
+                }
+
+                if (!walkDone && x < 4.5f)
+                {
+                    string left = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveLeft));
+                    string right = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveRight));
+                    keys = new[] { left, right };
+                    return;
+                }
+            }
+
+            // 2. Rope Swing & Climb up Cliff (X ~ 4.5m .. 11.2m)
+            if (x >= 4.2f && x <= 11.2f && pPos.y < 0.85f)
+            {
+                if (player.CurrentState == PlayerState.RopeGrab || player.CurrentState == PlayerState.RopeClimb)
+                {
+                    string up = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveUp));
+                    string left = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveLeft));
+                    string right = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveRight));
+                    string jump = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Jump));
+                    keys = new[] { up, left, right, jump };
+                    offset = new Vector3(0f, 2.25f, 0f);
+                    return;
+                }
+                else
+                {
+                    string ropeKey = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.RopeGrab));
+                    keys = new[] { ropeKey };
+                    if (forestRope != null)
                     {
-                        hasMoved = true;
-                        moveTutorialDismissed = true;
-                        HidePrompt();
+                        target = forestRope.transform;
+                        offset = new Vector3(0f, -2.0f, 0f);
+                    }
+                    return;
+                }
+            }
+
+            // 3. Jump across Rocky Ravine Gap (X ~ 12.2m .. 17.5m)
+            if (x >= 12.2f && x <= 17.4f)
+            {
+                string jump = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Jump));
+                keys = new[] { jump };
+                offset = new Vector3(0f, 2.35f, 0f);
+                return;
+            }
+
+            // 4. Crawl under Fallen Tree Trunk (X ~ 21.5m .. 27.4m)
+            if (x >= 21.5f && x <= 27.4f)
+            {
+                string crouchKey = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Crouch));
+                keys = new[] { crouchKey };
+                offset = new Vector3(0f, 1.95f, 0f);
+                return;
+            }
+
+            // 5. Push/Pull Crate to Cliff Corner & Climb to High Platform (X ~ 27.5m .. 36.2m)
+            if (x >= 27.5f && x <= 36.2f && pPos.y < 1.35f)
+            {
+                if (player.CurrentState == PlayerState.PushPull)
+                {
+                    string left = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveLeft));
+                    string right = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveRight));
+                    keys = new[] { left, right };
+                    offset = new Vector3(0f, 2.35f, 0f);
+                    return;
+                }
+                else if (forestCrate != null)
+                {
+                    float crateX = forestCrate.transform.position.x;
+                    // Once crate is pushed near the cliff wall (X >= 33.6m), show SPACE to jump onto crate & ledge
+                    if (crateX >= 33.6f)
+                    {
+                        string jump = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Jump));
+                        keys = new[] { jump };
+                        target = forestCrate.transform;
+                        offset = new Vector3(0f, 1.95f, 0f);
+                        return;
+                    }
+                    else
+                    {
+                        string interact = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Interact));
+                        keys = new[] { interact };
+                        target = forestCrate.transform;
+                        offset = new Vector3(0f, 1.85f, 0f);
+                        return;
                     }
                 }
             }
-
-            // 2. Monitor Sprint & Leap Tutorial (around X: 10m to 18m natural dip)
-            if (!jumpTutorialTriggered && !jumpTutorialDismissed && x >= 9.5f && x <= 22f)
-            {
-                jumpTutorialTriggered = true;
-                string shiftKey = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Sprint));
-                string spaceKey = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Jump));
-                ShowPrompt(
-                    "CHẠY LẤY ĐÀ & BẬT NHẢY",
-                    $"[ {shiftKey} ] + [ {spaceKey} ]",
-                    "Giữ chạy nước rút và nhấn nhảy để phóng xa vượt trội"
-                );
-            }
-
-            if (jumpTutorialTriggered && !jumpTutorialDismissed)
-            {
-                if (player.CurrentState == PlayerState.Airborne || player.IsSprinting || x > 23f)
-                {
-                    hasSprintedOrJumped = true;
-                    jumpTutorialDismissed = true;
-                    HidePrompt();
-                }
-            }
-
-            // 3. Monitor Interaction Tutorial (around X: 22m Gourd Trellis garden)
-            if (!interactTutorialTriggered && !interactTutorialDismissed && x >= 22.5f && x <= 29f)
-            {
-                interactTutorialTriggered = true;
-                string eKey = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Interact));
-                ShowPrompt(
-                    "TƯƠNG TÁC KHÁM PHÁ",
-                    $"[ {eKey} ]",
-                    "Nhặt đồ vật / Đẩy kéo thùng gỗ dưới giàn bầu"
-                );
-            }
-
-            if (interactTutorialTriggered && !interactTutorialDismissed)
-            {
-                if (x > 31f)
-                {
-                    interactTutorialDismissed = true;
-                    HidePrompt();
-                }
-            }
         }
 
-        private void RefreshCurrentPromptKeys()
+        private void UpdateWorldToScreenPosition()
         {
-            // Update keys dynamically if rebinding happens mid-game
-            if (promptCanvasGroup != null && promptCanvasGroup.alpha > 0.05f)
+            if (glyphClusterRect == null) return;
+            Camera cam = Camera.main;
+            if (cam != null && currentCustomWorldTarget != null)
             {
-                if (jumpTutorialTriggered && !jumpTutorialDismissed)
+                float bobY = Mathf.Sin(Time.unscaledTime * 2.4f) * 0.08f;
+                Vector3 worldPos = currentCustomWorldTarget.position + currentWorldAnchorOffset + new Vector3(0f, bobY, 0f);
+                Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
+                if (screenPos.z > 0f)
                 {
-                    string shiftKey = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Sprint));
-                    string spaceKey = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Jump));
-                    promptKeysText.text = $"[ {shiftKey} ] + [ {spaceKey} ]";
-                }
-                else if (!moveTutorialDismissed)
-                {
-                    promptKeysText.text = $"[ {KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveLeft))} ]   [ {KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveRight))} ]";
+                    glyphClusterRect.position = screenPos;
                 }
             }
         }
 
+        private void FadeGlyphAlpha(float target)
+        {
+            if (glyphCanvasGroup == null) return;
+            float pulse = (target > 0.5f) ? (0.88f + Mathf.Sin(Time.unscaledTime * 2.8f) * 0.12f) : 0f;
+            glyphCanvasGroup.alpha = Mathf.MoveTowards(glyphCanvasGroup.alpha, target * pulse, Time.unscaledDeltaTime * 3.2f);
+        }
+
+        // Legacy compatibility API
         public void ShowPrompt(string title, string keys, string desc)
         {
-            if (promptTitleText != null) promptTitleText.text = title;
-            if (promptKeysText != null) promptKeysText.text = keys;
-            if (promptDescText != null) promptDescText.text = desc;
-
-            if (activeFadeRoutine != null) StopCoroutine(activeFadeRoutine);
-            activeFadeRoutine = StartCoroutine(FadePromptRoutine(1f, 0.8f));
+            string cleanKey = keys.Replace("[", "").Replace("]", "").Trim();
+            RebuildKeyCapGlyphs(new[] { cleanKey });
         }
 
         public void HidePrompt()
         {
-            if (activeFadeRoutine != null) StopCoroutine(activeFadeRoutine);
-            activeFadeRoutine = StartCoroutine(FadePromptRoutine(0f, 0.8f));
+            currentDisplayedSignature = "";
+            if (glyphCanvasGroup != null) glyphCanvasGroup.alpha = 0f;
         }
 
-        private IEnumerator FadePromptRoutine(float targetAlpha, float duration)
+        private void BuildMinimalistGlyphCanvas()
         {
-            if (promptCanvasGroup == null) yield break;
-            float startAlpha = promptCanvasGroup.alpha;
-            float t = 0f;
-            while (t < duration)
-            {
-                t += Time.unscaledDeltaTime;
-                promptCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, t / duration);
-                yield return null;
-            }
-            promptCanvasGroup.alpha = targetAlpha;
-        }
-
-        // =====================================================================================
-        // UI BLUEPRINT
-        // =====================================================================================
-        private void BuildTutorialUI()
-        {
-            var canvasGO = new GameObject("Canvas_PlanetOfLana_Tutorial");
+            var canvasGO = new GameObject("Canvas_PlanetOfLana_MinimalistGlyphs");
             canvasGO.transform.SetParent(transform, false);
 
             tutorialCanvas = canvasGO.AddComponent<Canvas>();
             tutorialCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            tutorialCanvas.sortingOrder = 450; // Just under Pause Menu
+            tutorialCanvas.sortingOrder = 450;
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
 
-            canvasGO.AddComponent<GraphicRaycaster>();
+            glyphFont = Font.CreateDynamicFontFromOSFont("Segoe UI", 28) ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-            Font font = Font.CreateDynamicFontFromOSFont("Segoe UI", 36);
-            if (font == null) font = Font.CreateDynamicFontFromOSFont("Arial", 36);
-            if (font == null) font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var clusterGO = new GameObject("GlyphCluster", typeof(RectTransform), typeof(CanvasGroup), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter));
+            clusterGO.transform.SetParent(canvasGO.transform, false);
+            glyphClusterRect = clusterGO.GetComponent<RectTransform>();
+            glyphClusterRect.anchorMin = glyphClusterRect.anchorMax = new Vector2(0.5f, 0.5f);
+            glyphClusterRect.pivot = new Vector2(0.5f, 0.5f);
 
-            // Pill Container (Bottom Center)
-            var pillRect = CreateRect("Tutorial_Pill_Container", canvasGO.transform);
-            pillRect.anchorMin = pillRect.anchorMax = new Vector2(0.5f, 0.14f);
-            pillRect.pivot = new Vector2(0.5f, 0.5f);
-            pillRect.sizeDelta = new Vector2(620f, 96f);
+            glyphCanvasGroup = clusterGO.GetComponent<CanvasGroup>();
+            glyphCanvasGroup.alpha = 0f;
+            glyphCanvasGroup.blocksRaycasts = false;
+            glyphCanvasGroup.interactable = false;
 
-            promptCanvasGroup = pillRect.gameObject.AddComponent<CanvasGroup>();
-            promptCanvasGroup.alpha = 0f;
-            promptCanvasGroup.blocksRaycasts = false;
-            promptCanvasGroup.interactable = false;
+            var hlg = clusterGO.GetComponent<HorizontalLayoutGroup>();
+            hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.spacing = 12f;
+            hlg.childControlWidth = true;
+            hlg.childControlHeight = true;
+            hlg.childForceExpandWidth = false;
+            hlg.childForceExpandHeight = false;
 
-            // Matte Frosted Pill Background
-            var pillBg = pillRect.gameObject.AddComponent<Image>();
-            pillBg.color = new Color(0.04f, 0.06f, 0.09f, 0.82f);
-
-            var outline = pillRect.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(1.0f, 0.95f, 0.80f, 0.18f);
-            outline.effectDistance = new Vector2(1.2f, -1.2f);
-
-            // Small Category / Header
-            var titleGO = CreateRect("Title", pillRect);
-            titleGO.anchorMin = titleGO.anchorMax = new Vector2(0.5f, 0.80f);
-            titleGO.sizeDelta = new Vector2(580f, 22f);
-            promptTitleText = titleGO.gameObject.AddComponent<Text>();
-            promptTitleText.font = font;
-            promptTitleText.fontSize = 11;
-            promptTitleText.fontStyle = FontStyle.Bold;
-            promptTitleText.alignment = TextAnchor.MiddleCenter;
-            promptTitleText.color = new Color(0.85f, 0.75f, 0.55f, 0.92f);
-            promptTitleText.text = "HƯỚNG DẪN";
-
-            // Centered Key Glyphs
-            var keysGO = CreateRect("Keys", pillRect);
-            keysGO.anchorMin = keysGO.anchorMax = new Vector2(0.5f, 0.48f);
-            keysGO.sizeDelta = new Vector2(580f, 32f);
-            promptKeysText = keysGO.gameObject.AddComponent<Text>();
-            promptKeysText.font = font;
-            promptKeysText.fontSize = 20;
-            promptKeysText.fontStyle = FontStyle.Bold;
-            promptKeysText.alignment = TextAnchor.MiddleCenter;
-            promptKeysText.color = new Color(1.0f, 0.98f, 0.92f, 1.0f);
-            promptKeysText.text = "[ A ]   [ D ]";
-
-            // Description / Action Subtitle
-            var descGO = CreateRect("Desc", pillRect);
-            descGO.anchorMin = descGO.anchorMax = new Vector2(0.5f, 0.20f);
-            descGO.sizeDelta = new Vector2(580f, 20f);
-            promptDescText = descGO.gameObject.AddComponent<Text>();
-            promptDescText.font = font;
-            promptDescText.fontSize = 12;
-            promptDescText.fontStyle = FontStyle.Normal;
-            promptDescText.alignment = TextAnchor.MiddleCenter;
-            promptDescText.color = new Color(0.82f, 0.88f, 0.94f, 0.85f);
-            promptDescText.text = "Nhấn để bước đi trong bóng râm";
+            var csf = clusterGO.GetComponent<ContentSizeFitter>();
+            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         }
 
-        private static RectTransform CreateRect(string name, Transform parent)
+        private void RebuildKeyCapGlyphs(string[] keyLabels)
         {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            return go.AddComponent<RectTransform>();
+            for (int i = 0; i < activeKeyCapObjects.Count; i++)
+            {
+                if (activeKeyCapObjects[i] != null) Destroy(activeKeyCapObjects[i]);
+            }
+            activeKeyCapObjects.Clear();
+
+            if (glyphClusterRect == null || keyLabels == null) return;
+
+            foreach (string rawKey in keyLabels)
+            {
+                string label = rawKey.Trim().ToUpperInvariant();
+                if (label == "LEFTCONTROL" || label == "LCTRL") label = "CTRL";
+                if (label == "LEFTSHIFT" || label == "LSHIFT") label = "SHIFT";
+                if (label == "SPACE" || label.Contains("SPACE") || label.Contains("CÁCH")) label = "SPACE";
+
+                bool isSpace = label == "SPACE";
+                bool isWideKey = isSpace || label.Length > 2;
+                float width = isSpace ? 104f : (isWideKey ? Mathf.Max(82f, label.Length * 15f + 22f) : 46f);
+                float height = 46f;
+
+                var capGO = new GameObject($"KeyGlyph_{label}", typeof(RectTransform), typeof(LayoutElement));
+                capGO.transform.SetParent(glyphClusterRect, false);
+                var capRect = capGO.GetComponent<RectTransform>();
+                capRect.sizeDelta = new Vector2(width, height);
+
+                var le = capGO.GetComponent<LayoutElement>();
+                le.minWidth = width;
+                le.preferredWidth = width;
+                le.minHeight = height;
+                le.preferredHeight = height;
+
+                // Ultra-subtle single-color translucent fill
+                var fillImg = capGO.AddComponent<Image>();
+                fillImg.color = GlyphFillColor;
+                fillImg.raycastTarget = false;
+
+                // Thin single-color translucent keycap border (4 thin 1.5px edges, zero dark box!)
+                CreateThinBorderEdge(capRect, "Top",    new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -1.5f), Vector2.zero);
+                CreateThinBorderEdge(capRect, "Bottom", new Vector2(0f, 0f), new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, 1.5f));
+                CreateThinBorderEdge(capRect, "Left",   new Vector2(0f, 0f), new Vector2(0f, 1f), Vector2.zero, new Vector2(1.5f, 0f));
+                CreateThinBorderEdge(capRect, "Right",  new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-1.5f, 0f), Vector2.zero);
+
+                // Translucent single-color key character
+                var txtGO = new GameObject("GlyphChar", typeof(RectTransform));
+                txtGO.transform.SetParent(capRect, false);
+                var txtRect = txtGO.GetComponent<RectTransform>();
+                txtRect.anchorMin = Vector2.zero;
+                txtRect.anchorMax = Vector2.one;
+                txtRect.offsetMin = Vector2.zero;
+                txtRect.offsetMax = Vector2.zero;
+
+                var txt = txtGO.AddComponent<Text>();
+                txt.font = glyphFont;
+                txt.fontSize = isSpace ? 16 : (isWideKey ? 17 : 21);
+                txt.fontStyle = FontStyle.Normal;
+                txt.alignment = TextAnchor.MiddleCenter;
+                txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+                txt.verticalOverflow = VerticalWrapMode.Overflow;
+                txt.color = GlyphSingleColor;
+                txt.text = label;
+                txt.raycastTarget = false;
+
+                activeKeyCapObjects.Add(capGO);
+            }
+
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(glyphClusterRect);
+        }
+
+        private static void CreateThinBorderEdge(RectTransform parent, string name, Vector2 min, Vector2 max, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            var edgeGO = new GameObject(name, typeof(RectTransform), typeof(Image));
+            edgeGO.transform.SetParent(parent, false);
+            var rt = edgeGO.GetComponent<RectTransform>();
+            rt.anchorMin = min;
+            rt.anchorMax = max;
+            rt.offsetMin = offsetMin;
+            rt.offsetMax = offsetMax;
+            var img = edgeGO.GetComponent<Image>();
+            img.color = GlyphBorderColor;
+            img.raycastTarget = false;
         }
     }
 }

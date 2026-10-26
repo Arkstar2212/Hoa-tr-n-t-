@@ -15,7 +15,7 @@ namespace HoaVaMau.Gameplay
 
         public float ClimbDuration { get; set; } = 1.05f; // Tăng tốc độ trèo tường nhanh và linh hoạt hơn
         public float MaxClimbForwardLean { get; set; } = 24f;
-        public bool AutoClimbOnLedgeGrab { get; set; } = true;
+        public bool AutoClimbOnLedgeGrab { get; set; } = false; // Mặc định bám treo tay vào vách đá, chờ người chơi bấm W hoặc Up để leo lên
 
         public Vector3 ClimbStartPos { get; private set; }
         public Vector3 ClimbEndPos { get; private set; }
@@ -27,7 +27,7 @@ namespace HoaVaMau.Gameplay
             LedgeGrabDetector ledgeDetector,
             float climbDuration = 1.05f,
             float maxClimbForwardLean = 24f,
-            bool autoClimbOnLedgeGrab = true)
+            bool autoClimbOnLedgeGrab = false)
         {
             this.transform = transform;
             this.charController = charController;
@@ -49,7 +49,7 @@ namespace HoaVaMau.Gameplay
             return false;
         }
 
-        public void StartLedgeGrab(Vector3 grabPos, Vector3 landPos, float facingDirection)
+        public void PrepareLedgeGrab(Vector3 grabPos, Vector3 landPos, float facingDirection)
         {
             if (charController != null) charController.enabled = false;
 
@@ -57,15 +57,29 @@ namespace HoaVaMau.Gameplay
             ClimbEndPos = new Vector3(landPos.x, landPos.y, 0f);
             ClimbProgress = 0f;
 
-            // Luôn bắt đầu tại vị trí bám gờ (ClimbStartPos) và di chuyển mượt theo quỹ đạo EvaluateClimbTrajectory
-            // Không dịch chuyển tức thời (teleport) lên ClimbEndPos ở frame 0 để tránh lỗi giật hình
+            // Đặt nhân vật bám gờ vách tại ClimbStartPos
             transform.position = ClimbStartPos;
+        }
+
+        public void StartClimbing()
+        {
+            ClimbProgress = 0f;
 
             var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
             if (meshyAnim != null) meshyAnim.OnClimbStarted();
 
             var anAnim = transform.GetComponent<AnAnimationController>();
             if (anAnim != null) anAnim.OnClimbStarted();
+        }
+
+        public void StartLedgeGrab(Vector3 grabPos, Vector3 landPos, float facingDirection)
+        {
+            PrepareLedgeGrab(grabPos, landPos, facingDirection);
+
+            if (AutoClimbOnLedgeGrab)
+            {
+                StartClimbing();
+            }
         }
 
         public bool UpdateClimb(float dt, float facingDirection, Transform visualTransform, float baseScaleX, float baseScaleY, float baseScaleZ)

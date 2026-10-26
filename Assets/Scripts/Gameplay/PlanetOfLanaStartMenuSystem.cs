@@ -254,6 +254,15 @@ namespace HoaVaMau.Gameplay
         private void Start()
         {
             mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                // Ensure no leftover CinemachineBrain in the Start Menu scene can override mainCam!
+                var brain = mainCam.GetComponent("CinemachineBrain");
+                if (brain != null) Destroy(brain);
+                mainCam.transform.position = menuCameraPosition;
+                mainCam.transform.eulerAngles = menuCameraEuler;
+                mainCam.fieldOfView = menuCameraFOV;
+            }
             EnsureEventSystem();
             RebuildUIImmediate();
 
@@ -362,7 +371,7 @@ namespace HoaVaMau.Gameplay
 
         public void SetPreviewState(MenuPhase phase)
         {
-            SetPhase(phase);
+            SetPreviewState(phase, 1.0f);
         }
 
         public void SetPreviewState(MenuPhase phase, float alpha)
@@ -644,6 +653,11 @@ namespace HoaVaMau.Gameplay
             UpdateAudioLifecycle(dt);
             UpdateAutosaveWidget(dt);
             UpdateScenicCamera(dt);
+        }
+
+        private void LateUpdate()
+        {
+            UpdateScenicCamera(Time.unscaledDeltaTime);
         }
 
         private void UpdateInitialStartup(float dt)
@@ -1188,7 +1202,7 @@ namespace HoaVaMau.Gameplay
                     IntroCutsceneState.MarkForNewGame();
                     HoaVaMauSaveSystem.ActiveSlotIndex = slotIndex;
                     HoaVaMauSaveSystem.SessionPlayTimeCounter = 0f;
-                    HoaVaMauSaveSystem.SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(0.0f, -1.77f, 0f));
+                    HoaVaMauSaveSystem.SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Rừng Sớm Cà Mau", 0, new Vector3(-4.0f, -1.85f, 0f));
                     SetPhase(MenuPhase.BotWLoadingScreen);
                 }
             }
@@ -1251,7 +1265,7 @@ namespace HoaVaMau.Gameplay
                 IntroCutsceneState.MarkForNewGame();
                 HoaVaMauSaveSystem.ActiveSlotIndex = pendingOverwriteSlot;
                 HoaVaMauSaveSystem.SessionPlayTimeCounter = 0f;
-                HoaVaMauSaveSystem.SaveCurrentGameState(pendingOverwriteSlot, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(0.0f, -1.77f, 0f));
+                HoaVaMauSaveSystem.SaveCurrentGameState(pendingOverwriteSlot, "Chương 1: Đất Đỏ Cà Mau", "Rừng Sớm Cà Mau", 0, new Vector3(-4.0f, -1.85f, 0f));
                 SetPhase(MenuPhase.BotWLoadingScreen);
             }
         }
@@ -1536,9 +1550,9 @@ namespace HoaVaMau.Gameplay
             iconGO.sizeDelta = new Vector2(100f, 100f);
             headphoneIconRect = iconGO;
             var iconImg = iconGO.gameObject.AddComponent<Image>();
-            iconImg.sprite = headphoneSprite;
+            iconImg.sprite = headphoneSprite ?? flowerBloomSprite;
             iconImg.preserveAspect = true;
-            iconImg.color = new Color(0.96f, 0.95f, 0.90f, 0.95f);
+            iconImg.color = (iconImg.sprite != null) ? new Color(0.96f, 0.95f, 0.90f, 0.95f) : Color.clear;
             iconImg.raycastTarget = false;
 
             var textGO = CreateRect("HeadphoneText", centerCluster);
@@ -1699,20 +1713,33 @@ namespace HoaVaMau.Gameplay
             cluster.anchorMin = new Vector2(0f, 1f);
             cluster.anchorMax = new Vector2(0f, 1f);
             cluster.pivot = new Vector2(0f, 1f);
-            cluster.anchoredPosition = new Vector2(120f, -65f);
-            cluster.sizeDelta = new Vector2(520f, 700f);
+            cluster.anchoredPosition = new Vector2(115f, -52f);
+            cluster.sizeDelta = new Vector2(650f, 840f);
             menuClusterRect = cluster;
 
             // NOTE: "FIVE COWS IN THE FIRE" text above the logo on Start Menu is REMOVED per user request!
 
-            // 1. Official Calligraphy Logo (Enlarged by ~28% per user request: "làm to hơn một tí")
+            // 1. Official Calligraphy Logo (Enlarged prominently per user request: "làm to hơn một tí")
             if (gameOfficialLogoSprite != null)
             {
+                if (softDotSprite != null)
+                {
+                    var glowGO = CreateRect("Official_Logo_WarmGlow", cluster);
+                    glowGO.anchorMin = glowGO.anchorMax = new Vector2(0f, 1f);
+                    glowGO.pivot = new Vector2(0f, 1f);
+                    glowGO.anchoredPosition = new Vector2(-20f, 14f);
+                    glowGO.sizeDelta = new Vector2(510f, 275f);
+                    var glowImg = glowGO.gameObject.AddComponent<Image>();
+                    glowImg.sprite = softDotSprite;
+                    glowImg.color = new Color(0.04f, 0.09f, 0.16f, 0.24f);
+                    glowImg.raycastTarget = false;
+                }
+
                 var logoGO = CreateRect("Official_Calligraphy_Logo", cluster);
                 logoGO.anchorMin = logoGO.anchorMax = new Vector2(0f, 1f);
                 logoGO.pivot = new Vector2(0f, 1f);
                 logoGO.anchoredPosition = new Vector2(0f, 0f);
-                logoGO.sizeDelta = new Vector2(460f, 255f);
+                logoGO.sizeDelta = new Vector2(465f, 250f);
                 mainLogoImg = logoGO.gameObject.AddComponent<Image>();
                 mainLogoImg.sprite = gameOfficialLogoSprite;
                 mainLogoImg.preserveAspect = true;
@@ -1724,10 +1751,10 @@ namespace HoaVaMau.Gameplay
                 titleGO.anchorMin = titleGO.anchorMax = new Vector2(0f, 1f);
                 titleGO.pivot = new Vector2(0f, 1f);
                 titleGO.anchoredPosition = new Vector2(0f, 0f);
-                titleGO.sizeDelta = new Vector2(480f, 70f);
+                titleGO.sizeDelta = new Vector2(580f, 80f);
                 var tTxt = titleGO.gameObject.AddComponent<Text>();
                 tTxt.font = font;
-                tTxt.fontSize = 40;
+                tTxt.fontSize = 46;
                 tTxt.fontStyle = FontStyle.Bold;
                 tTxt.alignment = TextAnchor.MiddleLeft;
                 tTxt.color = Color.white;
@@ -1738,30 +1765,30 @@ namespace HoaVaMau.Gameplay
             var divGO = CreateRect("Horizon_Divider", cluster);
             divGO.anchorMin = divGO.anchorMax = new Vector2(0f, 1f);
             divGO.pivot = new Vector2(0f, 1f);
-            divGO.anchoredPosition = new Vector2(0f, -270f);
-            divGO.sizeDelta = new Vector2(320f, 2f);
+            divGO.anchoredPosition = new Vector2(8f, -248f);
+            divGO.sizeDelta = new Vector2(380f, 2f);
             var divImg = divGO.gameObject.AddComponent<Image>();
-            divImg.color = new Color(1.0f, 0.95f, 0.80f, 0.60f);
+            divImg.color = new Color(1.0f, 0.95f, 0.80f, 0.65f);
 
             // 3. English Subtitle (FLOWER ON RED SOIL)
             var subGO = CreateRect("Subtitle_Text", cluster);
             subGO.anchorMin = subGO.anchorMax = new Vector2(0f, 1f);
             subGO.pivot = new Vector2(0f, 1f);
-            subGO.anchoredPosition = new Vector2(0f, -285f);
-            subGO.sizeDelta = new Vector2(420f, 26f);
+            subGO.anchoredPosition = new Vector2(8f, -264f);
+            subGO.sizeDelta = new Vector2(460f, 28f);
             var subTxt = subGO.gameObject.AddComponent<Text>();
             subTxt.font = font;
-            subTxt.fontSize = 13;
+            subTxt.fontSize = 14;
             subTxt.alignment = TextAnchor.MiddleLeft;
-            subTxt.color = new Color(0.98f, 0.92f, 0.75f, 0.92f);
+            subTxt.color = new Color(0.98f, 0.92f, 0.75f, 0.94f);
             subTxt.text = "• • •   F L O W E R   O N   R E D   S O I L   • • •";
 
             // 4. Menu Buttons (BẮT ĐẦU, TIẾP TỤC, TÙY CHỈNH, THOÁT)
             var btnContainer = CreateRect("MainButtons_Container", cluster);
             btnContainer.anchorMin = btnContainer.anchorMax = new Vector2(0f, 1f);
             btnContainer.pivot = new Vector2(0f, 1f);
-            btnContainer.anchoredPosition = new Vector2(0f, -340f);
-            btnContainer.sizeDelta = new Vector2(360f, 260f);
+            btnContainer.anchoredPosition = new Vector2(8f, -312f);
+            btnContainer.sizeDelta = new Vector2(380f, 270f);
 
             string[] labels = { "BẮT ĐẦU", "TIẾP TỤC", "TÙY CHỈNH", "THOÁT" };
             menuButtons.Clear();
@@ -1772,8 +1799,8 @@ namespace HoaVaMau.Gameplay
                 var btnRect = CreateRect($"Btn_{i}_{labels[i]}", btnContainer);
                 btnRect.anchorMin = btnRect.anchorMax = new Vector2(0f, 1f);
                 btnRect.pivot = new Vector2(0f, 1f);
-                btnRect.anchoredPosition = new Vector2(0f, -i * 54f);
-                btnRect.sizeDelta = new Vector2(320f, 44f);
+                btnRect.anchoredPosition = new Vector2(0f, -i * 56f);
+                btnRect.sizeDelta = new Vector2(345f, 46f);
 
                 var btn = btnRect.gameObject.AddComponent<Button>();
                 var colors = btn.colors;
@@ -2143,6 +2170,8 @@ namespace HoaVaMau.Gameplay
                 bTxt.font = font;
                 bTxt.fontSize = 12;
                 bTxt.alignment = TextAnchor.MiddleCenter;
+                bTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+                bTxt.verticalOverflow = VerticalWrapMode.Overflow;
                 bTxt.color = new Color(1f, 0.95f, 0.80f, 0.95f);
                 bTxt.text = $"[ {KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(action))} ]";
                 bTxt.raycastTarget = false;

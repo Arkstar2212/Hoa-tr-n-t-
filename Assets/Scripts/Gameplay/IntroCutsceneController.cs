@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Cinemachine;
+using TMPro;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -56,14 +57,12 @@ namespace HoaVaMau.Gameplay
         private string[] narrativeLines = new string[]
         {
             "Năm 1954 — Sau Hiệp định Genève, vùng đất Đỏ Cà Mau trở thành điểm hẹn của lịch sử.",
-            "Có những cuộc chia ly là để hẹn ngày trở lại, có những bước chân đi là vì một ngày mai độc lập.",
-            "Với cậu bé An, phía trước không chỉ là một chuyến hành trình...",
-            "...mà là lời hứa, là sứ mệnh, và là niềm hy vọng về một quê hương trọn vẹn bình yên."
+            "Phía trước cậu bé An là cả một hành trình của niềm tin và hy vọng về quê hương thống nhất."
         };
-        [SerializeField] private float monologueFadeInDuration = 1.0f;
-        [SerializeField] private float monologueHoldDuration = 3.0f;
-        [SerializeField] private float monologueFadeOutDuration = 0.8f;
-        [SerializeField] private float monologueAudioCrossfadeDuration = 3.0f;
+        [SerializeField] private float monologueFadeInDuration = 0.6f;
+        [SerializeField] private float monologueHoldDuration = 2.0f;
+        [SerializeField] private float monologueFadeOutDuration = 0.6f;
+        [SerializeField] private float monologueAudioCrossfadeDuration = 2.0f;
 
         [Header("Giai Đoạn 3: Chuyển Cảnh Camera Mượt Mà (Seamless Camera Transition)")]
         [SerializeField] private CinemachineCamera vcamIntroSky;
@@ -71,8 +70,8 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private CinemachineBrain cinemachineBrain;
         [SerializeField] private PlayerController playerController;
         [SerializeField] private Transform playerTransform;
-        [SerializeField] private float blackCurtainFadeOutDuration = 2.0f;
-        [SerializeField] private float cameraPanDuration = 4.5f;
+        [SerializeField] private float blackCurtainFadeOutDuration = 0.45f;
+        [SerializeField] private float cameraPanDuration = 10.0f;
 
         [Header("Audio Sources & Crossfade")]
         [SerializeField] private AudioSource projectorAudioSource;
@@ -82,7 +81,7 @@ namespace HoaVaMau.Gameplay
 
         [Header("Hold to Skip Settings")]
         [SerializeField] private bool allowSkip = true;
-        [SerializeField] private float holdToSkipDuration = 1.5f;
+        [SerializeField] private float holdToSkipDuration = 1.0f;
 
         // UI Canvas Components
         [Header("UI Canvas Hierarchy (Auto-generated if missing)")]
@@ -95,18 +94,24 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private Image vignetteOverlayImage;
         [SerializeField] private Image filmScratchesOverlayImage;
         [SerializeField] private CanvasGroup shutterFlashGroup;
-        [SerializeField] private Text subtitleText;
+        [SerializeField] private TextMeshProUGUI subtitleText;
         [SerializeField] private CanvasGroup subtitleGroup;
-        [SerializeField] private Text monologueText;
+        [SerializeField] private TextMeshProUGUI monologueText;
         [SerializeField] private CanvasGroup monologueGroup;
+        [SerializeField] private TextMeshProUGUI archivalHeaderText;
         [SerializeField] private RectTransform skipPromptRoot;
         [SerializeField] private Image skipProgressBar;
         [SerializeField] private CanvasGroup skipPromptGroup;
+        [SerializeField] private RectTransform skipFillMaskRect;
+        [SerializeField] private TextMeshProUGUI skipKeycapBaseText;
+        [SerializeField] private TextMeshProUGUI skipKeycapInvertedText;
+        [SerializeField] private TMP_FontAsset cutsceneFontAsset;
 
         // Runtime State
         private Coroutine activeCutsceneRoutine;
         private bool isCutsceneRunning = false;
         private bool isSkipTriggered = false;
+        private bool isSkyDescending = false;
         private float currentSkipHoldTimer = 0f;
         private Vector2 baseAperturePos = Vector2.zero;
         private CinemachineBlendDefinition originalDefaultBlend;
@@ -213,10 +218,10 @@ namespace HoaVaMau.Gameplay
         private void SetupDefaultSlideData()
         {
             historySlides = new HistorySlideData[4];
-            historySlides[0] = new HistorySlideData(null, "Năm 1954 — Sau Hiệp định Genève, vùng đất Đỏ Cà Mau trở thành điểm tập kết 200 ngày lịch sử.", 5.0f);
-            historySlides[1] = new HistorySlideData(null, "Hàng vạn đồng bào, chiến sĩ và những người con miền Nam tề tựu bên đôi bờ sông Đốc chuẩn bị cho chuyến đi xa.", 5.0f);
-            historySlides[2] = new HistorySlideData(null, "Những ánh mắt lưu luyến, những cái ôm siết chặt và lời thề son sắt hẹn ngày non sông thống nhất.", 5.0f);
-            historySlides[3] = new HistorySlideData(null, "Chuyến tàu chuyển quân rời bến trong nắng chiều, mang theo hành trang của cả một thế hệ kiên trung.", 5.5f);
+            historySlides[0] = new HistorySlideData(null, "Năm 1954 — Sau Hiệp định Genève, vùng đất Đỏ Cà Mau trở thành điểm tập kết 200 ngày lịch sử.", 2.8f);
+            historySlides[1] = new HistorySlideData(null, "Hàng vạn đồng bào, chiến sĩ và những người con miền Nam tề tựu bên đôi bờ sông Đốc chuẩn bị cho chuyến đi xa.", 2.8f);
+            historySlides[2] = new HistorySlideData(null, "Những ánh mắt lưu luyến, những cái ôm siết chặt và lời thề son sắt hẹn ngày non sông thống nhất.", 2.8f);
+            historySlides[3] = new HistorySlideData(null, "Chuyến tàu chuyển quân rời bến trong nắng chiều, mang theo hành trang của cả một thế hệ kiên trung.", 3.0f);
         }
 
         // =====================================================================================
@@ -271,7 +276,19 @@ namespace HoaVaMau.Gameplay
             }
             if (blackCurtainImage != null)
             {
-                blackCurtainImage.color = Color.black;
+                blackCurtainImage.color = new Color(0.03f, 0.025f, 0.02f, 1f);
+            }
+            if (projectorApertureRect != null)
+            {
+                projectorApertureRect.gameObject.SetActive(true);
+            }
+            if (vignetteOverlayImage != null)
+            {
+                vignetteOverlayImage.gameObject.SetActive(true);
+            }
+            if (filmScratchesOverlayImage != null)
+            {
+                filmScratchesOverlayImage.gameObject.SetActive(true);
             }
             if (skipPromptGroup != null)
             {
@@ -370,10 +387,16 @@ namespace HoaVaMau.Gameplay
                 }
             }
 
-            // Turn off slide reel display
+            // Turn off slide reel display and vintage film overlays before Phase 2 & 3
             if (slideImageGroup != null) slideImageGroup.alpha = 0f;
             if (subtitleGroup != null) subtitleGroup.alpha = 0f;
-            if (projectorApertureRect != null) projectorApertureRect.localScale = Vector3.one;
+            if (projectorApertureRect != null)
+            {
+                projectorApertureRect.localScale = Vector3.one;
+                projectorApertureRect.gameObject.SetActive(false);
+            }
+            if (vignetteOverlayImage != null) vignetteOverlayImage.gameObject.SetActive(false);
+            if (filmScratchesOverlayImage != null) filmScratchesOverlayImage.gameObject.SetActive(false);
 
             yield return new WaitForSeconds(0.4f);
 
@@ -428,57 +451,159 @@ namespace HoaVaMau.Gameplay
             if (monologueGroup != null) monologueGroup.alpha = 0f;
 
             // =================================================================================
-            // GIAI ĐOẠN 3: CAMERA PAN XUỐNG AN & BẮT ĐẦU GAMEPLAY (SEAMLESS TRANSITION)
+            // GIAI ĐOẠN 3: CAMERA PAN TỪ TRỜI XANH ĐẬM QUA MÂY XUỐNG RỪNG & AN (PLANET OF LANA ENTRY)
             // =================================================================================
             yield return StartCoroutine(ExecuteCameraPanAndGameplayHandoff());
         }
 
         private IEnumerator ExecuteCameraPanAndGameplayHandoff()
         {
-            // Ensure audio is fully transitioned
+            // Ensure vintage film overlays are hidden so the sky-to-forest reveal is crystal clear
+            if (projectorApertureRect != null) projectorApertureRect.gameObject.SetActive(false);
+            if (vignetteOverlayImage != null) vignetteOverlayImage.gameObject.SetActive(false);
+            if (filmScratchesOverlayImage != null) filmScratchesOverlayImage.gameObject.SetActive(false);
+            if (slideImageGroup != null) slideImageGroup.alpha = 0f;
+            if (subtitleGroup != null) subtitleGroup.alpha = 0f;
+            if (monologueGroup != null) monologueGroup.alpha = 0f;
+
+            // Ensure audio is fully transitioned to wind & forest nature
             if (projectorAudioSource != null && projectorAudioSource.isPlaying)
             {
-                StartCoroutine(FadeAudioSourceVolumeRoutine(projectorAudioSource, projectorAudioSource.volume, 0f, 1.5f, true));
+                StartCoroutine(FadeAudioSourceVolumeRoutine(projectorAudioSource, projectorAudioSource.volume, 0f, 1.2f, true));
             }
             if (ambientAudioSource != null)
             {
                 StartCoroutine(FadeAudioSourceVolumeRoutine(ambientAudioSource, ambientAudioSource.volume, targetAmbientVolume, 2.0f, false));
             }
 
-            // 1. Configure Cinemachine Brain blend to smooth EaseInOut
-            if (cinemachineBrain != null)
+            // Place An in forest sitting/playing posture while camera is up in the sky
+            Animator anAnim = playerController != null ? playerController.GetComponentInChildren<Animator>() : null;
+            if (anAnim != null)
             {
-                cinemachineBrain.DefaultBlend = new CinemachineBlendDefinition(CinemachineBlendDefinition.Styles.EaseInOut, cameraPanDuration);
+                int crouchHash = Animator.StringToHash("CrouchIdle");
+                int idleHash = Animator.StringToHash("Idle");
+                if (anAnim.HasState(0, crouchHash))
+                {
+                    anAnim.Play(crouchHash, 0, 0f);
+                }
+                else if (anAnim.HasState(0, idleHash))
+                {
+                    anAnim.Play(idleHash, 0, 0f);
+                }
             }
 
-            // 2. Drop Sky Camera priority to initiate Cinemachine pan to Gameplay camera
+            Vector3 skyZenithPos = new Vector3(-3.20f, 36.5f, -13.5f);
+            Vector3 forestGroundPos = new Vector3(-3.20f, 0.10f, -13.5f);
+
+            // 1. Position VCam_IntroSky high in the deep blue cosmic zenith sky as the ACTIVE camera
             if (vcamIntroSky != null)
             {
-                vcamIntroSky.Priority = 0;
+                vcamIntroSky.transform.position = skyZenithPos;
+                vcamIntroSky.transform.rotation = Quaternion.identity;
+                vcamIntroSky.gameObject.SetActive(true);
+                vcamIntroSky.Priority = 35; // Guarantee live camera!
             }
             if (vcamGameplay != null)
             {
-                vcamGameplay.Priority = 20;
+                vcamGameplay.Priority = 10;
             }
 
-            // 3. Smoothly fade out black curtain over 2 seconds to reveal sky & treetops
+            // 2. Smoothly fade out the black curtain to reveal the deep blue cosmic sky
+            float curtainDur = Mathf.Min(blackCurtainFadeOutDuration, 0.45f);
             float elapsedCurtain = 0f;
-            while (elapsedCurtain < blackCurtainFadeOutDuration)
+            while (elapsedCurtain < curtainDur)
             {
                 elapsedCurtain += Time.deltaTime;
-                float alpha = Mathf.Lerp(1f, 0f, elapsedCurtain / blackCurtainFadeOutDuration);
+                float alpha = Mathf.SmoothStep(1f, 0f, elapsedCurtain / curtainDur);
                 if (cutsceneCanvasGroup != null) cutsceneCanvasGroup.alpha = alpha;
                 if (blackCurtainImage != null) blackCurtainImage.color = new Color(0f, 0f, 0f, alpha);
                 yield return null;
             }
 
             if (cutsceneCanvasGroup != null) cutsceneCanvasGroup.alpha = 0f;
+            if (blackCurtainImage != null) blackCurtainImage.color = new Color(0f, 0f, 0f, 0f);
 
-            // 4. Wait for Cinemachine to finish landing on An (remaining camera pan duration)
-            float remainingPanTime = Mathf.Max(0.2f, cameraPanDuration - blackCurtainFadeOutDuration);
-            yield return new WaitForSeconds(remainingPanTime);
+            // Brief pause at the cosmic zenith sky to admire the deep galaxy blue & high wisps
+            yield return new WaitForSeconds(0.40f);
 
-            // 5. Complete transition
+            // 3. Physical Camera Descent: Directly translate vcamIntroSky from Y=36.5m down to Y=0.10m
+            isSkyDescending = true;
+            isSkipTriggered = false; // Reset so player can hold Space during descent if they want to fast-forward
+            currentSkipHoldTimer = 0f;
+
+            float descentDuration = Mathf.Max(6.0f, cameraPanDuration);
+            float panElapsed = 0f;
+            bool stoodUp = false;
+            GameObject cloudDescentGroup = GameObject.Find("IntroSky_CloudDescentGroup");
+
+            while (panElapsed < descentDuration)
+            {
+                // Check if player is holding Space to fast-forward the descent
+                bool isHoldingFF = false;
+#if ENABLE_INPUT_SYSTEM
+                if (Keyboard.current != null && (Keyboard.current.spaceKey.isPressed || Keyboard.current.escapeKey.isPressed)) isHoldingFF = true;
+                if (!isHoldingFF && Gamepad.current != null && (Gamepad.current.buttonSouth.isPressed || Gamepad.current.startButton.isPressed)) isHoldingFF = true;
+#else
+                if (Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.Escape)) isHoldingFF = true;
+#endif
+
+                float dt = Time.deltaTime * (isHoldingFF ? 3.0f : 1.0f);
+                panElapsed += dt;
+                float t = Mathf.Clamp01(panElapsed / descentDuration);
+                float smoothT = Mathf.SmoothStep(0f, 1f, t);
+
+                // Directly drive VCam_IntroSky transform
+                if (vcamIntroSky != null)
+                {
+                    vcamIntroSky.transform.position = Vector3.Lerp(skyZenithPos, forestGroundPos, smoothT);
+                }
+
+                // Drift the parallax cloud layers gently during descent
+                if (cloudDescentGroup != null)
+                {
+                    int childCount = cloudDescentGroup.transform.childCount;
+                    for (int c = 0; c < childCount; c++)
+                    {
+                        Transform tr = cloudDescentGroup.transform.GetChild(c);
+                        float dir = (c % 2 == 0) ? 1f : -1f;
+                        tr.localPosition += new Vector3(dir * 0.15f * Time.deltaTime, 0f, 0f);
+                    }
+                }
+
+                // When camera is ~78% down into the forest clearing, An stands up from playing in the grass
+                if (!stoodUp && t >= 0.78f)
+                {
+                    stoodUp = true;
+                    if (anAnim != null)
+                    {
+                        anAnim.CrossFadeInFixedTime("Idle", 0.45f);
+                    }
+                }
+
+                yield return null;
+            }
+
+            // Ensure camera is exactly at final ground position
+            if (vcamIntroSky != null)
+            {
+                vcamIntroSky.transform.position = forestGroundPos;
+            }
+
+            // 4. Hand off smoothly to Gameplay Camera
+            if (vcamGameplay != null)
+            {
+                vcamGameplay.transform.position = forestGroundPos;
+                vcamGameplay.Priority = 40;
+            }
+            if (vcamIntroSky != null)
+            {
+                vcamIntroSky.Priority = 0;
+            }
+
+            isSkyDescending = false;
+            yield return new WaitForSeconds(0.15f);
+
+            // 5. Complete transition and unlock An
             FinalizeGameplayUnlock();
         }
 
@@ -508,11 +633,13 @@ namespace HoaVaMau.Gameplay
         }
 
         // =====================================================================================
-        // HOLD TO SKIP IMPLEMENTATION
+        // HOLD TO SKIP IMPLEMENTATION (PLANET OF LANA INVERTED SPACE KEYCAP)
         // =====================================================================================
         private void UpdateHoldToSkip()
         {
-            if (!allowSkip || isSkipTriggered) return;
+            if (!allowSkip) return;
+            // Prevent skip during gameplay or after final unlock
+            if (!isCutsceneRunning) return;
 
             bool isHolding = false;
 
@@ -532,13 +659,19 @@ namespace HoaVaMau.Gameplay
             if (isHolding)
             {
                 currentSkipHoldTimer += Time.deltaTime;
+                float progress = Mathf.Clamp01(currentSkipHoldTimer / holdToSkipDuration);
+
                 if (skipPromptGroup != null)
                 {
-                    skipPromptGroup.alpha = Mathf.MoveTowards(skipPromptGroup.alpha, 1f, Time.deltaTime * 4f);
+                    skipPromptGroup.alpha = Mathf.MoveTowards(skipPromptGroup.alpha, 1.0f, Time.deltaTime * 5f);
+                }
+                if (skipFillMaskRect != null)
+                {
+                    skipFillMaskRect.sizeDelta = new Vector2(progress * 108f, 0f);
                 }
                 if (skipProgressBar != null)
                 {
-                    skipProgressBar.fillAmount = Mathf.Clamp01(currentSkipHoldTimer / holdToSkipDuration);
+                    skipProgressBar.fillAmount = progress;
                 }
 
                 if (currentSkipHoldTimer >= holdToSkipDuration)
@@ -548,14 +681,21 @@ namespace HoaVaMau.Gameplay
             }
             else
             {
-                currentSkipHoldTimer = Mathf.MoveTowards(currentSkipHoldTimer, 0f, Time.deltaTime * 2.5f);
+                currentSkipHoldTimer = Mathf.MoveTowards(currentSkipHoldTimer, 0f, Time.deltaTime * 3.0f);
+                float progress = Mathf.Clamp01(currentSkipHoldTimer / holdToSkipDuration);
+
+                if (skipFillMaskRect != null)
+                {
+                    skipFillMaskRect.sizeDelta = new Vector2(progress * 108f, 0f);
+                }
                 if (skipProgressBar != null)
                 {
-                    skipProgressBar.fillAmount = Mathf.Clamp01(currentSkipHoldTimer / holdToSkipDuration);
+                    skipProgressBar.fillAmount = progress;
                 }
-                if (skipPromptGroup != null && currentSkipHoldTimer <= 0.05f)
+                if (skipPromptGroup != null)
                 {
-                    skipPromptGroup.alpha = Mathf.MoveTowards(skipPromptGroup.alpha, 0f, Time.deltaTime * 3f);
+                    // Rest at subtle affordance alpha (0.45f) so the player knows Space to Skip exists
+                    skipPromptGroup.alpha = Mathf.MoveTowards(skipPromptGroup.alpha, 0.45f, Time.deltaTime * 2.5f);
                 }
             }
         }
@@ -565,7 +705,7 @@ namespace HoaVaMau.Gameplay
             if (isSkipTriggered) return;
 
             isSkipTriggered = true;
-            Debug.Log("<color=#fbbf24>[IntroCutsceneController]</color> Player skipped intro cutscene.");
+            Debug.Log("<color=#fbbf24>[IntroCutsceneController]</color> Player skipped intro prologue. Beginning Sky Descent...");
 
             if (activeCutsceneRoutine != null)
             {
@@ -582,11 +722,12 @@ namespace HoaVaMau.Gameplay
             if (subtitleGroup != null) subtitleGroup.alpha = 0f;
             if (monologueGroup != null) monologueGroup.alpha = 0f;
 
-            // Flash white shutter
+            // Flash white shutter briefly (0.08s)
             yield return StartCoroutine(PlayShutterFlashRoutine());
 
-            // Jump immediately into phase 3 camera pan (with accelerated pan for responsive feel)
-            cameraPanDuration = 1.5f;
+            // Immediately start Phase 3 camera pan through the clouds to gameplay
+            blackCurtainFadeOutDuration = 0.35f;
+            cameraPanDuration = 10.0f;
             yield return StartCoroutine(ExecuteCameraPanAndGameplayHandoff());
         }
 
@@ -649,20 +790,24 @@ namespace HoaVaMau.Gameplay
         // =====================================================================================
         private void UpdateFilmJitterAndGrain()
         {
-            if (projectorApertureRect != null && filmJitterAmount > 0.01f)
+            if (projectorApertureRect != null && projectorApertureRect.gameObject.activeInHierarchy)
             {
-                float timeX = Time.time * 22.0f;
-                float timeY = Time.time * 19.5f;
-                float jx = (Mathf.PerlinNoise(timeX, 0f) - 0.5f) * filmJitterAmount;
-                float jy = (Mathf.PerlinNoise(0f, timeY) - 0.5f) * filmJitterAmount;
+                // 24fps stepped projector cadence for authentic 1954 celluloid feel
+                float steppedTime = Mathf.Floor(Time.time * 24f) / 24f;
+                float jx = (Mathf.PerlinNoise(steppedTime * 18.0f, 0.3f) - 0.5f) * filmJitterAmount * 1.35f;
+                float jy = (Mathf.PerlinNoise(0.7f, steppedTime * 21.0f) - 0.5f) * filmJitterAmount * 1.65f;
                 projectorApertureRect.anchoredPosition = baseAperturePos + new Vector2(jx, jy);
+
+                // Pure crisp original art presentation without muddy yellow tinting
+                if (slideImage != null)
+                {
+                    slideImage.color = Color.white;
+                }
             }
 
             if (filmScratchesOverlayImage != null)
             {
-                // Jitter scratch UV coordinates / position
-                float grainAlpha = 0.15f + Mathf.Sin(Time.time * filmGrainPulseSpeed) * 0.08f;
-                filmScratchesOverlayImage.color = new Color(1f, 1f, 1f, grainAlpha);
+                filmScratchesOverlayImage.color = new Color(1f, 1f, 1f, 0f);
             }
         }
 
@@ -675,12 +820,12 @@ namespace HoaVaMau.Gameplay
 
             if (shutterFlashGroup != null)
             {
-                shutterFlashGroup.alpha = 1f;
+                shutterFlashGroup.alpha = 0.75f;
                 float t = 0f;
                 while (t < shutterFlashDuration)
                 {
                     t += Time.deltaTime;
-                    shutterFlashGroup.alpha = Mathf.Lerp(1f, 0f, t / shutterFlashDuration);
+                    shutterFlashGroup.alpha = Mathf.Lerp(0.75f, 0f, t / shutterFlashDuration);
                     yield return null;
                 }
                 shutterFlashGroup.alpha = 0f;
@@ -749,14 +894,12 @@ namespace HoaVaMau.Gameplay
         // =====================================================================================
         public void EnsureCutsceneCanvasExists()
         {
-            if (cutsceneCanvas != null) return;
-
             var existingCanvas = GameObject.Find("00_UI_CutsceneCanvas");
             if (existingCanvas != null)
             {
-                cutsceneCanvas = existingCanvas.GetComponent<Canvas>();
-                cutsceneCanvasGroup = existingCanvas.GetComponent<CanvasGroup>();
-                return;
+                if (Application.isPlaying) Destroy(existingCanvas);
+                else DestroyImmediate(existingCanvas);
+                cutsceneCanvas = null;
             }
 
             var canvasGO = new GameObject("00_UI_CutsceneCanvas");
@@ -773,72 +916,155 @@ namespace HoaVaMau.Gameplay
             canvasGO.AddComponent<GraphicRaycaster>();
             cutsceneCanvasGroup = canvasGO.AddComponent<CanvasGroup>();
 
-            // 1. Black Curtain
+            // Load crisp Dynamic SDF font with full Vietnamese diacritics support
+#if UNITY_EDITOR
+            if (cutsceneFontAsset == null)
+            {
+                cutsceneFontAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/SegoeUI_SDF_Dynamic.asset");
+            }
+#endif
+            if (cutsceneFontAsset == null)
+            {
+                cutsceneFontAsset = TMP_Settings.defaultFontAsset;
+            }
+
+            // 1. Deep Warm Celluloid Black Curtain
             var curtainGO = CreateUIElement("BlackCurtain", canvasGO.transform);
             StretchFull(curtainGO.GetComponent<RectTransform>());
             blackCurtainImage = curtainGO.AddComponent<Image>();
-            blackCurtainImage.color = Color.black;
+            blackCurtainImage.color = new Color(0.03f, 0.025f, 0.02f, 1.0f);
 
-            // 2. Projector Aperture Root
+            // 2. Projector Aperture Root (35mm Archival Gate)
             var apertureGO = CreateUIElement("ProjectorAperture", canvasGO.transform);
             projectorApertureRect = apertureGO.GetComponent<RectTransform>();
-            projectorApertureRect.anchorMin = new Vector2(0.1f, 0.22f);
-            projectorApertureRect.anchorMax = new Vector2(0.9f, 0.90f);
+            projectorApertureRect.anchorMin = new Vector2(0.14f, 0.23f);
+            projectorApertureRect.anchorMax = new Vector2(0.86f, 0.90f);
             projectorApertureRect.pivot = new Vector2(0.5f, 0.5f);
             projectorApertureRect.offsetMin = Vector2.zero;
             projectorApertureRect.offsetMax = Vector2.zero;
             baseAperturePos = projectorApertureRect.anchoredPosition;
 
-            // 3. Slide Image
+            // 2a. Warm Tungsten Projector Backing Matte
+            var gateBgGO = CreateUIElement("ProjectorGateMatte", apertureGO.transform);
+            var gateBgRect = gateBgGO.GetComponent<RectTransform>();
+            gateBgRect.anchorMin = new Vector2(-0.045f, -0.04f);
+            gateBgRect.anchorMax = new Vector2(1.045f, 1.06f);
+            gateBgRect.offsetMin = Vector2.zero;
+            gateBgRect.offsetMax = Vector2.zero;
+            var gateBgImg = gateBgGO.AddComponent<Image>();
+            gateBgImg.color = new Color(0.08f, 0.06f, 0.045f, 0.96f);
+            gateBgImg.raycastTarget = false;
+
+            // 2b. Inner Screen Backing
+            var screenBgGO = CreateUIElement("CelluloidScreenBacking", apertureGO.transform);
+            StretchFull(screenBgGO.GetComponent<RectTransform>());
+            var screenBgImg = screenBgGO.AddComponent<Image>();
+            screenBgImg.color = new Color(0f, 0f, 0f, 0.45f);
+            screenBgImg.raycastTarget = false;
+
+            // 3. Slide Image (Pure Original Full Color)
             var slideGO = CreateUIElement("SlideImage", apertureGO.transform);
-            StretchFull(slideGO.GetComponent<RectTransform>());
+            var slideRect = slideGO.GetComponent<RectTransform>();
+            slideRect.anchorMin = new Vector2(0.015f, 0.02f);
+            slideRect.anchorMax = new Vector2(0.985f, 0.95f);
+            slideRect.offsetMin = Vector2.zero;
+            slideRect.offsetMax = Vector2.zero;
             slideImage = slideGO.AddComponent<Image>();
             slideImage.preserveAspect = true;
+            slideImage.color = Color.white;
             slideImageGroup = slideGO.AddComponent<CanvasGroup>();
 
-            // 4. Vignette Overlay
+            // 3b. Archival Header Label on Top of 35mm Gate (Crisp SDF TextMeshPro)
+            var headerGO = CreateUIElement("ArchivalHeaderText", apertureGO.transform);
+            var headerRect = headerGO.GetComponent<RectTransform>();
+            headerRect.anchorMin = new Vector2(0.02f, 0.955f);
+            headerRect.anchorMax = new Vector2(0.98f, 1.035f);
+            headerRect.offsetMin = Vector2.zero;
+            headerRect.offsetMax = Vector2.zero;
+            archivalHeaderText = headerGO.AddComponent<TextMeshProUGUI>();
+            if (cutsceneFontAsset != null) archivalHeaderText.font = cutsceneFontAsset;
+            archivalHeaderText.fontSize = 15;
+            archivalHeaderText.characterSpacing = 2.0f;
+            archivalHeaderText.alignment = TextAlignmentOptions.Center;
+            archivalHeaderText.color = new Color(0.90f, 0.82f, 0.65f, 0.85f);
+            archivalHeaderText.text = "TƯ LIỆU LỊCH SỬ  •  SÔNG ĐỐC, CÀ MAU 1954  •  CUỘN PHIM 35MM";
+            archivalHeaderText.raycastTarget = false;
+
+            // 3c. Authentic 35mm Sprocket Hole Strips (Left & Right)
+            void BuildSprocketStrip(string stripName, float anchorX)
+            {
+                var stripGO = CreateUIElement(stripName, apertureGO.transform);
+                var stripRect = stripGO.GetComponent<RectTransform>();
+                stripRect.anchorMin = new Vector2(anchorX - 0.014f, -0.02f);
+                stripRect.anchorMax = new Vector2(anchorX + 0.014f, 1.02f);
+                stripRect.offsetMin = Vector2.zero;
+                stripRect.offsetMax = Vector2.zero;
+
+                int holeCount = 10;
+                for (int hIdx = 0; hIdx < holeCount; hIdx++)
+                {
+                    var holeGO = CreateUIElement($"Sprocket_{hIdx}", stripGO.transform);
+                    var holeRect = holeGO.GetComponent<RectTransform>();
+                    float yCenter = (hIdx + 0.5f) / holeCount;
+                    holeRect.anchorMin = new Vector2(0.18f, yCenter - 0.024f);
+                    holeRect.anchorMax = new Vector2(0.82f, yCenter + 0.024f);
+                    holeRect.offsetMin = Vector2.zero;
+                    holeRect.offsetMax = Vector2.zero;
+                    var holeImg = holeGO.AddComponent<Image>();
+                    holeImg.color = new Color(0.88f, 0.78f, 0.58f, 0.28f);
+                    holeImg.raycastTarget = false;
+                }
+            }
+            BuildSprocketStrip("SprocketStrip_Left", -0.022f);
+            BuildSprocketStrip("SprocketStrip_Right", 1.022f);
+
+            // 4. Vignette Overlay (Clear)
             var vigGO = CreateUIElement("VignetteOverlay", canvasGO.transform);
             StretchFull(vigGO.GetComponent<RectTransform>());
             vignetteOverlayImage = vigGO.AddComponent<Image>();
             vignetteOverlayImage.raycastTarget = false;
-            vignetteOverlayImage.color = new Color(1f, 1f, 1f, 0.85f);
+            vignetteOverlayImage.color = new Color(0f, 0f, 0f, 0f);
 
-            // 5. Film Scratches Overlay
+            // 5. Film Scratches Overlay (Disabled/Clear)
             var grainGO = CreateUIElement("FilmScratchesOverlay", canvasGO.transform);
             StretchFull(grainGO.GetComponent<RectTransform>());
             filmScratchesOverlayImage = grainGO.AddComponent<Image>();
             filmScratchesOverlayImage.raycastTarget = false;
-            filmScratchesOverlayImage.color = new Color(1f, 1f, 1f, 0.18f);
+            filmScratchesOverlayImage.color = new Color(0f, 0f, 0f, 0f);
 
-            // 6. Subtitle Container (Bottom)
+            // 6. Subtitle Container (Bottom Archival Caption Bar)
             var subGO = CreateUIElement("SubtitleContainer", canvasGO.transform);
             var subRect = subGO.GetComponent<RectTransform>();
-            subRect.anchorMin = new Vector2(0.12f, 0.05f);
-            subRect.anchorMax = new Vector2(0.88f, 0.20f);
+            subRect.anchorMin = new Vector2(0.12f, 0.045f);
+            subRect.anchorMax = new Vector2(0.88f, 0.205f);
             subRect.offsetMin = Vector2.zero;
             subRect.offsetMax = Vector2.zero;
             subtitleGroup = subGO.AddComponent<CanvasGroup>();
 
+            var subBgImg = subGO.AddComponent<Image>();
+            subBgImg.color = new Color(0.04f, 0.035f, 0.03f, 0.85f);
+            subBgImg.raycastTarget = false;
+
             var subTextGO = CreateUIElement("SubtitleText", subGO.transform);
-            StretchFull(subTextGO.GetComponent<RectTransform>());
-            subtitleText = subTextGO.AddComponent<Text>();
-            subtitleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            subtitleText.fontSize = 25;
-            subtitleText.fontStyle = FontStyle.Normal;
-            subtitleText.alignment = TextAnchor.MiddleCenter;
-            subtitleText.color = new Color(0.96f, 0.94f, 0.88f, 0.95f);
-            subtitleText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            subtitleText.verticalOverflow = VerticalWrapMode.Truncate;
+            var subTxtRect = subTextGO.GetComponent<RectTransform>();
+            subTxtRect.anchorMin = new Vector2(0.04f, 0.06f);
+            subTxtRect.anchorMax = new Vector2(0.96f, 0.94f);
+            subTxtRect.offsetMin = Vector2.zero;
+            subTxtRect.offsetMax = Vector2.zero;
+            subtitleText = subTextGO.AddComponent<TextMeshProUGUI>();
+            if (cutsceneFontAsset != null) subtitleText.font = cutsceneFontAsset;
+            subtitleText.fontSize = 26;
+            subtitleText.lineSpacing = 12f;
+            subtitleText.alignment = TextAlignmentOptions.Center;
+            subtitleText.color = new Color(1.00f, 0.96f, 0.88f, 0.98f);
+            subtitleText.textWrappingMode = TextWrappingModes.Normal;
+            subtitleText.overflowMode = TextOverflowModes.Truncate;
 
-            var subShadow = subTextGO.AddComponent<Shadow>();
-            subShadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
-            subShadow.effectDistance = new Vector2(2f, -2f);
-
-            // 7. Monologue Container (Center)
+            // 7. Monologue Container (Center - Narrative Prologue)
             var monoGO = CreateUIElement("MonologueContainer", canvasGO.transform);
             var monoRect = monoGO.GetComponent<RectTransform>();
-            monoRect.anchorMin = new Vector2(0.15f, 0.35f);
-            monoRect.anchorMax = new Vector2(0.85f, 0.65f);
+            monoRect.anchorMin = new Vector2(0.12f, 0.32f);
+            monoRect.anchorMax = new Vector2(0.88f, 0.68f);
             monoRect.offsetMin = Vector2.zero;
             monoRect.offsetMax = Vector2.zero;
             monologueGroup = monoGO.AddComponent<CanvasGroup>();
@@ -846,67 +1072,118 @@ namespace HoaVaMau.Gameplay
 
             var monoTextGO = CreateUIElement("MonologueText", monoGO.transform);
             StretchFull(monoTextGO.GetComponent<RectTransform>());
-            monologueText = monoTextGO.AddComponent<Text>();
-            monologueText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            monologueText.fontSize = 32;
-            monologueText.fontStyle = FontStyle.Italic;
-            monologueText.alignment = TextAnchor.MiddleCenter;
-            monologueText.color = new Color(0.98f, 0.96f, 0.92f, 0.98f);
-            monologueText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            monologueText = monoTextGO.AddComponent<TextMeshProUGUI>();
+            if (cutsceneFontAsset != null) monologueText.font = cutsceneFontAsset;
+            monologueText.fontSize = 34;
+            monologueText.fontStyle = FontStyles.Italic;
+            monologueText.lineSpacing = 16f;
+            monologueText.alignment = TextAlignmentOptions.Center;
+            monologueText.color = new Color(1.00f, 0.98f, 0.94f, 0.98f);
+            monologueText.textWrappingMode = TextWrappingModes.Normal;
 
-            var monoShadow = monoTextGO.AddComponent<Shadow>();
-            monoShadow.effectColor = new Color(0f, 0f, 0f, 0.95f);
-            monoShadow.effectDistance = new Vector2(2.5f, -2.5f);
-
-            // 8. Shutter Flash
+            // 8. Warm Amber Shutter Flash
             var flashGO = CreateUIElement("ShutterFlash", canvasGO.transform);
             StretchFull(flashGO.GetComponent<RectTransform>());
             var flashImg = flashGO.AddComponent<Image>();
-            flashImg.color = new Color(1f, 1f, 1f, 1f);
+            flashImg.color = new Color(1.0f, 0.92f, 0.72f, 0.82f);
             flashImg.raycastTarget = false;
             shutterFlashGroup = flashGO.AddComponent<CanvasGroup>();
             shutterFlashGroup.alpha = 0f;
 
-            // 9. Skip Prompt (Bottom Right)
+            // 9. Authentic Planet of Lana Pure Diegetic Keycap Skip Button (Bottom Right)
+            // Displays: [ SPACE ] only (clean keycap box with animated white fill & letter-by-letter black text inversion)
             var skipGO = CreateUIElement("SkipPromptRoot", canvasGO.transform);
             skipPromptRoot = skipGO.GetComponent<RectTransform>();
             skipPromptRoot.anchorMin = new Vector2(1f, 0f);
             skipPromptRoot.anchorMax = new Vector2(1f, 0f);
             skipPromptRoot.pivot = new Vector2(1f, 0f);
-            skipPromptRoot.anchoredPosition = new Vector2(-40f, 30f);
-            skipPromptRoot.sizeDelta = new Vector2(280f, 36f);
+            skipPromptRoot.anchoredPosition = new Vector2(-48f, 36f);
+            skipPromptRoot.sizeDelta = new Vector2(108f, 34f);
             skipPromptGroup = skipGO.AddComponent<CanvasGroup>();
-            skipPromptGroup.alpha = 0f;
+            skipPromptGroup.alpha = 0.45f; // Subtle affordance hint when cutscene starts
 
-            var skipTextGO = CreateUIElement("SkipLabel", skipGO.transform);
-            var skipTextRect = skipTextGO.GetComponent<RectTransform>();
-            skipTextRect.anchorMin = new Vector2(0f, 0f);
-            skipTextRect.anchorMax = new Vector2(0.85f, 1f);
-            skipTextRect.offsetMin = Vector2.zero;
-            skipTextRect.offsetMax = Vector2.zero;
-            var skipText = skipTextGO.AddComponent<Text>();
-            skipText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            skipText.fontSize = 15;
-            skipText.alignment = TextAnchor.MiddleRight;
-            skipText.color = new Color(0.85f, 0.85f, 0.85f, 0.75f);
-            skipText.text = "Giữ [Space] để bỏ qua";
+            // Distinct Keycap Container [ SPACE ] with Dual-Layer Inversion Mask
+            float keycapW = 108f;
+            float keycapH = 34f;
+            var keycapGO = CreateUIElement("Keycap_SPACE_Box", skipGO.transform);
+            var keycapRect = keycapGO.GetComponent<RectTransform>();
+            StretchFull(keycapRect); // Exactly matches skipPromptRoot (108 x 34)
 
-            var skipBarBg = CreateUIElement("SkipBarBg", skipGO.transform);
-            var barBgRect = skipBarBg.GetComponent<RectTransform>();
-            barBgRect.anchorMin = new Vector2(0.88f, 0.25f);
-            barBgRect.anchorMax = new Vector2(1.0f, 0.75f);
-            barBgRect.offsetMin = Vector2.zero;
-            barBgRect.offsetMax = Vector2.zero;
-            var bgImg = skipBarBg.AddComponent<Image>();
-            bgImg.color = new Color(0.2f, 0.2f, 0.2f, 0.6f);
+            // Keycap Dark Translucent Backing
+            var keycapBg = keycapGO.AddComponent<Image>();
+            keycapBg.color = new Color(0.04f, 0.07f, 0.12f, 0.90f);
+            keycapBg.raycastTarget = false;
 
-            var skipBarFill = CreateUIElement("SkipBarFill", skipBarBg.transform);
-            StretchFull(skipBarFill.GetComponent<RectTransform>());
-            skipProgressBar = skipBarFill.AddComponent<Image>();
-            skipProgressBar.type = Image.Type.Filled;
-            skipProgressBar.fillMethod = Image.FillMethod.Horizontal;
-            skipProgressBar.fillAmount = 0f;
-            skipProgressBar.color = new Color(0.98f, 0.85f, 0.55f, 0.95f);
+            // Layer 1: Base White Text (shows through the dark backing when unmasked)
+            var baseLabelGO = CreateUIElement("BaseText_SPACE", keycapGO.transform);
+            StretchFull(baseLabelGO.GetComponent<RectTransform>());
+            skipKeycapBaseText = baseLabelGO.AddComponent<TextMeshProUGUI>();
+            if (cutsceneFontAsset != null) skipKeycapBaseText.font = cutsceneFontAsset;
+            skipKeycapBaseText.fontSize = 14;
+            skipKeycapBaseText.fontStyle = FontStyles.Bold;
+            skipKeycapBaseText.characterSpacing = 2.5f;
+            skipKeycapBaseText.alignment = TextAlignmentOptions.Center;
+            skipKeycapBaseText.color = new Color(1.0f, 1.0f, 1.0f, 0.98f);
+            skipKeycapBaseText.text = "SPACE";
+            skipKeycapBaseText.raycastTarget = false;
+
+            // Layer 2: Fill Mask Container (RectMask2D driven by hold progress)
+            var fillMaskGO = CreateUIElement("FillMask", keycapGO.transform);
+            skipFillMaskRect = fillMaskGO.GetComponent<RectTransform>();
+            skipFillMaskRect.anchorMin = new Vector2(0f, 0f);
+            skipFillMaskRect.anchorMax = new Vector2(0f, 1f);
+            skipFillMaskRect.pivot = new Vector2(0f, 0.5f);
+            skipFillMaskRect.anchoredPosition = Vector2.zero;
+            skipFillMaskRect.sizeDelta = new Vector2(0f, 0f);
+            fillMaskGO.AddComponent<RectMask2D>();
+
+            // Layer 2a: Solid White Progress Fill
+            var fillImgGO = CreateUIElement("FillWhiteBar", fillMaskGO.transform);
+            var fillImgRect = fillImgGO.GetComponent<RectTransform>();
+            fillImgRect.anchorMin = new Vector2(0f, 0f);
+            fillImgRect.anchorMax = new Vector2(0f, 1f);
+            fillImgRect.pivot = new Vector2(0f, 0.5f);
+            fillImgRect.anchoredPosition = Vector2.zero;
+            fillImgRect.sizeDelta = new Vector2(keycapW, 0f);
+            var fillImg = fillImgGO.AddComponent<Image>();
+            fillImg.color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            fillImg.raycastTarget = false;
+
+            // Layer 2b: Inverted Pitch Black Text (unmasked over the white fill at exact identical coordinates!)
+            var invLabelGO = CreateUIElement("InvertedText_SPACE", fillMaskGO.transform);
+            var invRect = invLabelGO.GetComponent<RectTransform>();
+            invRect.anchorMin = new Vector2(0f, 0f);
+            invRect.anchorMax = new Vector2(0f, 1f);
+            invRect.pivot = new Vector2(0f, 0.5f);
+            invRect.anchoredPosition = Vector2.zero;
+            invRect.sizeDelta = new Vector2(keycapW, 0f);
+            skipKeycapInvertedText = invLabelGO.AddComponent<TextMeshProUGUI>();
+            if (cutsceneFontAsset != null) skipKeycapInvertedText.font = cutsceneFontAsset;
+            skipKeycapInvertedText.fontSize = 14;
+            skipKeycapInvertedText.fontStyle = FontStyles.Bold;
+            skipKeycapInvertedText.characterSpacing = 2.5f;
+            skipKeycapInvertedText.alignment = TextAlignmentOptions.Center;
+            skipKeycapInvertedText.color = new Color(0.04f, 0.07f, 0.12f, 1.0f);
+            skipKeycapInvertedText.text = "SPACE";
+            skipKeycapInvertedText.raycastTarget = false;
+
+            // Layer 3: Crisp Diegetic Border Edges (Created on top of fillMask so border outlines stay crisp!)
+            void CreateKeyEdge(string eName, Vector2 aMin, Vector2 aMax, Vector2 oMin, Vector2 oMax)
+            {
+                var edge = CreateUIElement(eName, keycapGO.transform);
+                var ert = edge.GetComponent<RectTransform>();
+                ert.anchorMin = aMin;
+                ert.anchorMax = aMax;
+                ert.offsetMin = oMin;
+                ert.offsetMax = oMax;
+                var eimg = edge.AddComponent<Image>();
+                eimg.color = new Color(0.88f, 0.92f, 0.98f, 0.70f);
+                eimg.raycastTarget = false;
+            }
+            CreateKeyEdge("EdgeT", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -1.5f), Vector2.zero);
+            CreateKeyEdge("EdgeB", new Vector2(0f, 0f), new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, 1.5f));
+            CreateKeyEdge("EdgeL", new Vector2(0f, 0f), new Vector2(0f, 1f), Vector2.zero, new Vector2(1.5f, 0f));
+            CreateKeyEdge("EdgeR", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-1.5f, 0f), Vector2.zero);
         }
 
         private GameObject CreateUIElement(string name, Transform parent)

@@ -53,7 +53,7 @@ namespace HoaVaMau.Gameplay
         [Header("Cinematic Ledge Climbing")]
         [SerializeField] private float climbDuration = 1.05f;
         [SerializeField] private float maxClimbForwardLean = 24f;
-        [SerializeField] private bool autoClimbOnLedgeGrab = true;
+        [SerializeField] private bool autoClimbOnLedgeGrab = false; // Mặc định bám gờ chờ người chơi bấm W/Up để leo lên
 
         [Header("Carry & Throw")]
         [SerializeField] private Transform carrySocket;
@@ -75,6 +75,8 @@ namespace HoaVaMau.Gameplay
         private CharacterController charController;
         private LedgeGrabDetector ledgeDetector;
         private Transform hipBone;
+        private float airTime = 0f;
+        private float lastFallVelocityY = 0f;
 
         // Public State (Backwards Compatibility API)
         public PlayerState CurrentState { get; private set; } = PlayerState.Grounded;
@@ -328,6 +330,17 @@ namespace HoaVaMau.Gameplay
             }
 
             // 4. Cập nhật hiệu ứng thị giác cơ học
+            if (ropeHandler != null && (CurrentState == PlayerState.RopeGrab || CurrentState == PlayerState.RopeClimb) && ropeHandler.CurrentRope != null)
+            {
+                Vector3 ropeTan = ropeHandler.CurrentRope.GetRopeTangent(0.5f);
+                float ropeAng = Vector2.SignedAngle(Vector2.down, new Vector2(ropeTan.x, ropeTan.y));
+                visualEffects.RopeAngle = ropeAng;
+            }
+            else
+            {
+                visualEffects.RopeAngle = 0f;
+            }
+
             visualEffects.UpdatePostures(
                 CurrentState,
                 FacingDirection,
@@ -362,18 +375,42 @@ namespace HoaVaMau.Gameplay
                 {
                     visualEffects.SetSquashStretch(0.76f); // Landing squash
                     CurrentState = interactionHandler.IsCarrying ? PlayerState.Carrying : PlayerState.Grounded;
+
+                    // Kích hoạt animation tiếp đất mượt mà sau khi rơi
+                    if (lastFallVelocityY < -2.5f || airTime > 0.16f)
+                    {
+                        var anAnim = GetComponent<AnAnimationController>();
+                        if (anAnim != null) anAnim.OnLanded(lastFallVelocityY);
+                        var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+                        if (meshyAnim != null) meshyAnim.OnLanded(lastFallVelocityY);
+                    }
+                    airTime = 0f;
+                    lastFallVelocityY = 0f;
                 }
             }
             else
             {
                 CurrentState = PlayerState.Airborne;
+                airTime += dt;
+                lastFallVelocityY = motor.Velocity.y;
 
-                // Kiểm tra bám mép vách khi rơi
+                // Kiểm tra bám mép vách khi nhảy hoặc rơi
                 if (ledgeClimber != null && motor.Velocity.y < 3.5f && !interactionHandler.IsCarrying)
                 {
                     if (ledgeClimber.TryDetectLedge(FacingDirection, motor.Velocity.y, out Vector3 grabPos, out Vector3 landPos))
                     {
                         StartLedgeGrab(grabPos, landPos);
+                        return;
+                    }
+                }
+
+                // Tự động bám dây thừng khi nhảy qua hoặc chạm dây trong không trung (chuẩn Planet of Lana)
+                if (CanAttachToRope && !interactionHandler.IsCarrying)
+                {
+                    var rope = FindNearbyRope(out int targetNode);
+                    if (rope != null && targetNode >= 0)
+                    {
+                        rope.OnPlayerTouchSegment(this, targetNode);
                         return;
                     }
                 }
@@ -387,6 +424,7 @@ namespace HoaVaMau.Gameplay
             {
                 visualEffects.SetSquashStretch(1.25f); // Launch stretch
                 CurrentState = PlayerState.Airborne;
+                airTime = 0.05f;
             }
 
             // Tính toán tốc độ di chuyển
@@ -419,43 +457,67 @@ namespace HoaVaMau.Gameplay
         {
             CurrentState = PlayerState.LedgeGrab;
             motor.Velocity = Vector3.zero;
-            ledgeClimber.StartLedgeGrab(grabPos, landPos, FacingDirection);
+            airTime = 0f;
+            lastFallVelocityY = 0f;
+            ledgeClimber.PrepareLedgeGrab(grabPos, landPos, FacingDirection);
+
+            var anAnim = GetComponent<AnAnimationController>();
+            if (anAnim != null) anAnim.OnLedgeHangStarted();
+            var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+            if (meshyAnim != null) meshyAnim.OnLedgeHangStarted();
 
             if (autoClimbOnLedgeGrab)
             {
-                CurrentState = PlayerState.LedgeClimb;
+                StartClimbUp();
             }
+        }
+
+        private void StartClimbUp()
+        {
+            CurrentState = PlayerState.LedgeClimb;
+            ledgeClimber.StartClimbing();
+            var anAnim = GetComponent<AnAnimationController>();
+            if (anAnim != null) anAnim.OnClimbStarted();
+            var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+            if (meshyAnim != null) meshyAnim.OnClimbStarted();
         }
 
         private void HandleLedgeGrab()
         {
             bool pushingAway = (inputReader.Horizontal != 0 && Mathf.Sign(inputReader.Horizontal) != FacingDirection);
 
+            // Nhảy đạp tường phóng ngược ra sau
             if (inputReader.JumpPressed && pushingAway)
             {
                 if (charController != null) charController.enabled = true;
                 CurrentState = PlayerState.Airborne;
-                motor.Velocity = new Vector3(-FacingDirection * walkSpeed * 0.85f, jumpForce * 0.85f, 0f);
+                motor.Velocity = new Vector3(-FacingDirection * walkSpeed * 1.15f, jumpForce * 0.90f, 0f);
                 SetFacingDirection(-FacingDirection);
+                var anAnim = GetComponent<AnAnimationController>();
+                if (anAnim != null) anAnim.OnClimbCancelled();
+                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+                if (meshyAnim != null) meshyAnim.OnClimbCancelled();
                 return;
             }
 
-            bool wantsClimb = inputReader.Vertical > 0.2f || inputReader.JumpPressed || (inputReader.Horizontal != 0 && Mathf.Sign(inputReader.Horizontal) == FacingDirection);
+            // Người chơi chủ động bấm phím [W] hoặc [Mũi tên lên] (hoặc phím nhảy) để leo lên đỉnh vách đá
+            bool wantsClimb = inputReader.Vertical > 0.2f || (inputReader.JumpPressed && !pushingAway) || (inputReader.Horizontal != 0 && Mathf.Sign(inputReader.Horizontal) == FacingDirection);
             if (wantsClimb)
             {
-                CurrentState = PlayerState.LedgeClimb;
-                var anAnim = GetComponent<AnAnimationController>();
-                if (anAnim != null) anAnim.OnClimbStarted();
-                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
-                if (meshyAnim != null) meshyAnim.OnClimbStarted();
+                StartClimbUp();
                 return;
             }
 
+            // Bấm [S] hoặc [Mũi tên xuống] (hoặc đẩy ra xa) để buông tay rơi xuống
             if (inputReader.Vertical < -0.3f || pushingAway)
             {
                 if (charController != null) charController.enabled = true;
                 CurrentState = PlayerState.Airborne;
-                motor.Velocity = new Vector3(-FacingDirection * 1.2f, -2.0f, 0f);
+                motor.Velocity = new Vector3(-FacingDirection * 1.0f, -2.0f, 0f);
+                var anAnim = GetComponent<AnAnimationController>();
+                if (anAnim != null) anAnim.OnClimbCancelled();
+                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
+                if (meshyAnim != null) meshyAnim.OnClimbCancelled();
                 return;
             }
         }

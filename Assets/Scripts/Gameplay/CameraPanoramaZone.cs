@@ -14,13 +14,13 @@ namespace HoaVaMau.Gameplay
     {
         [Header("Framing & Field of View")]
         [Tooltip("Expanded field of view to reveal the grand vista (Planet of Lana wide tracking)")]
-        [SerializeField] private float panoramaFov = 48f;
+        [SerializeField] private float panoramaFov = 45f;
         [Tooltip("Standard traversal field of view")]
-        [SerializeField] private float defaultFov = 36f;
+        [SerializeField] private float defaultFov = 38f;
         [Tooltip("Additional camera height offset (Y) to reveal sky clouds or lower river reflections")]
         [SerializeField] private float targetOffsetY = 2.4f;
         [Tooltip("Default camera height offset (Y)")]
-        [SerializeField] private float defaultOffsetY = 1.5f;
+        [SerializeField] private float defaultOffsetY = 2.0f;
 
         [Header("Transition Smoothing")]
         [SerializeField] private float transitionSpeed = 1.8f;
@@ -39,6 +39,11 @@ namespace HoaVaMau.Gameplay
 
             customCamera = UnityEngine.Object.FindAnyObjectByType<Cinematic2DCamera>();
             unityCamera = Camera.main;
+            if (virtualCamera == null)
+            {
+                var vcamGO = GameObject.Find("01_Camera/CM_VirtualCamera_2.5D") ?? GameObject.Find("CM_VirtualCamera_2.5D");
+                if (vcamGO != null) virtualCamera = vcamGO.GetComponent<CinemachineCamera>();
+            }
         }
 
         private void OnTriggerEnter(Collider other)
@@ -67,18 +72,19 @@ namespace HoaVaMau.Gameplay
             float dt = Time.deltaTime;
             float targetFov = isPlayerInside ? panoramaFov : defaultFov;
 
-            // 1. Update Camera Component FOV
-            if (unityCamera != null)
-            {
-                unityCamera.fieldOfView = Mathf.Lerp(unityCamera.fieldOfView, targetFov, dt * transitionSpeed);
-            }
-
-            // 2. Update Cinemachine Lens FOV if assigned
+            // Update Cinemachine Lens FOV on the 2.5D follow camera so CinemachineBrain blends cleanly
             if (virtualCamera != null)
             {
                 var lens = virtualCamera.Lens;
-                lens.FieldOfView = Mathf.Lerp(lens.FieldOfView, targetFov, dt * transitionSpeed);
-                virtualCamera.Lens = lens;
+                if (Mathf.Abs(lens.FieldOfView - targetFov) > 0.01f)
+                {
+                    lens.FieldOfView = Mathf.Lerp(lens.FieldOfView, targetFov, dt * transitionSpeed);
+                    virtualCamera.Lens = lens;
+                }
+            }
+            else if (unityCamera != null)
+            {
+                unityCamera.fieldOfView = Mathf.Lerp(unityCamera.fieldOfView, targetFov, dt * transitionSpeed);
             }
         }
 

@@ -571,12 +571,13 @@ MonoBehaviour:
   pullLeanAngle: -11
   climbDuration: 2.167
   maxClimbForwardLean: 24
-  autoClimbOnLedgeGrab: 1
+  autoClimbOnLedgeGrab: 0
   carrySocket: {fileID: 0}
   trajectoryPredictor: {fileID: 0}
   minThrowSpeed: 5
   maxThrowSpeed: 14.5
   throwChargeRate: 8.5
+  showDebugHUD: 0
 --- !u!1 &1581725309901114070
 GameObject:
   m_ObjectHideFlags: 0

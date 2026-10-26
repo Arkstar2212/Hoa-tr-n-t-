@@ -51,7 +51,7 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float windFrequency = 1.25f;
 
         [Header("Player Interaction")]
-        [SerializeField] private float playerSwingForce = 16.0f; // Controlled swing force
+        [SerializeField] private float playerSwingForce = 85.0f; // Controlled swing force với gia tốc con lắc tự nhiên
         [SerializeField] private float climbWiggleForce = 0.25f;
 
         [Header("Visuals")]
@@ -206,30 +206,34 @@ namespace HoaVaMau.Gameplay
 
                 if (!pushingPastLimit)
                 {
-                    // Resonant boost: if pressing in direction of motion, add gentle pump
+                    // Resonant boost: if pressing in direction of motion, add natural pendulum pump
                     float pumpMultiplier = 1.0f;
-                    if (Mathf.Sign(currentSwingInput) == Mathf.Sign(currentVel.x) && Mathf.Abs(currentVel.x) > 0.3f)
+                    if (Mathf.Sign(currentSwingInput) == Mathf.Sign(currentVel.x) && Mathf.Abs(currentVel.x) > 0.2f)
                     {
-                        pumpMultiplier = 1.25f;
+                        pumpMultiplier = 1.55f;
                     }
 
                     Vector3 swingDir = new Vector3(currentSwingInput * playerSwingForce * pumpMultiplier, 0f, 0f);
 
-                    nodes[grabIdx].acceleration += swingDir;
-                    if (grabIdx > 1) nodes[grabIdx - 1].acceleration += swingDir * 0.60f;
-                    if (grabIdx < nodes.Length - 1) nodes[grabIdx + 1].acceleration += swingDir * 0.60f;
+                    // Phân bổ lực đung đưa theo đòn bẩy con lắc (tăng dần từ điểm neo xuống ngọn dây)
+                    for (int i = 1; i < nodes.Length; i++)
+                    {
+                        float armFactor = (float)i / (nodes.Length - 1);
+                        nodes[i].acceleration += swingDir * armFactor;
+                    }
                 }
 
                 currentSwingInput = Mathf.MoveTowards(currentSwingInput, 0f, dt * 2.2f);
             }
 
             // 2. Verlet Integration Step
+            float effectiveDamping = (attachedPlayer != null) ? 0.997f : airDamping;
             for (int i = 1; i < nodes.Length; i++)
             {
                 Vector3 currentPos = nodes[i].position;
                 Vector3 prevPos = nodes[i].prevPosition;
 
-                Vector3 velocity = (currentPos - prevPos) * airDamping;
+                Vector3 velocity = (currentPos - prevPos) * effectiveDamping;
                 velocity = Vector3.ClampMagnitude(velocity, maxSwingSpeed * dt);
 
                 Vector3 nextPos = currentPos + velocity + nodes[i].acceleration * (dt * dt);
@@ -404,6 +408,18 @@ namespace HoaVaMau.Gameplay
 
             if (lowerIndex >= nodes.Length - 1) return nodes[nodes.Length - 1].position;
             return Vector3.Lerp(nodes[lowerIndex].position, nodes[upperIndex].position, t);
+        }
+
+        public Vector3 GetRopeTangent(float fraction)
+        {
+            if (nodes == null || nodes.Length < 2) return Vector3.down;
+
+            float exactIndex = Mathf.Clamp01(fraction) * (nodes.Length - 1);
+            int lowerIndex = Mathf.Clamp(Mathf.FloorToInt(exactIndex), 0, nodes.Length - 2);
+            int upperIndex = lowerIndex + 1;
+
+            Vector3 delta = nodes[upperIndex].position - nodes[lowerIndex].position;
+            return delta.sqrMagnitude > 0.0001f ? delta.normalized : Vector3.down;
         }
 
         public Vector3 GetReleaseVelocity()
