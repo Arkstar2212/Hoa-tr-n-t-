@@ -332,13 +332,6 @@ namespace HoaVaMau.Editor
 
             Shader bgShader = Shader.Find("HoaVaMau/LanaBackgroundBlend") ?? Shader.Find("Universal Render Pipeline/Unlit");
 
-            var texOfficialMain = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_MainSkyHills_Official.png");
-            if (texOfficialMain == null)
-            {
-                texOfficialMain = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_PlainsHills_Day.png");
-            }
-            var texPlains = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/BG_Lana_PlainsHills_Day.png");
-
             void SpawnVistaPanel(string name, Texture2D tex, float centerX, float centerY, float z, float width, float height, float leftFeather, float rightFeather, int queueOffset, Color tint, bool flipY = false, float topFeather = 0.0f)
             {
                 if (tex == null) return;
@@ -349,6 +342,8 @@ namespace HoaVaMau.Editor
                 mat.SetFloat("_RightFeather", rightFeather);
                 mat.SetFloat("_BottomFeather", 0.0f);
                 mat.SetFloat("_TopFeather", topFeather);
+                mat.SetFloat("_CloudRadianceIntensity", 0.15f);
+                mat.SetFloat("_SunbeamIntensity", 0.10f);
                 mat.renderQueue = 2900 + queueOffset;
                 EditorUtility.SetDirty(mat);
 
@@ -368,85 +363,104 @@ namespace HoaVaMau.Editor
             var follower = bgRoot.GetComponent<LanaParallaxBackgroundFollower>() ?? bgRoot.AddComponent<LanaParallaxBackgroundFollower>();
             follower.ClearLayers();
 
-            // 1. SINGLE CONTINUOUS SEAMLESS SKY BACKDROP QUAD SPANNING 220 METERS HORIZONTALLY!
-            // Generated with 100% horizontally-uniform pixel rows: mathematically ZERO horizontal color differences and ZERO vertical seams!
-            Texture2D texSeamlessSky = BuildOrLoadSeamlessSkyTexture();
-            SpawnVistaPanel("Sky_Continuous_Backdrop", texSeamlessSky, 65.0f, 21.0f, 18.0f, 220.0f, 52.0f, 0.0f, 0.0f, 0, Color.white);
+            // 1. STRICTLY ONE GRAND UNIFIED PLANET OF LANA BACKGROUND!
+            // Seamlessly integrates cosmic midnight zenith blue at top down to distant watercolor rolling hills & horizon haze at base.
+            // Spans 260 meters horizontally across the entire level with zero patchwork seams or disjointed panels.
+            Texture2D texGrandUnified = BuildOrLoadGrandUnifiedBackgroundTexture();
+            SpawnVistaPanel("Grand_Unified_PlanetOfLana_Background", texGrandUnified, 65.0f, 22.0f, 18.0f, 260.0f, 56.0f, 0.0f, 0.0f, 0, Color.white);
 
-            // 2. ZONE 2 & 3 ROLLING HILLS & PLAINS VISTA (Distant soft hazy watercolor hills at horizon, X = 80.0m)
-            const float bgDepthZ = 16.5f;
-            float panelHeight = 18.0f;
-            if (texPlains != null)
-            {
-                float plainsAspect = (float)texPlains.width / Mathf.Max(1, texPlains.height);
-                float plainsWidth = panelHeight * plainsAspect;
-                SpawnVistaPanel("Vista_RollingHills_Plains", texPlains, 80.0f, 3.20f, bgDepthZ, plainsWidth, panelHeight, 0.25f, 0.25f, 1, new Color(0.96f, 0.98f, 1.0f, 0.95f), false, 0.28f);
-            }
+            follower.RegisterLayer("Lana_Painted_Vistas", vistaGroup.transform, 0.94f, 0.02f);
 
-            follower.RegisterLayer("Lana_Painted_Vistas", vistaGroup.transform, 0.92f, 0.02f);
-
-            // 4. POPULATE RICH 25-CLOUD MULTI-LAYER CLOUDSCAPE
-            PopulateRichPlanetOfLanaCloudscape(bgRoot.transform, mats);
+            // 2. AUTHENTIC 3-TIER VERTICAL CLOUD DESCENT (Zenith wisps -> Dense cloud sea blanket -> Forest reveal)
+            BuildEntrySceneCloudDescent(bgRoot.transform, mats);
         }
 
-        private static Texture2D BuildOrLoadSeamlessSkyTexture()
+        private static Texture2D BuildOrLoadGrandUnifiedBackgroundTexture()
         {
-            string outPath = "Assets/Textures/Backgrounds_Lana/T_Lana_ContinuousCosmicSky_Seamless.png";
-            int w = 256;
-            int h = 1024;
-            var skyTex = new Texture2D(w, h, TextureFormat.RGB24, false);
+            string outPath = "Assets/Textures/Backgrounds_Lana/T_Lana_GrandUnified_Background.png";
+            if (File.Exists(outPath))
+            {
+                var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(outPath);
+                if (existing != null) return existing;
+            }
 
-            // Planet of Lana / Studio Ghibli vertical sky gradient palette:
-            // v = 0.00 .. 0.12: Warm horizon pale cyan-white (matching distant haze / mountains)
-            Color cHorizonMist  = new Color(0.68f, 0.78f, 0.86f, 1f);
-            // v = 0.12 .. 0.32: Soft daytime cyan-cerulean
-            Color cLowerSky     = new Color(0.38f, 0.62f, 0.82f, 1f);
-            // v = 0.32 .. 0.58: Pure Planet of Lana cobalt blue
-            Color cMidSky       = new Color(0.12f, 0.38f, 0.66f, 1f);
-            // v = 0.58 .. 0.82: Deep cosmic midnight cobalt
-            Color cUpperSky     = new Color(0.045f, 0.145f, 0.300f, 1f);
-            // v = 0.82 .. 1.00: Cosmic zenith galaxy black-blue
-            Color cGalaxyZenith = new Color(0.015f, 0.045f, 0.115f, 1f);
+            string officialPath = "Assets/Textures/Backgrounds_Lana/BG_Lana_MainSkyHills_Official.png";
+            if (!File.Exists(officialPath))
+            {
+                officialPath = "Assets/Textures/Backgrounds_Lana/BG_Lana_PlainsHills_Day.png";
+            }
+
+            byte[] bytes = File.ReadAllBytes(officialPath);
+            var texOfficial = new Texture2D(2, 2);
+            texOfficial.LoadImage(bytes);
+
+            int w = 2048;
+            int h = 2048;
+            var grandTex = new Texture2D(w, h, TextureFormat.RGB24, false);
+
+            int officialSplitY = 820; // Lower ~40% is official painted hills & horizon
+
+            Color cDaytimeCobalt = new Color(0.102f, 0.329f, 0.576f, 1f); // Matches official sky top
+            Color cRoyalCobalt   = new Color(0.065f, 0.220f, 0.440f, 1f);
+            Color cMidnightCobalt= new Color(0.030f, 0.100f, 0.230f, 1f);
+            Color cCosmicDark    = new Color(0.015f, 0.050f, 0.130f, 1f);
+            Color cGalaxyZenith  = new Color(0.008f, 0.022f, 0.065f, 1f);
 
             Color[] pixels = new Color[w * h];
+
             for (int y = 0; y < h; y++)
             {
-                float v = (float)y / Mathf.Max(1, h - 1);
-                Color rowCol;
-                if (v < 0.12f)
+                if (y < officialSplitY)
                 {
-                    float t = Mathf.SmoothStep(0f, 1f, v / 0.12f);
-                    rowCol = Color.Lerp(cHorizonMist, cLowerSky, t);
-                }
-                else if (v < 0.32f)
-                {
-                    float t = Mathf.SmoothStep(0f, 1f, (v - 0.12f) / 0.20f);
-                    rowCol = Color.Lerp(cLowerSky, cMidSky, t);
-                }
-                else if (v < 0.58f)
-                {
-                    float t = Mathf.SmoothStep(0f, 1f, (v - 0.32f) / 0.26f);
-                    rowCol = Color.Lerp(cMidSky, cUpperSky, t);
+                    float vOff = (float)y / officialSplitY;
+                    float blendFactor = Mathf.Clamp01((vOff - 0.88f) / 0.12f);
+                    for (int x = 0; x < w; x++)
+                    {
+                        float u = (float)x / Mathf.Max(1, w - 1);
+                        Color offCol = texOfficial.GetPixelBilinear(u, vOff);
+                        pixels[y * w + x] = Color.Lerp(offCol, cDaytimeCobalt, blendFactor);
+                    }
                 }
                 else
                 {
-                    float t = Mathf.SmoothStep(0f, 1f, (v - 0.58f) / 0.42f);
-                    rowCol = Color.Lerp(cUpperSky, cGalaxyZenith, t);
-                }
+                    float vGrad = (float)(y - officialSplitY) / (h - 1 - officialSplitY);
+                    Color rowCol;
+                    if (vGrad < 0.25f)
+                    {
+                        float t = Mathf.SmoothStep(0f, 1f, vGrad / 0.25f);
+                        rowCol = Color.Lerp(cDaytimeCobalt, cRoyalCobalt, t);
+                    }
+                    else if (vGrad < 0.55f)
+                    {
+                        float t = Mathf.SmoothStep(0f, 1f, (vGrad - 0.25f) / 0.30f);
+                        rowCol = Color.Lerp(cRoyalCobalt, cMidnightCobalt, t);
+                    }
+                    else if (vGrad < 0.82f)
+                    {
+                        float t = Mathf.SmoothStep(0f, 1f, (vGrad - 0.55f) / 0.27f);
+                        rowCol = Color.Lerp(cMidnightCobalt, cCosmicDark, t);
+                    }
+                    else
+                    {
+                        float t = Mathf.SmoothStep(0f, 1f, (vGrad - 0.82f) / 0.18f);
+                        rowCol = Color.Lerp(cCosmicDark, cGalaxyZenith, t);
+                    }
 
-                // 100% identical horizontal pixels -> zero horizontal seam!
-                for (int x = 0; x < w; x++)
-                {
-                    pixels[y * w + x] = rowCol;
+                    for (int x = 0; x < w; x++)
+                    {
+                        pixels[y * w + x] = rowCol;
+                    }
                 }
             }
-            skyTex.SetPixels(pixels);
-            skyTex.Apply();
 
-            File.WriteAllBytes(outPath, skyTex.EncodeToPNG());
-            UnityEngine.Object.DestroyImmediate(skyTex);
+            grandTex.SetPixels(pixels);
+            grandTex.Apply();
+
+            File.WriteAllBytes(outPath, grandTex.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(grandTex);
+            UnityEngine.Object.DestroyImmediate(texOfficial);
+
             AssetDatabase.ImportAsset(outPath, ImportAssetOptions.ForceUpdate);
-
             var ti = AssetImporter.GetAtPath(outPath) as TextureImporter;
             if (ti != null)
             {
@@ -458,14 +472,13 @@ namespace HoaVaMau.Editor
             return AssetDatabase.LoadAssetAtPath<Texture2D>(outPath);
         }
 
-        private static void PopulateRichPlanetOfLanaCloudscape(Transform bgParent, LanaMaterialSet mats)
+        private static void BuildEntrySceneCloudDescent(Transform bgParent, LanaMaterialSet mats)
         {
-            var cloudGroup = new GameObject("PlanetOfLana_RichCloudscape");
+            var cloudGroup = new GameObject("IntroSky_CloudDescentGroup");
             cloudGroup.transform.SetParent(bgParent, false);
 
             const string CloudBaseDir = "Assets/Art/Environment/Sky/Clouds";
             const string LanaCloudDir = "Assets/Textures/Lana_Unified_Art/Clouds";
-            const string TexturesCloudDir = "Assets/Textures/Clouds";
 
             Sprite sprHeroDescent01 = LoadSprite($"{CloudBaseDir}/Foreground/T_Cloud_Hero_Descent01.png");
             Sprite sprHeroDescent02 = LoadSprite($"{CloudBaseDir}/Foreground/T_Cloud_Hero_Descent02.png");
@@ -481,11 +494,7 @@ namespace HoaVaMau.Editor
             Sprite sprLanaHighWisps  = LoadSprite($"{LanaCloudDir}/T_Lana_Cloud_03_HighWisps.png") ?? sprDistantWisp01;
             Sprite sprLanaGoldenHoriz= LoadSprite($"{LanaCloudDir}/T_Lana_Cloud_04_GoldenHorizon.png") ?? sprDistantHorizon;
 
-            Sprite sprLanaCloud01    = LoadSprite($"{TexturesCloudDir}/lana_cloud_01.png") ?? sprHeroDescent01;
-            Sprite sprLanaCloud02    = LoadSprite($"{TexturesCloudDir}/lana_cloud_02.png") ?? sprMidCluster02;
-            Sprite sprLanaCloud03    = LoadSprite($"{TexturesCloudDir}/lana_cloud_03.png") ?? sprMidSoftBank03;
-
-            void SpawnCloud(string name, Sprite spr, Vector3 pos, Vector2 scale, Color col, int sortOrder, bool flipX = false, float driftSpeed = 0.35f)
+            void SpawnCloud(string name, Sprite spr, Vector3 pos, Vector2 scale, Color col, int sortOrder, bool flipX = false, float driftSpeed = 0.25f)
             {
                 if (spr == null) return;
                 var go = new GameObject(name);
@@ -501,50 +510,46 @@ namespace HoaVaMau.Editor
 
                 var sway = go.AddComponent<PlanetOfLanaFoliageSway>();
                 var so = new SerializedObject(sway);
-                so.FindProperty("maxRotationAngle").floatValue = 0.15f;
+                so.FindProperty("maxRotationAngle").floatValue = 0.10f;
                 so.FindProperty("swaySpeed").floatValue = driftSpeed;
                 so.FindProperty("useWorldPositionOffset").boolValue = true;
-                so.FindProperty("manualPhaseOffset").floatValue = pos.x * 0.1f;
-                so.FindProperty("scaleBreathing").floatValue = 0.015f;
+                so.FindProperty("manualPhaseOffset").floatValue = pos.x * 0.15f + pos.y * 0.1f;
+                so.FindProperty("scaleBreathing").floatValue = 0.012f;
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
 
-            // 1. HIGH STRATOSPHERE WISPS (Y = 28.0m .. 38.0m, Z = 11.0m .. 14.0m)
-            SpawnCloud("Cloud_Zenith_Wisp01", sprLanaHighWisps,  new Vector3(-12.0f, 35.5f, 13.0f), new Vector2(3.2f, 2.5f), new Color(0.92f, 0.95f, 1.0f, 0.85f), 1);
-            SpawnCloud("Cloud_Zenith_Wisp02", sprDistantWisp01,  new Vector3( -3.0f, 36.5f, 12.5f), new Vector2(3.6f, 2.8f), new Color(0.95f, 0.97f, 1.0f, 0.90f), 1);
-            SpawnCloud("Cloud_Zenith_Wisp03", sprDistantLayer02, new Vector3(  8.5f, 34.0f, 13.5f), new Vector2(4.0f, 2.6f), new Color(0.88f, 0.93f, 1.0f, 0.80f), 1, true);
-            SpawnCloud("Cloud_Zenith_Wisp04", sprLanaHighWisps,  new Vector3( 24.0f, 35.0f, 13.0f), new Vector2(3.5f, 2.5f), new Color(0.90f, 0.94f, 1.0f, 0.85f), 1);
-            SpawnCloud("Cloud_Zenith_Wisp05", sprDistantWisp01,  new Vector3( 45.0f, 36.0f, 13.0f), new Vector2(3.8f, 2.7f), new Color(0.90f, 0.94f, 1.0f, 0.85f), 1);
+            // TIER 1: HIGH STRATOSPHERE WISPS ("từ tận trời xanh đậm xuống thông qua một vài lớp mây", Y = 33m .. 39m)
+            // Camera starts at X = -3.2m, Y = 36.5m in deep cosmic midnight navy blue
+            SpawnCloud("Cloud_Zenith_Wisp01", sprLanaHighWisps,   new Vector3( -7.5f, 36.5f, 10.0f), new Vector2(4.5f, 2.6f), new Color(0.92f, 0.95f, 1.0f, 0.85f), 1);
+            SpawnCloud("Cloud_Zenith_Wisp02", sprDistantWisp01,   new Vector3(  2.2f, 35.0f,  9.5f), new Vector2(4.8f, 2.8f), new Color(0.95f, 0.97f, 1.0f, 0.88f), 1, true);
+            SpawnCloud("Cloud_Zenith_Wisp03", sprDistantLayer02,  new Vector3(-14.0f, 38.0f, 11.0f), new Vector2(5.0f, 2.6f), new Color(0.88f, 0.93f, 1.0f, 0.78f), 1);
 
-            // 2. MID-SKY BILLOWY CUMULUS (Y = 14.0m .. 26.0m, Z = 9.5m .. 12.0m)
-            SpawnCloud("Cloud_Mid_HeroDescent01", sprHeroDescent01,   new Vector3( -2.5f, 22.5f, 10.5f), new Vector2(2.8f, 2.8f), new Color(0.98f, 0.99f, 1.0f, 0.96f), 2);
-            SpawnCloud("Cloud_Mid_HeroDescent02", sprHeroDescent02,   new Vector3(  6.0f, 20.0f, 11.0f), new Vector2(3.0f, 2.6f), new Color(0.96f, 0.98f, 1.0f, 0.92f), 2, true);
-            SpawnCloud("Cloud_Mid_Cumulus01",     sprLanaHeroCumulus, new Vector3(-16.0f, 18.5f, 10.5f), new Vector2(3.2f, 2.8f), new Color(0.97f, 0.98f, 1.0f, 0.94f), 2);
-            SpawnCloud("Cloud_Mid_Cumulus02",     sprMidCumulusBank,  new Vector3( 18.0f, 17.5f, 11.2f), new Vector2(3.6f, 2.7f), new Color(0.95f, 0.97f, 1.0f, 0.92f), 2);
-            SpawnCloud("Cloud_Mid_Cumulus03",     sprMidCluster02,    new Vector3( 32.0f, 21.0f, 10.8f), new Vector2(3.4f, 2.6f), new Color(0.96f, 0.98f, 1.0f, 0.93f), 2, true);
-            SpawnCloud("Cloud_Mid_Cumulus04",     sprLanaCloud01,     new Vector3( 50.0f, 18.0f, 11.5f), new Vector2(3.5f, 2.8f), new Color(0.95f, 0.97f, 1.0f, 0.92f), 2);
-            SpawnCloud("Cloud_Mid_Cumulus05",     sprHeroDescent01,   new Vector3( 68.0f, 19.5f, 10.5f), new Vector2(3.2f, 2.7f), new Color(0.96f, 0.98f, 1.0f, 0.94f), 2, true);
-            SpawnCloud("Cloud_Mid_Cumulus06",     sprMidCumulusBank,  new Vector3( 88.0f, 17.0f, 11.2f), new Vector2(3.8f, 2.9f), new Color(0.95f, 0.97f, 1.0f, 0.92f), 2);
-            SpawnCloud("Cloud_Mid_Cumulus07",     sprLanaHeroCumulus, new Vector3(108.0f, 20.0f, 10.8f), new Vector2(3.4f, 2.8f), new Color(0.96f, 0.98f, 1.0f, 0.93f), 2);
-            SpawnCloud("Cloud_Mid_Cumulus08",     sprMidCluster02,    new Vector3(128.0f, 18.5f, 11.5f), new Vector2(3.6f, 2.7f), new Color(0.95f, 0.97f, 1.0f, 0.92f), 2, true);
+            // TIER 2: DENSE CLOUD SEA BLANKET ("rồi sẽ đi qua một tầng nhiều mây", Y = 10.5m .. 26.0m)
+            // Completely conceals all ground geometry and tree canopies during vertical camera descent!
+            // Upper Stratum (Y = 20.0m .. 25.5m)
+            SpawnCloud("Cloud_Sea_Upper_01", sprLanaWideBank,     new Vector3(-11.5f, 23.5f, 6.0f), new Vector2(8.5f, 5.2f), new Color(0.98f, 0.99f, 1.0f, 0.96f), 4);
+            SpawnCloud("Cloud_Sea_Upper_02", sprLanaHeroCumulus,  new Vector3( -2.0f, 22.0f, 5.0f), new Vector2(8.2f, 5.0f), new Color(1.00f, 1.00f, 1.0f, 0.98f), 5, true);
+            SpawnCloud("Cloud_Sea_Upper_03", sprHeroDescent02,    new Vector3(  8.5f, 24.0f, 6.5f), new Vector2(8.6f, 5.2f), new Color(0.96f, 0.98f, 1.0f, 0.95f), 4);
+            SpawnCloud("Cloud_Sea_Upper_04_Near", sprHeroDescent01,new Vector3(-3.5f, 21.0f, 1.5f), new Vector2(7.2f, 4.8f), new Color(0.98f, 0.99f, 1.0f, 0.96f), 7);
 
-            // 3. LOW HORIZON CUMULUS BANKS (Y = 2.0m .. 9.0m, Z = 12.0m .. 15.0m)
-            SpawnCloud("Cloud_Horizon_Opening01", sprLanaHeroCumulus, new Vector3(  3.6f,  4.8f, 12.5f), new Vector2(3.6f, 2.6f), new Color(1.0f, 1.0f, 1.0f, 0.96f), 3, true);
-            SpawnCloud("Cloud_Horizon_Bank02",    sprLanaWideBank,    new Vector3( 14.5f,  6.2f, 13.5f), new Vector2(4.2f, 2.8f), new Color(0.98f, 0.99f, 1.0f, 0.92f), 3);
-            SpawnCloud("Cloud_Horizon_Bank03",    sprDistantHorizon,  new Vector3( 28.0f,  5.5f, 14.0f), new Vector2(4.5f, 2.9f), new Color(0.96f, 0.98f, 1.0f, 0.90f), 3, true);
-            SpawnCloud("Cloud_Horizon_Bank04",    sprMidSoftBank03,   new Vector3( 42.0f,  6.8f, 13.2f), new Vector2(3.9f, 2.7f), new Color(0.97f, 0.98f, 1.0f, 0.92f), 3);
-            SpawnCloud("Cloud_Horizon_Bank05",    sprLanaGoldenHoriz, new Vector3( 58.0f,  5.8f, 14.2f), new Vector2(4.6f, 3.0f), new Color(0.98f, 0.97f, 0.92f, 0.92f), 3);
-            SpawnCloud("Cloud_Horizon_Bank06",    sprLanaWideBank,    new Vector3( 74.0f,  6.5f, 13.8f), new Vector2(4.4f, 2.8f), new Color(1.0f, 0.98f, 0.90f, 0.94f), 3, true);
-            SpawnCloud("Cloud_Horizon_Bank07",    sprDistantHorizon,  new Vector3( 90.0f,  5.8f, 14.5f), new Vector2(4.8f, 3.1f), new Color(1.0f, 0.97f, 0.88f, 0.93f), 3);
-            SpawnCloud("Cloud_Horizon_Bank08",    sprLanaGoldenHoriz, new Vector3(106.0f,  6.2f, 14.0f), new Vector2(4.5f, 2.9f), new Color(1.0f, 0.98f, 0.94f, 0.94f), 3, true);
-            SpawnCloud("Cloud_Horizon_Bank09",    sprLanaWideBank,    new Vector3(122.0f,  6.8f, 13.8f), new Vector2(4.4f, 2.8f), new Color(1.0f, 0.97f, 0.88f, 0.92f), 3);
-            SpawnCloud("Cloud_Horizon_Bank10",    sprMidSoftBank03,   new Vector3(138.0f,  5.5f, 14.2f), new Vector2(4.2f, 2.7f), new Color(0.98f, 0.97f, 0.90f, 0.92f), 3, true);
+            // Mid Stratum (Y = 15.0m .. 20.5m)
+            SpawnCloud("Cloud_Sea_Mid_01", sprMidCumulusBank,     new Vector3(-15.0f, 18.0f, 5.5f), new Vector2(8.8f, 5.4f), new Color(0.97f, 0.98f, 1.0f, 0.97f), 4);
+            SpawnCloud("Cloud_Sea_Mid_02", sprLanaWideBank,       new Vector3( -4.5f, 16.5f, 4.0f), new Vector2(9.2f, 5.6f), new Color(1.00f, 1.00f, 1.0f, 1.00f), 6);
+            SpawnCloud("Cloud_Sea_Mid_03", sprMidCluster02,       new Vector3(  5.5f, 18.0f, 5.0f), new Vector2(8.8f, 5.2f), new Color(0.98f, 0.99f, 1.0f, 0.97f), 5, true);
+            SpawnCloud("Cloud_Sea_Mid_04", sprLanaHeroCumulus,    new Vector3( 13.5f, 16.5f, 6.0f), new Vector2(8.2f, 5.0f), new Color(0.96f, 0.98f, 1.0f, 0.95f), 4);
+            SpawnCloud("Cloud_Sea_Mid_05_Near", sprHeroDescent02, new Vector3(  0.5f, 15.5f, 0.8f), new Vector2(8.0f, 5.2f), new Color(0.99f, 1.00f, 1.0f, 0.98f), 8, true);
 
-            var follower = bgParent.GetComponent<LanaParallaxBackgroundFollower>();
-            if (follower != null)
-            {
-                follower.RegisterLayer("PlanetOfLana_RichCloudscape", cloudGroup.transform, 0.88f, 0.04f);
-            }
+            // Lower Stratum (Y = 10.5m .. 15.5m)
+            SpawnCloud("Cloud_Sea_Low_01", sprMidSoftBank03,      new Vector3(-12.0f, 13.0f, 4.5f), new Vector2(8.8f, 5.2f), new Color(0.98f, 0.99f, 1.0f, 0.98f), 5);
+            SpawnCloud("Cloud_Sea_Low_02", sprLanaHeroCumulus,    new Vector3( -3.5f, 12.0f, 3.5f), new Vector2(9.0f, 5.4f), new Color(1.00f, 1.00f, 1.0f, 1.00f), 6, true);
+            SpawnCloud("Cloud_Sea_Low_03", sprLanaWideBank,       new Vector3(  6.5f, 13.0f, 4.8f), new Vector2(9.2f, 5.4f), new Color(0.98f, 0.99f, 1.0f, 0.98f), 5);
+            SpawnCloud("Cloud_Sea_Low_04", sprHeroDescent01,      new Vector3( 14.5f, 11.5f, 5.5f), new Vector2(8.4f, 5.0f), new Color(0.96f, 0.98f, 1.0f, 0.95f), 4);
+
+            // TIER 3: SOFT TRAILING REVEAL FRINGE ("rồi mới xuống được khung cảnh của người chơi", Y = 7.5m .. 9.8m)
+            // As camera descends below Y = 8.0m, these soft clouds drift upward out of frame, revealing the forest!
+            SpawnCloud("Cloud_Reveal_Fringe_01", sprMidSoftBank03, new Vector3(-8.0f, 8.8f, 5.0f), new Vector2(7.2f, 3.6f), new Color(1.0f, 1.0f, 1.0f, 0.92f), 5);
+            SpawnCloud("Cloud_Reveal_Fringe_02", sprLanaGoldenHoriz,new Vector3( 2.5f, 8.2f, 4.5f), new Vector2(7.5f, 3.8f), new Color(1.0f, 0.99f, 0.95f, 0.90f), 5, true);
+            SpawnCloud("Cloud_Reveal_Fringe_03", sprDistantHorizon,new Vector3(11.5f, 9.0f, 5.5f), new Vector2(7.0f, 3.4f), new Color(0.98f, 0.98f, 1.0f, 0.88f), 4);
         }
 
         // =========================================================================================
@@ -1114,7 +1119,6 @@ namespace HoaVaMau.Editor
         private static void PopulateUnifiedPlanetOfLanaEcosystem(LanaMaterialSet mats)
         {
             var mgRoot = GameObject.Find("05_Midground") ?? new GameObject("05_Midground");
-            var fgRoot = GameObject.Find("04_Foreground") ?? new GameObject("04_Foreground");
 
             var ecoRoot = new GameObject("Lana_HandDrawn_Ecosystem");
             ecoRoot.transform.SetParent(mgRoot.transform, false);
@@ -1124,9 +1128,6 @@ namespace HoaVaMau.Editor
             var grassGroup   = new GameObject("HandDrawn_MeadowGrass"); grassGroup.transform.SetParent(ecoRoot.transform, false);
             var riceGroup    = new GameObject("Golden_RiceField_2D");   riceGroup.transform.SetParent(ecoRoot.transform, false);
             var rocksGroup   = new GameObject("Sculpted_MossyBoulders");rocksGroup.transform.SetParent(ecoRoot.transform, false);
-
-            var fgDescentGroup = new GameObject("FG_SkyToForest_DescentBushes");
-            fgDescentGroup.transform.SetParent(fgRoot.transform, false);
 
             // Tree Sprites - Dedicated 3-Depth Layering System (Planet of Lana Standard)
             Sprite sprTreeForeground1 = LoadSprite("Assets/Textures/Tree/truoc 1.png", new Vector2(0.5f, 0.02f));
@@ -1278,154 +1279,52 @@ namespace HoaVaMau.Editor
             Color fgShadowCol   = new Color(0.12f, 0.20f, 0.18f, 0.96f);
 
             // =====================================================================================
-            // A. SKY-TO-FOREST ENTRY CORNER FRAMING (REPOUSSOIR - FOREGROUND LAYER)
+            // A. FOREGROUND LAYER: STRICTLY UNOBSTRUCTED & OPEN (Zero dark silhouette repoussoir props)
             // =====================================================================================
-            // 1. MASSIVE FOREGROUND DARK SILHOUETTE FRAMING TRUNKS (media_1792981597148_cf8bf183.png & media_1792982003302_435c07e3.jpg)
-            // Left towering dark silhouette trunk framing left boundary cleanly
-            SpawnSprite("Repoussoir_Left_MassiveHeroTrunk", fgDescentGroup.transform, sprTreeForeground1 ?? sprTrunkModular ?? sprCurvedTreeV2Full,
-                new Vector3(-8.50f, -2.20f, -1.85f), new Vector2(1.35f, 2.20f), fgShadowCol, 29, 0.3f, 0.5f);
-
-            // Slender organic framing branch framing An in near foreground
-            SpawnSprite("Repoussoir_Near_FramingBranch", fgDescentGroup.transform, sprBranchOver ?? sprTreeSlenderHigh,
-                new Vector3(-5.10f, -1.25f, -1.65f), new Vector2(0.85f, 1.15f), fgShadowCol, 28, 0.4f, 0.5f);
-
-            // Right massive dark silhouette trunk framing right boundary beyond cliff
-            SpawnSprite("Repoussoir_Right_MassiveHeroTrunk", fgDescentGroup.transform, sprTreeForeground1 ?? sprTrunkModular ?? sprTreeFullIsolated,
-                new Vector3(8.50f, -2.00f, -1.85f), new Vector2(1.40f, 2.20f), fgShadowCol, 29, 0.3f, 0.5f, true);
-
-            // Overhead framing foliage canopy (top corners)
-            SpawnSprite("Repoussoir_TopLeft_HighCanopy", fgDescentGroup.transform, sprRepoussoirTop ?? sprBranchOver,
-                new Vector3(-6.80f, 4.80f, -1.55f), new Vector2(1.25f, 1.15f), fgShadowCol, 28, 0.6f, 0.6f);
-            SpawnSprite("Repoussoir_TopRight_HighCanopy", fgDescentGroup.transform, sprBranchOver,
-                new Vector3(6.80f, 4.80f, -1.55f), new Vector2(1.25f, 1.15f), fgShadowCol, 28, 0.6f, 0.6f, true);
-
-            // Dark silhouette foreground ground accents on the corners (below character walking plane)
-            SpawnSprite("Repoussoir_Bottom_LeftRock", fgDescentGroup.transform, sprHDRock04Flat ?? sprRock04FlatSlab,
-                new Vector3(-8.20f, -2.75f, -1.85f), new Vector2(1.40f, 0.50f), fgShadowCol, 29, 0f, 0f);
-            SpawnSprite("Repoussoir_Bottom_RightRock", fgDescentGroup.transform, sprHDRock04Flat ?? sprRock04FlatSlab,
-                new Vector3(8.20f, -2.75f, -1.85f), new Vector2(1.40f, 0.50f), fgShadowCol, 29, 0f, 0f, true);
-
-            if (sprBranchOver != null)
-            {
-                SpawnSprite("Cliff_Framing_Branch", fgDescentGroup.transform, sprBranchOver,
-                    new Vector3(12.5f, 5.8f, -1.50f), new Vector2(1.05f, 1.00f), fgShadowCol, 28, 0.9f, 0.8f);
-                SpawnSprite("Crawl_Framing_Branch", fgDescentGroup.transform, sprBranchOver,
-                    new Vector3(26.0f, 5.20f, -1.50f), new Vector2(1.00f, 0.95f), fgShadowCol, 28, 0.9f, 0.8f, true);
-            }
+            // Per Planet of Lana art direction: Foreground remains open, luminous, and clear.
+            // No black silhouette tree trunks, blocking branches, or fake framing props in front of the camera.
 
             // =====================================================================================
             // B. ZONE 1 (-12m to +35.5m): TRANQUIL MORNING FOREST CLEARING (PLANET OF LANA DEPTH)
             // =====================================================================================
-            // 0. Distant Background Forest Ridge (sau 1.png / Z = 6.5m, Order 4)
-            float[] ridgeXs = new float[] { -12.0f, -8.5f, 18.5f, 25.5f, 33.5f };
-            for (int rIdx = 0; rIdx < ridgeXs.Length; rIdx++)
-            {
-                float rx = ridgeXs[rIdx];
-                float ry = SampleTerrainSurfaceY(rx) + 0.90f;
-                float rz = 6.5f + (rIdx % 2) * 0.3f;
-                SpawnSprite($"Forest_MidRidge_{rIdx:D2}", treesGroup.transform, sprTreeBackground1 ?? sprMidgroundHills,
-                    new Vector3(rx, ry, rz), new Vector2(2.5f, 2.1f), farForestCol, 4, 0.5f, 0.6f, (rIdx % 2 == 1));
-            }
-
-            // 1. Atmospheric Background Trees (Z = 5.2m .. 5.8m, proportional scale 1.35f - 1.55f)
-            float[] bgTreeXs = new float[] { -11.5f, -8.0f, -3.5f, 1.5f, 7.5f, 12.5f, 18.5f, 24.0f, 30.0f };
+            // 1. Atmospheric Distant Background Trees (Z = 6.0m, spaced cleanly every 6-8m, zero overlapping trunks)
+            float[] bgTreeXs = new float[] { -10.0f, -4.5f, 2.0f, 8.5f, 14.5f, 20.5f, 26.5f, 32.5f };
             for (int tIdx = 0; tIdx < bgTreeXs.Length; tIdx++)
             {
                 float bx = bgTreeXs[tIdx];
                 float by = SampleTerrainSurfaceY(bx) - 0.05f;
                 Sprite bTreeSpr = (tIdx % 3 == 0) ? sprTreeWideCanopy : ((tIdx % 3 == 1) ? sprTreePoplarTall : sprTreeSlenderHigh);
-                Vector2 bScale = new Vector2(1.45f, 1.45f);
-                float bZ = 5.2f + (tIdx % 3) * 0.25f;
+                Vector2 bScale = new Vector2(1.40f, 1.40f);
                 SpawnSprite($"Forest_BG_Tree_{tIdx:D2}", treesGroup.transform, bTreeSpr,
-                    new Vector3(bx, by, bZ), bScale, farForestCol, 5, 0.8f, 0.9f, (tIdx % 2 == 1));
+                    new Vector3(bx, by, 6.0f), bScale, farForestCol, 5, 0.6f, 0.7f, (tIdx % 2 == 1));
             }
 
-            // 2. HERO COMPOSITION - TRANQUIL MORNING FOREST BASIN & STEPPING STONES:
-            // --- A. LEFT EMBANKMENT (X = -8.5m .. -4.0m) ---
-            float bgLeft1Y = SampleTerrainSurfaceY(-8.2f) + 0.10f;
-            SpawnSprite("Opening_BG_Tree_Left1", treesGroup.transform, sprTreeWideCanopy,
-                new Vector3(-8.2f, bgLeft1Y, 4.2f), new Vector2(1.45f, 1.45f), farForestCol, 5, 0.7f, 0.8f);
-
-            float bgLeft2Y = SampleTerrainSurfaceY(-6.8f) + 0.10f;
-            SpawnSprite("Opening_BG_Tree_Left2", treesGroup.transform, sprTreeSlenderHigh,
-                new Vector3(-6.8f, bgLeft2Y, 4.5f), new Vector2(1.40f, 1.40f), farForestCol, 4, 0.7f, 0.8f);
-
-            // Stacked mossy rock outcrop at the base of the embankment
-            SpawnSprite("Opening_Rock01_LargeOutcrop", rocksGroup.transform, sprRock01Large,
-                new Vector3(-5.80f, SampleTerrainSurfaceY(-5.80f) - 0.05f, 0.85f), new Vector2(1.15f, 1.15f), nearForestCol, 12, 0f, 0f);
-            SpawnSprite("Opening_Rock02_MossyMediumTop", rocksGroup.transform, sprRock02MossyTop,
-                new Vector3(-4.50f, SampleTerrainSurfaceY(-4.50f) - 0.04f, 0.65f), new Vector2(0.95f, 0.95f), nearForestCol, 12, 0f, 0f);
-            SpawnSprite("Opening_Rock05_SmallMossy_Embankment", rocksGroup.transform, sprRock05Small,
-                new Vector3(-3.80f, SampleTerrainSurfaceY(-3.80f) - 0.04f, 0.45f), new Vector2(0.85f, 0.85f), nearForestCol, 12, 0f, 0f);
-
-            // --- B. TRANQUIL MORNING FOREST CLEARING & MOSSY EARTH EMBANKMENTS (X = -4.0m .. +5.2m) ---
-            float[] slopeXs = new float[] { -4.2f, -2.6f, -0.8f, 1.1f, 2.8f, 4.2f };
-            for (int ci = 0; ci < slopeXs.Length; ci++)
-            {
-                float cx = slopeXs[ci];
-                float cy = -0.75f + Mathf.Abs(cx) * 0.28f;
-                float cz = 2.8f + (ci % 2) * 0.35f;
-                Sprite cSpr = (ci % 2 == 0) ? (sprHDRock01Large ?? sprRock01Large) : (sprCliffShelf ?? sprRock01Large);
-                SpawnSprite($"Forest_MossySlope_{ci:D2}", rocksGroup.transform, cSpr,
-                    new Vector3(cx, cy, cz), new Vector2(2.10f, 1.65f), (ci == 2 || ci == 3) ? midForestCol : nearForestCol, 6, 0f, 0f, (ci % 2 == 1));
-            }
-
-            // 1. Natural stepping stone slabs leading An through the forest path to the cliff
-            float[] pathSlabXs = new float[] { -3.40f, -2.10f, -0.80f, 0.60f, 1.90f, 3.20f, 4.30f };
-            for (int sIdx = 0; sIdx < pathSlabXs.Length; sIdx++)
-            {
-                float sx = pathSlabXs[sIdx];
-                float sy = SampleTerrainSurfaceY(sx) - 0.14f;
-                SpawnSprite($"Path_SteppingStone_{sIdx:D2}", rocksGroup.transform, sprHDRock04Flat ?? sprRock04FlatSlab,
-                    new Vector3(sx, sy, 0.10f), new Vector2(0.85f, 0.15f), nearForestCol, 12, 0f, 0f, (sIdx % 2 == 1));
-            }
-
-            // 2. Lush, tranquil morning trees rising with atmospheric depth (Midground Layer)
+            // 2. HERO COMPOSITION - TRANQUIL MORNING FOREST BASIN (Strictly grounded behind player walking plane, Z = 2.0m .. 2.5m)
             SpawnSprite("Tranquil_HeroBanyan_Left", treesGroup.transform, sprTreeMidground1 ?? sprTree01Large,
-                new Vector3(-4.40f, SampleTerrainSurfaceY(-4.40f) - 0.05f, 1.65f), new Vector2(1.25f, 1.25f), nearForestCol, 9, 0.6f, 0.7f);
+                new Vector3(-4.80f, SampleTerrainSurfaceY(-4.80f) - 0.05f, 2.00f), new Vector2(1.25f, 1.25f), nearForestCol, 9, 0.6f, 0.7f);
 
-            SpawnSprite("Tranquil_SlenderTree_Center", treesGroup.transform, sprCay1 ?? sprTreeSlenderHigh,
-                new Vector3(-0.90f, SampleTerrainSurfaceY(-0.90f) - 0.05f, 2.80f), new Vector2(1.35f, 1.40f), midForestCol, 8, 0.5f, 0.6f);
+            SpawnSprite("Tranquil_SlenderTree_Center", treesGroup.transform, sprTree04Tall ?? sprTreeMidground1,
+                new Vector3(-1.20f, SampleTerrainSurfaceY(-1.20f) - 0.05f, 2.50f), new Vector2(1.20f, 1.25f), midForestCol, 8, 0.5f, 0.6f);
 
-            SpawnSprite("Tranquil_CurvedTree_Right", treesGroup.transform, sprCurvedTreeV2Full,
-                new Vector3(1.85f, SampleTerrainSurfaceY(1.85f) - 0.05f, 1.80f), new Vector2(1.15f, 1.15f), nearForestCol, 9, 0.6f, 0.7f, true);
+            SpawnSprite("Tranquil_Banyan_RightCliffBase", treesGroup.transform, sprTree02Medium ?? sprCurvedTreeV2Full,
+                new Vector3(3.20f, SampleTerrainSurfaceY(3.20f) - 0.05f, 2.20f), new Vector2(1.15f, 1.15f), nearForestCol, 9, 0.6f, 0.7f, true);
 
             // 3. Peaceful Sun-Dappled Forest Dust & Pollen VFX (Zero fiery embers!)
             SetupPeacefulForestPollenVFX();
 
-            // Ground pebbles firmly touching the surface
-            SpawnSprite("Opening_Pebbles_01", rocksGroup.transform, sprRock06PebblesTop,
-                new Vector3(-2.80f, SampleTerrainSurfaceY(-2.80f) - 0.02f, 0.35f), new Vector2(0.65f, 0.65f), nearForestCol, 13, 0f, 0f);
-            SpawnSprite("Opening_Pebbles_02", rocksGroup.transform, sprRock07PebblesBot,
-                new Vector3( 0.80f, SampleTerrainSurfaceY( 0.80f) - 0.02f, 0.35f), new Vector2(0.65f, 0.65f), nearForestCol, 13, 0f, 0f);
-            SpawnSprite("Opening_Rock05_PathDip", rocksGroup.transform, sprRock05Small,
-                new Vector3( 2.20f, SampleTerrainSurfaceY( 2.20f) - 0.02f, 0.35f), new Vector2(0.60f, 0.60f), nearForestCol, 13, 0f, 0f);
-
-            // --- C. STRATIFIED ROCK CLIFF FACE & OVERLOOK (X >= 5.0m, media_1792981610035_0a37bbf7.jpg) ---
-            SpawnSprite("Cliff_Stratified_LargeOutcrop", rocksGroup.transform, sprHDRock01Large ?? sprRock01Large,
-                new Vector3(5.45f, -1.25f, 0.08f), new Vector2(1.10f, 1.15f), nearForestCol, 24, 0f, 0f);
-            SpawnSprite("Cliff_Shelf_MidTier", rocksGroup.transform, sprCliffShelf ?? sprRock01Large,
-                new Vector3(5.75f, -0.90f, 0.12f), new Vector2(1.10f, 0.85f), nearForestCol, 24, 0f, 0f);
-            SpawnSprite("Cliff_Rock_BaseFooting", rocksGroup.transform, sprRock03MossyBot,
-                new Vector3(5.15f, -1.82f, 0.10f), new Vector2(0.95f, 0.85f), nearForestCol, 24, 0f, 0f);
-            SpawnSprite("Cliff_Rock_TopLedgeCap", rocksGroup.transform, sprHDRock04Flat ?? sprRock04FlatSlab,
-                new Vector3(5.45f, -0.48f, 0.06f), new Vector2(1.05f, 0.45f), nearForestCol, 25, 0f, 0f);
-
-            // Overhanging Ivy Vines cascading down the rock face
+            // 4. Overhanging Ivy Vines cascading down the rock face
             SpawnSprite("Cliff_Ivy_Vines_01", bushesGroup.transform, sprVineCreep ?? sprBranchOver,
                 new Vector3(5.30f, -0.55f, 0.04f), new Vector2(1.05f, 1.15f), nearForestCol, 26, 1.2f, 1.0f);
             SpawnSprite("Cliff_Ivy_Vines_02", bushesGroup.transform, sprVineCluster ?? sprVineCreep,
                 new Vector3(5.65f, -0.75f, 0.04f), new Vector2(0.95f, 1.05f), nearForestCol, 26, 1.0f, 0.9f);
 
-            // Ancient Hero Tree rooted on the plateau ridge holding the rope bough (media_1792981759724_01eb70a4.jpg)
+            // 5. Ancient Hero Tree rooted on the plateau ridge holding the rope bough
             SpawnSprite("Cliff_RopeHeroTree_Plateau", treesGroup.transform, sprTree01Large ?? sprTreeFullIsolated,
-                new Vector3(6.20f, SampleTerrainSurfaceY(6.20f) - 0.05f, 0.65f), new Vector2(1.50f, 1.50f), nearForestCol, 11, 0.7f, 0.8f);
+                new Vector3(6.20f, SampleTerrainSurfaceY(6.20f) - 0.05f, 1.80f), new Vector2(1.40f, 1.40f), nearForestCol, 11, 0.7f, 0.8f);
 
-            // Plateau edge trees firmly grounded at Y = -0.55m
-            SpawnSprite("Cliff_Tree03_PlateauEdge", treesGroup.transform, sprCay2 ?? sprTree03Small,
-                new Vector3(7.80f, SampleTerrainSurfaceY(7.80f) - 0.04f, 1.80f), new Vector2(1.05f, 1.05f), nearForestCol, 10, 0.9f, 0.9f);
-            SpawnSprite("Cliff_Tree04_SlenderTall", treesGroup.transform, sprCay3 ?? sprTree04Tall,
-                new Vector3(11.50f, SampleTerrainSurfaceY(11.50f) - 0.04f, 1.50f), new Vector2(1.10f, 1.10f), nearForestCol, 10, 1.0f, 1.0f);
+            // Plateau edge tree firmly grounded at Y = -0.55m
+            SpawnSprite("Cliff_Tree04_PlateauEdge", treesGroup.transform, sprCay3 ?? sprTree04Tall,
+                new Vector3(10.50f, SampleTerrainSurfaceY(10.50f) - 0.04f, 1.80f), new Vector2(1.10f, 1.10f), nearForestCol, 10, 1.0f, 1.0f);
 
             // Zone 1 Landmark Trees: Cliff, Ravine, Crawlway (All strictly grounded on SampleTerrainSurfaceY with proportional scale!)
             SpawnSprite("Ravine_HeroTree_Edge", treesGroup.transform, sprCurvedTreeV2Full,
@@ -1439,10 +1338,8 @@ namespace HoaVaMau.Editor
             SpawnBoulder("Forest_ClearBoulder_Ravine", new Vector3(12.5f, SampleTerrainSurfaceY(12.5f) - 0.08f, 1.35f), new Vector3(1.35f, 0.60f, 1.0f), 30f);
             SpawnBoulder("Forest_ClearBoulder_Crawl",  new Vector3(21.8f, SampleTerrainSurfaceY(21.8f) - 0.08f, 1.35f), new Vector3(1.20f, 0.52f, 0.95f), 140f);
 
-            // Wall Creeping Vines firmly anchored to cliff & ravine lips (Zero floating leaves in chasm void)
-            SpawnSprite("Cliff_Vine_RopeWall", bushesGroup.transform, sprVineCreep,   new Vector3( 5.35f, SampleTerrainSurfaceY( 5.35f), -0.2f), new Vector2(0.95f, 0.95f), nearForestCol, 16, 1.8f, 1.5f);
-            SpawnSprite("Cliff_Vine_RavineW",  bushesGroup.transform, sprVineCreep,   new Vector3(13.90f, SampleTerrainSurfaceY(13.90f), -0.2f), new Vector2(0.85f, 0.85f), nearForestCol, 16, 1.8f, 1.5f);
-            SpawnSprite("Cliff_Vine_RavineE",  bushesGroup.transform, sprVineCreep,   new Vector3(18.25f, SampleTerrainSurfaceY(18.25f), -0.2f), new Vector2(0.85f, 0.85f), nearForestCol, 16, 1.8f, 1.5f, true);
+            // Wall Creeping Vines firmly anchored to cliff face
+            SpawnSprite("Cliff_Vine_RopeWall", bushesGroup.transform, sprVineCreep, new Vector3(5.35f, SampleTerrainSurfaceY(5.35f), 0.12f), new Vector2(0.95f, 0.95f), nearForestCol, 16, 1.8f, 1.5f);
 
             // Fallen Tree Crawl dressing
             SpawnSprite("FallenTree_TopBush1",  bushesGroup.transform, sprBushBroad1,  new Vector3(24.5f,  0.42f, -0.25f), new Vector2(0.70f, 0.68f), nearForestCol, 16, 1.5f, 1.4f);
@@ -1467,32 +1364,10 @@ namespace HoaVaMau.Editor
             SpawnSprite("HillSlope_Palm_3", treesGroup.transform, sprTree05Banana,     new Vector3(60.5f, SampleTerrainSurfaceY(60.5f) - 0.10f, 2.6f), new Vector2(0.95f, 0.95f), nearForestCol, 9, 1.5f, 1.3f);
 
             // =====================================================================================
-            // D. ORGANIC RIM TUFTS & GROUND DETAIL (-11.5m to +62.0m)
+            // D. ORGANIC VEGETATION DETAIL (-11.5m to +62.0m)
             // =====================================================================================
-            // Zero flat cardboard carpets! The 3D procedural ledge mesh provides the continuous painterly grass.
-            // Only delicate, subtle tufts placed strictly on the rim edge (Z = 0.05m) to feather the silhouette into air.
-            int tuftIdx = 0;
-            for (float x = -11.5f; x <= 61.5f; x += 3.2f)
-            {
-                if (x > 14.0f && x < 18.0f) continue; // Skip ravine chasm entirely
-
-                float y = SampleTerrainSurfaceY(x);
-                float slopeRotZ = 0f;
-                if (x >= 43.5f && x < 62.0f) slopeRotZ = -11.5f;
-
-                float goldBlend = Mathf.InverseLerp(48.0f, 62.0f, x);
-                Color grassCol = Color.Lerp(new Color(0.92f, 0.98f, 0.88f, 1f), new Color(0.98f, 0.92f, 0.72f, 1f), goldBlend);
-                float scaleJitter = 0.95f + Mathf.Abs(Mathf.Sin(x * 3.7f)) * 0.15f;
-
-                Sprite tuftSpr = (tuftIdx % 2 == 0) ? LoadSprite($"{UnifiedTexRoot}/Grass/T_Lana_Grass_01_SoftTuft.png", new Vector2(0.5f, 0.05f))
-                                                    : LoadSprite($"{UnifiedTexRoot}/Grass/T_Lana_Grass_02_WindsweptClump.png", new Vector2(0.5f, 0.05f));
-                if (tuftSpr == null) tuftSpr = sprGrassCarpets[0];
-
-                SpawnSprite($"Platform_RimTuft_{tuftIdx:D2}", grassGroup.transform, tuftSpr,
-                    new Vector3(x, y - 0.03f, 0.05f), new Vector2(0.55f * scaleJitter, 0.45f * scaleJitter), grassCol, 14, 1.4f, 1.2f, (tuftIdx % 2 == 0), slopeRotZ);
-
-                tuftIdx++;
-            }
+            // Zero flat 2D rectangular carpet strips! The 3D procedural ledge mesh provides the continuous painterly grass.
+            // Foliage is strictly composed of delicate wildflowers, reeds, and rooted bushes anchored on SampleTerrainSurfaceY.
 
             // Proportional bushes (scale 0.45f - 0.55f) grounded on SampleTerrainSurfaceY
             void SpawnAnchoredBush(string name, float bx, float bz, Sprite spr, float scale, Color col, float rotZ = 0f)
