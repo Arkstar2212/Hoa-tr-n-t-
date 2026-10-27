@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "com.besty.unity-skills": "https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v2.9.1",
+    "com.kinematicsoup.scenefusion2": "https://github.com/KinematicSoup/Releases.git?path=/SceneFusion/2.0.5",
     "com.tripo3d.unitybridge": "file:C:/Users/Thanh Tài/Downloads/Tripo3d_Unity_Bridge-latest/Tripo3d_Unity_Bridge",
     "com.unity.2d.animation": "16.0.1",
     "com.unity.2d.sprite": "1.0.0",

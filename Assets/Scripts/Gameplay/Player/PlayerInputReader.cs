@@ -54,7 +54,7 @@ namespace HoaVaMau.Gameplay
             }
 
             if (KeybindingManager.IsActionHeld(GameAction.Sprint)) SprintHeld = true;
-            if (KeybindingManager.IsActionPressed(GameAction.Crouch) || KeybindingManager.IsActionHeld(GameAction.Crouch)) CrouchPressed = true;
+            if (KeybindingManager.IsActionPressed(GameAction.Crouch) || KeybindingManager.IsActionHeld(GameAction.Crouch) || Input.GetKey(KeyCode.C) || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) CrouchPressed = true;
 
             if (KeybindingManager.IsActionPressed(GameAction.Jump)) JumpPressed = true;
             if (KeybindingManager.IsActionHeld(GameAction.Jump)) JumpHeld = true;
@@ -72,7 +72,7 @@ namespace HoaVaMau.Gameplay
                 if (kb.leftArrowKey.isPressed) Horizontal = Mathf.Clamp(Horizontal - 1f, -1f, 1f);
                 if (kb.rightArrowKey.isPressed) Horizontal = Mathf.Clamp(Horizontal + 1f, -1f, 1f);
                 if (kb.upArrowKey.isPressed) Vertical = Mathf.Clamp(Vertical + 1f, -1f, 1f);
-                if (kb.downArrowKey.isPressed) { Vertical = Mathf.Clamp(Vertical - 1f, -1f, 1f); CrouchPressed = true; }
+                if (kb.downArrowKey.isPressed || kb.sKey.isPressed || kb.cKey.isPressed || kb.leftCtrlKey.isPressed || kb.rightCtrlKey.isPressed) { Vertical = Mathf.Clamp(Vertical - 1f, -1f, 1f); CrouchPressed = true; }
                 if (kb.spaceKey.wasPressedThisFrame) JumpPressed = true;
                 if (kb.spaceKey.isPressed) JumpHeld = true;
                 if (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed) SprintHeld = true;

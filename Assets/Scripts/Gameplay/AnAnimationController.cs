@@ -84,6 +84,11 @@ namespace HoaVaMau.Gameplay
         private float speedVelocity = 0f;
         private float targetFacingAngle = 90f; // 90 = Right, -90 = Left
         private string currentPlayingState = "Idle";
+        [Header("Tầm nhìn đầu khi ngồi (LookAt IK)")]
+        [Range(0f, 1f)]
+        [SerializeField] private float crouchHeadLookWeight = 0.85f;
+        private float currentHeadIKWeight = 0f;
+        private Transform headBone;
         private bool isLanding = false;
         private float landingTimer = 0f;
         private const float DefaultLandingDuration = 0.35f;
@@ -156,6 +161,37 @@ namespace HoaVaMau.Gameplay
             }
             // Chặn hoàn toàn Root Motion tự động của Animator để CharacterController và PlayerLedgeClimber
             // làm chủ 100% vị trí vật lý, không bao giờ xảy ra xung đột giật lùi.
+        }
+
+        
+        private void OnAnimatorIK(int layerIndex)
+        {
+            if (animator == null || !animator.isHuman) return;
+
+            bool isCrouchedState = (currentPlayingState == "Crouch" || currentPlayingState == "CrouchWalk" || currentPlayingState == "CrouchIdle" ||
+                                   mode == AnAnimationMode.ForceCrouch ||
+                                   (playerController != null && playerController.IsCrouching));
+
+            float targetWeight = isCrouchedState ? crouchHeadLookWeight : 0f;
+            float dt = Application.isPlaying ? Time.deltaTime : 0.02f;
+            currentHeadIKWeight = Mathf.MoveTowards(currentHeadIKWeight, targetWeight, 5f * dt);
+
+            if (currentHeadIKWeight > 0.001f)
+            {
+                Transform head = (headBone != null) ? headBone : animator.GetBoneTransform(HumanBodyBones.Head);
+                Vector3 headPos = (head != null) ? head.position : (transform.position + Vector3.up * 0.9f);
+
+                // Điểm nhìn hướng thẳng ngang tầm mắt theo hướng nhìn của nhân vật
+                Vector3 lookTarget = headPos + transform.forward * 4.0f;
+
+                // Humanoid LookAt IK: bodyWeight=0 (giữ nguyên dáng thân), headWeight=0.85 (nâng đầu tự nhiên theo giải phẫu xương, không gục đầu/vẹo cổ)
+                animator.SetLookAtWeight(currentHeadIKWeight, 0.0f, 0.85f, 0.0f, 0.5f);
+                animator.SetLookAtPosition(lookTarget);
+            }
+            else
+            {
+                animator.SetLookAtWeight(0f);
+            }
         }
 
         private void LateUpdate()
@@ -720,7 +756,7 @@ namespace HoaVaMau.Gameplay
 
         private void CrossFadeToState(string stateName, float duration)
         {
-            if (animator == null) return;
+            if (animator == null || animator.runtimeAnimatorController == null) return;
 
             if (animator.GetCurrentAnimatorStateInfo(0).IsName(stateName))
             {

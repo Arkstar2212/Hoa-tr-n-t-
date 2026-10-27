@@ -372,7 +372,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.PlayerController
   walkSpeed: 2.2
   sprintSpeed: 5.5
-  crouchSpeed: 1.8
+  crouchSpeed: 1.15
   crawlSpeed: 1.2
   pushPullSpeed: 2.1
   acceleration: 26

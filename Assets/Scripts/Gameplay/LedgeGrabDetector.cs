@@ -76,6 +76,10 @@ namespace HoaVaMau.Gameplay
             // với hai tay vươn thẳng bám đúng vào góc gờ (topY). Gốc tọa độ chân nằm cách mép gờ 1.70m về phía dưới.
             float hangX = wallX - facingDir * wallHangOffset;
             float hangY = topY - 1.70f;
+            if (Physics.Raycast(new Vector3(hangX, topY, 0f), Vector3.down, out RaycastHit floorHit, 3.5f, obstacleMask, QueryTriggerInteraction.Ignore))
+            {
+                hangY = Mathf.Max(hangY, floorHit.point.y);
+            }
             hangPos = new Vector3(hangX, hangY, 0f);
 
             // Vị trí kết thúc trèo (platformLandPos): Đứng vững trên mặt phẳng đỉnh platform, cách mép gờ 0.42m
