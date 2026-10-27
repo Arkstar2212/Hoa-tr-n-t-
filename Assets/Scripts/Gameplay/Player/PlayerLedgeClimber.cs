@@ -1,11 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace HoaVaMau.Gameplay
 {
     /// <summary>
     /// SOLID - Single Responsibility Principle:
     /// Chuyên trách quản lý cơ chế bám mép vách (Ledge Grab) và leo trèo (Ledge Climb),
-    /// tính toán quỹ đạo chuyển động mượt mà (Biomechanical Hoist) và đồng bộ hoàn toàn với Animator.
+    /// tính toán quỹ đạo chuyển động mượt mà (Biomechanical Hoist) và thông báo cho Animator.
     /// </summary>
     public class PlayerLedgeClimber
     {
@@ -13,21 +13,19 @@ namespace HoaVaMau.Gameplay
         private readonly CharacterController charController;
         private readonly LedgeGrabDetector ledgeDetector;
 
-        public float ClimbDuration { get; set; } = 1.15f;
+        public float ClimbDuration { get; set; } = 1.05f; // Tăng tốc độ trèo tường nhanh và linh hoạt hơn
         public float MaxClimbForwardLean { get; set; } = 24f;
-        public bool AutoClimbOnLedgeGrab { get; set; } = false;
+        public bool AutoClimbOnLedgeGrab { get; set; } = false; // Mặc định bám treo tay vào vách đá, chờ người chơi bấm W hoặc Up để leo lên
 
         public Vector3 ClimbStartPos { get; private set; }
         public Vector3 ClimbEndPos { get; private set; }
-        public float LedgeWallX { get; private set; }
-        public float LedgeTopY { get; private set; }
         public float ClimbProgress { get; private set; }
 
         public PlayerLedgeClimber(
             Transform transform,
             CharacterController charController,
             LedgeGrabDetector ledgeDetector,
-            float climbDuration = 1.15f,
+            float climbDuration = 1.05f,
             float maxClimbForwardLean = 24f,
             bool autoClimbOnLedgeGrab = false)
         {
@@ -51,32 +49,37 @@ namespace HoaVaMau.Gameplay
             return false;
         }
 
-        public void StartLedgeGrab(Vector3 grabPos, Vector3 landPos, float facingDirection)
+        public void PrepareLedgeGrab(Vector3 grabPos, Vector3 landPos, float facingDirection)
         {
             if (charController != null) charController.enabled = false;
 
             ClimbStartPos = new Vector3(grabPos.x, grabPos.y, 0f);
             ClimbEndPos = new Vector3(landPos.x, landPos.y, 0f);
-            float wallOffset = (ledgeDetector != null) ? ledgeDetector.WallHangOffset : 0.28f;
-            LedgeWallX = (ledgeDetector != null && Mathf.Abs(ledgeDetector.LastDetectedWallX) > 0.0001f)
-                ? ledgeDetector.LastDetectedWallX
-                : (ClimbStartPos.x + facingDirection * wallOffset);
-            LedgeTopY = ClimbEndPos.y;
             ClimbProgress = 0f;
 
-            // Đặt nhân vật tại vị trí bám gờ (ClimbStartPos) áp sát vách đá
+            // Đặt nhân vật bám gờ vách tại ClimbStartPos
             transform.position = ClimbStartPos;
-
-            var anAnim = transform.GetComponent<AnAnimationController>();
-            if (anAnim != null) anAnim.OnLedgeHangStarted();
         }
 
-        public void BeginClimbFromGrab()
+        public void StartClimbing()
         {
             ClimbProgress = 0f;
 
+            var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
+            if (meshyAnim != null) meshyAnim.OnClimbStarted();
+
             var anAnim = transform.GetComponent<AnAnimationController>();
             if (anAnim != null) anAnim.OnClimbStarted();
+        }
+
+        public void StartLedgeGrab(Vector3 grabPos, Vector3 landPos, float facingDirection)
+        {
+            PrepareLedgeGrab(grabPos, landPos, facingDirection);
+
+            if (AutoClimbOnLedgeGrab)
+            {
+                StartClimbing();
+            }
         }
 
         public bool UpdateClimb(float dt, float facingDirection, Transform visualTransform, float baseScaleX, float baseScaleY, float baseScaleZ)
@@ -84,7 +87,7 @@ namespace HoaVaMau.Gameplay
             ClimbProgress += dt / Mathf.Max(0.1f, ClimbDuration);
             float t = Mathf.Clamp01(ClimbProgress);
 
-            // Di chuyển nhân vật mượt mà theo đường cong cơ sinh học từ vị trí bám vách lên đỉnh gờ
+            // Di chuyển nhân vật mượt mà theo đường cong cơ sinh học từ mép tường lên đỉnh gờ
             transform.position = EvaluateClimbTrajectory(t, facingDirection);
 
             bool hasClimbAnimation = (transform.GetComponent<Animator>() != null);
@@ -98,6 +101,9 @@ namespace HoaVaMau.Gameplay
                 transform.position = ClimbEndPos;
                 Physics.SyncTransforms();
                 if (charController != null) charController.enabled = true;
+
+                var meshyAnim = transform.GetComponent<MeshyBoyAnimationController>();
+                if (meshyAnim != null) meshyAnim.OnClimbFinished();
 
                 var anAnim = transform.GetComponent<AnAnimationController>();
                 if (anAnim != null) anAnim.OnClimbFinished();
@@ -113,22 +119,23 @@ namespace HoaVaMau.Gameplay
             Vector3 start = ClimbStartPos;
             Vector3 end = ClimbEndPos;
 
-            float wallX = LedgeWallX;
-            float topY = LedgeTopY;
+            // Tọa độ mép tường thực tế (start.x nằm cách mặt tường 0.28m về phía ngoài)
+            float wallX = start.x + facing * 0.28f;
+            float topY = end.y;
 
-            // P0: Điểm bám ban đầu áp sát mặt ngoài của vách tường (đồng bộ 100% với tư thế LedgeHang)
+            // P0: Điểm bám ban đầu áp sát mặt ngoài của vách tường
             Vector3 p0 = start;
-            // P1: Kéo thân người thẳng đứng dọc theo mặt ngoài vách tường lên ngang mép gờ (0% -> 42%)
-            Vector3 p1 = new Vector3(wallX - facing * 0.14f, topY - 0.10f, 0f);
-            // P2: Chống tay vượt qua góc gờ (wallX, topY) đặt chân lên mặt sàn (42% -> 76%)
+            // P1: Kéo người thẳng đứng dọc theo mặt ngoài vách tường lên sát mép gờ (không xuyên tường)
+            Vector3 p1 = new Vector3(wallX - facing * 0.14f, topY - 0.08f, 0f);
+            // P2: Chống tay vượt qua góc gờ (wallX, topY) đặt chân lên mặt sàn
             Vector3 p2 = new Vector3(wallX + facing * 0.24f, topY, 0f);
-            // P3: Đứng thẳng dậy hoàn toàn tại điểm đáp trên platform (76% -> 100%)
+            // P3: Đứng thẳng dậy hoàn toàn tại điểm đáp trên platform
             Vector3 p3 = end;
 
-            if (t <= 0.42f)
+            if (t <= 0.46f)
             {
-                // Pha 1 (0% -> 42%): Kéo người từ vị trí treo vách lên mép gờ
-                float subT = t / 0.42f;
+                // Pha 1 (0% -> 46%): Bám vách và kéo thân người thẳng đứng lên dọc theo mặt tường
+                float subT = t / 0.46f;
                 float easeY = Mathf.SmoothStep(0f, 1f, subT);
                 float easeX = subT * subT;
                 return new Vector3(
@@ -136,17 +143,17 @@ namespace HoaVaMau.Gameplay
                     Mathf.Lerp(p0.y, p1.y, easeY),
                     0f);
             }
-            else if (t <= 0.76f)
+            else if (t <= 0.78f)
             {
-                // Pha 2 (42% -> 76%): Vượt qua mép gờ (Mantle) bước hai chân lên mặt sàn
-                float subT = (t - 0.42f) / 0.34f;
+                // Pha 2 (46% -> 78%): Vượt qua mép gờ (Mantle) bước chân lên mặt sàn
+                float subT = (t - 0.46f) / 0.32f;
                 float ease = Mathf.SmoothStep(0f, 1f, subT);
                 return Vector3.Lerp(p1, p2, ease);
             }
             else
             {
-                // Pha 3 (76% -> 100%): Đứng thẳng dậy hoàn toàn trên platform
-                float subT = (t - 0.76f) / 0.24f;
+                // Pha 3 (78% -> 100%): Đứng thẳng dậy và bước ổn định vào trong platform
+                float subT = (t - 0.78f) / 0.22f;
                 float ease = Mathf.SmoothStep(0f, 1f, subT);
                 return Vector3.Lerp(p2, p3, ease);
             }

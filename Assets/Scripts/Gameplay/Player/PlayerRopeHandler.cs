@@ -14,6 +14,9 @@ namespace HoaVaMau.Gameplay
         private RopeController currentRope;
         private float ropeAttachCooldown = 0f;
 
+        public float HandOffsetHeight { get; set; } = 1.45f; // Khoảng cách từ gốc tọa độ chân lên đến bàn tay nắm dây
+        public float CurrentRopeAngle { get; private set; } = 0f; // Góc nghiêng của dây thừng tại điểm bám
+
         public bool CanAttachToRope => ropeAttachCooldown <= 0f;
         public RopeController CurrentRope => currentRope;
 
@@ -36,7 +39,9 @@ namespace HoaVaMau.Gameplay
 
             currentRope = rope;
             if (charController != null) charController.enabled = false;
-            transform.position = new Vector3(attachPos.x, attachPos.y, 0f);
+
+            // Bàn tay bám đúng tại attachPos, thân người và chân nằm phía dưới
+            transform.position = new Vector3(attachPos.x, attachPos.y - HandOffsetHeight, 0f);
             return true;
         }
 
@@ -56,24 +61,30 @@ namespace HoaVaMau.Gameplay
                 return false;
             }
 
+            // Leo trèo lên / xuống dọc theo chiều dài dây thừng với tốc độ tự nhiên
             if (Mathf.Abs(verticalInput) > 0.1f)
             {
-                float climbSpeed = 5.2f; // Leo dây nhanh và nhạy hơn
+                float climbSpeed = (verticalInput > 0f) ? 2.2f : 2.8f;
                 currentRope.Climb(player, verticalInput * climbSpeed * dt);
             }
 
-            if (Mathf.Abs(horizontalInput) > 0.1f)
+            // Lấy đà đung đưa con lắc khi bấm A / D
+            if (Mathf.Abs(horizontalInput) > 0.05f)
             {
                 currentRope.ApplySwingInput(horizontalInput, dt);
             }
 
-            transform.position = currentRope.GetPlayerRopePosition(player);
+            // Cập nhật vị trí nhân vật theo đốt dây đang bám
+            Vector3 ropeGrabPos = currentRope.GetPlayerRopePosition(player);
+            transform.position = new Vector3(ropeGrabPos.x, ropeGrabPos.y - HandOffsetHeight, 0f);
 
+            // Bật nhảy phóng khỏi dây thừng
             if (jumpPressed)
             {
                 float jumpDir = horizontalInput != 0 ? Mathf.Sign(horizontalInput) : player.FacingDirection;
-                releaseVelocity = currentRope.GetReleaseVelocity() + new Vector3(jumpDir * 3.6f * 1.4f, 8.6f * 1.05f, 0f);
-                ropeAttachCooldown = 0.55f;
+                Vector3 ropeReleaseVel = currentRope.GetReleaseVelocity();
+                releaseVelocity = ropeReleaseVel + new Vector3(jumpDir * 4.2f, 8.6f * 0.95f, 0f);
+                ropeAttachCooldown = 0.50f;
                 DetachFromRope(player, releaseVelocity);
                 return false; // Released
             }
@@ -89,11 +100,13 @@ namespace HoaVaMau.Gameplay
                 currentRope = null;
             }
 
+            CurrentRopeAngle = 0f;
+
             if (charController != null) charController.enabled = true;
 
             if (Mathf.Abs(releaseVelocity.x) > 0.1f)
             {
-                transform.position += new Vector3(Mathf.Sign(releaseVelocity.x) * 0.45f, 0.15f, 0f);
+                transform.position += new Vector3(Mathf.Sign(releaseVelocity.x) * 0.40f, 0.12f, 0f);
             }
         }
 

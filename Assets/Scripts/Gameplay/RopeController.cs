@@ -39,11 +39,11 @@ namespace HoaVaMau.Gameplay
         [Header("Physics & Motion Smoothing")]
         [SerializeField] private float gravity = 22.0f;
         [Range(0.90f, 0.999f)]
-        [SerializeField] private float airDamping = 0.985f; // Stable damping preventing endless chaotic oscillation
+        [SerializeField] private float airDamping = 0.988f; // Stable damping preventing endless chaotic oscillation
         [Range(4, 20)]
         [SerializeField] private int constraintIterations = 14; // High iterations = zero rubber-banding
-        [SerializeField] private float maxSwingSpeed = 7.5f;
-        [SerializeField] private float maxSwingAngle = 52.0f; // Angular lock clamp (degrees from vertical)
+        [SerializeField] private float maxSwingSpeed = 11.5f;
+        [SerializeField] private float maxSwingAngle = 55.0f; // Angular lock clamp (degrees from vertical)
 
         [Header("Ambient Breeze (Gentle Wiggle)")]
         [SerializeField] private bool enableAmbientWiggle = true;
@@ -51,7 +51,7 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float windFrequency = 1.25f;
 
         [Header("Player Interaction")]
-        [SerializeField] private float playerSwingForce = 16.0f; // Controlled swing force
+        [SerializeField] private float playerSwingForce = 34.0f; // Smooth resonant pendulum pumping with heavy inertia
         [SerializeField] private float climbWiggleForce = 0.25f;
 
         [Header("Visuals")]
@@ -68,6 +68,7 @@ namespace HoaVaMau.Gameplay
         private PlayerController attachedPlayer;
         private float playerClimbFraction = 0.6f; // 0 = anchor at top, 1 = tip at bottom
         private float currentSwingInput = 0f;
+        private float smoothedSwingInput = 0f;
 
         // Triggers
         private List<GameObject> triggerColliders = new List<GameObject>();
@@ -112,20 +113,25 @@ namespace HoaVaMau.Gameplay
             lineRenderer = GetComponent<LineRenderer>();
             if (lineRenderer == null) lineRenderer = gameObject.AddComponent<LineRenderer>();
 
-            Shader litShader = Shader.Find("Universal Render Pipeline/Lit");
-            if (litShader == null) litShader = Shader.Find("Standard");
+            Shader ropeShader = Shader.Find("Universal Render Pipeline/Unlit")
+                             ?? Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                             ?? Shader.Find("Sprites/Default");
 
             if (ropeMaterial == null)
             {
-                ropeMaterial = new Material(litShader) { name = "Mat_RopeHemp", color = ropeColor };
+                ropeMaterial = new Material(ropeShader) { name = "Mat_RopeHemp" };
+                if (ropeMaterial.HasProperty("_BaseColor")) ropeMaterial.SetColor("_BaseColor", ropeColor);
+                if (ropeMaterial.HasProperty("_Color")) ropeMaterial.SetColor("_Color", ropeColor);
             }
 
             lineRenderer.material = ropeMaterial;
+            lineRenderer.sharedMaterial = ropeMaterial;
             lineRenderer.startWidth = ropeVisualWidth;
-            lineRenderer.endWidth = ropeVisualWidth * 0.85f;
+            lineRenderer.endWidth = ropeVisualWidth * 0.88f;
             lineRenderer.startColor = ropeColor;
-            lineRenderer.endColor = ropeColor * 0.9f;
+            lineRenderer.endColor = ropeColor;
             lineRenderer.useWorldSpace = true;
+            lineRenderer.sortingOrder = 25;
             lineRenderer.numCapVertices = 6;
             lineRenderer.numCornerVertices = 4;
             lineRenderer.positionCount = nodeCount;
@@ -192,44 +198,58 @@ namespace HoaVaMau.Gameplay
                 }
             }
 
-            // Player swing input (A / D pumping with resonant momentum)
-            if (attachedPlayer != null && Mathf.Abs(currentSwingInput) > 0.05f)
+            // Player swing input (Smooth resonant pendulum pumping with realistic body inertia)
+            if (attachedPlayer != null)
             {
-                int grabIdx = Mathf.Clamp(Mathf.RoundToInt(playerClimbFraction * (nodes.Length - 1)), 1, nodes.Length - 1);
-                Vector3 currentVel = (nodes[grabIdx].position - nodes[grabIdx].prevPosition) / Mathf.Max(dt, 0.001f);
+                // Smoothly ramp input instead of instant jerk
+                smoothedSwingInput = Mathf.MoveTowards(smoothedSwingInput, currentSwingInput, dt * 3.5f);
 
-                // Prevent over-accelerating if already near maximum deflection angle
-                Vector3 grabOffset = nodes[grabIdx].position - anchorPosition;
-                float currentAngle = Vector2.SignedAngle(Vector2.down, new Vector2(grabOffset.x, grabOffset.y));
-                bool pushingPastLimit = (currentSwingInput > 0 && currentAngle > (maxSwingAngle - 4f)) ||
-                                        (currentSwingInput < 0 && currentAngle < -(maxSwingAngle - 4f));
-
-                if (!pushingPastLimit)
+                if (Mathf.Abs(smoothedSwingInput) > 0.02f)
                 {
-                    // Resonant boost: if pressing in direction of motion, add gentle pump
-                    float pumpMultiplier = 1.0f;
-                    if (Mathf.Sign(currentSwingInput) == Mathf.Sign(currentVel.x) && Mathf.Abs(currentVel.x) > 0.3f)
+                    int grabIdx = Mathf.Clamp(Mathf.RoundToInt(playerClimbFraction * (nodes.Length - 1)), 1, nodes.Length - 1);
+                    Vector3 currentVel = (nodes[grabIdx].position - nodes[grabIdx].prevPosition) / Mathf.Max(dt, 0.001f);
+
+                    // Prevent over-accelerating if already near maximum deflection angle
+                    Vector3 grabOffset = nodes[grabIdx].position - anchorPosition;
+                    float currentAngle = Vector2.SignedAngle(Vector2.down, new Vector2(grabOffset.x, grabOffset.y));
+                    bool pushingPastLimit = (smoothedSwingInput > 0 && currentAngle > (maxSwingAngle - 3f)) ||
+                                            (smoothedSwingInput < 0 && currentAngle < -(maxSwingAngle - 3f));
+
+                    if (!pushingPastLimit)
                     {
-                        pumpMultiplier = 1.25f;
+                        // Resonant boost: pumping with the swing arc gives natural acceleration
+                        float pumpMultiplier = 1.0f;
+                        if (Mathf.Sign(smoothedSwingInput) == Mathf.Sign(currentVel.x) && Mathf.Abs(currentVel.x) > 0.2f)
+                        {
+                            pumpMultiplier = 1.45f;
+                        }
+
+                        Vector3 swingDir = new Vector3(smoothedSwingInput * playerSwingForce * pumpMultiplier, 0f, 0f);
+
+                        // Phân bổ lực đung đưa theo đòn bẩy con lắc (tăng dần từ điểm neo xuống ngọn dây)
+                        for (int i = 1; i < nodes.Length; i++)
+                        {
+                            float armFactor = (float)i / (nodes.Length - 1);
+                            nodes[i].acceleration += swingDir * armFactor;
+                        }
                     }
-
-                    Vector3 swingDir = new Vector3(currentSwingInput * playerSwingForce * pumpMultiplier, 0f, 0f);
-
-                    nodes[grabIdx].acceleration += swingDir;
-                    if (grabIdx > 1) nodes[grabIdx - 1].acceleration += swingDir * 0.60f;
-                    if (grabIdx < nodes.Length - 1) nodes[grabIdx + 1].acceleration += swingDir * 0.60f;
                 }
 
-                currentSwingInput = Mathf.MoveTowards(currentSwingInput, 0f, dt * 2.2f);
+                currentSwingInput = Mathf.MoveTowards(currentSwingInput, 0f, dt * 1.8f);
+            }
+            else
+            {
+                smoothedSwingInput = 0f;
             }
 
-            // 2. Verlet Integration Step
+            // 2. Verlet Integration Step (High inertia retention when player is attached)
+            float effectiveDamping = (attachedPlayer != null) ? 0.9994f : airDamping;
             for (int i = 1; i < nodes.Length; i++)
             {
                 Vector3 currentPos = nodes[i].position;
                 Vector3 prevPos = nodes[i].prevPosition;
 
-                Vector3 velocity = (currentPos - prevPos) * airDamping;
+                Vector3 velocity = (currentPos - prevPos) * effectiveDamping;
                 velocity = Vector3.ClampMagnitude(velocity, maxSwingSpeed * dt);
 
                 Vector3 nextPos = currentPos + velocity + nodes[i].acceleration * (dt * dt);
@@ -406,6 +426,18 @@ namespace HoaVaMau.Gameplay
             return Vector3.Lerp(nodes[lowerIndex].position, nodes[upperIndex].position, t);
         }
 
+        public Vector3 GetRopeTangent(float fraction)
+        {
+            if (nodes == null || nodes.Length < 2) return Vector3.down;
+
+            float exactIndex = Mathf.Clamp01(fraction) * (nodes.Length - 1);
+            int lowerIndex = Mathf.Clamp(Mathf.FloorToInt(exactIndex), 0, nodes.Length - 2);
+            int upperIndex = lowerIndex + 1;
+
+            Vector3 delta = nodes[upperIndex].position - nodes[lowerIndex].position;
+            return delta.sqrMagnitude > 0.0001f ? delta.normalized : Vector3.down;
+        }
+
         public Vector3 GetReleaseVelocity()
         {
             if (nodes == null || nodes.Length < 2) return Vector3.zero;
@@ -415,10 +447,10 @@ namespace HoaVaMau.Gameplay
             
             // Tangential momentum boost on release for cinematic arc
             float speedX = vel.x;
-            vel.x = speedX * 1.25f;
-            if (Mathf.Abs(speedX) > 1.0f)
+            vel.x = speedX * 1.35f;
+            if (Mathf.Abs(speedX) > 0.6f)
             {
-                vel.y = Mathf.Max(vel.y, Mathf.Abs(speedX) * 0.45f);
+                vel.y = Mathf.Max(vel.y, Mathf.Abs(speedX) * 0.50f);
             }
             return Vector3.ClampMagnitude(vel, maxSwingSpeed);
         }

@@ -5,10 +5,8 @@ namespace HoaVaMau.Gameplay
     /// <summary>
     /// Chuyển động đung đưa tán lá và cành cây phong cách Planet of Lana.
     /// Kết hợp: Rotation đa tần số + Micro-Position + Micro-Scale (breathing) + Spatial Phase Offset.
-    /// Tự động chạy cả trong Edit Mode và Play Mode.
+    /// Hoạt động an toàn trong Play Mode, KHÔNG khóa hay ghi đè Transform trong Edit Mode.
     /// </summary>
-    [ExecuteAlways]
-    [SelectionBase]
     public class PlanetOfLanaFoliageSway : MonoBehaviour
     {
         [Header("--- Rotation (Góc lắc chính) ---")]
@@ -37,7 +35,7 @@ namespace HoaVaMau.Gameplay
         [Tooltip("Độ dịch chuyển vị trí cực nhỏ theo nhịp lắc")]
         [SerializeField] private Vector2 positionJitter = new Vector2(0.015f, 0.008f);
 
-        // Lưu trữ transform ban đầu
+        // Lưu trữ transform ban đầu khi bắt đầu Play Mode
         private Vector3 initialLocalPos;
         private Quaternion initialLocalRot;
         private Vector3 initialLocalScale;
@@ -46,24 +44,26 @@ namespace HoaVaMau.Gameplay
 
         private void OnEnable()
         {
-            InitializeTransform();
+            if (Application.isPlaying)
+            {
+                InitializeTransform();
+            }
         }
 
         private void Start()
         {
-            InitializeTransform();
+            if (Application.isPlaying)
+            {
+                InitializeTransform();
+            }
         }
 
-        private void InitializeTransform()
+        public void InitializeTransform()
         {
-            if (!isInitialized)
-            {
-                initialLocalPos = transform.localPosition;
-                initialLocalRot = transform.localRotation;
-                initialLocalScale = transform.localScale;
-                isInitialized = true;
-            }
-
+            initialLocalPos = transform.localPosition;
+            initialLocalRot = transform.localRotation;
+            initialLocalScale = transform.localScale;
+            isInitialized = true;
             UpdatePhase();
         }
 
@@ -82,26 +82,16 @@ namespace HoaVaMau.Gameplay
 
         private void Update()
         {
+            // BẢO VỆ CHẾ ĐỘ EDIT: Tuyệt đối không can thiệp Transform khi đang Edit trong Scene!
+            // Người dùng có thể tự do di chuyển, xoay, scale cây bất kỳ lúc nào.
+            if (!Application.isPlaying) return;
+
             if (!isInitialized)
             {
                 InitializeTransform();
             }
 
-            // Lấy thời gian (hỗ trợ cả Editor Scene View khi không Play)
-            float t;
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-            {
-                t = (float)UnityEditor.EditorApplication.timeSinceStartup;
-            }
-            else
-            {
-                t = Time.time;
-            }
-#else
-            t = Time.time;
-#endif
-
+            float t = Time.time;
             float windTime = (t * swaySpeed) + computedPhase;
 
             // 1. Tổ hợp 2 sóng Sin & Cos có tần số không tỷ lệ nguyên để không bị lặp tuần hoàn robot
@@ -117,7 +107,7 @@ namespace HoaVaMau.Gameplay
             if (positionJitter != Vector2.zero)
             {
                 float posX = totalWave * positionJitter.x;
-                float posY = -Mathf.Abs(totalWave) * positionJitter.y; // Khi lắc mạnh thì hơi sụt xuống
+                float posY = -Mathf.Abs(totalWave) * positionJitter.y;
                 transform.localPosition = initialLocalPos + new Vector3(posX, posY, 0f);
             }
 
@@ -132,7 +122,7 @@ namespace HoaVaMau.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (isInitialized && !Application.isPlaying)
+            if (isInitialized && Application.isPlaying)
             {
                 UpdatePhase();
             }

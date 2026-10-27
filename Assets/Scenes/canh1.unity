@@ -177,7 +177,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 784c013e9dceaba45b018b95ca800628, type: 2}
+  - {fileID: 2100000, guid: 630305d8fefced64486cb6a9ce51f2db, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -319,6 +319,37 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!1 &19309019
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 19309020}
+  m_Layer: 0
+  m_Name: Cinematic_Shot_Vantage
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &19309020
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 19309019}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.034708314, y: 0.10446479, z: -0.0036479908, w: 0.9939161}
+  m_LocalPosition: {x: -15.3, y: 2.65, z: -9.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 705594917}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &72934169
 GameObject:
   m_ObjectHideFlags: 0
@@ -4215,7 +4246,7 @@ MonoBehaviour:
   pullLeanAngle: -11
   climbDuration: 1.05
   maxClimbForwardLean: 24
-  autoClimbOnLedgeGrab: 1
+  autoClimbOnLedgeGrab: 0
   carrySocket: {fileID: 0}
   trajectoryPredictor: {fileID: 0}
   minThrowSpeed: 5
@@ -4246,6 +4277,11 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.75, z: 0}
+--- !u!95 &656629917 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: e92aaa74888da254a8ca0c2469819cef, type: 3}
+  m_PrefabInstance: {fileID: 656629912}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &668859160
 GameObject:
   m_ObjectHideFlags: 0
@@ -4289,6 +4325,90 @@ Transform:
   - {fileID: 1972440858}
   - {fileID: 360081786}
   - {fileID: 623786461}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &705594914
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 705594917}
+  - component: {fileID: 705594916}
+  - component: {fileID: 705594915}
+  m_Layer: 0
+  m_Name: Prologue_Cutscene_Director
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!320 &705594915
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 705594914}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 11400000, guid: 482b6b3f7ff32bb4cba9bd4548a39676, type: 2}
+  m_InitialState: 1
+  m_WrapMode: 2
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings:
+  - key: {fileID: 7767656774415367750, guid: 482b6b3f7ff32bb4cba9bd4548a39676, type: 2}
+    value: {fileID: 656629917}
+  m_ExposedReferences:
+    m_References: []
+--- !u!114 &705594916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 705594914}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b6a9986018a47244a68917c2f91f94b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.PrologueCutsceneDirector
+  playerObject: {fileID: 656629914}
+  playerController: {fileID: 0}
+  anAnimController: {fileID: 0}
+  animator: {fileID: 0}
+  startPosition: {x: -19.8, y: 0.85, z: 0}
+  vantagePosition: {x: -12.8, y: 0.85, z: 0}
+  walkSpeed: 2.2
+  walkDuration: 3.2
+  stopSettleDuration: 0.8
+  lookAroundDuration: 4
+  cameraBlendBackDuration: 1.5
+  mainCamera: {fileID: 0}
+  cinematicCamera: {fileID: 0}
+  cinematicShotTransform: {fileID: 19309020}
+  enableCinematicBars: 1
+  barScreenRatio: 0.12
+  playableDirector: {fileID: 705594915}
+  playOnStart: 1
+  initialDelay: 0.5
+--- !u!4 &705594917
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 705594914}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 19309020}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &718885468
@@ -5761,6 +5881,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -3336152666366407747, guid: 46e3b9b5d261d48499d67def7c552875, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: daeab9f98e425314da30e2b18479cb2c, type: 2}
     - target: {fileID: 919132149155446097, guid: 46e3b9b5d261d48499d67def7c552875, type: 3}
       propertyPath: m_Name
       value: Cargo_Crate_IslandGap
@@ -6015,7 +6139,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 784c013e9dceaba45b018b95ca800628, type: 2}
+  - {fileID: 2100000, guid: 630305d8fefced64486cb6a9ce51f2db, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -6864,7 +6988,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 784c013e9dceaba45b018b95ca800628, type: 2}
+  - {fileID: 2100000, guid: 630305d8fefced64486cb6a9ce51f2db, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7230,7 +7354,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 784c013e9dceaba45b018b95ca800628, type: 2}
+  - {fileID: 2100000, guid: 630305d8fefced64486cb6a9ce51f2db, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7770,3 +7894,4 @@ SceneRoots:
   - {fileID: 525759942}
   - {fileID: 1147957105}
   - {fileID: 591190795}
+  - {fileID: 705594917}

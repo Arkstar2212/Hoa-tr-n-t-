@@ -462,6 +462,7 @@ GameObject:
   - component: {fileID: 8891205644686792538}
   - component: {fileID: 5414384805424578515}
   - component: {fileID: 6403582852766756651}
+  - component: {fileID: 3683125324409555840}
   m_Layer: 0
   m_Name: PF_Player_Minh
   m_TagString: Player
@@ -496,7 +497,7 @@ Animator:
   m_GameObject: {fileID: 1534530169323914542}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: e92aaa74888da254a8ca0c2469819cef, type: 3}
-  m_Controller: {fileID: 9100000, guid: 1135f207cd0bac24081b94c49cba351f, type: 2}
+  m_Controller: {fileID: 9100000, guid: d77968aa378c4e84fb44d1a1bd7a4dc6, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -547,7 +548,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.PlayerController
   walkSpeed: 2.2
   sprintSpeed: 5.5
-  crouchSpeed: 1.8
+  crouchSpeed: 1.15
   crawlSpeed: 1.2
   pushPullSpeed: 2.1
   acceleration: 26
@@ -571,12 +572,31 @@ MonoBehaviour:
   pullLeanAngle: -11
   climbDuration: 2.167
   maxClimbForwardLean: 24
-  autoClimbOnLedgeGrab: 1
+  autoClimbOnLedgeGrab: 0
   carrySocket: {fileID: 0}
   trajectoryPredictor: {fileID: 0}
   minThrowSpeed: 5
   maxThrowSpeed: 14.5
   throwChargeRate: 8.5
+  showDebugHUD: 0
+--- !u!114 &3683125324409555840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1534530169323914542}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc2a7ee1a1027f84798e90eaee4c7a77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.AnAnimationController
+  mode: 0
+  enableKeyShortcuts: 1
+  showOnScreenGui: 1
+  smoothFacing: 1
+  turnSpeed: 720
+  isCutsceneActive: 0
 --- !u!1 &1581725309901114070
 GameObject:
   m_ObjectHideFlags: 0
@@ -1552,7 +1572,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -6341870812657150275, guid: e92aaa74888da254a8ca0c2469819cef, type: 3}
   m_Bones:

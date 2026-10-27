@@ -62,7 +62,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8572121818980453681, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
       propertyPath: m_Name
-      value: Player_MeshyBoy
+      value: PF_Player_MeshyBoy
       objectReference: {fileID: 0}
     - target: {fileID: 8572121818980453681, guid: df4d86906b207a74ca5472858c8cbf82, type: 3}
       propertyPath: m_TagString
@@ -156,6 +156,7 @@ MonoBehaviour:
   minThrowSpeed: 5
   maxThrowSpeed: 14.5
   throwChargeRate: 8.5
+  showDebugHUD: 0
 --- !u!114 &7089099335603199940
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -174,4 +175,5 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  wallHangOffset: 0.28
   platformLandForward: 0.72

@@ -1,0 +1,709 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1538394581283560194
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1718375956994709291}
+  - component: {fileID: 5041772419627231290}
+  - component: {fileID: 5663426529861409307}
+  m_Layer: 0
+  m_Name: Seagull_1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1718375956994709291
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1538394581283560194}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.0818036, y: -0.35310072, z: 0}
+  m_LocalScale: {x: 0.23979738, y: 0.23979738, z: 0.23979738}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8668663449346422683}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &5041772419627231290
+SpriteRenderer:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1538394581283560194}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -5
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  m_Color: {r: 0.12, g: 0.12, b: 0.14, a: 0.85}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
+  m_BlendShapeWeights: []
+--- !u!114 &5663426529861409307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1538394581283560194}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3dc13b6fe8335347b1b3ea211749179, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Environment.DistantSeagull
+  flightFrames:
+  - {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  - {fileID: -7420301832441736144, guid: 5d4b5dd49307e104fa93201f69323ffc, type: 3}
+  - {fileID: 4676514219026867928, guid: 40fa30f41913c5044b7fd4c770122392, type: 3}
+  - {fileID: -8023823841235311866, guid: 505bf25490e29d348890fc65ecc8eb5b, type: 3}
+  - {fileID: 4809883229670683234, guid: 2a042eff0aca5f042b9bf404bf1debf1, type: 3}
+  - {fileID: 3769882690432756570, guid: 1a38b41488a8f46489e3b5f47d1095a3, type: 3}
+  glideFrameIndex: 2
+  flapFps: 10
+  minFlapCount: 3
+  maxFlapCount: 6
+  minGlideDuration: 1.8
+  maxGlideDuration: 3.5
+  flightSpeed: 1.4079294
+  flightDirection: 1
+  flapBobAmplitude: 0.08
+  windWaveAmplitude: 0.15
+  windWaveFrequency: 0.6
+  minBoundaryX: -25
+  maxBoundaryX: 25
+  verticalWrapVariation: 0.5
+  bankingAngle: 5
+--- !u!1 &2760969651052062814
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6803674908150352861}
+  - component: {fileID: 3639379259427858289}
+  - component: {fileID: 8927422920405416922}
+  m_Layer: 0
+  m_Name: Seagull_4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6803674908150352861
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2760969651052062814}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -7.401179, y: -0.48665592, z: 0}
+  m_LocalScale: {x: 0.23345089, y: 0.23345089, z: 0.23345089}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8668663449346422683}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &3639379259427858289
+SpriteRenderer:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2760969651052062814}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -5
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  m_Color: {r: 0.12, g: 0.12, b: 0.14, a: 0.85}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
+  m_BlendShapeWeights: []
+--- !u!114 &8927422920405416922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2760969651052062814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3dc13b6fe8335347b1b3ea211749179, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Environment.DistantSeagull
+  flightFrames:
+  - {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  - {fileID: -7420301832441736144, guid: 5d4b5dd49307e104fa93201f69323ffc, type: 3}
+  - {fileID: 4676514219026867928, guid: 40fa30f41913c5044b7fd4c770122392, type: 3}
+  - {fileID: -8023823841235311866, guid: 505bf25490e29d348890fc65ecc8eb5b, type: 3}
+  - {fileID: 4809883229670683234, guid: 2a042eff0aca5f042b9bf404bf1debf1, type: 3}
+  - {fileID: 3769882690432756570, guid: 1a38b41488a8f46489e3b5f47d1095a3, type: 3}
+  glideFrameIndex: 2
+  flapFps: 10
+  minFlapCount: 3
+  maxFlapCount: 6
+  minGlideDuration: 1.8
+  maxGlideDuration: 3.5
+  flightSpeed: 1.4950256
+  flightDirection: 1
+  flapBobAmplitude: 0.08
+  windWaveAmplitude: 0.15
+  windWaveFrequency: 0.6
+  minBoundaryX: -25
+  maxBoundaryX: 25
+  verticalWrapVariation: 0.5
+  bankingAngle: 5
+--- !u!1 &4696746139251027549
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2661495570780252122}
+  - component: {fileID: 7184015415547640216}
+  - component: {fileID: 6976755227509775645}
+  m_Layer: 0
+  m_Name: Seagull_2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2661495570780252122
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4696746139251027549}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.4983935, y: -0.18439968, z: 0}
+  m_LocalScale: {x: 0.26926038, y: 0.26926038, z: 0.26926038}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8668663449346422683}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &7184015415547640216
+SpriteRenderer:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4696746139251027549}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -5
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  m_Color: {r: 0.12, g: 0.12, b: 0.14, a: 0.85}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
+  m_BlendShapeWeights: []
+--- !u!114 &6976755227509775645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4696746139251027549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3dc13b6fe8335347b1b3ea211749179, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Environment.DistantSeagull
+  flightFrames:
+  - {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  - {fileID: -7420301832441736144, guid: 5d4b5dd49307e104fa93201f69323ffc, type: 3}
+  - {fileID: 4676514219026867928, guid: 40fa30f41913c5044b7fd4c770122392, type: 3}
+  - {fileID: -8023823841235311866, guid: 505bf25490e29d348890fc65ecc8eb5b, type: 3}
+  - {fileID: 4809883229670683234, guid: 2a042eff0aca5f042b9bf404bf1debf1, type: 3}
+  - {fileID: 3769882690432756570, guid: 1a38b41488a8f46489e3b5f47d1095a3, type: 3}
+  glideFrameIndex: 2
+  flapFps: 10
+  minFlapCount: 3
+  maxFlapCount: 6
+  minGlideDuration: 1.8
+  maxGlideDuration: 3.5
+  flightSpeed: 1.5063826
+  flightDirection: 1
+  flapBobAmplitude: 0.08
+  windWaveAmplitude: 0.15
+  windWaveFrequency: 0.6
+  minBoundaryX: -25
+  maxBoundaryX: 25
+  verticalWrapVariation: 0.5
+  bankingAngle: 5
+--- !u!1 &5344225117215295945
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3222385938314522447}
+  - component: {fileID: 55359332081427476}
+  - component: {fileID: 492510995174510246}
+  m_Layer: 0
+  m_Name: Seagull_3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3222385938314522447
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5344225117215295945}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -6.1038218, y: 0.57013947, z: 0}
+  m_LocalScale: {x: 0.26278988, y: 0.26278988, z: 0.26278988}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8668663449346422683}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &55359332081427476
+SpriteRenderer:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5344225117215295945}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -5
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  m_Color: {r: 0.12, g: 0.12, b: 0.14, a: 0.85}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
+  m_BlendShapeWeights: []
+--- !u!114 &492510995174510246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5344225117215295945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3dc13b6fe8335347b1b3ea211749179, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Environment.DistantSeagull
+  flightFrames:
+  - {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  - {fileID: -7420301832441736144, guid: 5d4b5dd49307e104fa93201f69323ffc, type: 3}
+  - {fileID: 4676514219026867928, guid: 40fa30f41913c5044b7fd4c770122392, type: 3}
+  - {fileID: -8023823841235311866, guid: 505bf25490e29d348890fc65ecc8eb5b, type: 3}
+  - {fileID: 4809883229670683234, guid: 2a042eff0aca5f042b9bf404bf1debf1, type: 3}
+  - {fileID: 3769882690432756570, guid: 1a38b41488a8f46489e3b5f47d1095a3, type: 3}
+  glideFrameIndex: 2
+  flapFps: 10
+  minFlapCount: 3
+  maxFlapCount: 6
+  minGlideDuration: 1.8
+  maxGlideDuration: 3.5
+  flightSpeed: 1.5407226
+  flightDirection: 1
+  flapBobAmplitude: 0.08
+  windWaveAmplitude: 0.15
+  windWaveFrequency: 0.6
+  minBoundaryX: -25
+  maxBoundaryX: 25
+  verticalWrapVariation: 0.5
+  bankingAngle: 5
+--- !u!1 &6745422818172192754
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8668663449346422683}
+  - component: {fileID: 4495515139435253594}
+  m_Layer: 0
+  m_Name: DistantSeagull_Flock
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8668663449346422683
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6745422818172192754}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7844645925109420601}
+  - {fileID: 1718375956994709291}
+  - {fileID: 2661495570780252122}
+  - {fileID: 3222385938314522447}
+  - {fileID: 6803674908150352861}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4495515139435253594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6745422818172192754}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a9115554617dfd4eb567b3e3d104f17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Environment.DistantFlockManager
+  flightFrames:
+  - {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  - {fileID: -7420301832441736144, guid: 5d4b5dd49307e104fa93201f69323ffc, type: 3}
+  - {fileID: 4676514219026867928, guid: 40fa30f41913c5044b7fd4c770122392, type: 3}
+  - {fileID: -8023823841235311866, guid: 505bf25490e29d348890fc65ecc8eb5b, type: 3}
+  - {fileID: 4809883229670683234, guid: 2a042eff0aca5f042b9bf404bf1debf1, type: 3}
+  - {fileID: 3769882690432756570, guid: 1a38b41488a8f46489e3b5f47d1095a3, type: 3}
+  spriteMaterial: {fileID: 0}
+  birdCount: 5
+  formation: 1
+  spacing: {x: 1.8, y: 0.6}
+  baseScale: 0.25
+  flockTint: {r: 0.12, g: 0.12, b: 0.14, a: 0.85}
+  baseFlightSpeed: 1.6
+  flightDirection: 1
+  minX: -30
+  maxX: 30
+  spawnedBirds:
+  - {fileID: 7640675326768663311}
+  - {fileID: 1538394581283560194}
+  - {fileID: 4696746139251027549}
+  - {fileID: 5344225117215295945}
+  - {fileID: 2760969651052062814}
+--- !u!1 &7640675326768663311
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7844645925109420601}
+  - component: {fileID: 6483837839620598570}
+  - component: {fileID: 662705656618492237}
+  m_Layer: 0
+  m_Name: Seagull_0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7844645925109420601
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7640675326768663311}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.6, z: 0}
+  m_LocalScale: {x: 0.26006472, y: 0.26006472, z: 0.26006472}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8668663449346422683}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &6483837839620598570
+SpriteRenderer:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7640675326768663311}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -5
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  m_Color: {r: 0.12, g: 0.12, b: 0.14, a: 0.85}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
+  m_BlendShapeWeights: []
+--- !u!114 &662705656618492237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7640675326768663311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3dc13b6fe8335347b1b3ea211749179, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Environment.DistantSeagull
+  flightFrames:
+  - {fileID: 2305628688601267996, guid: 94f8a11d6dd4636438f8b17ce11fef94, type: 3}
+  - {fileID: -7420301832441736144, guid: 5d4b5dd49307e104fa93201f69323ffc, type: 3}
+  - {fileID: 4676514219026867928, guid: 40fa30f41913c5044b7fd4c770122392, type: 3}
+  - {fileID: -8023823841235311866, guid: 505bf25490e29d348890fc65ecc8eb5b, type: 3}
+  - {fileID: 4809883229670683234, guid: 2a042eff0aca5f042b9bf404bf1debf1, type: 3}
+  - {fileID: 3769882690432756570, guid: 1a38b41488a8f46489e3b5f47d1095a3, type: 3}
+  glideFrameIndex: 2
+  flapFps: 10
+  minFlapCount: 3
+  maxFlapCount: 6
+  minGlideDuration: 1.8
+  maxGlideDuration: 3.5
+  flightSpeed: 1.5251641
+  flightDirection: 1
+  flapBobAmplitude: 0.08
+  windWaveAmplitude: 0.15
+  windWaveFrequency: 0.6
+  minBoundaryX: -25
+  maxBoundaryX: 25
+  verticalWrapVariation: 0.5
+  bankingAngle: 5

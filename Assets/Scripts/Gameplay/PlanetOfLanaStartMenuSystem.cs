@@ -68,16 +68,21 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private Sprite softDotSprite;
         [SerializeField] private Sprite boySilhouetteSprite;
         [SerializeField] private Sprite shipSilhouetteSprite;
+        [Header("Save Slot Fallback Thumbnails (Concept Art)")]
+        [SerializeField] private Texture2D[] fallbackSlotThumbnails;
 
         [Header("Audio (Gentle BGM, Wind & UI Chimes)")]
         [SerializeField] private AudioClip mainMenuMusicClip;
+        [SerializeField] private AudioClip[] randomMenuMusicClips;
         [SerializeField] private AudioClip ambientWindClip;
         [SerializeField] private AudioClip hoverSfxClip;
         [SerializeField] private AudioClip confirmSfxClip;
         [SerializeField, Range(0f, 1f)] private float musicVolume = 0.65f;
         [SerializeField, Range(0f, 1f)] private float windVolume = 0.22f;
         [SerializeField, Range(0f, 1f)] private float sfxVolume = 0.45f;
-        [SerializeField] private float musicSmoothInDuration = 4.5f;
+        [SerializeField] private float musicSmoothInDuration = 3.5f;
+        [SerializeField] private float autoCrossfadeLeadDuration = 4.0f;
+        [SerializeField] private float musicCrossfadeDuration = 3.0f;
 
         [Header("Scenic Camera Settings")]
         [SerializeField] private Vector3 menuCameraPosition = new Vector3(0f, 0f, -10.0f);
@@ -89,10 +94,25 @@ namespace HoaVaMau.Gameplay
         private float currentMusicFadeVol = 0f;
         private bool isMusicPlaying = false;
 
-        // Audio Sources
-        private AudioSource musicSource;
+        // Dual Music Sources for True Seamless DJ Crossfading & Shuffle
+        private AudioSource musicSourceA;
+        private AudioSource musicSourceB;
+        private bool isUsingSourceA = true;
+        private Coroutine activeCrossfadeCoroutine;
+        private bool isCrossfading = false;
+        private readonly List<AudioClip> activePlaylist = new List<AudioClip>();
+        private int currentTrackIndex = -1;
+
         private AudioSource windSource;
         private AudioSource sfxSource;
+
+        private AudioSource ActiveMusicSource => isUsingSourceA ? musicSourceA : musicSourceB;
+        private AudioSource InactiveMusicSource => isUsingSourceA ? musicSourceB : musicSourceA;
+
+        // Now Playing Toast Widget
+        private CanvasGroup toastGroup;
+        private Text toastText;
+        private float toastTimer = 0f;
 
         // Runtime Canvas & Panels
         private Canvas rootCanvas;
@@ -204,6 +224,7 @@ namespace HoaVaMau.Gameplay
         {
             public RectTransform RootRect;
             public Button ButtonComp;
+            public Image SelectionBox;
             public Text LabelText;
             public Text LeftDots;
             public Text RightDots;
@@ -215,11 +236,16 @@ namespace HoaVaMau.Gameplay
         private class SaveSlotUIItem
         {
             public RectTransform RootRect;
+            public RectTransform CardFrameRect;
             public Button ButtonComp;
-            public Text SlotTitleText;
-            public Text SlotDetailsText;
-            public Text StatusBadgeText;
-            public Image CardBg;
+            public Text HeaderText;             // "SLOT 1", "SLOT 2", "SLOT 3"
+            public Image CardBorderImg;         // White outline border when selected
+            public Image CardInnerBg;           // Dark container bg
+            public RawImage ThumbnailImg;       // Screenshot thumbnail texture or fallback concept art
+            public GameObject EmptyContainer;   // Dark navy panel for empty slot
+            public Text EmptyLabelText;         // "NEW GAME"
+            public Text TimestampText;          // e.g. "10/26/2026 10:08:03 AM"
+            public Text PlaytimeText;           // e.g. "PLAYTIME 09:03:44"
             public int SlotIndex;
             public bool IsOccupied;
         }
@@ -253,6 +279,15 @@ namespace HoaVaMau.Gameplay
         private void Start()
         {
             mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                // Ensure no leftover CinemachineBrain in the Start Menu scene can override mainCam!
+                var brain = mainCam.GetComponent("CinemachineBrain");
+                if (brain != null) Destroy(brain);
+                mainCam.transform.position = menuCameraPosition;
+                mainCam.transform.eulerAngles = menuCameraEuler;
+                mainCam.fieldOfView = menuCameraFOV;
+            }
             EnsureEventSystem();
             RebuildUIImmediate();
 
@@ -262,30 +297,339 @@ namespace HoaVaMau.Gameplay
 
         private void SetupAudioSources()
         {
-            if (musicSource == null)
+            var sources = GetComponents<AudioSource>();
+
+            // Assign or create exactly 4 AudioSources:
+            // 0: musicSourceA (DJ deck 1)
+            // 1: musicSourceB (DJ deck 2)
+            // 2: windSource (ambient wind loop)
+            // 3: sfxSource (UI clicks & chimes)
+            musicSourceA = sources.Length > 0 ? sources[0] : gameObject.AddComponent<AudioSource>();
+            musicSourceB = sources.Length > 1 ? sources[1] : gameObject.AddComponent<AudioSource>();
+            windSource   = sources.Length > 2 ? sources[2] : gameObject.AddComponent<AudioSource>();
+            sfxSource    = sources.Length > 3 ? sources[3] : gameObject.AddComponent<AudioSource>();
+
+            // Clean up any extra redundant AudioSources if count > 4 to prevent clutter
+            if (sources.Length > 4)
             {
-                musicSource = gameObject.AddComponent<AudioSource>();
-                musicSource.loop = true;
-                musicSource.playOnAwake = false;
-                musicSource.volume = 0f;
+                for (int i = 4; i < sources.Length; i++)
+                {
+                    if (Application.isPlaying) Destroy(sources[i]);
+                    else DestroyImmediate(sources[i]);
+                }
             }
 
-            if (windSource == null)
-            {
-                windSource = gameObject.AddComponent<AudioSource>();
-                windSource.loop = true;
-                windSource.playOnAwake = false;
-                windSource.volume = 0f;
-            }
+            ConfigureAudioSource(musicSourceA, loop: false, volume: 0f);
+            ConfigureAudioSource(musicSourceB, loop: false, volume: 0f);
+            ConfigureAudioSource(windSource, loop: true, volume: 0f);
+            ConfigureAudioSource(sfxSource, loop: false, volume: sfxVolume);
 
-            if (sfxSource == null)
-            {
-                sfxSource = gameObject.AddComponent<AudioSource>();
-                sfxSource.playOnAwake = false;
-            }
-
-            if (mainMenuMusicClip != null) musicSource.clip = mainMenuMusicClip;
             if (ambientWindClip != null) windSource.clip = ambientWindClip;
+
+            BuildActivePlaylist();
+            PrepareNextTrackImmediate(isFirstStartup: true);
+        }
+
+        private void ConfigureAudioSource(AudioSource src, bool loop, float volume)
+        {
+            if (src == null) return;
+            src.loop = loop;
+            src.playOnAwake = false;
+            src.volume = volume;
+        }
+
+        public void BuildActivePlaylist()
+        {
+            activePlaylist.Clear();
+
+            // 1. Add explicitly serialized randomMenuMusicClips
+            if (randomMenuMusicClips != null && randomMenuMusicClips.Length > 0)
+            {
+                for (int i = 0; i < randomMenuMusicClips.Length; i++)
+                {
+                    var clip = randomMenuMusicClips[i];
+                    if (clip != null && !activePlaylist.Contains(clip))
+                    {
+                        activePlaylist.Add(clip);
+                    }
+                }
+            }
+
+#if UNITY_EDITOR
+            // 2. Editor & Play Mode Guarantee: Automatically discover official tracks if missing
+            if (activePlaylist.Count < 2)
+            {
+                string[] searchPaths = new[]
+                {
+                    "Assets/Audio/Phat_Hien_Binh_Yen.mp3",
+                    "Assets/Audio/Pastoral_Alien.mp3",
+                    "Assets/Audio/Breath of the World.mp3",
+                    "Assets/Audio/Haru Haru (Piano Cover).mp3"
+                };
+                foreach (var path in searchPaths)
+                {
+                    var c = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                    if (c != null && !activePlaylist.Contains(c))
+                    {
+                        activePlaylist.Add(c);
+                    }
+                }
+                if (randomMenuMusicClips == null || randomMenuMusicClips.Length == 0)
+                {
+                    randomMenuMusicClips = activePlaylist.ToArray();
+                }
+            }
+#endif
+
+            // Fallback to mainMenuMusicClip if playlist still empty
+            if (activePlaylist.Count == 0 && mainMenuMusicClip != null)
+            {
+                activePlaylist.Add(mainMenuMusicClip);
+            }
+        }
+
+        public void SetRandomMenuMusicClips(AudioClip[] clips)
+        {
+            randomMenuMusicClips = clips;
+            BuildActivePlaylist();
+            PrepareNextTrackImmediate(isFirstStartup: true);
+        }
+
+        private AudioClip GetNextRandomClip(out int newIndex, bool isInitial = false)
+        {
+            if (activePlaylist.Count == 0) BuildActivePlaylist();
+
+            if (activePlaylist.Count == 0)
+            {
+                newIndex = -1;
+                return mainMenuMusicClip;
+            }
+
+            if (activePlaylist.Count == 1)
+            {
+                newIndex = 0;
+                return activePlaylist[0];
+            }
+
+            // Shuffle rule: Must NEVER play the same track back-to-back!
+            int nextIdx;
+            int attempts = 0;
+            do
+            {
+                nextIdx = UnityEngine.Random.Range(0, activePlaylist.Count);
+                attempts++;
+            } while (nextIdx == currentTrackIndex && attempts < 30);
+
+            if (nextIdx == currentTrackIndex)
+            {
+                nextIdx = (currentTrackIndex + 1) % activePlaylist.Count;
+            }
+
+            newIndex = nextIdx;
+            return activePlaylist[nextIdx];
+        }
+
+        private void PrepareNextTrackImmediate(bool isFirstStartup = false)
+        {
+            AudioClip clip = GetNextRandomClip(out currentTrackIndex, isInitial: isFirstStartup);
+            if (clip != null)
+            {
+                mainMenuMusicClip = clip;
+                var src = ActiveMusicSource;
+                if (src != null)
+                {
+                    src.clip = clip;
+                    src.time = 0f;
+                    src.volume = 0f;
+                    src.loop = false;
+                }
+            }
+        }
+
+        public void StartPlayingMenuMusic()
+        {
+            if (isMusicPlaying) return;
+
+            var activeSrc = ActiveMusicSource;
+            if (activeSrc == null) return;
+
+            if (activeSrc.clip == null)
+            {
+                PrepareNextTrackImmediate(isFirstStartup: true);
+            }
+
+            if (activeSrc.clip != null)
+            {
+                activeSrc.volume = 0f;
+                activeSrc.time = 0f;
+                activeSrc.loop = false;
+                activeSrc.Play();
+                isMusicPlaying = true;
+                currentMusicFadeVol = 0f;
+
+                ShowNowPlayingToast(GetTrackDisplayName(activeSrc.clip));
+                Debug.Log($"<color=#38bdf8>[StartMenu Audio]</color> <b>Playing Initial Random Track:</b> {activeSrc.clip.name} ({activeSrc.clip.length:F1}s)");
+            }
+        }
+
+        public void CrossfadeToNextRandomTrack(float duration = -1f)
+        {
+            if (duration <= 0f) duration = musicCrossfadeDuration;
+
+            if (!gameObject.activeInHierarchy || !enabled)
+            {
+                var nextClip = GetNextRandomClip(out currentTrackIndex);
+                var activeSrc = ActiveMusicSource;
+                if (activeSrc != null && nextClip != null)
+                {
+                    activeSrc.clip = nextClip;
+                    activeSrc.Play();
+                    activeSrc.volume = musicVolume;
+                    mainMenuMusicClip = nextClip;
+                }
+                return;
+            }
+
+            if (activeCrossfadeCoroutine != null)
+            {
+                StopCoroutine(activeCrossfadeCoroutine);
+            }
+            activeCrossfadeCoroutine = StartCoroutine(CrossfadeRoutine(duration));
+        }
+
+        private IEnumerator CrossfadeRoutine(float duration)
+        {
+            isCrossfading = true;
+
+            var fromSource = ActiveMusicSource;
+            var toSource = InactiveMusicSource;
+
+            AudioClip nextClip = GetNextRandomClip(out currentTrackIndex);
+            if (nextClip == null || toSource == null)
+            {
+                isCrossfading = false;
+                activeCrossfadeCoroutine = null;
+                yield break;
+            }
+
+            mainMenuMusicClip = nextClip;
+            toSource.clip = nextClip;
+            toSource.time = 0f;
+            toSource.volume = 0f;
+            toSource.loop = false;
+            toSource.Play();
+
+            ShowNowPlayingToast(GetTrackDisplayName(nextClip));
+            Debug.Log($"<color=#10b981>[StartMenu Audio DJ Mix]</color> <b>Crossfading To Next Random Track:</b> {nextClip.name} ({nextClip.length:F1}s) over {duration:F1}s");
+
+            float timer = 0f;
+            float fromStartVol = fromSource != null ? fromSource.volume : 0f;
+
+            while (timer < duration)
+            {
+                timer += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(timer / duration);
+
+                if (fromSource != null && fromSource.isPlaying)
+                {
+                    fromSource.volume = Mathf.Lerp(fromStartVol, 0f, t);
+                }
+
+                if (toSource != null)
+                {
+                    toSource.volume = Mathf.Lerp(0f, musicVolume, Mathf.SmoothStep(0f, 1f, t));
+                }
+
+                yield return null;
+            }
+
+            if (fromSource != null)
+            {
+                fromSource.Stop();
+                fromSource.volume = 0f;
+            }
+
+            if (toSource != null)
+            {
+                toSource.volume = musicVolume;
+            }
+
+            // Swap active source
+            isUsingSourceA = !isUsingSourceA;
+            isCrossfading = false;
+            activeCrossfadeCoroutine = null;
+        }
+
+        private void StopAllMenuMusicImmediate()
+        {
+            if (activeCrossfadeCoroutine != null)
+            {
+                StopCoroutine(activeCrossfadeCoroutine);
+                activeCrossfadeCoroutine = null;
+            }
+            isCrossfading = false;
+
+            if (musicSourceA != null)
+            {
+                musicSourceA.Stop();
+                musicSourceA.volume = 0f;
+            }
+            if (musicSourceB != null)
+            {
+                musicSourceB.Stop();
+                musicSourceB.volume = 0f;
+            }
+            isMusicPlaying = false;
+            currentMusicFadeVol = 0f;
+        }
+
+        private void ApplyMusicVolumeToSources()
+        {
+            if (musicSourceA != null && musicSourceA.isPlaying)
+            {
+                musicSourceA.volume = isCrossfading ? musicSourceA.volume : (isUsingSourceA ? musicVolume * currentMusicFadeVol : 0f);
+            }
+            if (musicSourceB != null && musicSourceB.isPlaying)
+            {
+                musicSourceB.volume = isCrossfading ? musicSourceB.volume : (!isUsingSourceA ? musicVolume * currentMusicFadeVol : 0f);
+            }
+        }
+
+        public void ShowNowPlayingToast(string title)
+        {
+            if (toastText != null)
+            {
+                toastText.text = $"♪  {title}   <size=11><color=#a3a3a3>[N: Đổi bài]</color></size>";
+            }
+            toastTimer = 5.0f;
+        }
+
+        private string GetTrackDisplayName(AudioClip clip)
+        {
+            if (clip == null) return "";
+            string n = clip.name;
+            if (n.Contains("Phat_Hien_Binh_Yen") || n.Contains("Phát Hiện Bình Yên")) return "Phát Hiện Bình Yên";
+            if (n.Contains("Pastoral_Alien") || n.Contains("Pastoral Alien")) return "Pastoral Alien";
+            if (n.Contains("Breath of the World")) return "Breath of the World";
+            if (n.Contains("Haru Haru")) return "Haru Haru (Piano Cover)";
+            return n.Replace('_', ' ');
+        }
+
+        private bool IsNextTrackHotkeyPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.nKey.wasPressedThisFrame || Keyboard.current.mKey.wasPressedThisFrame) return true;
+            }
+            if (Gamepad.current != null)
+            {
+                if (Gamepad.current.rightShoulder.wasPressedThisFrame) return true;
+            }
+#else
+            if (Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.M)) return true;
+#endif
+            return false;
         }
 
         public void ConfigureAssets(
@@ -299,7 +643,7 @@ namespace HoaVaMau.Gameplay
             string gameplayScene = "",
             Sprite headphoneSpr = null)
         {
-            ConfigureAssets(studioSprite, officialGameLogo, flowerSprite, doveSprite, dotSprite, null, null, bgmClip, windClip, gameplayScene);
+            ConfigureAssets(studioSprite, officialGameLogo, flowerSprite, doveSprite, dotSprite, null, null, bgmClip, windClip, gameplayScene, headphoneSpr, null);
         }
 
         public void ConfigureAssets(
@@ -313,7 +657,8 @@ namespace HoaVaMau.Gameplay
             AudioClip bgmClip,
             AudioClip windClip,
             string gameplayScene = "",
-            Sprite headphoneSpr = null)
+            Sprite headphoneSpr = null,
+            AudioClip[] playlistClips = null)
         {
             studioLogoSprite = studioSprite;
             gameOfficialLogoSprite = officialGameLogo;
@@ -325,6 +670,7 @@ namespace HoaVaMau.Gameplay
             if (headphoneSpr != null) headphoneSprite = headphoneSpr;
             mainMenuMusicClip = bgmClip;
             ambientWindClip = windClip;
+            if (playlistClips != null && playlistClips.Length > 0) randomMenuMusicClips = playlistClips;
             if (!string.IsNullOrEmpty(gameplayScene)) targetGameplaySceneName = gameplayScene;
 
             SetupAudioSources();
@@ -335,6 +681,11 @@ namespace HoaVaMau.Gameplay
             menuCameraPosition = pos;
             menuCameraEuler = euler;
             menuCameraFOV = fov;
+        }
+
+        public void SetFallbackSlotThumbnails(Texture2D[] thumbnails)
+        {
+            fallbackSlotThumbnails = thumbnails;
         }
 
         public void RebuildUIImmediate()
@@ -361,7 +712,7 @@ namespace HoaVaMau.Gameplay
 
         public void SetPreviewState(MenuPhase phase)
         {
-            SetPhase(phase);
+            SetPreviewState(phase, 1.0f);
         }
 
         public void SetPreviewState(MenuPhase phase, float alpha)
@@ -380,6 +731,13 @@ namespace HoaVaMau.Gameplay
             {
                 startMenuGroup.alpha = alpha;
                 if (blackCurtainGroup != null) blackCurtainGroup.alpha = 1f - alpha;
+            }
+            else if (phase == MenuPhase.SaveSlotSelection && saveModalGroup != null)
+            {
+                saveModalGroup.alpha = alpha;
+                if (blackCurtainGroup != null) blackCurtainGroup.alpha = 0f;
+                if (autosaveWidgetGroup != null) autosaveWidgetGroup.alpha = 0f;
+                PopulateSaveSlotCards();
             }
             else if (phase == MenuPhase.Options && optionsModalGroup != null)
             {
@@ -419,13 +777,7 @@ namespace HoaVaMau.Gameplay
                     if (overwriteDialogGroup != null) overwriteDialogGroup.gameObject.SetActive(false);
                     if (botwLoadingGroup != null) botwLoadingGroup.gameObject.SetActive(false);
 
-                    if (musicSource != null)
-                    {
-                        musicSource.Stop();
-                        musicSource.volume = 0f;
-                    }
-                    isMusicPlaying = false;
-                    currentMusicFadeVol = 0f;
+                    StopAllMenuMusicImmediate();
                     break;
 
                 case MenuPhase.TeamLoadingScreen:
@@ -445,7 +797,7 @@ namespace HoaVaMau.Gameplay
                     if (optionsModalGroup != null) optionsModalGroup.gameObject.SetActive(false);
                     if (botwLoadingGroup != null) botwLoadingGroup.gameObject.SetActive(false);
 
-                    if (musicSource != null) musicSource.Stop();
+                    StopAllMenuMusicImmediate();
                     break;
 
                 case MenuPhase.HeadphoneScreen:
@@ -478,7 +830,7 @@ namespace HoaVaMau.Gameplay
                     if (optionsModalGroup != null) optionsModalGroup.gameObject.SetActive(false);
                     if (botwLoadingGroup != null) botwLoadingGroup.gameObject.SetActive(false);
 
-                    if (musicSource != null) musicSource.Stop();
+                    StopAllMenuMusicImmediate();
                     break;
                 case MenuPhase.StartMenuOpenVista:
                     if (teamLoadingGroup != null)
@@ -513,12 +865,7 @@ namespace HoaVaMau.Gameplay
 
                     RefreshContinueButtonState();
 
-                    if (musicSource != null && !musicSource.isPlaying && mainMenuMusicClip != null)
-                    {
-                        musicSource.volume = 0f;
-                        musicSource.Play();
-                        isMusicPlaying = true;
-                    }
+                    StartPlayingMenuMusic();
                     if (windSource != null && !windSource.isPlaying && ambientWindClip != null)
                     {
                         windSource.volume = windVolume * 0.7f;
@@ -527,10 +874,17 @@ namespace HoaVaMau.Gameplay
                     break;
 
                 case MenuPhase.SaveSlotSelection:
+                    if (blackCurtainGroup != null)
+                    {
+                        blackCurtainGroup.alpha = 0f;
+                        blackCurtainGroup.blocksRaycasts = false;
+                    }
                     if (saveModalGroup != null)
                     {
                         saveModalGroup.gameObject.SetActive(true);
                         saveModalGroup.alpha = 1f;
+                        saveModalGroup.interactable = true;
+                        saveModalGroup.blocksRaycasts = true;
                         PopulateSaveSlotCards();
                     }
                     if (optionsModalGroup != null) optionsModalGroup.gameObject.SetActive(false);
@@ -641,8 +995,14 @@ namespace HoaVaMau.Gameplay
             }
 
             UpdateAudioLifecycle(dt);
+            UpdateMusicToast(dt);
             UpdateAutosaveWidget(dt);
             UpdateScenicCamera(dt);
+        }
+
+        private void LateUpdate()
+        {
+            UpdateScenicCamera(Time.unscaledDeltaTime);
         }
 
         private void UpdateInitialStartup(float dt)
@@ -809,13 +1169,13 @@ namespace HoaVaMau.Gameplay
 
             if (overwriteDialogGroup != null && overwriteDialogGroup.gameObject.activeSelf) return;
 
-            if (IsNavDownPressed())
+            if (IsNavRightPressed() || IsNavDownPressed())
             {
                 selectedSlotIndex = (selectedSlotIndex + 1) % slotUIItems.Count;
                 PlayHover();
                 HighlightSelectedSlot();
             }
-            else if (IsNavUpPressed())
+            else if (IsNavLeftPressed() || IsNavUpPressed())
             {
                 selectedSlotIndex = (selectedSlotIndex - 1 + slotUIItems.Count) % slotUIItems.Count;
                 PlayHover();
@@ -913,37 +1273,75 @@ namespace HoaVaMau.Gameplay
                 blackCurtainGroup.alpha = Mathf.MoveTowards(blackCurtainGroup.alpha, 1f, dt * 1.8f);
             }
 
-            if (musicSource != null)
-            {
-                musicSource.volume = Mathf.MoveTowards(musicSource.volume, 0f, dt * (musicVolume / 1.2f));
-            }
+            if (musicSourceA != null) musicSourceA.volume = Mathf.MoveTowards(musicSourceA.volume, 0f, dt * (musicVolume / 1.2f));
+            if (musicSourceB != null) musicSourceB.volume = Mathf.MoveTowards(musicSourceB.volume, 0f, dt * (musicVolume / 1.2f));
         }
 
         private void UpdateAudioLifecycle(float dt)
         {
             if (currentPhase == MenuPhase.StartMenuOpenVista || currentPhase == MenuPhase.SaveSlotSelection || currentPhase == MenuPhase.Options)
             {
-                if (isMusicPlaying && musicSource != null)
+                if (isMusicPlaying)
                 {
-                    currentMusicFadeVol = Mathf.MoveTowards(currentMusicFadeVol, 1f, dt / Mathf.Max(0.1f, musicSmoothInDuration));
-                    musicSource.volume = musicVolume * Mathf.SmoothStep(0f, 1f, currentMusicFadeVol);
+                    var currentSource = ActiveMusicSource;
+                    if (currentSource != null && currentSource.clip != null)
+                    {
+                        // Auto-advance check: when nearing end of track or if playback stalled/ended
+                        if (!isCrossfading)
+                        {
+                            if (currentSource.isPlaying)
+                            {
+                                float remaining = currentSource.clip.length - currentSource.time;
+                                if (remaining <= autoCrossfadeLeadDuration && currentSource.time > 10.0f)
+                                {
+                                    CrossfadeToNextRandomTrack(musicCrossfadeDuration);
+                                }
+                            }
+                            else if (currentSource.time >= currentSource.clip.length - 0.5f || currentSource.time == 0f)
+                            {
+                                CrossfadeToNextRandomTrack(1.5f);
+                            }
+                        }
+
+                        // Smooth initial volume fade in
+                        if (!isCrossfading)
+                        {
+                            currentMusicFadeVol = Mathf.MoveTowards(currentMusicFadeVol, 1f, dt / Mathf.Max(0.1f, musicSmoothInDuration));
+                            currentSource.volume = musicVolume * Mathf.SmoothStep(0f, 1f, currentMusicFadeVol);
+                        }
+                    }
                 }
 
                 if (windSource != null && windSource.isPlaying)
                 {
                     windSource.volume = windVolume;
                 }
+
+                // Hotkey: Check for 'N' or 'M' to skip to next random track anytime!
+                if (IsNextTrackHotkeyPressed())
+                {
+                    CrossfadeToNextRandomTrack(1.5f);
+                }
             }
-            else if (currentPhase == MenuPhase.BotWLoadingScreen)
+            else if (currentPhase == MenuPhase.BotWLoadingScreen || currentPhase == MenuPhase.TransitionToGameplay)
             {
-                if (musicSource != null)
-                {
-                    musicSource.volume = Mathf.MoveTowards(musicSource.volume, 0f, dt * 0.6f);
-                }
-                if (windSource != null)
-                {
-                    windSource.volume = Mathf.MoveTowards(windSource.volume, 0f, dt * 0.6f);
-                }
+                if (musicSourceA != null) musicSourceA.volume = Mathf.MoveTowards(musicSourceA.volume, 0f, dt * 0.8f);
+                if (musicSourceB != null) musicSourceB.volume = Mathf.MoveTowards(musicSourceB.volume, 0f, dt * 0.8f);
+                if (windSource != null) windSource.volume = Mathf.MoveTowards(windSource.volume, 0f, dt * 0.8f);
+            }
+        }
+
+        private void UpdateMusicToast(float dt)
+        {
+            if (toastGroup == null) return;
+            if (toastTimer > 0f)
+            {
+                toastTimer -= dt;
+                toastGroup.alpha = Mathf.MoveTowards(toastGroup.alpha, 0.95f, dt * 3.5f);
+            }
+            else
+            {
+                toastGroup.alpha = Mathf.MoveTowards(toastGroup.alpha, 0f, dt * 1.5f);
             }
         }
 
@@ -1126,20 +1524,75 @@ namespace HoaVaMau.Gameplay
                 var data = HoaVaMauSaveSystem.GetSlotData(slot);
                 card.IsOccupied = data.isOccupied;
 
-                card.SlotTitleText.text = $"VỊ TRÍ {slot}";
+                if (card.HeaderText != null)
+                {
+                    card.HeaderText.text = $"SLOT {slot}";
+                }
+
                 if (data.isOccupied)
                 {
-                    card.SlotDetailsText.text = $"{data.chapterTitle} • {data.locationName}\nThời gian: {data.GetFormattedPlayTime()}   |   Ngày: {data.saveTimestamp}";
-                    card.StatusBadgeText.text = (currentSaveMode == SaveModalMode.NewGame) ? "[ ĐÃ CÓ TIẾN TRÌNH ]" : "[ TIẾP TỤC ]";
-                    card.StatusBadgeText.color = new Color(0.98f, 0.88f, 0.65f, 0.95f);
+                    // Try to load custom captured screenshot thumbnail
+                    Texture2D thumbTex = HoaVaMauSaveSystem.LoadThumbnailTexture(slot);
+
+                    // If not yet captured, use fallback concept art thumbnail
+                    if (thumbTex == null && fallbackSlotThumbnails != null && fallbackSlotThumbnails.Length > 0)
+                    {
+                        int fallbackIdx = (slot - 1) % fallbackSlotThumbnails.Length;
+                        thumbTex = fallbackSlotThumbnails[fallbackIdx];
+                    }
+
+                    if (thumbTex != null && card.ThumbnailImg != null)
+                    {
+                        card.ThumbnailImg.texture = thumbTex;
+                        card.ThumbnailImg.gameObject.SetActive(true);
+                    }
+                    else if (card.ThumbnailImg != null)
+                    {
+                        card.ThumbnailImg.gameObject.SetActive(false);
+                    }
+
+                    if (card.EmptyContainer != null)
+                    {
+                        card.EmptyContainer.SetActive(false);
+                    }
+
+                    // Format matching Planet of Lana:
+                    // Line 1: Timestamp (e.g. 10/26/2026 10:08:03 AM)
+                    // Line 2: PLAYTIME 09:03:44
+                    if (card.TimestampText != null)
+                    {
+                        card.TimestampText.text = string.IsNullOrEmpty(data.saveTimestamp) ? DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss tt") : data.saveTimestamp;
+                    }
+                    if (card.PlaytimeText != null)
+                    {
+                        card.PlaytimeText.text = $"PLAYTIME {data.GetFormattedPlayTime()}";
+                    }
                 }
                 else
                 {
-                    card.SlotDetailsText.text = "Vị trí chưa có dữ liệu lưu. Bắt đầu từ đầu chương 1.";
-                    card.StatusBadgeText.text = (currentSaveMode == SaveModalMode.NewGame) ? "[ TRỐNG - BẮT ĐẦU ]" : "[ TRỐNG ]";
-                    card.StatusBadgeText.color = new Color(0.70f, 0.80f, 0.90f, 0.65f);
+                    if (card.ThumbnailImg != null)
+                    {
+                        card.ThumbnailImg.gameObject.SetActive(false);
+                    }
+                    if (card.EmptyContainer != null)
+                    {
+                        card.EmptyContainer.SetActive(true);
+                    }
+                    if (card.EmptyLabelText != null)
+                    {
+                        card.EmptyLabelText.text = "NEW GAME";
+                    }
+                    if (card.TimestampText != null)
+                    {
+                        card.TimestampText.text = "";
+                    }
+                    if (card.PlaytimeText != null)
+                    {
+                        card.PlaytimeText.text = "";
+                    }
                 }
             }
+
             selectedSlotIndex = 0;
             HighlightSelectedSlot();
         }
@@ -1150,11 +1603,22 @@ namespace HoaVaMau.Gameplay
             {
                 var card = slotUIItems[i];
                 bool isSel = (i == selectedSlotIndex);
-                if (card.CardBg != null)
+
+                // Pure crisp white outline border when selected
+                if (card.CardBorderImg != null)
                 {
-                    card.CardBg.color = isSel ? new Color(0.18f, 0.22f, 0.32f, 0.90f) : new Color(0.06f, 0.08f, 0.12f, 0.78f);
+                    card.CardBorderImg.color = isSel ? Color.white : new Color(0.12f, 0.16f, 0.24f, 0.40f);
                 }
-                card.RootRect.localScale = isSel ? new Vector3(1.02f, 1.02f, 1f) : Vector3.one;
+
+                if (card.HeaderText != null)
+                {
+                    card.HeaderText.color = isSel ? Color.white : new Color(0.70f, 0.75f, 0.85f, 0.75f);
+                }
+
+                if (card.CardFrameRect != null)
+                {
+                    card.CardFrameRect.localScale = isSel ? new Vector3(1.025f, 1.025f, 1f) : Vector3.one;
+                }
             }
         }
 
@@ -1175,7 +1639,7 @@ namespace HoaVaMau.Gameplay
                     IntroCutsceneState.MarkForNewGame();
                     HoaVaMauSaveSystem.ActiveSlotIndex = slotIndex;
                     HoaVaMauSaveSystem.SessionPlayTimeCounter = 0f;
-                    HoaVaMauSaveSystem.SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(0.0f, -1.77f, 0f));
+                    HoaVaMauSaveSystem.SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Rừng Sớm Cà Mau", 0, new Vector3(-4.0f, -1.85f, 0f));
                     SetPhase(MenuPhase.BotWLoadingScreen);
                 }
             }
@@ -1238,7 +1702,7 @@ namespace HoaVaMau.Gameplay
                 IntroCutsceneState.MarkForNewGame();
                 HoaVaMauSaveSystem.ActiveSlotIndex = pendingOverwriteSlot;
                 HoaVaMauSaveSystem.SessionPlayTimeCounter = 0f;
-                HoaVaMauSaveSystem.SaveCurrentGameState(pendingOverwriteSlot, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(0.0f, -1.77f, 0f));
+                HoaVaMauSaveSystem.SaveCurrentGameState(pendingOverwriteSlot, "Chương 1: Đất Đỏ Cà Mau", "Rừng Sớm Cà Mau", 0, new Vector3(-4.0f, -1.85f, 0f));
                 SetPhase(MenuPhase.BotWLoadingScreen);
             }
         }
@@ -1267,13 +1731,22 @@ namespace HoaVaMau.Gameplay
             if (item == null || item.LabelText == null) return;
             if (!item.IsInteractable) return;
 
-            Color col = Color.Lerp(new Color(0.92f, 0.95f, 0.98f, 0.75f), new Color(1.0f, 0.98f, 0.88f, 1.0f), item.HoverBlend);
-            item.LabelText.color = col;
+            // Planet of Lana iconic selection behavior:
+            // Unselected: Dimmed semi-transparent silver text (alpha 0.60), no background box.
+            // Selected: Solid white rectangle overlays behind text, text font color inverts to dark background navy (#07101C).
+            if (item.SelectionBox != null)
+            {
+                item.SelectionBox.color = new Color(1f, 1f, 1f, item.HoverBlend);
+            }
 
-            float scale = Mathf.Lerp(1.0f, 1.05f, item.HoverBlend);
+            Color unselTextColor = new Color(0.92f, 0.95f, 0.98f, 0.60f);
+            Color selTextColor = new Color(0.04f, 0.08f, 0.14f, 1.0f); // Deep dark background navy
+            item.LabelText.color = Color.Lerp(unselTextColor, selTextColor, item.HoverBlend);
+
+            float scale = Mathf.Lerp(1.0f, 1.02f, item.HoverBlend);
             item.RootRect.localScale = new Vector3(scale, scale, 1f);
 
-            Color dotCol = new Color(1.0f, 0.95f, 0.80f, item.HoverBlend * 0.92f);
+            Color dotCol = new Color(0.04f, 0.08f, 0.14f, item.HoverBlend * 0.92f);
             if (item.LeftDots != null) item.LeftDots.color = dotCol;
             if (item.RightDots != null) item.RightDots.color = dotCol;
         }
@@ -1286,6 +1759,35 @@ namespace HoaVaMau.Gameplay
         private void PlayConfirm()
         {
             if (sfxSource != null && confirmSfxClip != null) sfxSource.PlayOneShot(confirmSfxClip, sfxVolume);
+        }
+
+        private void SetupButtonSolidWhiteHover(RectTransform btnRect, Image bgImg, Text labelText, Color? normalBg = null, Color? normalText = null)
+        {
+            if (btnRect == null) return;
+            Color defaultBg = normalBg ?? (bgImg != null ? bgImg.color : new Color(0.18f, 0.22f, 0.32f, 0.85f));
+            Color defaultText = normalText ?? (labelText != null ? labelText.color : Color.white);
+            Color selBg = new Color(0.98f, 0.98f, 0.98f, 0.96f);
+            Color selText = new Color(0.04f, 0.08f, 0.14f, 1f);
+
+            var trigger = btnRect.gameObject.GetComponent<EventTrigger>() ?? btnRect.gameObject.AddComponent<EventTrigger>();
+            var enterEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            enterEntry.callback.AddListener((data) =>
+            {
+                PlayHover();
+                if (bgImg != null) bgImg.color = selBg;
+                if (labelText != null) labelText.color = selText;
+                btnRect.localScale = new Vector3(1.02f, 1.02f, 1f);
+            });
+            trigger.triggers.Add(enterEntry);
+
+            var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+            exitEntry.callback.AddListener((data) =>
+            {
+                if (bgImg != null) bgImg.color = defaultBg;
+                if (labelText != null) labelText.color = defaultText;
+                btnRect.localScale = Vector3.one;
+            });
+            trigger.triggers.Add(exitEntry);
         }
 
         // =====================================================================================
@@ -1324,7 +1826,7 @@ namespace HoaVaMau.Gameplay
         private void OnMusicVolumeChanged(float val)
         {
             musicVolume = val;
-            if (musicSource != null) musicSource.volume = musicVolume * currentMusicFadeVol;
+            ApplyMusicVolumeToSources();
             if (musicVolValText != null) musicVolValText.text = $"{Mathf.RoundToInt(val * 100f)}%";
         }
 
@@ -1485,9 +1987,9 @@ namespace HoaVaMau.Gameplay
             iconGO.sizeDelta = new Vector2(100f, 100f);
             headphoneIconRect = iconGO;
             var iconImg = iconGO.gameObject.AddComponent<Image>();
-            iconImg.sprite = headphoneSprite;
+            iconImg.sprite = headphoneSprite ?? flowerBloomSprite;
             iconImg.preserveAspect = true;
-            iconImg.color = new Color(0.96f, 0.95f, 0.90f, 0.95f);
+            iconImg.color = (iconImg.sprite != null) ? new Color(0.96f, 0.95f, 0.90f, 0.95f) : Color.clear;
             iconImg.raycastTarget = false;
 
             var textGO = CreateRect("HeadphoneText", centerCluster);
@@ -1648,20 +2150,33 @@ namespace HoaVaMau.Gameplay
             cluster.anchorMin = new Vector2(0f, 1f);
             cluster.anchorMax = new Vector2(0f, 1f);
             cluster.pivot = new Vector2(0f, 1f);
-            cluster.anchoredPosition = new Vector2(120f, -65f);
-            cluster.sizeDelta = new Vector2(520f, 700f);
+            cluster.anchoredPosition = new Vector2(115f, -52f);
+            cluster.sizeDelta = new Vector2(650f, 840f);
             menuClusterRect = cluster;
 
             // NOTE: "FIVE COWS IN THE FIRE" text above the logo on Start Menu is REMOVED per user request!
 
-            // 1. Official Calligraphy Logo (Enlarged by ~28% per user request: "làm to hơn một tí")
+            // 1. Official Calligraphy Logo (Enlarged prominently per user request: "làm to hơn một tí")
             if (gameOfficialLogoSprite != null)
             {
+                if (softDotSprite != null)
+                {
+                    var glowGO = CreateRect("Official_Logo_WarmGlow", cluster);
+                    glowGO.anchorMin = glowGO.anchorMax = new Vector2(0f, 1f);
+                    glowGO.pivot = new Vector2(0f, 1f);
+                    glowGO.anchoredPosition = new Vector2(-20f, 14f);
+                    glowGO.sizeDelta = new Vector2(510f, 275f);
+                    var glowImg = glowGO.gameObject.AddComponent<Image>();
+                    glowImg.sprite = softDotSprite;
+                    glowImg.color = new Color(0.04f, 0.09f, 0.16f, 0.24f);
+                    glowImg.raycastTarget = false;
+                }
+
                 var logoGO = CreateRect("Official_Calligraphy_Logo", cluster);
                 logoGO.anchorMin = logoGO.anchorMax = new Vector2(0f, 1f);
                 logoGO.pivot = new Vector2(0f, 1f);
                 logoGO.anchoredPosition = new Vector2(0f, 0f);
-                logoGO.sizeDelta = new Vector2(460f, 255f);
+                logoGO.sizeDelta = new Vector2(465f, 250f);
                 mainLogoImg = logoGO.gameObject.AddComponent<Image>();
                 mainLogoImg.sprite = gameOfficialLogoSprite;
                 mainLogoImg.preserveAspect = true;
@@ -1673,10 +2188,10 @@ namespace HoaVaMau.Gameplay
                 titleGO.anchorMin = titleGO.anchorMax = new Vector2(0f, 1f);
                 titleGO.pivot = new Vector2(0f, 1f);
                 titleGO.anchoredPosition = new Vector2(0f, 0f);
-                titleGO.sizeDelta = new Vector2(480f, 70f);
+                titleGO.sizeDelta = new Vector2(580f, 80f);
                 var tTxt = titleGO.gameObject.AddComponent<Text>();
                 tTxt.font = font;
-                tTxt.fontSize = 40;
+                tTxt.fontSize = 46;
                 tTxt.fontStyle = FontStyle.Bold;
                 tTxt.alignment = TextAnchor.MiddleLeft;
                 tTxt.color = Color.white;
@@ -1687,30 +2202,30 @@ namespace HoaVaMau.Gameplay
             var divGO = CreateRect("Horizon_Divider", cluster);
             divGO.anchorMin = divGO.anchorMax = new Vector2(0f, 1f);
             divGO.pivot = new Vector2(0f, 1f);
-            divGO.anchoredPosition = new Vector2(0f, -270f);
-            divGO.sizeDelta = new Vector2(320f, 2f);
+            divGO.anchoredPosition = new Vector2(8f, -248f);
+            divGO.sizeDelta = new Vector2(380f, 2f);
             var divImg = divGO.gameObject.AddComponent<Image>();
-            divImg.color = new Color(1.0f, 0.95f, 0.80f, 0.60f);
+            divImg.color = new Color(1.0f, 0.95f, 0.80f, 0.65f);
 
             // 3. English Subtitle (FLOWER ON RED SOIL)
             var subGO = CreateRect("Subtitle_Text", cluster);
             subGO.anchorMin = subGO.anchorMax = new Vector2(0f, 1f);
             subGO.pivot = new Vector2(0f, 1f);
-            subGO.anchoredPosition = new Vector2(0f, -285f);
-            subGO.sizeDelta = new Vector2(420f, 26f);
+            subGO.anchoredPosition = new Vector2(8f, -264f);
+            subGO.sizeDelta = new Vector2(460f, 28f);
             var subTxt = subGO.gameObject.AddComponent<Text>();
             subTxt.font = font;
-            subTxt.fontSize = 13;
+            subTxt.fontSize = 14;
             subTxt.alignment = TextAnchor.MiddleLeft;
-            subTxt.color = new Color(0.98f, 0.92f, 0.75f, 0.92f);
+            subTxt.color = new Color(0.98f, 0.92f, 0.75f, 0.94f);
             subTxt.text = "• • •   F L O W E R   O N   R E D   S O I L   • • •";
 
             // 4. Menu Buttons (BẮT ĐẦU, TIẾP TỤC, TÙY CHỈNH, THOÁT)
             var btnContainer = CreateRect("MainButtons_Container", cluster);
             btnContainer.anchorMin = btnContainer.anchorMax = new Vector2(0f, 1f);
             btnContainer.pivot = new Vector2(0f, 1f);
-            btnContainer.anchoredPosition = new Vector2(0f, -340f);
-            btnContainer.sizeDelta = new Vector2(360f, 260f);
+            btnContainer.anchoredPosition = new Vector2(8f, -312f);
+            btnContainer.sizeDelta = new Vector2(380f, 270f);
 
             string[] labels = { "BẮT ĐẦU", "TIẾP TỤC", "TÙY CHỈNH", "THOÁT" };
             menuButtons.Clear();
@@ -1721,8 +2236,8 @@ namespace HoaVaMau.Gameplay
                 var btnRect = CreateRect($"Btn_{i}_{labels[i]}", btnContainer);
                 btnRect.anchorMin = btnRect.anchorMax = new Vector2(0f, 1f);
                 btnRect.pivot = new Vector2(0f, 1f);
-                btnRect.anchoredPosition = new Vector2(0f, -i * 54f);
-                btnRect.sizeDelta = new Vector2(320f, 44f);
+                btnRect.anchoredPosition = new Vector2(0f, -i * 56f);
+                btnRect.sizeDelta = new Vector2(345f, 46f);
 
                 var btn = btnRect.gameObject.AddComponent<Button>();
                 var colors = btn.colors;
@@ -1730,6 +2245,33 @@ namespace HoaVaMau.Gameplay
                 colors.highlightedColor = Color.clear;
                 colors.pressedColor = Color.clear;
                 btn.colors = colors;
+
+                var hitImg = btnRect.gameObject.AddComponent<Image>();
+                hitImg.color = Color.clear;
+                hitImg.raycastTarget = true;
+                btn.targetGraphic = hitImg;
+
+                var trigger = btnRect.gameObject.AddComponent<EventTrigger>();
+                var hoverEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                hoverEntry.callback.AddListener((data) =>
+                {
+                    if (selectedMenuIndex != idx)
+                    {
+                        selectedMenuIndex = idx;
+                        PlayHover();
+                    }
+                });
+                trigger.triggers.Add(hoverEntry);
+
+                // Planet of Lana selection box: Solid white rectangle overlay behind text
+                var boxRect = CreateRect("SelectionBox", btnRect);
+                boxRect.anchorMin = new Vector2(0f, 0.1f);
+                boxRect.anchorMax = new Vector2(0.92f, 0.9f);
+                boxRect.offsetMin = Vector2.zero;
+                boxRect.offsetMax = Vector2.zero;
+                var boxImg = boxRect.gameObject.AddComponent<Image>();
+                boxImg.color = new Color(1f, 1f, 1f, 0f); // Hidden until selected
+                boxImg.raycastTarget = false;
 
                 var txtRect = CreateRect("Label", btnRect);
                 txtRect.anchorMin = new Vector2(0f, 0f);
@@ -1740,8 +2282,9 @@ namespace HoaVaMau.Gameplay
                 txt.font = font;
                 txt.fontSize = 18;
                 txt.alignment = TextAnchor.MiddleLeft;
-                txt.color = new Color(0.92f, 0.95f, 0.98f, 0.75f);
+                txt.color = new Color(0.92f, 0.95f, 0.98f, 0.60f);
                 txt.text = labels[i];
+                txt.raycastTarget = false;
 
                 var lDots = CreateRect("LeftDot", btnRect);
                 lDots.anchorMin = new Vector2(0f, 0.5f);
@@ -1755,6 +2298,7 @@ namespace HoaVaMau.Gameplay
                 lTxt.alignment = TextAnchor.MiddleCenter;
                 lTxt.color = Color.clear;
                 lTxt.text = "•";
+                lTxt.raycastTarget = false;
 
                 btn.onClick.AddListener(() => TriggerMenuSelection(idx));
 
@@ -1762,6 +2306,7 @@ namespace HoaVaMau.Gameplay
                 {
                     RootRect = btnRect,
                     ButtonComp = btn,
+                    SelectionBox = boxImg,
                     LabelText = txt,
                     LeftDots = lTxt,
                     RightDots = null,
@@ -1773,6 +2318,31 @@ namespace HoaVaMau.Gameplay
                 if (i == 1) continueButtonItem = item;
                 menuButtons.Add(item);
             }
+
+            // Now Playing Toast Widget (Bottom-Left Corner)
+            var toastGO = CreateRect("Music_NowPlaying_Toast", panelRect);
+            toastGO.anchorMin = toastGO.anchorMax = new Vector2(0f, 0f);
+            toastGO.pivot = new Vector2(0f, 0f);
+            toastGO.anchoredPosition = new Vector2(40f, 32f);
+            toastGO.sizeDelta = new Vector2(500f, 36f);
+
+            toastGroup = toastGO.gameObject.AddComponent<CanvasGroup>();
+            toastGroup.alpha = 0f;
+            toastGroup.blocksRaycasts = false;
+            toastGroup.interactable = false;
+
+            var toastTxtGO = CreateRect("ToastText", toastGO);
+            StretchFull(toastTxtGO);
+            toastText = toastTxtGO.gameObject.AddComponent<Text>();
+            toastText.font = font;
+            toastText.fontSize = 13;
+            toastText.fontStyle = FontStyle.Normal;
+            toastText.alignment = TextAnchor.MiddleLeft;
+            toastText.color = new Color(0.96f, 0.94f, 0.88f, 0.90f);
+            toastText.text = "";
+            var toastShadow = toastTxtGO.gameObject.AddComponent<Shadow>();
+            toastShadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            toastShadow.effectDistance = new Vector2(1f, -1f);
         }
 
         private void BuildSaveSlotModal(Transform parent, Font font)
@@ -1784,110 +2354,263 @@ namespace HoaVaMau.Gameplay
             modalRect.gameObject.SetActive(false);
 
             var bgImg = modalRect.gameObject.AddComponent<Image>();
-            bgImg.color = new Color(0.02f, 0.03f, 0.06f, 0.88f);
+            bgImg.color = new Color(0.02f, 0.04f, 0.07f, 0.95f);
 
             var centerBox = CreateRect("Center_Dialog_Box", modalRect);
             centerBox.anchorMin = centerBox.anchorMax = new Vector2(0.5f, 0.5f);
             centerBox.pivot = new Vector2(0.5f, 0.5f);
-            centerBox.sizeDelta = new Vector2(820f, 580f);
+            centerBox.sizeDelta = new Vector2(1150f, 750f);
 
             var titleRect = CreateRect("SaveModal_Title", centerBox);
-            titleRect.anchorMin = titleRect.anchorMax = new Vector2(0.5f, 0.93f);
-            titleRect.sizeDelta = new Vector2(740f, 40f);
+            titleRect.anchorMin = titleRect.anchorMax = new Vector2(0.5f, 0.96f);
+            titleRect.sizeDelta = new Vector2(800f, 32f);
             saveModalTitleText = titleRect.gameObject.AddComponent<Text>();
             saveModalTitleText.font = font;
-            saveModalTitleText.fontSize = 20;
+            saveModalTitleText.fontSize = 17;
             saveModalTitleText.fontStyle = FontStyle.Bold;
             saveModalTitleText.alignment = TextAnchor.MiddleCenter;
-            saveModalTitleText.color = new Color(1.0f, 0.98f, 0.90f, 0.95f);
+            saveModalTitleText.color = new Color(0.88f, 0.92f, 0.98f, 0.85f);
             saveModalTitleText.text = "C H Ọ N   V Ị   T R Í   L Ư U";
 
-            // Notice text for empty slots / warnings
+            // Notice text for warnings
             var noticeRect = CreateRect("SaveModal_Notice", centerBox);
-            noticeRect.anchorMin = noticeRect.anchorMax = new Vector2(0.5f, 0.85f);
-            noticeRect.sizeDelta = new Vector2(700f, 30f);
+            noticeRect.anchorMin = noticeRect.anchorMax = new Vector2(0.5f, 0.92f);
+            noticeRect.sizeDelta = new Vector2(700f, 24f);
             saveModalNoticeText = noticeRect.gameObject.AddComponent<Text>();
             saveModalNoticeText.font = font;
-            saveModalNoticeText.fontSize = 13;
+            saveModalNoticeText.fontSize = 12;
             saveModalNoticeText.alignment = TextAnchor.MiddleCenter;
             saveModalNoticeText.color = new Color(0.98f, 0.45f, 0.35f, 0.95f);
             saveModalNoticeText.text = "";
 
-            // 3 Save Slot Cards
+            // 3 Vertical Save Slot Cards (Planet of Lana Style)
             slotUIItems.Clear();
+            float[] posXs = new float[] { -340f, 0f, 340f };
+
             for (int i = 0; i < 3; i++)
             {
                 int slot = i + 1;
-                var cardRect = CreateRect($"Slot_Card_{slot}", centerBox);
-                cardRect.anchorMin = cardRect.anchorMax = new Vector2(0.5f, 0.68f - i * 0.22f);
-                cardRect.sizeDelta = new Vector2(720f, 96f);
+                var slotColRect = CreateRect($"Slot_Column_{slot}", centerBox);
+                slotColRect.anchorMin = slotColRect.anchorMax = new Vector2(0.5f, 0.5f);
+                slotColRect.anchoredPosition = new Vector2(posXs[i], 12f);
+                slotColRect.sizeDelta = new Vector2(280f, 620f);
 
-                var cardBg = cardRect.gameObject.AddComponent<Image>();
-                cardBg.color = new Color(0.06f, 0.08f, 0.12f, 0.78f);
+                // 1. Header above card: "SLOT 1", "SLOT 2", "SLOT 3"
+                var headerRect = CreateRect($"Slot_Header_{slot}", slotColRect);
+                headerRect.anchorMin = headerRect.anchorMax = new Vector2(0.5f, 0.5f);
+                headerRect.anchoredPosition = new Vector2(0f, 275f);
+                headerRect.sizeDelta = new Vector2(280f, 30f);
+                var headerTxt = headerRect.gameObject.AddComponent<Text>();
+                headerTxt.font = font;
+                headerTxt.fontSize = 20;
+                headerTxt.fontStyle = FontStyle.Bold;
+                headerTxt.alignment = TextAnchor.MiddleCenter;
+                headerTxt.color = new Color(0.96f, 0.96f, 0.98f, 0.95f);
+                headerTxt.text = $"SLOT {slot}";
 
-                var btn = cardRect.gameObject.AddComponent<Button>();
+                // 2. The Card Frame (280 x 480)
+                var cardFrameRect = CreateRect($"Card_Frame_{slot}", slotColRect);
+                cardFrameRect.anchorMin = cardFrameRect.anchorMax = new Vector2(0.5f, 0.5f);
+                cardFrameRect.anchoredPosition = new Vector2(0f, 0f);
+                cardFrameRect.sizeDelta = new Vector2(280f, 480f);
+
+                // Border Image (Active highlight)
+                var borderImg = cardFrameRect.gameObject.AddComponent<Image>();
+                borderImg.color = (i == 0) ? Color.white : new Color(0.12f, 0.16f, 0.24f, 0.40f);
+
+                // Button Component for clicking the card
+                var btn = cardFrameRect.gameObject.AddComponent<Button>();
+                btn.transition = Selectable.Transition.None;
                 btn.onClick.AddListener(() => OnSlotCardClicked(slot));
 
-                var sTitleRect = CreateRect("SlotTitle", cardRect);
-                sTitleRect.anchorMin = new Vector2(0.04f, 0.55f);
-                sTitleRect.anchorMax = new Vector2(0.40f, 0.92f);
-                var sTitle = sTitleRect.gameObject.AddComponent<Text>();
-                sTitle.font = font;
-                sTitle.fontSize = 17;
-                sTitle.fontStyle = FontStyle.Bold;
-                sTitle.alignment = TextAnchor.MiddleLeft;
-                sTitle.color = new Color(0.99f, 0.96f, 0.88f, 0.98f);
-                sTitle.text = $"VỊ TRÍ {slot}";
+                int cardIdx = i;
+                var trigger = cardFrameRect.gameObject.AddComponent<EventTrigger>();
+                var hoverEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                hoverEntry.callback.AddListener((data) =>
+                {
+                    if (selectedSlotIndex != cardIdx)
+                    {
+                        selectedSlotIndex = cardIdx;
+                        PlayHover();
+                        HighlightSelectedSlot();
+                    }
+                });
+                trigger.triggers.Add(hoverEntry);
 
-                var badgeRect = CreateRect("Badge", cardRect);
-                badgeRect.anchorMin = new Vector2(0.60f, 0.55f);
-                badgeRect.anchorMax = new Vector2(0.96f, 0.92f);
-                var badge = badgeRect.gameObject.AddComponent<Text>();
-                badge.font = font;
-                badge.fontSize = 13;
-                badge.alignment = TextAnchor.MiddleRight;
-                badge.color = new Color(0.98f, 0.88f, 0.65f, 0.95f);
-                badge.text = "[ TRỐNG ]";
+                // Inner Container (274 x 474 with 3px border padding)
+                var innerRect = CreateRect("Inner_Area", cardFrameRect);
+                innerRect.anchorMin = innerRect.anchorMax = new Vector2(0.5f, 0.5f);
+                innerRect.sizeDelta = new Vector2(274f, 474f);
+                var innerBg = innerRect.gameObject.AddComponent<Image>();
+                innerBg.color = new Color(0.04f, 0.07f, 0.13f, 1.0f);
 
-                var detailsRect = CreateRect("Details", cardRect);
-                detailsRect.anchorMin = new Vector2(0.04f, 0.08f);
-                detailsRect.anchorMax = new Vector2(0.96f, 0.52f);
-                var details = detailsRect.gameObject.AddComponent<Text>();
-                details.font = font;
-                details.fontSize = 13;
-                details.alignment = TextAnchor.MiddleLeft;
-                details.color = new Color(0.85f, 0.88f, 0.92f, 0.75f);
-                details.text = "Chưa có dữ liệu";
+                // Thumbnail RawImage (Displays live screenshot thumbnail or fallback concept art)
+                var thumbRect = CreateRect("Thumbnail_RawImage", innerRect);
+                StretchFull(thumbRect);
+                var thumbRawImg = thumbRect.gameObject.AddComponent<RawImage>();
+                thumbRawImg.color = Color.white;
+                thumbRawImg.raycastTarget = false;
+
+                // Empty Slot Container (Displays dark navy box with centered "NEW GAME")
+                var emptyContainerRect = CreateRect("Empty_Slot_Container", innerRect);
+                StretchFull(emptyContainerRect);
+                var emptyBg = emptyContainerRect.gameObject.AddComponent<Image>();
+                emptyBg.color = new Color(0.05f, 0.09f, 0.16f, 1.0f);
+                emptyBg.raycastTarget = false;
+
+                var emptyLabelRect = CreateRect("NewGame_Label", emptyContainerRect);
+                StretchFull(emptyLabelRect);
+                var emptyLabelTxt = emptyLabelRect.gameObject.AddComponent<Text>();
+                emptyLabelTxt.font = font;
+                emptyLabelTxt.fontSize = 18;
+                emptyLabelTxt.fontStyle = FontStyle.Bold;
+                emptyLabelTxt.alignment = TextAnchor.MiddleCenter;
+                emptyLabelTxt.color = new Color(0.96f, 0.96f, 0.98f, 0.95f);
+                emptyLabelTxt.text = "NEW GAME";
+
+                // 3. Metadata Below Card: Timestamp & Playtime
+                var metaRect = CreateRect("Metadata_Area", slotColRect);
+                metaRect.anchorMin = metaRect.anchorMax = new Vector2(0.5f, 0.5f);
+                metaRect.anchoredPosition = new Vector2(0f, -270f);
+                metaRect.sizeDelta = new Vector2(280f, 46f);
+
+                var timeRect = CreateRect("Timestamp", metaRect);
+                timeRect.anchorMin = timeRect.anchorMax = new Vector2(0.5f, 0.70f);
+                timeRect.sizeDelta = new Vector2(280f, 20f);
+                var timeTxt = timeRect.gameObject.AddComponent<Text>();
+                timeTxt.font = font;
+                timeTxt.fontSize = 12;
+                timeTxt.fontStyle = FontStyle.Bold;
+                timeTxt.alignment = TextAnchor.MiddleCenter;
+                timeTxt.color = new Color(0.94f, 0.96f, 0.98f, 0.95f);
+                timeTxt.text = "";
+
+                var playTimeRect = CreateRect("Playtime", metaRect);
+                playTimeRect.anchorMin = playTimeRect.anchorMax = new Vector2(0.5f, 0.25f);
+                playTimeRect.sizeDelta = new Vector2(280f, 20f);
+                var playTimeTxt = playTimeRect.gameObject.AddComponent<Text>();
+                playTimeTxt.font = font;
+                playTimeTxt.fontSize = 11;
+                playTimeTxt.fontStyle = FontStyle.Bold;
+                playTimeTxt.alignment = TextAnchor.MiddleCenter;
+                playTimeTxt.color = new Color(0.85f, 0.88f, 0.92f, 0.85f);
+                playTimeTxt.text = "";
 
                 slotUIItems.Add(new SaveSlotUIItem
                 {
-                    RootRect = cardRect,
+                    RootRect = slotColRect,
+                    CardFrameRect = cardFrameRect,
                     ButtonComp = btn,
-                    SlotTitleText = sTitle,
-                    SlotDetailsText = details,
-                    StatusBadgeText = badge,
-                    CardBg = cardBg,
+                    HeaderText = headerTxt,
+                    CardBorderImg = borderImg,
+                    CardInnerBg = innerBg,
+                    ThumbnailImg = thumbRawImg,
+                    EmptyContainer = emptyContainerRect.gameObject,
+                    EmptyLabelText = emptyLabelTxt,
+                    TimestampText = timeTxt,
+                    PlaytimeText = playTimeTxt,
                     SlotIndex = slot,
                     IsOccupied = false
                 });
             }
 
-            // Back Button
-            var backBtnRect = CreateRect("Btn_Back_From_SaveModal", centerBox);
-            backBtnRect.anchorMin = backBtnRect.anchorMax = new Vector2(0.5f, 0.06f);
-            backBtnRect.sizeDelta = new Vector2(160f, 40f);
-            var backBtn = backBtnRect.gameObject.AddComponent<Button>();
-            var backImg = backBtnRect.gameObject.AddComponent<Image>();
-            backImg.color = new Color(0.20f, 0.24f, 0.32f, 0.85f);
-            var backTxtRect = CreateRect("Label", backBtnRect);
-            StretchFull(backTxtRect);
-            var backTxt = backTxtRect.gameObject.AddComponent<Text>();
-            backTxt.font = font;
-            backTxt.fontSize = 14;
-            backTxt.alignment = TextAnchor.MiddleCenter;
-            backTxt.color = Color.white;
-            backTxt.text = "QUAY LẠI";
+            // Bottom Navigation Keycaps: [Esc] BACK    [Enter] SELECT
+            BuildBottomNavKeycaps(centerBox, font);
+        }
+
+        private void BuildBottomNavKeycaps(Transform parent, Font font)
+        {
+            var navRect = CreateRect("Bottom_Nav_Hints", parent);
+            navRect.anchorMin = navRect.anchorMax = new Vector2(0.5f, 0.05f);
+            navRect.sizeDelta = new Vector2(420f, 36f);
+
+            // Back item: [Esc] BACK
+            var backItem = CreateRect("Nav_Back_Cluster", navRect);
+            backItem.anchorMin = backItem.anchorMax = new Vector2(0.28f, 0.5f);
+            backItem.sizeDelta = new Vector2(150f, 32f);
+
+            var escKeycap = CreateRect("Keycap_Esc", backItem);
+            escKeycap.anchorMin = escKeycap.anchorMax = new Vector2(0.22f, 0.5f);
+            escKeycap.sizeDelta = new Vector2(38f, 24f);
+            var escBorder = escKeycap.gameObject.AddComponent<Image>();
+            escBorder.color = new Color(0.95f, 0.95f, 0.98f, 0.85f);
+
+            var escInner = CreateRect("Keycap_Inner", escKeycap);
+            escInner.anchorMin = escInner.anchorMax = new Vector2(0.5f, 0.5f);
+            escInner.sizeDelta = new Vector2(34f, 20f);
+            var escInnerImg = escInner.gameObject.AddComponent<Image>();
+            escInnerImg.color = new Color(0.04f, 0.07f, 0.13f, 1f);
+
+            var escLabel = CreateRect("Label", escInner);
+            StretchFull(escLabel);
+            var escTxt = escLabel.gameObject.AddComponent<Text>();
+            escTxt.font = font;
+            escTxt.fontSize = 11;
+            escTxt.fontStyle = FontStyle.Bold;
+            escTxt.alignment = TextAnchor.MiddleCenter;
+            escTxt.color = Color.white;
+            escTxt.text = "Esc";
+
+            var backLabel = CreateRect("Label_Back", backItem);
+            backLabel.anchorMin = backLabel.anchorMax = new Vector2(0.72f, 0.5f);
+            backLabel.sizeDelta = new Vector2(75f, 25f);
+            var backLabelTxt = backLabel.gameObject.AddComponent<Text>();
+            backLabelTxt.font = font;
+            backLabelTxt.fontSize = 13;
+            backLabelTxt.fontStyle = FontStyle.Bold;
+            backLabelTxt.alignment = TextAnchor.MiddleLeft;
+            backLabelTxt.color = new Color(0.95f, 0.95f, 0.98f, 0.90f);
+            backLabelTxt.text = "BACK";
+
+            var backBtn = backItem.gameObject.AddComponent<Button>();
             backBtn.onClick.AddListener(CloseSaveModal);
+
+            // Select item: [Enter] SELECT
+            var selectItem = CreateRect("Nav_Select_Cluster", navRect);
+            selectItem.anchorMin = selectItem.anchorMax = new Vector2(0.76f, 0.5f);
+            selectItem.sizeDelta = new Vector2(170f, 32f);
+
+            var enterKeycap = CreateRect("Keycap_Enter", selectItem);
+            enterKeycap.anchorMin = enterKeycap.anchorMax = new Vector2(0.22f, 0.5f);
+            enterKeycap.sizeDelta = new Vector2(48f, 24f);
+            var enterBorder = enterKeycap.gameObject.AddComponent<Image>();
+            enterBorder.color = new Color(0.95f, 0.95f, 0.98f, 0.85f);
+
+            var enterInner = CreateRect("Keycap_Inner", enterKeycap);
+            enterInner.anchorMin = enterInner.anchorMax = new Vector2(0.5f, 0.5f);
+            enterInner.sizeDelta = new Vector2(44f, 20f);
+            var enterInnerImg = enterInner.gameObject.AddComponent<Image>();
+            enterInnerImg.color = new Color(0.04f, 0.07f, 0.13f, 1f);
+
+            var enterLabel = CreateRect("Label", enterInner);
+            StretchFull(enterLabel);
+            var enterTxt = enterLabel.gameObject.AddComponent<Text>();
+            enterTxt.font = font;
+            enterTxt.fontSize = 11;
+            enterTxt.fontStyle = FontStyle.Bold;
+            enterTxt.alignment = TextAnchor.MiddleCenter;
+            enterTxt.color = Color.white;
+            enterTxt.text = "Enter";
+
+            var selLabel = CreateRect("Label_Select", selectItem);
+            selLabel.anchorMin = selLabel.anchorMax = new Vector2(0.74f, 0.5f);
+            selLabel.sizeDelta = new Vector2(85f, 25f);
+            var selLabelTxt = selLabel.gameObject.AddComponent<Text>();
+            selLabelTxt.font = font;
+            selLabelTxt.fontSize = 13;
+            selLabelTxt.fontStyle = FontStyle.Bold;
+            selLabelTxt.alignment = TextAnchor.MiddleLeft;
+            selLabelTxt.color = new Color(0.95f, 0.95f, 0.98f, 0.90f);
+            selLabelTxt.text = "SELECT";
+
+            var selBtn = selectItem.gameObject.AddComponent<Button>();
+            selBtn.onClick.AddListener(() =>
+            {
+                if (selectedSlotIndex >= 0 && selectedSlotIndex < slotUIItems.Count)
+                {
+                    OnSlotCardClicked(slotUIItems[selectedSlotIndex].SlotIndex);
+                }
+            });
         }
 
         private void BuildOptionsModal(Transform parent, Font font)
@@ -1964,6 +2687,7 @@ namespace HoaVaMau.Gameplay
             fullscreenBtnText.raycastTarget = false;
             fullscreenBtnText.text = Screen.fullScreen ? "TOÀN MÀN HÌNH: [ BẬT ]" : "TOÀN MÀN HÌNH: [ TẮT ]";
             fsBtn.onClick.AddListener(ToggleFullscreenMode);
+            SetupButtonSolidWhiteHover(fsBtnRect, fsImg, fullscreenBtnText);
 
             // VSync Button
             var vsyncBtnRect = CreateRect("Btn_Toggle_VSync", box);
@@ -1987,6 +2711,7 @@ namespace HoaVaMau.Gameplay
             vsyncBtnText.raycastTarget = false;
             vsyncBtnText.text = (QualitySettings.vSyncCount > 0) ? "ĐỒNG BỘ DỌC: [ BẬT ]" : "ĐỒNG BỘ DỌC: [ TẮT ]";
             vsyncBtn.onClick.AddListener(ToggleVSyncMode);
+            SetupButtonSolidWhiteHover(vsyncBtnRect, vsyncImg, vsyncBtnText);
 
             // SECTION 3: BẢNG PHÍM ĐIỀU KHIỂN (CONTROLS REBINDING)
             startY -= 48f;
@@ -2045,6 +2770,8 @@ namespace HoaVaMau.Gameplay
                 bTxt.font = font;
                 bTxt.fontSize = 12;
                 bTxt.alignment = TextAnchor.MiddleCenter;
+                bTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+                bTxt.verticalOverflow = VerticalWrapMode.Overflow;
                 bTxt.color = new Color(1f, 0.95f, 0.80f, 0.95f);
                 bTxt.text = $"[ {KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(action))} ]";
                 bTxt.raycastTarget = false;
@@ -2052,6 +2779,7 @@ namespace HoaVaMau.Gameplay
                 keybindButtonTexts[action] = bTxt;
 
                 btn.onClick.AddListener(() => StartRebindingAction(action));
+                SetupButtonSolidWhiteHover(btnRect, bImg, bTxt);
             }
 
             // RESET TO DEFAULTS BUTTON
@@ -2076,6 +2804,7 @@ namespace HoaVaMau.Gameplay
                 RefreshKeybindButtonLabels();
                 PlayConfirm();
             });
+            SetupButtonSolidWhiteHover(resetBtnRect, rImg, rTxt);
 
             // BACK / SAVE BUTTON
             var backBtnRect = CreateRect("Btn_Back_Options", box);
@@ -2096,6 +2825,7 @@ namespace HoaVaMau.Gameplay
             backTxt.text = "LƯU & QUAY LẠI";
             backTxt.raycastTarget = false;
             backBtn.onClick.AddListener(CloseOptionsDialog);
+            SetupButtonSolidWhiteHover(backBtnRect, backImg, backTxt, new Color(0.85f, 0.42f, 0.18f, 0.90f), Color.white);
         }
 
         private static void CreateSectionHeader(RectTransform parent, string title, Vector2 pos, Font font)
@@ -2526,6 +3256,26 @@ namespace HoaVaMau.Gameplay
             return kb != null && (kb.upArrowKey.wasPressedThisFrame || kb.wKey.wasPressedThisFrame);
 #else
             return Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W);
+#endif
+        }
+
+        private static bool IsNavRightPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var kb = Keyboard.current;
+            return kb != null && (kb.rightArrowKey.wasPressedThisFrame || kb.dKey.wasPressedThisFrame);
+#else
+            return Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D);
+#endif
+        }
+
+        private static bool IsNavLeftPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var kb = Keyboard.current;
+            return kb != null && (kb.leftArrowKey.wasPressedThisFrame || kb.aKey.wasPressedThisFrame);
+#else
+            return Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A);
 #endif
         }
 

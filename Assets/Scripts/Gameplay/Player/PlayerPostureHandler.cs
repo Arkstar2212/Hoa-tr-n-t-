@@ -44,42 +44,45 @@ namespace HoaVaMau.Gameplay
         public void UpdatePostures(bool grounded, bool crouchPressed, float moveInputX, float facingDirection)
         {
             bool ceilingBlocked = CheckCeilingObstruction(out bool blockedFromCrouch);
-            bool tunnelAhead = CheckLowOverhangAhead(moveInputX, facingDirection);
 
             if (grounded)
             {
-                if (blockedFromCrouch)
+                if (crouchPressed)
                 {
-                    // Khoảng hở dưới trần quá thấp (< 1.1m) buộc phải bò trườn
-                    IsCrawling = true;
+                    // Người chơi chủ động bấm phím ngồi (S)
                     IsCrouching = true;
-                }
-                else if (ceilingBlocked)
-                {
-                    // Trần nhà thấp vừa phải (1.1m - 1.8m)
-                    IsCrouching = true;
-                    if (crouchPressed || tunnelAhead) IsCrawling = true;
-                }
-                else if (crouchPressed)
-                {
-                    // Người chơi chủ động bấm phím ngồi (S / C / Ctrl)
-                    IsCrouching = true;
-                    IsCrawling = tunnelAhead;
+                    // Bò nếu trần ép thấp (< 1.1m) hoặc đang di chuyển qua khe hẹp
+                    IsCrawling = blockedFromCrouch || (Mathf.Abs(moveInputX) > 0.05f && ceilingBlocked);
                 }
                 else
                 {
-                    // Không tự động ngồi khi đi bộ qua khe thấp nếu người chơi không bấm phím ngồi
-                    IsCrouching = false;
-                    IsCrawling = false;
+                    // Người chơi không bấm S:
+                    // KHÔNG BAO GIỜ TỰ ĐỘNG BÒ KHI ĐI BÌNH THƯỜNG.
+                    // Chỉ giữ nguyên tư thế ngồi/bò nếu trần nhà / hốc đá phía trên đang chặn không cho đứng dậy!
+                    if (ceilingBlocked)
+                    {
+                        IsCrouching = true;
+                        if (blockedFromCrouch)
+                        {
+                            IsCrawling = true;
+                        }
+                        else
+                        {
+                            IsCrawling = false;
+                        }
+                    }
+                    else
+                    {
+                        // Đứng thẳng hoàn toàn
+                        IsCrouching = false;
+                        IsCrawling = false;
+                    }
                 }
             }
             else
             {
-                if (!ceilingBlocked)
-                {
-                    IsCrouching = false;
-                    IsCrawling = false;
-                }
+                IsCrouching = false;
+                IsCrawling = false;
             }
 
             ApplyColliderDimensions();

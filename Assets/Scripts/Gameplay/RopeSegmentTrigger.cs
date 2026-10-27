@@ -26,6 +26,12 @@ namespace HoaVaMau.Gameplay
             if (player != null)
             {
                 player.RegisterNearbyRope(controller, index);
+
+                // Tự động bám dây khi đang nhảy / trên không mà chạm vào dây
+                if (player.CurrentState == PlayerState.Airborne && player.CanAttachToRope)
+                {
+                    controller.OnPlayerTouchSegment(player, index);
+                }
             }
         }
 
@@ -35,6 +41,12 @@ namespace HoaVaMau.Gameplay
             if (player != null)
             {
                 player.RegisterNearbyRope(controller, index);
+
+                // Tự động bám dây khi đang rơi / trên không
+                if (player.CurrentState == PlayerState.Airborne && player.CanAttachToRope)
+                {
+                    controller.OnPlayerTouchSegment(player, index);
+                }
             }
         }
 

@@ -44,9 +44,9 @@ namespace HoaVaMau.Editor
             if (vcamIntroGO == null)
             {
                 vcamIntroGO = new GameObject("VCam_IntroSky");
-                vcamIntroGO.transform.position = new Vector3(0f, 9.5f, -13.5f);
-                vcamIntroGO.transform.rotation = Quaternion.Euler(-12f, 0f, 0f);
             }
+            vcamIntroGO.transform.position = new Vector3(-3.20f, 36.5f, -13.5f);
+            vcamIntroGO.transform.rotation = Quaternion.identity;
             var vcamSky = vcamIntroGO.GetComponent<CinemachineCamera>();
             if (vcamSky == null)
             {
@@ -100,6 +100,8 @@ namespace HoaVaMau.Editor
             // Setup serialized fields via SerializedObject for persistent undo-safe storage
             SerializedObject so = new SerializedObject(controller);
             so.FindProperty("vcamIntroSky").objectReferenceValue = vcamSky;
+            so.FindProperty("cameraPanDuration").floatValue = 11.0f;
+            so.FindProperty("forcePlayIntro").boolValue = true;
             if (vcamGameplay != null)
             {
                 so.FindProperty("vcamGameplay").objectReferenceValue = vcamGameplay;

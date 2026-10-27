@@ -4215,7 +4215,7 @@ MonoBehaviour:
   pullLeanAngle: -11
   climbDuration: 2.167
   maxClimbForwardLean: 24
-  autoClimbOnLedgeGrab: 1
+  autoClimbOnLedgeGrab: 0
   carrySocket: {fileID: 0}
   trajectoryPredictor: {fileID: 0}
   minThrowSpeed: 5

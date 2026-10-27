@@ -24,6 +24,7 @@ namespace HoaVaMau.Gameplay
         public float RunLeanAngle { get; set; } = 10.5f;
         public float PushLeanAngle { get; set; } = 14.0f;
         public float PullLeanAngle { get; set; } = -11.0f;
+        public float RopeAngle { get; set; } = 0f;
 
         public float BaseVisualScaleX => baseVisualScaleX;
         public float BaseVisualScaleY => baseVisualScaleY;
@@ -104,6 +105,10 @@ namespace HoaVaMau.Gameplay
             else if (isSprinting && currentState == PlayerState.Grounded)
             {
                 zRot = -facingDirection * RunLeanAngle;
+            }
+            else if (currentState == PlayerState.RopeGrab || currentState == PlayerState.RopeClimb)
+            {
+                zRot = RopeAngle;
             }
 
             visualTransform.localEulerAngles = new Vector3(0f, yRot, zRot);

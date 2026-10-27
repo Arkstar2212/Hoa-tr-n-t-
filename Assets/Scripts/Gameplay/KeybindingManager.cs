@@ -37,7 +37,7 @@ namespace HoaVaMau.Gameplay
             { GameAction.MoveDown, KeyCode.S },
             { GameAction.Jump, KeyCode.Space },
             { GameAction.Sprint, KeyCode.LeftShift },
-            { GameAction.Crouch, KeyCode.C },
+            { GameAction.Crouch, KeyCode.S },
             { GameAction.Interact, KeyCode.E },
             { GameAction.RopeGrab, KeyCode.F }
         };
@@ -50,7 +50,7 @@ namespace HoaVaMau.Gameplay
             { GameAction.MoveDown, KeyCode.DownArrow },
             { GameAction.Jump, KeyCode.None },
             { GameAction.Sprint, KeyCode.RightShift },
-            { GameAction.Crouch, KeyCode.LeftControl },
+            { GameAction.Crouch, KeyCode.DownArrow },
             { GameAction.Interact, KeyCode.None },
             { GameAction.RopeGrab, KeyCode.None }
         };
@@ -73,6 +73,7 @@ namespace HoaVaMau.Gameplay
                     string keyName = PlayerPrefs.GetString(prefKey);
                     if (Enum.TryParse(keyName, out KeyCode savedKey))
                     {
+                        if (kvp.Key == GameAction.Crouch && savedKey == KeyCode.C) savedKey = KeyCode.S;
                         CurrentBindings[kvp.Key] = savedKey;
                         continue;
                     }
@@ -179,13 +180,13 @@ namespace HoaVaMau.Gameplay
                 case KeyCode.RightShift: return "R-Shift";
                 case KeyCode.LeftControl: return "L-Ctrl";
                 case KeyCode.RightControl: return "R-Ctrl";
-                case KeyCode.Space: return "Phím Cách (Space)";
+                case KeyCode.Space: return "Space";
                 case KeyCode.Return: return "Enter";
                 case KeyCode.Escape: return "Esc";
-                case KeyCode.LeftArrow: return "Mũi tên Trái";
-                case KeyCode.RightArrow: return "Mũi tên Phải";
-                case KeyCode.UpArrow: return "Mũi tên Lên";
-                case KeyCode.DownArrow: return "Mũi tên Xuống";
+                case KeyCode.LeftArrow: return "Left";
+                case KeyCode.RightArrow: return "Right";
+                case KeyCode.UpArrow: return "Up";
+                case KeyCode.DownArrow: return "Down";
                 case KeyCode.None: return "Chưa gán";
                 default: return key.ToString();
             }
