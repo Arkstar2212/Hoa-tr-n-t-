@@ -24,7 +24,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 39fa6bac40d9dda4fb73de779af499a6, type: 3}
+        m_Texture: {fileID: 2800000, guid: 14a4e21b76e794d47aea56113d831ddc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SoilTex:
@@ -45,7 +45,7 @@ Material:
     - _ShadowStrength: 0.52
     - _SoilTexStrength: 0.4
     - _StrataScale: 2.2
-    - _TrailBlend: 0.28
+    - _TrailBlend: 0.52
     - _UseMeshUV: 1
     - _WaveDisplacement: 0.035
     m_Colors:
@@ -60,8 +60,8 @@ Material:
     - _SoilDarkBottomColor: {r: 0.04, g: 0.05, b: 0.07, a: 1}
     - _SoilDarkColor: {r: 0.3, g: 0.18, b: 0.1, a: 1}
     - _SoilMidColor: {r: 0.46, g: 0.29, b: 0.16, a: 1}
-    - _SoilTexTiling: {r: 0.45, g: 1, b: 0, a: 0}
+    - _SoilTexTiling: {r: 0.35, g: 1, b: 0, a: 0}
     - _SoilTopColor: {r: 0.55, g: 0.35, b: 0.2, a: 1}
-    - _WornTrailColor: {r: 0, g: 0, b: 0, a: 1}
+    - _WornTrailColor: {r: 0.55, g: 0.27, b: 0.14, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

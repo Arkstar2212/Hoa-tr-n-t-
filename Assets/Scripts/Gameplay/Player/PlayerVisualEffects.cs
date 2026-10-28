@@ -108,7 +108,10 @@ namespace HoaVaMau.Gameplay
             }
             else if (currentState == PlayerState.RopeGrab || currentState == PlayerState.RopeClimb)
             {
-                zRot = RopeAngle;
+                // In Unity, when facing left (facingDirection < 0), yRot is 180 deg.
+                // Rotating around Z when Y=180 inverts world Z rotation.
+                // Multiplying by facingDirection guarantees correct world tilt along the rope in both directions.
+                zRot = facingDirection * RopeAngle;
             }
 
             visualTransform.localEulerAngles = new Vector3(0f, yRot, zRot);
