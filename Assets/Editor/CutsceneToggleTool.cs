@@ -29,7 +29,7 @@ public static class CutsceneToggleTool
         return null;
     }
 
-    [MenuItem("Tools/Hoa Tren Dat Do/Cutscene/Tắt Cutscene (Chế Độ Edit & Test Nhanh) %&c")]
+    [MenuItem("Tools/Hoa Tren Dat Do/Cutscene/1. Tắt Cutscene Hoàn Toàn (Chế Độ Edit & Test Nhanh) %&c")]
     public static void DisableCutsceneForEditing()
     {
         // 1. Tắt forcePlayIntro trên IntroCutsceneController
@@ -93,28 +93,78 @@ public static class CutsceneToggleTool
         UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
             UnityEngine.SceneManagement.SceneManager.GetActiveScene());
 
-        Debug.Log("<color=#38bdf8><b>[CutsceneToggleTool] ĐÃ TẮT CUTSCENE THÀNH CÔNG!</b></color>\n" +
+        Debug.Log("<color=#38bdf8><b>[CutsceneToggleTool] ĐÃ TẮT CUTSCENE HOÀN TOÀN!</b></color>\n" +
                   "✔ Màn đen Cutscene đã được ẩn hoàn toàn để bạn tự do Edit trong Scene.\n" +
                   "✔ Camera chuyển về góc nhìn 2.5D của nhân vật.\n" +
                   "✔ Khi nhấn Play, bạn sẽ được điều khiển nhân vật ngay lập tức mà không phải chờ Intro.\n" +
                   "<i>(Phím tắt nhanh: Ctrl + Alt + C)</i>");
     }
 
-    [MenuItem("Tools/Hoa Tren Dat Do/Cutscene/Bật Cutscene (Chế Độ Cinematic Đầy Đủ) %#&c")]
+    [MenuItem("Tools/Hoa Tren Dat Do/Cutscene/2. Chỉ Chạy Camera Hạ Cánh Từ Trời (Bỏ Qua Chiếu Phim) %&s")]
+    public static void EnableSkyDescentOnly()
+    {
+        // 1. Cấu hình IntroCutsceneController: forcePlayIntro = true, startWithSkyDescent = true
+        var ctrl = Object.FindAnyObjectByType<IntroCutsceneController>();
+        if (ctrl != null)
+        {
+            Undo.RecordObject(ctrl, "Enable Sky Descent Only");
+            var so = new SerializedObject(ctrl);
+            var propForce = so.FindProperty("forcePlayIntro");
+            var propSky = so.FindProperty("startWithSkyDescent");
+            if (propForce != null) propForce.boolValue = true;
+            if (propSky != null) propSky.boolValue = true;
+            so.ApplyModifiedProperties();
+            EditorUtility.SetDirty(ctrl);
+        }
+
+        // 2. Ẩn Canvas màn đen Cutscene (để không che scene view)
+        var canvas = FindGameObjectInScene("00_UI_CutsceneCanvas");
+        if (canvas != null)
+        {
+            Undo.RecordObject(canvas, "Disable Cutscene Canvas");
+            canvas.SetActive(false);
+            EditorUtility.SetDirty(canvas);
+        }
+
+        // 3. Khôi phục VCam_IntroSky ở độ cao Y=75m với Priority 30
+        var vcamSky = FindGameObjectInScene("VCam_IntroSky");
+        if (vcamSky != null)
+        {
+            Undo.RecordObject(vcamSky, "Enable Intro Sky Camera");
+            vcamSky.SetActive(true);
+            vcamSky.transform.position = new Vector3(-3.20f, 75.0f, -13.5f);
+            var cm = vcamSky.GetComponent<CinemachineCamera>();
+            if (cm != null) cm.Priority = 30;
+            EditorUtility.SetDirty(vcamSky);
+        }
+
+        // 4. Cập nhật IntroCutsceneState
+        IntroCutsceneState.ShouldPlayIntroCutscene = true;
+        IntroCutsceneState.HasViewedInSession = false;
+
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+
+        Debug.Log("<color=#38bdf8><b>[CutsceneToggleTool] ĐÃ BẬT CHẾ ĐỘ: CHỈ HẠ CÁNH TỪ TRỜI (SKY DESCENT ONLY)!</b></color>\n" +
+                  "✔ Đã bỏ qua máy chiếu phim tài liệu 1954 và lời tựa.\n" +
+                  "✔ Khi nhấn Play, camera sẽ bắt đầu từ bầu trời (Y=75m) lướt qua các tầng mây xuống đất rồi vào gameplay mượt mà.\n" +
+                  "<i>(Phím tắt nhanh: Ctrl + Alt + S)</i>");
+    }
+
+    [MenuItem("Tools/Hoa Tren Dat Do/Cutscene/3. Bật Cutscene Đầy Đủ (Máy Chiếu Phim + Lời Tựa + Hạ Cánh) %#&c")]
     public static void EnableCutscene()
     {
-        // 1. Bật forcePlayIntro trên IntroCutsceneController
+        // 1. Bật forcePlayIntro trên IntroCutsceneController và tắt startWithSkyDescent
         var ctrl = Object.FindAnyObjectByType<IntroCutsceneController>();
         if (ctrl != null)
         {
             Undo.RecordObject(ctrl, "Enable Force Play Intro");
             var so = new SerializedObject(ctrl);
             var prop = so.FindProperty("forcePlayIntro");
-            if (prop != null)
-            {
-                prop.boolValue = true;
-                so.ApplyModifiedProperties();
-            }
+            var propSky = so.FindProperty("startWithSkyDescent");
+            if (prop != null) prop.boolValue = true;
+            if (propSky != null) propSky.boolValue = false;
+            so.ApplyModifiedProperties();
             EditorUtility.SetDirty(ctrl);
         }
 
@@ -133,6 +183,7 @@ public static class CutsceneToggleTool
         {
             Undo.RecordObject(vcamSky, "Enable Intro Sky Camera");
             vcamSky.SetActive(true);
+            vcamSky.transform.position = new Vector3(-3.20f, 75.0f, -13.5f);
             var cm = vcamSky.GetComponent<CinemachineCamera>();
             if (cm != null) cm.Priority = 30;
             EditorUtility.SetDirty(vcamSky);
@@ -145,7 +196,8 @@ public static class CutsceneToggleTool
         UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
             UnityEngine.SceneManagement.SceneManager.GetActiveScene());
 
-        Debug.Log("<color=#a3e635><b>[CutsceneToggleTool] ĐÃ BẬT LẠI CUTSCENE!</b></color>\n" +
-                  "✔ Intro Cinematic đầy đủ (Máy chiếu phim tài liệu + Lời tựa + Camera hạ cánh) sẽ phát khi nhấn Play.");
+        Debug.Log("<color=#a3e635><b>[CutsceneToggleTool] ĐÃ BẬT LẠI CUTSCENE ĐẦY ĐỦ!</b></color>\n" +
+                  "✔ Intro Cinematic đầy đủ (Máy chiếu phim tài liệu + Lời tựa + Camera hạ cánh) sẽ phát khi nhấn Play.\n" +
+                  "<i>(Phím tắt nhanh: Ctrl + Shift + Alt + C)</i>");
     }
 }

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -63,6 +63,12 @@ namespace HoaVaMau.Gameplay
 
         private IEnumerator ShowInitialMovementPrompt()
         {
+            // Do not show movement pill if tutorial controller is handling it or if cutscene is active
+            if (Object.FindAnyObjectByType<PlanetOfLanaTutorialController>() != null)
+            {
+                yield break;
+            }
+
             yield return new WaitForSeconds(1.5f);
             ShowPrompt(PromptType.Move, "DI CHUYỂN", null, 6f);
         }
@@ -167,7 +173,15 @@ namespace HoaVaMau.Gameplay
 
         private void BuildRuntimeUI()
         {
+            var existing = transform.Find("PlanetOfLanaPromptCanvas");
+            if (existing != null)
+            {
+                if (Application.isPlaying) Destroy(existing.gameObject);
+                else DestroyImmediate(existing.gameObject);
+            }
+
             GameObject canvasGo = new GameObject("PlanetOfLanaPromptCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvasGo.hideFlags = HideFlags.DontSave;
             canvasGo.transform.SetParent(transform, false);
 
             promptCanvas = canvasGo.GetComponent<Canvas>();

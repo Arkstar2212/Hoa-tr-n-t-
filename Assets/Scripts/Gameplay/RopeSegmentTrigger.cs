@@ -4,7 +4,7 @@ namespace HoaVaMau.Gameplay
 {
     /// <summary>
     /// Trigger component attached to each rope grab zone.
-    /// Giúp Player nhận biết đang ở trong tầm với của dây thừng để bấm [F] leo dây.
+    /// Giúp Player nhận biết đang ở trong tầm với của dây thừng để bám hoặc tự động bám khi nhảy tới (chuẩn Planet of Lana).
     /// </summary>
     public class RopeSegmentTrigger : MonoBehaviour
     {
@@ -27,10 +27,10 @@ namespace HoaVaMau.Gameplay
             {
                 player.RegisterNearbyRope(controller, index);
 
-                // Tự động bám dây khi đang nhảy / trên không mà chạm vào dây
+                // Tự động bám dây khi đang nhảy / trên không mà chạm vào dây với quán tính ban đầu
                 if (player.CurrentState == PlayerState.Airborne && player.CanAttachToRope)
                 {
-                    controller.OnPlayerTouchSegment(player, index);
+                    controller.OnPlayerTouchSegment(player, index, player.Velocity);
                 }
             }
         }
@@ -45,7 +45,7 @@ namespace HoaVaMau.Gameplay
                 // Tự động bám dây khi đang rơi / trên không
                 if (player.CurrentState == PlayerState.Airborne && player.CanAttachToRope)
                 {
-                    controller.OnPlayerTouchSegment(player, index);
+                    controller.OnPlayerTouchSegment(player, index, player.Velocity);
                 }
             }
         }

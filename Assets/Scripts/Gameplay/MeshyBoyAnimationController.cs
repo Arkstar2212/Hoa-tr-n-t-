@@ -615,6 +615,14 @@ namespace HoaVaMau.Gameplay
             {
                 CrossFadeToState("Crawl", 0.12f);
             }
+            else if (playerController != null && playerController.CurrentState == PlayerState.LedgeGrab)
+            {
+                CrossFadeToState("LedgeHang", 0.08f);
+            }
+            else if (playerController != null && playerController.CurrentState == PlayerState.LedgeClimb)
+            {
+                CrossFadeToState("Climb", 0.08f);
+            }
             else if (isCrouching)
             {
                 if (currentSmoothSpeed > 0.12f)
@@ -713,9 +721,9 @@ namespace HoaVaMau.Gameplay
         {
             if (animator == null) return;
             throwPhase = ThrowAnimPhase.None;
+            animator.speed = 1f;
             currentPlayingState = "LedgeHang";
-            animator.Play("Climb", 0, 0f);
-            animator.speed = 0f;
+            CrossFadeToState("LedgeHang", 0.08f);
         }
 
         public void OnClimbCancelled()
@@ -734,7 +742,7 @@ namespace HoaVaMau.Gameplay
             animator.speed = 1f;
             currentPlayingState = "Climb";
             animator.SetBool(IsClimbingHash, true);
-            animator.CrossFadeInFixedTime("Climb", 0.08f);
+            CrossFadeToState("Climb", 0.08f);
         }
 
         public void OnClimbFinished()

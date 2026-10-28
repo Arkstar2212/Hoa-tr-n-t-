@@ -253,6 +253,8 @@ namespace HoaVaMau.Gameplay
             float dt = Time.deltaTime;
 
             // 1. Đọc Input
+            EnsureInitialized();
+            if (inputReader == null) return;
             inputReader.ReadInput();
 
             // 2. Cập nhật Timers
@@ -281,7 +283,7 @@ namespace HoaVaMau.Gameplay
 
                     if (targetRope != null && targetNode >= 0)
                     {
-                        targetRope.OnPlayerTouchSegment(this, targetNode);
+                        targetRope.OnPlayerTouchSegment(this, targetNode, motor.Velocity);
                     }
                 }
             }
@@ -332,9 +334,9 @@ namespace HoaVaMau.Gameplay
             // 4. Cập nhật hiệu ứng thị giác cơ học
             if (ropeHandler != null && (CurrentState == PlayerState.RopeGrab || CurrentState == PlayerState.RopeClimb) && ropeHandler.CurrentRope != null)
             {
-                Vector3 ropeTan = ropeHandler.CurrentRope.GetRopeTangent(0.5f);
-                float ropeAng = Vector2.SignedAngle(Vector2.down, new Vector2(ropeTan.x, ropeTan.y));
-                visualEffects.RopeAngle = ropeAng;
+                visualEffects.RopeAngle = ropeHandler.CurrentRope.CurrentAngleDegrees;
+
+
             }
             else
             {
@@ -410,7 +412,7 @@ namespace HoaVaMau.Gameplay
                     var rope = FindNearbyRope(out int targetNode);
                     if (rope != null && targetNode >= 0)
                     {
-                        rope.OnPlayerTouchSegment(this, targetNode);
+                        rope.OnPlayerTouchSegment(this, targetNode, motor.Velocity);
                         return;
                     }
                 }
@@ -501,7 +503,7 @@ namespace HoaVaMau.Gameplay
             }
 
             // Người chơi chủ động bấm phím [W] hoặc [Mũi tên lên] (hoặc phím nhảy) để leo lên đỉnh vách đá
-            bool wantsClimb = inputReader.Vertical > 0.2f || (inputReader.JumpPressed && !pushingAway) || (inputReader.Horizontal != 0 && Mathf.Sign(inputReader.Horizontal) == FacingDirection);
+            bool wantsClimb = inputReader.Vertical > 0.2f;
             if (wantsClimb)
             {
                 StartClimbUp();
@@ -544,9 +546,9 @@ namespace HoaVaMau.Gameplay
             }
         }
 
-        public void AttachToRope(RopeController rope, Vector3 attachPos)
+        public void AttachToRope(RopeController rope, Vector3 attachPos, Vector3 incomingVelocity = default)
         {
-            if (ropeHandler.AttachToRope(this, rope, attachPos))
+            if (ropeHandler.AttachToRope(this, rope, attachPos, incomingVelocity))
             {
                 CurrentState = PlayerState.RopeGrab;
                 motor.Velocity = Vector3.zero;

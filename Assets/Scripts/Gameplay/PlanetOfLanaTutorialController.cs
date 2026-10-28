@@ -8,8 +8,8 @@ namespace HoaVaMau.Gameplay
     /// <summary>
     /// Authentic Planet of Lana Minimalist Diegetic Key Glyph Tutorial Controller.
     /// Strictly follows user specification:
-    /// - ONLY a translucent single-color key symbol/icon ("chỉ có biểu tượng chữ trong suốt một màu").
-    /// - ZERO text boxes, ZERO instruction paragraphs, ZERO dark background pills ("không hiện một cái box text để guide người chơi").
+    /// - ONLY a translucent single-color key symbol/icon ("ch? c� bi?u t�?ng ch? trong su?t m?t m�u").
+    /// - ZERO text boxes, ZERO instruction paragraphs, ZERO dark background pills ("kh�ng hi?n m?t c�i box text �? guide ng�?i ch�i").
     /// - Guides the player through the complete Forest Manual Obstacle Course:
     ///   1. Walk (A / D)
     ///   2. Grab & Climb/Swing Rope up the Cliff (F -> W / A D / SPACE)
@@ -38,6 +38,10 @@ namespace HoaVaMau.Gameplay
 
         private float walkTimer = 0f;
         private bool walkDone = false;
+
+        private float cratePromptTimer = 0f;
+        private bool cratePromptCompleted = false;
+        private const float CratePromptMaxDuration = 1.8f; // Hien thi trong 1 - 2 giay (1.8s) khi toi thung go
 
         // Monochromatic translucent off-white palette (Planet of Lana signature)
         private static readonly Color GlyphSingleColor = new Color(1.0f, 1.0f, 1.0f, 0.72f);
@@ -73,7 +77,8 @@ namespace HoaVaMau.Gameplay
             // Hide all tutorial glyphs while cutscene is running or player is disabled
             if (!player.enabled || (IntroCutsceneControllerExistsAndRunning()))
             {
-                FadeGlyphAlpha(0f);
+                if (glyphCanvasGroup != null) glyphCanvasGroup.alpha = 0f;
+                currentDisplayedSignature = "";
                 return;
             }
 
@@ -137,6 +142,16 @@ namespace HoaVaMau.Gameplay
                 }
             }
 
+            // 1.5. Ledge Grab: show [W] to climb up (Chi W hoac Mui ten len moi len duoc)
+            if (player.CurrentState == PlayerState.LedgeGrab)
+            {
+                string up = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveUp));
+                if (string.IsNullOrEmpty(up)) up = "W";
+                keys = new[] { up };
+                offset = new Vector3(0f, 1.85f, 0f);
+                return;
+            }
+
             // 2. Rope Swing & Climb up Cliff (X ~ 4.5m .. 11.2m)
             if (x >= 4.2f && x <= 11.2f && pPos.y < 0.85f)
             {
@@ -186,6 +201,7 @@ namespace HoaVaMau.Gameplay
             {
                 if (player.CurrentState == PlayerState.PushPull)
                 {
+                    cratePromptCompleted = true;
                     string left = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveLeft));
                     string right = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveRight));
                     keys = new[] { left, right };
@@ -204,13 +220,35 @@ namespace HoaVaMau.Gameplay
                         offset = new Vector3(0f, 1.95f, 0f);
                         return;
                     }
-                    else
+                    else if (!cratePromptCompleted)
                     {
-                        string interact = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Interact));
-                        keys = new[] { interact };
-                        target = forestCrate.transform;
-                        offset = new Vector3(0f, 1.85f, 0f);
-                        return;
+                        // Chi hien khi toi cho thung go (khoang cach gan <= 2.0m) va chi hien 1 - 2 giay (1.8s)
+                        float distToCrate = Mathf.Abs(pPos.x - crateX);
+                        float distYToCrate = Mathf.Abs(pPos.y - forestCrate.transform.position.y);
+                        bool isAtCrate = distToCrate <= 2.0f && distYToCrate <= 1.3f;
+
+                        if (isAtCrate)
+                        {
+                            if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
+                            {
+                                cratePromptCompleted = true;
+                                return;
+                            }
+
+                            cratePromptTimer += Time.deltaTime;
+                            if (cratePromptTimer <= CratePromptMaxDuration)
+                            {
+                                string interact = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Interact));
+                                keys = new[] { interact };
+                                target = forestCrate.transform;
+                                offset = new Vector3(0f, 1.85f, 0f);
+                                return;
+                            }
+                            else
+                            {
+                                cratePromptCompleted = true;
+                            }
+                        }
                     }
                 }
             }
@@ -254,7 +292,15 @@ namespace HoaVaMau.Gameplay
 
         private void BuildMinimalistGlyphCanvas()
         {
+            var existingCanvas = transform.Find("Canvas_PlanetOfLana_MinimalistGlyphs");
+            if (existingCanvas != null)
+            {
+                if (Application.isPlaying) Destroy(existingCanvas.gameObject);
+                else DestroyImmediate(existingCanvas.gameObject);
+            }
+
             var canvasGO = new GameObject("Canvas_PlanetOfLana_MinimalistGlyphs");
+            canvasGO.hideFlags = HideFlags.DontSave;
             canvasGO.transform.SetParent(transform, false);
 
             tutorialCanvas = canvasGO.AddComponent<Canvas>();
@@ -307,7 +353,7 @@ namespace HoaVaMau.Gameplay
                 string label = rawKey.Trim().ToUpperInvariant();
                 if (label == "LEFTCONTROL" || label == "LCTRL") label = "CTRL";
                 if (label == "LEFTSHIFT" || label == "LSHIFT") label = "SHIFT";
-                if (label == "SPACE" || label.Contains("SPACE") || label.Contains("CÁCH")) label = "SPACE";
+                if (label == "SPACE" || label.Contains("SPACE") || label.Contains("C�CH")) label = "SPACE";
 
                 bool isSpace = label == "SPACE";
                 bool isWideKey = isSpace || label.Length > 2;
@@ -315,6 +361,7 @@ namespace HoaVaMau.Gameplay
                 float height = 46f;
 
                 var capGO = new GameObject($"KeyGlyph_{label}", typeof(RectTransform), typeof(LayoutElement));
+                capGO.hideFlags = HideFlags.DontSave;
                 capGO.transform.SetParent(glyphClusterRect, false);
                 var capRect = capGO.GetComponent<RectTransform>();
                 capRect.sizeDelta = new Vector2(width, height);
