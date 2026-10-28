@@ -29,10 +29,11 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Female_Waving
+  m_Name: Female_Talking_02
   m_Speed: 1
   m_CycleOffset: 0
-  m_Transitions: []
+  m_Transitions:
+  - {fileID: -2474261523019637006}
   m_StateMachineBehaviours: []
   m_Position: {x: 50, y: 50, z: 0}
   m_IKOnFeet: 0
@@ -42,7 +43,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: e5f3788ac7e93124e8f304ee2f06e79e, type: 3}
+  m_Motion: {fileID: -203655887218126122, guid: 7683e6864fd2f5245a23098a60dd9463, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -184,7 +185,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Female_Talking_02
+  m_Name: Female_Talking_01
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
@@ -198,7 +199,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: -203655887218126122, guid: 7683e6864fd2f5245a23098a60dd9463, type: 3}
+  m_Motion: {fileID: -203655887218126122, guid: 254f55100f342cd42bfddf97f373c3ce, type: 3}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
