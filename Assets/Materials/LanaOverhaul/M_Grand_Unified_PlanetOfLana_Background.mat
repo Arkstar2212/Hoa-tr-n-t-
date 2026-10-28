@@ -30,11 +30,11 @@ Material:
     m_Ints: []
     m_Floats:
     - _BottomFeather: 0
-    - _CloudRadianceIntensity: 0.15
+    - _CloudRadianceIntensity: 0
     - _LeftFeather: 0
     - _RightFeather: 0
-    - _SkyClarity: 1.05
-    - _SunbeamIntensity: 0.1
+    - _SkyClarity: 1
+    - _SunbeamIntensity: 0
     - _TopFeather: 0
     m_Colors:
     - _CloudRadianceColor: {r: 1, g: 0.97999996, b: 0.9, a: 1}

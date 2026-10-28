@@ -28,6 +28,7 @@ Shader "HoaVaMau/LanaBackgroundBlend"
         Pass
         {
             Name "UnlitBlend"
+            Tags { "LightMode" = "UniversalForward" }
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
             Cull Off

@@ -37,8 +37,10 @@ namespace HoaVaMau.Gameplay
         }
 
         [Header("Pipeline Control")]
-        [Tooltip("Force play intro cutscene regardless of save/session state (useful for Editor testing)")]
-        [SerializeField] private bool forcePlayIntro = false;
+
+        [Tooltip("If true, starts immediately with sky descent from current camera position without showing archival projector reel")]
+        [SerializeField] private bool startWithSkyDescent = true;
+        [SerializeField] private bool forcePlayIntro = true;
         [SerializeField] private bool autoFindReferencesOnStart = true;
 
         [Header("Giai Đoạn 1: Máy Chiếu Phim Cổ (Vintage Film Projector)")]
@@ -71,7 +73,32 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private PlayerController playerController;
         [SerializeField] private Transform playerTransform;
         [SerializeField] private float blackCurtainFadeOutDuration = 0.45f;
-        [SerializeField] private float cameraPanDuration = 10.0f;
+        [SerializeField] private float cameraPanDuration = 11.5f;
+        [SerializeField] private Vector3 skyZenithPosition = new Vector3(-3.20f, 75.0f, -13.5f);
+        [SerializeField] private Vector3 forestGroundPosition = new Vector3(-3.20f, 0.10f, -13.5f);
+        [SerializeField] private AnimationCurve descentProfileCurve;
+
+        public static AnimationCurve CreateDefaultDescentCurve()
+        {
+            var curve = new AnimationCurve();
+            // Calibrated for 11.5s descent:
+            // 0.0s - 1.0s (t=0 to 0.087): Empty deep blue sky (Y=75m -> 67.5m)
+            // 1.0s - 2.2s (t=0.087 to 0.191): Sparse clouds (Y=67.5m -> 56.5m)
+            // 2.2s - 5.0s (t=0.191 to 0.435): Dense clouds (Y=56.5m -> 36.5m) [2.8s in dense clouds]
+            // 5.0s - 8.7s (t=0.435 to 0.757): Open daytime blue sky (Y=36.5m -> 15.0m) [3.7s in open sky]
+            // 8.7s - 11.5s (t=0.757 to 1.000): Forest canopy & ground settle (Y=15.0m -> 0.10m)
+            curve.AddKey(new Keyframe(0.000f, 0.000f, 0.00f, 0.85f));
+            curve.AddKey(new Keyframe(0.087f, 0.100f, 1.05f, 1.05f));
+            curve.AddKey(new Keyframe(0.191f, 0.247f, 1.15f, 1.15f));
+            curve.AddKey(new Keyframe(0.435f, 0.514f, 1.05f, 1.05f));
+            curve.AddKey(new Keyframe(0.757f, 0.801f, 0.85f, 0.85f));
+            curve.AddKey(new Keyframe(1.000f, 1.000f, 0.00f, 0.00f));
+            for (int i = 0; i < curve.length; i++)
+            {
+                curve.SmoothTangents(i, 0.25f);
+            }
+            return curve;
+        }
 
         [Header("Audio Sources & Crossfade")]
         [SerializeField] private AudioSource projectorAudioSource;
@@ -120,16 +147,48 @@ namespace HoaVaMau.Gameplay
 
         private void Awake()
         {
+            if (!enabled)
+            {
+                enabled = true;
+            }
+
             if (autoFindReferencesOnStart)
             {
                 ResolveSceneReferences();
+            }
+
+            if (vcamIntroSky != null)
+            {
+                vcamIntroSky.gameObject.SetActive(true);
+                vcamIntroSky.enabled = true;
+                vcamIntroSky.enabled = true;
+                vcamIntroSky.enabled = true;
+                vcamIntroSky.transform.position = skyZenithPosition;
+                vcamIntroSky.Priority = 35;
+            }
+            if (vcamGameplay != null)
+            {
+                vcamGameplay.Priority = 10;
+            }
+            if (cinemachineBrain != null)
+            {
+                cinemachineBrain.ManualUpdate();
+            }
+
+            // Keep cutscene canvas hidden initially until StartIntroCutscene explicitly shows it
+            if (!isCutsceneRunning && cutsceneCanvas != null)
+            {
+                cutsceneCanvas.gameObject.SetActive(false);
             }
         }
 
         private void Start()
         {
             // Evaluate whether cutscene should play
-            bool shouldPlay = forcePlayIntro || (IntroCutsceneState.ShouldPlayIntroCutscene && !IntroCutsceneState.HasViewedInSession);
+            #if UNITY_EDITOR
+            IntroCutsceneState.HasViewedInSession = false;
+            #endif
+            bool shouldPlay = forcePlayIntro || IntroCutsceneState.ShouldPlayIntroCutscene;
 
             if (shouldPlay)
             {
@@ -168,17 +227,22 @@ namespace HoaVaMau.Gameplay
                 cinemachineBrain = UnityEngine.Object.FindAnyObjectByType<CinemachineBrain>();
             }
 
-            var allCameras = UnityEngine.Object.FindObjectsByType<CinemachineCamera>(FindObjectsSortMode.None);
+            var allCameras = UnityEngine.Object.FindObjectsByType<CinemachineCamera>(FindObjectsInactive.Exclude);
             foreach (var cam in allCameras)
             {
-                if (cam.name.Contains("IntroSky") || cam.name.Contains("Intro_Sky") || cam.name.Contains("VCam_IntroSky"))
+                if ((vcamIntroSky == null || !vcamIntroSky.gameObject.activeInHierarchy) && (cam.name.Contains("IntroSky") || cam.name.Contains("Intro_Sky") || cam.name.Contains("VCam_IntroSky")))
                 {
                     vcamIntroSky = cam;
                 }
-                else if (cam.name.Contains("2.5D") || cam.name.Contains("Gameplay") || cam.name.Contains("VCam_Gameplay"))
+                else if (vcamGameplay == null && (cam.name.Contains("2.5D") || cam.name.Contains("Gameplay") || cam.name.Contains("VCam_Gameplay")))
                 {
                     vcamGameplay = cam;
                 }
+            }
+
+            if (vcamIntroSky != null && vcamIntroSky.transform.position.y > 50f)
+            {
+                skyZenithPosition = vcamIntroSky.transform.position;
             }
 
             // Create AudioSources if unassigned
@@ -256,11 +320,24 @@ namespace HoaVaMau.Gameplay
             if (vcamIntroSky != null)
             {
                 vcamIntroSky.gameObject.SetActive(true);
-                vcamIntroSky.Priority = 30; // Elevated priority to guarantee live camera
+                vcamIntroSky.enabled = true;
+                vcamIntroSky.enabled = true;
+                vcamIntroSky.transform.position = skyZenithPosition;
+                vcamIntroSky.Priority = 35; // Elevated priority to guarantee live camera
             }
             if (vcamGameplay != null)
             {
                 vcamGameplay.Priority = 10;
+            }
+
+            if (startWithSkyDescent)
+            {
+                if (cutsceneCanvas != null)
+                {
+                    cutsceneCanvas.gameObject.SetActive(false);
+                }
+                activeCutsceneRoutine = StartCoroutine(DirectSkyDescentRoutine());
+                return;
             }
 
             // 3. Prepare Canvas
@@ -297,6 +374,30 @@ namespace HoaVaMau.Gameplay
 
             // 4. Start Audio & Pipeline Coroutine
             activeCutsceneRoutine = StartCoroutine(CutscenePipelineRoutine());
+        }
+
+        private IEnumerator DirectSkyDescentRoutine()
+        {
+            // Ambient wind / nature sound
+            if (ambientAudioSource != null)
+            {
+                ambientAudioSource.volume = targetAmbientVolume;
+                if (!ambientAudioSource.isPlaying) ambientAudioSource.Play();
+            }
+
+            // Ensure starting view is the pristine high blue sky
+            if (vcamIntroSky != null)
+            {
+                vcamIntroSky.enabled = true;
+                vcamIntroSky.transform.position = skyZenithPosition;
+                vcamIntroSky.Lens.FieldOfView = 38f;
+            }
+
+            // Brief serene hold (0.8s) to take in the vast blue zenith sky
+            yield return new WaitForSeconds(0.8f);
+
+            // Execute descent through clouds to game background and ground
+            yield return StartCoroutine(ExecuteCameraPanAndGameplayHandoff());
         }
 
         private IEnumerator CutscenePipelineRoutine()
@@ -492,8 +593,28 @@ namespace HoaVaMau.Gameplay
                 }
             }
 
-            Vector3 skyZenithPos = new Vector3(-3.20f, 36.5f, -13.5f);
-            Vector3 forestGroundPos = new Vector3(-3.20f, 0.10f, -13.5f);
+            Vector3 skyZenithPos = skyZenithPosition;
+            if (vcamIntroSky != null && vcamIntroSky.transform.position.y > 50f)
+            {
+                skyZenithPos = vcamIntroSky.transform.position;
+            }
+            Vector3 forestGroundPos = forestGroundPosition;
+            float targetGameplayFov = 20f;
+            if (vcamGameplay != null)
+            {
+                targetGameplayFov = vcamGameplay.Lens.FieldOfView;
+                var pc = vcamGameplay.GetComponent<CinemachinePositionComposer>();
+                if (pc != null && vcamGameplay.Follow != null)
+                {
+                    Vector3 targetPos = vcamGameplay.Follow.position + pc.TargetOffset;
+                    forestGroundPos = targetPos - vcamGameplay.transform.forward * pc.CameraDistance;
+                }
+                else
+                {
+                    forestGroundPos = vcamGameplay.transform.position;
+                }
+            }
+            float initialFov = vcamIntroSky != null ? vcamIntroSky.Lens.FieldOfView : 38f;
 
             // 1. Position VCam_IntroSky high in the deep blue cosmic zenith sky as the ACTIVE camera
             if (vcamIntroSky != null)
@@ -501,6 +622,7 @@ namespace HoaVaMau.Gameplay
                 vcamIntroSky.transform.position = skyZenithPos;
                 vcamIntroSky.transform.rotation = Quaternion.identity;
                 vcamIntroSky.gameObject.SetActive(true);
+                vcamIntroSky.enabled = true;
                 vcamIntroSky.Priority = 35; // Guarantee live camera!
             }
             if (vcamGameplay != null)
@@ -550,12 +672,15 @@ namespace HoaVaMau.Gameplay
                 float dt = Time.deltaTime * (isHoldingFF ? 3.0f : 1.0f);
                 panElapsed += dt;
                 float t = Mathf.Clamp01(panElapsed / descentDuration);
-                float smoothT = Mathf.SmoothStep(0f, 1f, t);
+                float progress = descentProfileCurve != null && descentProfileCurve.length > 0
+                    ? Mathf.Clamp01(descentProfileCurve.Evaluate(t))
+                    : Mathf.SmoothStep(0f, 1f, t);
 
                 // Directly drive VCam_IntroSky transform
                 if (vcamIntroSky != null)
                 {
-                    vcamIntroSky.transform.position = Vector3.Lerp(skyZenithPos, forestGroundPos, smoothT);
+                    vcamIntroSky.transform.position = Vector3.Lerp(skyZenithPos, forestGroundPos, progress);
+                    vcamIntroSky.Lens.FieldOfView = Mathf.Lerp(initialFov, targetGameplayFov, progress);
                 }
 
                 // Drift the parallax cloud layers gently during descent
@@ -587,6 +712,7 @@ namespace HoaVaMau.Gameplay
             if (vcamIntroSky != null)
             {
                 vcamIntroSky.transform.position = forestGroundPos;
+                vcamIntroSky.Lens.FieldOfView = targetGameplayFov;
             }
 
             // 4. Hand off smoothly to Gameplay Camera
@@ -612,6 +738,15 @@ namespace HoaVaMau.Gameplay
             if (cutsceneCanvas != null)
             {
                 cutsceneCanvas.gameObject.SetActive(false);
+            }
+
+            if (vcamGameplay != null)
+            {
+                vcamGameplay.Priority = 40;
+            }
+            if (vcamIntroSky != null)
+            {
+                vcamIntroSky.Priority = 0;
             }
 
             // Restore original blend definition
@@ -712,7 +847,14 @@ namespace HoaVaMau.Gameplay
                 StopCoroutine(activeCutsceneRoutine);
             }
 
-            StartCoroutine(SkipTransitionRoutine());
+            if (isSkyDescending)
+            {
+                FinalizeGameplayUnlock();
+            }
+            else
+            {
+                StartCoroutine(SkipTransitionRoutine());
+            }
         }
 
         private IEnumerator SkipTransitionRoutine()
@@ -727,7 +869,7 @@ namespace HoaVaMau.Gameplay
 
             // Immediately start Phase 3 camera pan through the clouds to gameplay
             blackCurtainFadeOutDuration = 0.35f;
-            cameraPanDuration = 10.0f;
+            cameraPanDuration = 11.5f;
             yield return StartCoroutine(ExecuteCameraPanAndGameplayHandoff());
         }
 
@@ -801,7 +943,7 @@ namespace HoaVaMau.Gameplay
                 // Pure crisp original art presentation without muddy yellow tinting
                 if (slideImage != null)
                 {
-                    slideImage.color = Color.white;
+                    slideImage.color = (slideImage.sprite != null) ? Color.white : new Color(0f, 0f, 0f, 0f);
                 }
             }
 
@@ -971,7 +1113,9 @@ namespace HoaVaMau.Gameplay
             slideRect.offsetMax = Vector2.zero;
             slideImage = slideGO.AddComponent<Image>();
             slideImage.preserveAspect = true;
-            slideImage.color = Color.white;
+            Sprite initialSprite = (historySlides != null && historySlides.Length > 0) ? historySlides[0].image : null;
+            slideImage.sprite = initialSprite;
+            slideImage.color = (initialSprite != null) ? Color.white : new Color(0f, 0f, 0f, 0f);
             slideImageGroup = slideGO.AddComponent<CanvasGroup>();
 
             // 3b. Archival Header Label on Top of 35mm Gate (Crisp SDF TextMeshPro)

@@ -108,11 +108,16 @@ public static class CutsceneToggleTool
         if (ctrl != null)
         {
             Undo.RecordObject(ctrl, "Enable Force Play Intro");
+            ctrl.enabled = true;
             var so = new SerializedObject(ctrl);
+            var propEnabled = so.FindProperty("m_Enabled");
+            if (propEnabled != null) propEnabled.boolValue = true;
             var prop = so.FindProperty("forcePlayIntro");
             if (prop != null)
             {
                 prop.boolValue = true;
+                var propDirect = so.FindProperty("startWithSkyDescent");
+                if (propDirect != null) propDirect.boolValue = true;
                 so.ApplyModifiedProperties();
             }
             EditorUtility.SetDirty(ctrl);
