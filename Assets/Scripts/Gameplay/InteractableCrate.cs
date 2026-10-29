@@ -20,8 +20,12 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float moveSpeed = 2.1f;
         [SerializeField] private LayerMask obstacleMask = ~0;
 
-        [Header("Interaction Radius")]
+                [Header("Interaction Radius")]
         [SerializeField] private float grabRange = 1.35f;
+
+        [Header("Audio SFX")]
+        [SerializeField] private AudioClip cratePushSfx;
+        private AudioSource audioSource;
 
         // Runtime state
         private Rigidbody rb;
@@ -45,6 +49,21 @@ namespace HoaVaMau.Gameplay
             }
 
             ConfigurePhysics();
+
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                audioSource.playOnAwake = false;
+                audioSource.loop = true;
+                audioSource.spatialBlend = 0.4f;
+            }
+#if UNITY_EDITOR
+            if (cratePushSfx == null)
+            {
+                cratePushSfx = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_Crate_Push.mp3");
+            }
+#endif
         }
 
         private void Reset()
@@ -142,6 +161,11 @@ namespace HoaVaMau.Gameplay
             {
                 rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
             }
+
+            if (audioSource != null && audioSource.isPlaying)
+            {
+                audioSource.Stop();
+            }
         }
 
         /// <summary>
@@ -160,6 +184,7 @@ namespace HoaVaMau.Gameplay
             if (Mathf.Abs(horizontalInput) < 0.05f)
             {
                 rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+                if (audioSource != null && audioSource.isPlaying) audioSource.Stop();
                 return;
             }
 
@@ -183,6 +208,16 @@ namespace HoaVaMau.Gameplay
             }
 
             rb.linearVelocity = new Vector3(targetVelX, rb.linearVelocity.y, 0f);
+
+            if (cratePushSfx != null && audioSource != null)
+            {
+                if (!audioSource.isPlaying)
+                {
+                    audioSource.clip = cratePushSfx;
+                    audioSource.volume = 0.85f;
+                    audioSource.Play();
+                }
+            }
         }
 
         private void OnDrawGizmosSelected()
