@@ -55,7 +55,7 @@ PrefabInstance:
     - target: {fileID: -5754084199372789682, guid: 6c20a6f5a1c33374bbf3d2e190927264, type: 3}
       propertyPath: m_Mesh
       value: 
-      objectReference: {fileID: 4300000, guid: 97be29e9069aa9c4a86b7a087706eeed, type: 2}
+      objectReference: {fileID: 8631537904683789455, guid: 4d71258341f2ea24b9ea24e644e207b4, type: 3}
     - target: {fileID: 919132149155446097, guid: 6c20a6f5a1c33374bbf3d2e190927264, type: 3}
       propertyPath: m_Name
       value: Model_Lu

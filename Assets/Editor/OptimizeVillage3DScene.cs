@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,91 +10,137 @@ using UnityEngine.SceneManagement;
 namespace HoaVaMau.Editor
 {
     /// <summary>
-    /// Công cụ chuẩn hóa và tối ưu hóa hiệu năng (60+ FPS) cho Scene 3D CaMau_1954_Village.unity:
-    /// 1. Tự động đơn giản hóa lưới (Vertex Clustering Decimation) cho các model siêu nặng từ AI 3D (Lu nước, Thùng gỗ, Tảng đá, Nhà sàn).
-    /// 2. Lưu mesh tối ưu vào Assets/Models/Optimized/ và gán vào các Prefab/Scene.
-    /// 3. Tối ưu Shadow Casters trên các prop nhỏ (Lu nước, Ruộng lúa, Sỏi đá) và rút gọn Camera FarClip từ 5000m về 160m.
-    /// 4. Giảm tổng đa giác scene từ 60.6 TRIỆU tris xuống dưới 2 triệu tris (giảm 97%+ tải render).
+    /// Công cụ chuẩn hóa và tối ưu hóa hiệu năng đồ họa cao (60+ FPS) cho Scene 3D CaMau_1954_Village.unity:
+    /// 1. Tích hợp mesh tối ưu hóa từ Blender (Quadric Error Decimation + Smooth Shading) bảo toàn độ cong mịn,
+    ///    đường nét viền mượt mà của lu nước, thùng gỗ, tảng đá, nhà sàn, giếng nước, trâu, xuồng...
+    /// 2. Cập nhật mesh dữ liệu cao vào Assets/Models/Optimized/ và đồng bộ tự động vào các Prefab/Scene.
+    /// 3. Tối ưu Shadow Casters trên các prop nhỏ và rút gọn Camera FarClip.
+    /// 4. Đảm bảo BẢO TOÀN TUYỆT ĐỐI Player và New Scene 1_Overhaul.unity (Chỉ tác động CaMau_1954_Village).
     /// </summary>
     public static class OptimizeVillage3DScene
     {
-        private const string Scene3DPath = "Assets/Scenes/CaMau_1954_Village.unity";
-        private const string OptimizedMeshFolder = "Assets/Models/Optimized";
+        public const string Scene3DPath = "Assets/Scenes/CaMau_1954_Village.unity";
+        public const string OptimizedMeshFolder = "Assets/Models/Optimized";
+
+        // Cấu hình đồng bộ giữa FBX gốc, FBX tối ưu từ Blender, và file .asset tối ưu (nếu có)
+        private static readonly (string origFbx, string blenderFbx, string assetName)[] ModelMappings = new[]
+        {
+            ("Assets/Models/Model_Lu.fbx", "Assets/Models/Optimized/SM_Lu_BlenderOptimized.fbx", "M_Lu_Nuoc_Optimized.asset"),
+            ("Assets/Models/Props/SM_WoodenCrate.fbx", "Assets/Models/Optimized/SM_WoodenCrate_BlenderOptimized.fbx", "M_WoodenCrate_Optimized.asset"),
+            ("Assets/Models/Environment/SM_Rock_Large_01.fbx", "Assets/Models/Optimized/SM_Rock_Large_BlenderOptimized.fbx", "M_Rock_Large_Optimized.asset"),
+            ("Assets/Models/Environment/SM_MossyBoulder_01.fbx", "Assets/Models/Optimized/SM_MossyBoulder_BlenderOptimized.fbx", "M_MossyBoulder_Optimized.asset"),
+            ("Assets/Models/Environment/SM_StiltedHouse_Thatched.fbx", "Assets/Models/Optimized/SM_StiltedHouse_Thatched_BlenderOptimized.fbx", "M_House_Thatched_Optimized.asset"),
+            ("Assets/Models/Environment/SM_StiltedHouse_Wood.fbx", "Assets/Models/Optimized/SM_StiltedHouse_Wood_BlenderOptimized.fbx", "M_House_Wood_Optimized.asset"),
+            ("Assets/Models/Props/SM_WoodenSlatCube.fbx", "Assets/Models/Optimized/SM_WoodenSlatCube_BlenderOptimized.fbx", "M_WoodenSlatCube_Optimized.asset"),
+            ("Assets/Models/Environment/SM_Rock_Medium_02.fbx", "Assets/Models/Optimized/SM_Rock_Medium_02_BlenderOptimized.fbx", null),
+            ("Assets/Models/Environment/SM_LoneBoulder.fbx", "Assets/Models/Optimized/SM_LoneBoulder_BlenderOptimized.fbx", null),
+            ("Assets/Models/GiengNuoc.fbx", "Assets/Models/Optimized/SM_GiengNuoc_BlenderOptimized.fbx", null),
+            ("Assets/Models/Buffalo.fbx", "Assets/Models/Optimized/SM_Buffalo_BlenderOptimized.fbx", null),
+            ("Assets/Models/Xe_keo.fbx", "Assets/Models/Optimized/SM_Xe_keo_BlenderOptimized.fbx", null),
+            ("Assets/Models/Xuong_go.fbx", "Assets/Models/Optimized/SM_Xuong_go_BlenderOptimized.fbx", null),
+            ("Assets/Models/Cong_lang.fbx", "Assets/Models/Optimized/SM_Cong_lang_BlenderOptimized.fbx", null),
+            ("Assets/Models/Nhà tranh.fbx", "Assets/Models/Optimized/SM_NhaTranh_BlenderOptimized.fbx", null)
+        };
 
         [MenuItem("Tools/Hoa Tren Dat Do/Optimize Ca Mau 3D Village Scene (60 FPS)")]
         public static void OptimizeVillageSceneMenu()
         {
-            Debug.Log("<color=#38bdf8>[OptimizeVillage]</color> Bắt đầu quy trình tối ưu hóa Scene 3D Làng Cà Mau 1954...");
+            Debug.Log("<color=#38bdf8>[OptimizeVillage]</color> Bắt đầu quy trình tối ưu hóa chất lượng cao Scene 3D Làng Cà Mau 1954...");
 
-            if (!AssetDatabase.IsValidFolder(OptimizedMeshFolder))
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
+            var meshMap = new Dictionary<string, UnityEngine.Mesh>(StringComparer.OrdinalIgnoreCase);
+
+            // 1. Nạp các Blender-optimized meshes và cập nhật vào .asset
+            foreach (var item in ModelMappings)
             {
-                Directory.CreateDirectory(OptimizedMeshFolder);
-                AssetDatabase.Refresh();
-            }
-
-            // 1. Tối ưu và lưu trữ các Mesh dung lượng siêu nặng thành mesh chuẩn game
-            var meshConfigs = new (string fbxPath, string assetName, int divisions)[]
-            {
-                ("Assets/Models/Model_Lu.fbx", "M_Lu_Nuoc_Optimized.asset", 36), // ~12k tris (gốc 1.9M tris)
-                ("Assets/Models/Props/SM_WoodenCrate.fbx", "M_WoodenCrate_Optimized.asset", 28), // ~8k tris (gốc 2.54M tris)
-                ("Assets/Models/Environment/SM_MossyBoulder_01.fbx", "M_MossyBoulder_Optimized.asset", 34), // ~7k tris (gốc 916k tris)
-                ("Assets/Models/Environment/SM_Rock_Large_01.fbx", "M_Rock_Large_Optimized.asset", 36), // ~8k tris (gốc 1.95M tris)
-                ("Assets/Models/Environment/SM_StiltedHouse_Thatched.fbx", "M_House_Thatched_Optimized.asset", 44), // ~35k tris (gốc 960k tris)
-                ("Assets/Models/Environment/SM_StiltedHouse_Wood.fbx", "M_House_Wood_Optimized.asset", 38), // ~15k tris (gốc 405k tris)
-                ("Assets/Models/Props/SM_WoodenSlatCube.fbx", "M_WoodenSlatCube_Optimized.asset", 26), // ~7k tris (gốc 225k tris)
-                ("Assets/Models/RicePlants/SM_Rice_Plant_Meshy_LOD_0.fbx", "M_RicePlant_LOD0_Optimized.asset", 22), // ~1.5k tris (gốc 18k tris)
-                ("Assets/Models/RicePlants/SM_Rice_Plant_Tripo.fbx", "M_RicePlant_Tripo_Optimized.asset", 20), // ~1k tris (gốc 8.3k tris)
-                ("Assets/Models/RicePlants/SM_Rice_Plant_Meshy_LOD_1.fbx", "M_RicePlant_LOD1_Optimized.asset", 18) // ~800 tris (gốc 7.1k tris)
-            };
-
-            var optimizedMeshes = new Dictionary<string, UnityEngine.Mesh>(System.StringComparer.OrdinalIgnoreCase);
-
-            foreach (var cfg in meshConfigs)
-            {
-                string savedAssetPath = $"{OptimizedMeshFolder}/{cfg.assetName}";
-                UnityEngine.Mesh optMesh = AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>(savedAssetPath);
-
-                if (optMesh == null)
+                UnityEngine.Mesh blenderMesh = GetMeshFromFBX(item.blenderFbx);
+                if (blenderMesh == null)
                 {
-                    GameObject srcGo = AssetDatabase.LoadAssetAtPath<GameObject>(cfg.fbxPath);
-                    var mf = srcGo != null ? srcGo.GetComponentInChildren<MeshFilter>() : null;
-                    if (mf != null && mf.sharedMesh != null)
+                    Debug.LogWarning($"[OptimizeVillage] Chưa tìm thấy mesh trong Blender FBX: {item.blenderFbx}");
+                    continue;
+                }
+
+                // Đăng ký vào bảng tra cứu cho cả FBX gốc và FBX tối ưu
+                meshMap[item.origFbx] = blenderMesh;
+                meshMap[item.blenderFbx] = blenderMesh;
+
+                // Nếu có file .asset đại diện, sao chép dữ liệu mesh để giữ nguyên toàn bộ tham chiếu cũ
+                if (!string.IsNullOrEmpty(item.assetName))
+                {
+                    string assetPath = $"{OptimizedMeshFolder}/{item.assetName}";
+                    UnityEngine.Mesh existingAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>(assetPath);
+                    if (existingAsset != null)
                     {
-                        optMesh = GenerateDecimatedMesh(mf.sharedMesh, cfg.divisions);
-                        optMesh.name = Path.GetFileNameWithoutExtension(cfg.assetName);
-                        AssetDatabase.CreateAsset(optMesh, savedAssetPath);
-                        Debug.Log($"[OptimizeVillage] Đã tạo mesh tối ưu: {savedAssetPath} ({mf.sharedMesh.triangles.Length / 3:N0} -> {optMesh.triangles.Length / 3:N0} tris)");
+                        CopyMeshData(blenderMesh, existingAsset);
+                        meshMap[assetPath] = existingAsset;
+                        Debug.Log($"[OptimizeVillage] Đã nâng cấp {item.assetName} sang dạng mịn Blender QEM ({existingAsset.triangles.Length / 3:N0} tris)");
+                    }
+                    else
+                    {
+                        var newAsset = UnityEngine.Object.Instantiate(blenderMesh);
+                        newAsset.name = Path.GetFileNameWithoutExtension(item.assetName);
+                        AssetDatabase.CreateAsset(newAsset, assetPath);
+                        meshMap[assetPath] = newAsset;
+                        Debug.Log($"[OptimizeVillage] Đã tạo mới {item.assetName} ({newAsset.triangles.Length / 3:N0} tris)");
                     }
                 }
-
-                if (optMesh != null)
-                {
-                    optimizedMeshes[cfg.fbxPath] = optMesh;
-                }
             }
 
             AssetDatabase.SaveAssets();
 
-            // 2. Cập nhật các Prefab tương ứng
-            UpdatePrefabMesh("Assets/Prefabs/Model_Lu.prefab", optimizedMeshes, "Assets/Models/Model_Lu.fbx");
-            UpdatePrefabMesh("Assets/Prefabs/Props/PF_Prop_CargoCrate_3D.prefab", optimizedMeshes, "Assets/Models/Props/SM_WoodenCrate.fbx");
-            UpdatePrefabMesh("Assets/Prefabs/Environment/PF_MossyBoulder.prefab", optimizedMeshes, "Assets/Models/Environment/SM_MossyBoulder_01.fbx");
-            UpdatePrefabMesh("Assets/Prefabs/Environment/PF_Rock_Large_01.prefab", optimizedMeshes, "Assets/Models/Environment/SM_Rock_Large_01.fbx");
-            UpdatePrefabMesh("Assets/Prefabs/Environment/PF_StiltedHouse_Thatched.prefab", optimizedMeshes, "Assets/Models/Environment/SM_StiltedHouse_Thatched.fbx");
+            // 2. Cập nhật các Prefab môi trường và prop (TUYỆT ĐỐI KHÔNG ĐỤNG ĐẾN PREFAB PLAYER)
+            UpdatePrefabMesh("Assets/Prefabs/Model_Lu.prefab", meshMap, "Assets/Models/Model_Lu.fbx", true);
+            UpdatePrefabMesh("Assets/Prefabs/Props/PF_Prop_CargoCrate_3D.prefab", meshMap, "Assets/Models/Props/SM_WoodenCrate.fbx", false);
+            UpdatePrefabMesh("Assets/Prefabs/Environment/PF_MossyBoulder.prefab", meshMap, "Assets/Models/Environment/SM_MossyBoulder_01.fbx", false);
+            UpdatePrefabMesh("Assets/Prefabs/Environment/PF_Rock_Large_01.prefab", meshMap, "Assets/Models/Environment/SM_Rock_Large_01.fbx", false);
+            UpdatePrefabMesh("Assets/Prefabs/Environment/PF_StiltedHouse_Thatched.prefab", meshMap, "Assets/Models/Environment/SM_StiltedHouse_Thatched.fbx", false);
 
             AssetDatabase.SaveAssets();
 
-            // 3. Tối ưu Scene 3D: CaMau_1954_Village.unity
-            OptimizeSceneObjects(optimizedMeshes);
+            // 3. Tối ưu hóa Scene CaMau_1954_Village.unity
+            OptimizeSceneObjects(meshMap);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("<color=#4ade80>[OptimizeVillage]</color> Đã hoàn tất tối ưu hóa Scene 3D Làng Cà Mau 1954! Đạt chuẩn mượt mà 60+ FPS.");
+            Debug.Log("<color=#4ade80>[OptimizeVillage]</color> Đã hoàn tất nâng cấp mesh Blender chất lượng cao cho Scene 3D Làng Cà Mau 1954!");
         }
 
-        private static void UpdatePrefabMesh(string prefabPath, Dictionary<string, UnityEngine.Mesh> meshMap, string fbxKey)
+        public static UnityEngine.Mesh GetMeshFromFBX(string fbxPath)
         {
-            if (!File.Exists(prefabPath) || !meshMap.TryGetValue(fbxKey, out var optMesh)) return;
+            if (!File.Exists(fbxPath)) return null;
+            var assets = AssetDatabase.LoadAllAssetsAtPath(fbxPath);
+            foreach (var a in assets)
+            {
+                if (a is UnityEngine.Mesh m && !m.name.Contains("__preview__"))
+                {
+                    return m;
+                }
+            }
+            return null;
+        }
+
+        public static void CopyMeshData(UnityEngine.Mesh src, UnityEngine.Mesh dst)
+        {
+            dst.Clear();
+            dst.indexFormat = src.indexFormat;
+            dst.vertices = src.vertices;
+            dst.normals = src.normals;
+            dst.uv = src.uv;
+            dst.uv2 = src.uv2;
+            dst.tangents = src.tangents;
+            dst.subMeshCount = src.subMeshCount;
+            for (int s = 0; s < src.subMeshCount; s++)
+            {
+                dst.SetTriangles(src.GetTriangles(s), s);
+            }
+            dst.RecalculateBounds();
+            EditorUtility.SetDirty(dst);
+        }
+
+        private static void UpdatePrefabMesh(string prefabPath, Dictionary<string, UnityEngine.Mesh> meshMap, string key, bool disableShadow)
+        {
+            if (!File.Exists(prefabPath) || !meshMap.TryGetValue(key, out var optMesh)) return;
             GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
             if (root == null) return;
             try
@@ -103,11 +150,12 @@ namespace HoaVaMau.Editor
                 {
                     mf.sharedMesh = optMesh;
                     var rend = root.GetComponentInChildren<MeshRenderer>(true);
-                    if (rend != null && prefabPath.Contains("Model_Lu"))
+                    if (rend != null && disableShadow)
                     {
-                        rend.shadowCastingMode = ShadowCastingMode.Off; // Lu nước không cần cản shadow
+                        rend.shadowCastingMode = ShadowCastingMode.Off;
                     }
                     PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                    Debug.Log($"[OptimizeVillage] Đã cập nhật Prefab: {prefabPath} -> {optMesh.name} ({optMesh.triangles.Length / 3:N0} tris)");
                 }
             }
             finally
@@ -131,13 +179,24 @@ namespace HoaVaMau.Editor
 
             foreach (var root in scene.GetRootGameObjects())
             {
+                // Tuyệt đối không đụng đến đối tượng Player
+                if (root.name.Contains("Player") || root.name.Contains("Hero") || root.name.Contains("Boy"))
+                {
+                    continue;
+                }
+
                 foreach (var t in root.GetComponentsInChildren<Transform>(true))
                 {
                     var go = t.gameObject;
+                    if (go.name.Contains("Player") || go.name.Contains("Hero") || go.name.Contains("Boy"))
+                    {
+                        continue;
+                    }
+
                     var mf = go.GetComponent<MeshFilter>();
                     var mr = go.GetComponent<MeshRenderer>();
 
-                    // A. Thay thế các mesh siêu nặng thành mesh tối ưu
+                    // A. Thay thế các mesh siêu nặng thành mesh tối ưu Blender
                     if (mf != null && mf.sharedMesh != null)
                     {
                         string p = AssetDatabase.GetAssetPath(mf.sharedMesh);
@@ -151,7 +210,7 @@ namespace HoaVaMau.Editor
                         }
                     }
 
-                    // B. Tối ưu Shadow Casters trên các prop nhỏ / foliage rải rác
+                    // B. Tối ưu Shadow Casters trên các prop nhỏ
                     if (mr != null && mr.enabled && mr.shadowCastingMode != ShadowCastingMode.Off)
                     {
                         string n = go.name;
@@ -180,94 +239,12 @@ namespace HoaVaMau.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, Scene3DPath);
-            Debug.Log($"[OptimizeVillage] Đã cập nhật {replacedMeshes} vị trí dùng mesh tối ưu và tắt shadow trên {shadowCastersDisabled} prop nhỏ/lúa!");
+            Debug.Log($"[OptimizeVillage] Scene CaMau_1954_Village: Đã cập nhật {replacedMeshes} vị trí sang mesh mịn Blender và tắt shadow trên {shadowCastersDisabled} prop nhỏ!");
 
             if (!wasLoaded)
             {
                 EditorSceneManager.CloseScene(scene, true);
             }
-        }
-
-        public static UnityEngine.Mesh GenerateDecimatedMesh(UnityEngine.Mesh src, int targetDivisions)
-        {
-            Vector3[] srcVerts = src.vertices;
-            Vector3[] srcNorms = src.normals;
-            Vector2[] srcUvs = src.uv;
-            bool hasNorms = srcNorms != null && srcNorms.Length == srcVerts.Length;
-            bool hasUvs = srcUvs != null && srcUvs.Length == srcVerts.Length;
-
-            Bounds b = src.bounds;
-            Vector3 min = b.min;
-            float maxDim = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
-            float cellSize = maxDim / targetDivisions;
-
-            var cellToVertIndex = new Dictionary<long, int>();
-            var outVerts = new List<Vector3>();
-            var outNorms = hasNorms ? new List<Vector3>() : null;
-            var outUvs = hasUvs ? new List<Vector2>() : null;
-            var cellWeights = new List<int>();
-
-            int[] vertRemap = new int[srcVerts.Length];
-
-            for (int i = 0; i < srcVerts.Length; i++)
-            {
-                Vector3 v = srcVerts[i];
-                int cx = Mathf.FloorToInt((v.x - min.x) / cellSize);
-                int cy = Mathf.FloorToInt((v.y - min.y) / cellSize);
-                int cz = Mathf.FloorToInt((v.z - min.z) / cellSize);
-
-                long key = ((long)(cx + 50000)) | (((long)(cy + 50000)) << 20) | (((long)(cz + 50000)) << 40);
-
-                if (!cellToVertIndex.TryGetValue(key, out int newIdx))
-                {
-                    newIdx = outVerts.Count;
-                    cellToVertIndex[key] = newIdx;
-                    outVerts.Add(v);
-                    if (hasNorms) outNorms.Add(srcNorms[i]);
-                    if (hasUvs) outUvs.Add(srcUvs[i]);
-                    cellWeights.Add(1);
-                }
-                else
-                {
-                    int w = cellWeights[newIdx];
-                    outVerts[newIdx] = (outVerts[newIdx] * w + v) / (w + 1);
-                    if (hasNorms) outNorms[newIdx] = (outNorms[newIdx] * w + srcNorms[i]).normalized;
-                    if (hasUvs) outUvs[newIdx] = (outUvs[newIdx] * w + srcUvs[i]) / (w + 1);
-                    cellWeights[newIdx] = w + 1;
-                }
-                vertRemap[i] = newIdx;
-            }
-
-            var simplified = new UnityEngine.Mesh();
-            simplified.name = src.name + "_Optimized";
-            if (outVerts.Count > 65535) simplified.indexFormat = IndexFormat.UInt32;
-            simplified.SetVertices(outVerts);
-            if (hasNorms) simplified.SetNormals(outNorms);
-            if (hasUvs) simplified.SetUVs(0, outUvs);
-
-            simplified.subMeshCount = src.subMeshCount;
-            for (int sub = 0; sub < src.subMeshCount; sub++)
-            {
-                int[] srcIndices = src.GetTriangles(sub);
-                var outIndices = new List<int>(srcIndices.Length / 4);
-                for (int i = 0; i < srcIndices.Length; i += 3)
-                {
-                    int i0 = vertRemap[srcIndices[i]];
-                    int i1 = vertRemap[srcIndices[i + 1]];
-                    int i2 = vertRemap[srcIndices[i + 2]];
-
-                    if (i0 != i1 && i1 != i2 && i2 != i0)
-                    {
-                        outIndices.Add(i0);
-                        outIndices.Add(i1);
-                        outIndices.Add(i2);
-                    }
-                }
-                simplified.SetTriangles(outIndices, sub);
-            }
-
-            simplified.RecalculateBounds();
-            return simplified;
         }
     }
 }
