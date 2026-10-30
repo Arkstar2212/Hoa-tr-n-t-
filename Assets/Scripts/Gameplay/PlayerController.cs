@@ -30,9 +30,9 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float deceleration = 30f;
 
         [Header("Jumping & Gravity")]
-        [SerializeField] private float jumpForce = 8.6f;
+        [SerializeField] private float jumpForce = 6.2f;
         [SerializeField] private float minJumpTime = 0.12f;
-        [SerializeField] private float gravity = 23f;
+        [SerializeField] private float gravity = 22.5f;
         [SerializeField] private float fallGravityMultiplier = 1.4f;
         [SerializeField] private float terminalVelocity = 14.5f;
         [SerializeField] private float coyoteTimeDuration = 0.16f;
@@ -238,7 +238,7 @@ namespace HoaVaMau.Gameplay
             if (trajectoryPredictor == null)
             {
                 trajectoryPredictor = GetComponentInChildren<TrajectoryPredictor>();
-                if (trajectoryPredictor == null)
+                if (trajectoryPredictor == null && Application.isPlaying)
                 {
                     GameObject trajGO = new GameObject("TrajectoryPredictor");
                     trajGO.transform.SetParent(transform);
@@ -335,12 +335,17 @@ namespace HoaVaMau.Gameplay
             if (ropeHandler != null && (CurrentState == PlayerState.RopeGrab || CurrentState == PlayerState.RopeClimb) && ropeHandler.CurrentRope != null)
             {
                 visualEffects.RopeAngle = ropeHandler.CurrentRope.CurrentAngleDegrees;
+                visualEffects.HandOffsetHeight = ropeHandler.HandOffsetHeight;
+                // Planet of Lana dynamic swing lag: thân người có độ trễ quán tính theo vận tốc góc con lắc
+                float angVel = ropeHandler.CurrentRope.AngularVelocity;
+                visualEffects.SwingLagAngle = -Mathf.Clamp(angVel * 3.5f, -14f, 14f);
 
 
             }
             else
             {
                 visualEffects.RopeAngle = 0f;
+                visualEffects.SwingLagAngle = 0f;
             }
 
             visualEffects.UpdatePostures(

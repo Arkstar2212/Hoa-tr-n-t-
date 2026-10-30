@@ -7,7 +7,7 @@ namespace HoaVaMau.Gameplay
 {
     /// <summary>
     /// Robust, production-grade Save System for "Hoa trên Đất Đỏ".
-    /// Tracks up to 3 Save Slots with real chapter progression, playtime, location, and timestamps.
+    /// Tracks up to 3 Save Slots with real chapter progression, playtime, location, scene name, and 3D coordinates.
     /// Provides atomic JSON persistence and PlayerPrefs fallback for maximum reliability.
     /// </summary>
     public static class HoaVaMauSaveSystem
@@ -22,6 +22,7 @@ namespace HoaVaMau.Gameplay
             public bool isOccupied = false;
             public string chapterTitle = "Chương 1: Đất Đỏ Cà Mau";
             public string locationName = "Bờ Sông Đất Đỏ";
+            public string savedSceneName = "New Scene 1_Overhaul";
             public float playTimeSeconds = 0f;
             public string saveTimestamp = "";
             public int checkpointIndex = 0;
@@ -149,6 +150,8 @@ namespace HoaVaMau.Gameplay
                     var data = JsonUtility.FromJson<SaveSlotData>(json);
                     if (data != null && data.isOccupied)
                     {
+                        if (string.IsNullOrEmpty(data.savedSceneName))
+                            data.savedSceneName = "New Scene 1_Overhaul";
                         return data;
                     }
                 }
@@ -158,7 +161,6 @@ namespace HoaVaMau.Gameplay
                 }
             }
 
-            // Fallback to PlayerPrefs metadata
             string key = $"{PrefsPrefix}Slot_{slotIndex}_Occupied";
             if (PlayerPrefs.GetInt(key, 0) == 1)
             {
@@ -168,12 +170,13 @@ namespace HoaVaMau.Gameplay
                     isOccupied = true,
                     chapterTitle = PlayerPrefs.GetString($"{PrefsPrefix}Slot_{slotIndex}_Chapter", "Chương 1: Đất Đỏ Cà Mau"),
                     locationName = PlayerPrefs.GetString($"{PrefsPrefix}Slot_{slotIndex}_Location", "Bờ Sông Đất Đỏ"),
+                    savedSceneName = PlayerPrefs.GetString($"{PrefsPrefix}Slot_{slotIndex}_Scene", "New Scene 1_Overhaul"),
                     playTimeSeconds = PlayerPrefs.GetFloat($"{PrefsPrefix}Slot_{slotIndex}_PlayTime", 60f),
                     saveTimestamp = PlayerPrefs.GetString($"{PrefsPrefix}Slot_{slotIndex}_Date", DateTime.Now.ToString("dd/MM/yyyy HH:mm")),
                     checkpointIndex = PlayerPrefs.GetInt($"{PrefsPrefix}Slot_{slotIndex}_Checkpoint", 0),
                     playerPosX = PlayerPrefs.GetFloat($"{PrefsPrefix}Slot_{slotIndex}_PosX", 0.0f),
                     playerPosY = PlayerPrefs.GetFloat($"{PrefsPrefix}Slot_{slotIndex}_PosY", -1.77f),
-                    playerPosZ = 0f
+                    playerPosZ = PlayerPrefs.GetFloat($"{PrefsPrefix}Slot_{slotIndex}_PosZ", 0f)
                 };
             }
 
@@ -183,21 +186,34 @@ namespace HoaVaMau.Gameplay
                 isOccupied = false,
                 chapterTitle = "Chưa có dữ liệu",
                 locationName = "Vị trí trống",
+                savedSceneName = "New Scene 1_Overhaul",
                 playTimeSeconds = 0f,
                 saveTimestamp = "--/--/----"
             };
         }
 
-        public static bool SaveCurrentGameState(int slotIndex, string chapter = "Chương 1: Đất Đỏ Cà Mau", string location = "Bờ Sông Đất Đỏ", int checkpoint = 0, Vector3? pos = null, bool captureThumbnail = true)
+        public static bool SaveCurrentGameState(
+            int slotIndex,
+            string chapter = "Chương 1: Đất Đỏ Cà Mau",
+            string location = "Bờ Sông Đất Đỏ",
+            int checkpoint = 0,
+            Vector3? pos = null,
+            bool captureThumbnail = true,
+            string sceneName = null)
         {
             if (slotIndex < 1 || slotIndex > MaxSlots) slotIndex = 1;
             ActiveSlotIndex = slotIndex;
 
             Vector3 playerPos = pos.HasValue ? pos.Value : new Vector3(0.0f, -1.77f, 0f);
+            string resolvedScene = !string.IsNullOrEmpty(sceneName) ? sceneName : SceneManager.GetActiveScene().name;
+            if (string.IsNullOrEmpty(resolvedScene) || resolvedScene == "Scene_MainMenu")
+            {
+                resolvedScene = "New Scene 1_Overhaul";
+            }
 
             var existing = GetSlotData(slotIndex);
             float totalPlayTime = (existing != null && existing.isOccupied ? existing.playTimeSeconds : 0f) + SessionPlayTimeCounter;
-            SessionPlayTimeCounter = 0f; // reset session delta once committed
+            SessionPlayTimeCounter = 0f;
 
             var data = new SaveSlotData
             {
@@ -205,6 +221,7 @@ namespace HoaVaMau.Gameplay
                 isOccupied = true,
                 chapterTitle = chapter,
                 locationName = location,
+                savedSceneName = resolvedScene,
                 playTimeSeconds = totalPlayTime,
                 saveTimestamp = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
                 checkpointIndex = checkpoint,
@@ -221,7 +238,6 @@ namespace HoaVaMau.Gameplay
                 File.WriteAllText(path, json);
                 diskWriteOk = true;
 
-                // Also attempt to capture camera thumbnail snapshot if in active gameplay
                 if (captureThumbnail && Application.isPlaying && Camera.main != null)
                 {
                     CaptureAndSaveThumbnail(slotIndex, Camera.main);
@@ -232,17 +248,18 @@ namespace HoaVaMau.Gameplay
                 Debug.LogError($"[HoaVaMauSaveSystem] Failed writing save file: {ex.Message}");
             }
 
-            // Also mirror to PlayerPrefs for instant cache & backup
             try
             {
                 PlayerPrefs.SetInt($"{PrefsPrefix}Slot_{slotIndex}_Occupied", 1);
                 PlayerPrefs.SetString($"{PrefsPrefix}Slot_{slotIndex}_Chapter", data.chapterTitle);
                 PlayerPrefs.SetString($"{PrefsPrefix}Slot_{slotIndex}_Location", data.locationName);
+                PlayerPrefs.SetString($"{PrefsPrefix}Slot_{slotIndex}_Scene", data.savedSceneName);
                 PlayerPrefs.SetFloat($"{PrefsPrefix}Slot_{slotIndex}_PlayTime", data.playTimeSeconds);
                 PlayerPrefs.SetString($"{PrefsPrefix}Slot_{slotIndex}_Date", data.saveTimestamp);
                 PlayerPrefs.SetInt($"{PrefsPrefix}Slot_{slotIndex}_Checkpoint", data.checkpointIndex);
                 PlayerPrefs.SetFloat($"{PrefsPrefix}Slot_{slotIndex}_PosX", data.playerPosX);
                 PlayerPrefs.SetFloat($"{PrefsPrefix}Slot_{slotIndex}_PosY", data.playerPosY);
+                PlayerPrefs.SetFloat($"{PrefsPrefix}Slot_{slotIndex}_PosZ", data.playerPosZ);
                 PlayerPrefs.SetInt("HoaVaMau_ActiveSlot", slotIndex);
                 PlayerPrefs.Save();
             }
@@ -257,8 +274,7 @@ namespace HoaVaMau.Gameplay
             ActiveSlotIndex = slotIndex;
             SessionPlayTimeCounter = 0f;
 
-            // Commit new game slot state
-            SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(0.0f, -1.77f, 0f));
+            SaveCurrentGameState(slotIndex, "Chương 1: Đất Đỏ Cà Mau", "Khởi hành", 0, new Vector3(0.0f, -1.77f, 0f), true, targetScene);
 
             IntroCutsceneState.MarkForNewGame();
             if (!string.IsNullOrEmpty(targetScene))
@@ -276,11 +292,14 @@ namespace HoaVaMau.Gameplay
             int cp = (slot != null && slot.isOccupied) ? slot.checkpointIndex : 0;
             IntroCutsceneState.MarkForContinue(cp);
 
+            string sceneToLoad = (slot != null && slot.isOccupied && !string.IsNullOrEmpty(slot.savedSceneName))
+                ? slot.savedSceneName
+                : targetScene;
 
-            if (!string.IsNullOrEmpty(targetScene))
+            if (!string.IsNullOrEmpty(sceneToLoad))
             {
                 Time.timeScale = 1.0f;
-                SceneManager.LoadScene(targetScene);
+                SceneManager.LoadScene(sceneToLoad);
             }
         }
 
@@ -295,11 +314,13 @@ namespace HoaVaMau.Gameplay
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_Occupied");
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_Chapter");
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_Location");
+                PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_Scene");
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_PlayTime");
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_Date");
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_Checkpoint");
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_PosX");
                 PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_PosY");
+                PlayerPrefs.DeleteKey($"{PrefsPrefix}Slot_{slotIndex}_PosZ");
                 PlayerPrefs.Save();
             }
             catch (Exception ex)

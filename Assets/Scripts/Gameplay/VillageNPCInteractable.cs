@@ -1,13 +1,14 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using HoaVaMau.Test3D;
 
 namespace HoaVaMau.Gameplay
 {
     /// <summary>
-    /// Interactive 3D Rigged Villager NPC for the living Planet of Lana style village.
-    /// - Drives Humanoid Animator state (Idle, Wave, Talk, Sit, Walk patrol) + subtle breathing/look-at toward An.
-    /// - Displays ONLY a minimalist translucent single-color [E] key glyph above the NPC when An is within interaction range.
+    /// Interactive 3D Rigged Villager NPC for both 2.5D Overhaul and 3D Ca Mau 1954 Village.
+    /// - Drives Humanoid Animator state (Idle, Wave, Talk, Sit, Walk patrol) + natural look-at toward An.
+    /// - Displays ONLY a minimalist translucent single-color [E] key glyph above the NPC when An is within range.
     /// - Plays warm conversational animation and displays clean dialogue subtitles when An presses [E].
     /// </summary>
     [DisallowMultipleComponent]
@@ -32,6 +33,7 @@ namespace HoaVaMau.Gameplay
 
         private Animator animator;
         private PlayerController player;
+        private Player3DController player3D;
         private float startX;
         private int patrolDir = 1;
         private float patrolPauseTimer = 0f;
@@ -52,6 +54,8 @@ namespace HoaVaMau.Gameplay
         private static Text sharedLineText;
         private static VillageNPCInteractable activeDialogueOwner;
 
+        public static bool HasActivePromptOwner => activePromptOwner != null;
+
         public void ConfigureNPC(string speakerName, string[] lines, string initialAnimState = "Idle", float patrolDist = 0f)
         {
             npcName = speakerName;
@@ -63,6 +67,11 @@ namespace HoaVaMau.Gameplay
         private void Awake()
         {
             animator = GetComponentInChildren<Animator>();
+            if (animator != null)
+            {
+                animator.applyRootMotion = false;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            }
             startX = transform.position.x;
             baseRotation = transform.rotation;
             EnsureSharedCanvas();
@@ -70,24 +79,112 @@ namespace HoaVaMau.Gameplay
 
         private void Start()
         {
-            player = Object.FindAnyObjectByType<PlayerController>();
-            if (animator != null && !string.IsNullOrEmpty(defaultAnimState))
+            ResolvePlayer();
+            TryPlayAnimatorState(defaultAnimState, Random.Range(0f, 0.85f), false);
+            if (animator != null) animator.Update(0.02f);
+            SnapLowestFootToGround();
+        }
+
+        /// <summary>
+        /// Ensures the rigged 3D NPC's actual posed foot vertices rest cleanly on the ground collider/terrain surface.
+        /// </summary>
+        public void SnapLowestFootToGround()
+        {
+            var smr = GetComponentInChildren<SkinnedMeshRenderer>();
+            if (smr == null) return;
+
+            Vector3 rayOrigin = transform.position + Vector3.up * 2.5f;
+            float groundY = float.MinValue;
+            RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, 8.0f, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < hits.Length; i++)
             {
-                animator.Play(defaultAnimState, 0, Random.Range(0f, 0.85f));
+                var h = hits[i];
+                if (h.collider == null || h.collider.transform.IsChildOf(transform)) continue;
+                if (h.point.y > groundY) groundY = h.point.y;
             }
+            if (groundY == float.MinValue) return;
+
+            Mesh baked = new Mesh();
+            smr.BakeMesh(baked);
+            Vector3[] verts = baked.vertices;
+            float minFootY = float.MaxValue;
+            Transform smrTr = smr.transform;
+            for (int i = 0; i < verts.Length; i++)
+            {
+                float wy = smrTr.TransformPoint(verts[i]).y;
+                if (wy < minFootY) minFootY = wy;
+            }
+            if (Application.isPlaying) Destroy(baked);
+            else DestroyImmediate(baked);
+
+            if (minFootY < float.MaxValue)
+            {
+                float deltaY = (groundY + 0.015f) - minFootY;
+                if (Mathf.Abs(deltaY) > 0.002f && Mathf.Abs(deltaY) < 1.5f)
+                {
+                    transform.position += new Vector3(0f, deltaY, 0f);
+                }
+            }
+        }
+
+        private void TryPlayAnimatorState(string stateName, float normalizedTimeOrTransition, bool crossFade)
+        {
+            if (animator == null || string.IsNullOrEmpty(stateName) || animator.runtimeAnimatorController == null) return;
+            int hash = Animator.StringToHash(stateName);
+            if (!animator.HasState(0, hash)) return;
+
+            if (crossFade)
+                animator.CrossFadeInFixedTime(hash, normalizedTimeOrTransition);
+            else
+                animator.Play(hash, 0, normalizedTimeOrTransition);
+        }
+
+        private void OnDisable()
+        {
+            if (activePromptOwner == this)
+            {
+                activePromptOwner = null;
+                if (sharedKeyGlyphGroup != null) sharedKeyGlyphGroup.alpha = 0f;
+            }
+            if (activeDialogueOwner == this)
+            {
+                activeDialogueOwner = null;
+                if (sharedDialogueGroup != null) sharedDialogueGroup.alpha = 0f;
+            }
+        }
+
+        private void ResolvePlayer()
+        {
+            if (player == null) player = Object.FindAnyObjectByType<PlayerController>();
+            if (player == null && player3D == null) player3D = Object.FindAnyObjectByType<Player3DController>();
         }
 
         private void Update()
         {
-            if (player == null)
+            if (PauseMenuController.Instance != null && PauseMenuController.Instance.IsPaused) return;
+
+            ResolvePlayer();
+            bool is3DMode = (player == null && player3D != null);
+            Transform pTr = player != null ? player.transform : (player3D != null ? player3D.transform : null);
+            if (pTr == null) return;
+
+            bool playerActive = player != null ? player.enabled : player3D.enabled;
+
+            float planarDist;
+            if (is3DMode)
             {
-                player = Object.FindAnyObjectByType<PlayerController>();
-                if (player == null) return;
+                planarDist = Vector2.Distance(
+                    new Vector2(pTr.position.x, pTr.position.z),
+                    new Vector2(transform.position.x, transform.position.z)
+                );
+            }
+            else
+            {
+                planarDist = Mathf.Abs(pTr.position.x - transform.position.x);
             }
 
-            float distX = Mathf.Abs(player.transform.position.x - transform.position.x);
-            float distY = Mathf.Abs(player.transform.position.y - transform.position.y);
-            bool inRange = player.enabled && (distX <= interactRadius) && (distY <= 2.0f) && (dialogueLines != null && dialogueLines.Length > 0);
+            float distY = Mathf.Abs(pTr.position.y - transform.position.y);
+            bool inRange = playerActive && (planarDist <= interactRadius) && (distY <= 2.2f) && (dialogueLines != null && dialogueLines.Length > 0);
 
             // 1. Optional gentle village patrol when not talking
             if (!isTalking && !inRange && patrolRangeX > 0.25f)
@@ -96,12 +193,29 @@ namespace HoaVaMau.Gameplay
             }
             else if (facePlayerWhenClose && (inRange || isTalking) && defaultAnimState != "Sit")
             {
-                float dirToPlayer = Mathf.Sign(player.transform.position.x - transform.position.x);
-                if (Mathf.Abs(dirToPlayer) > 0.01f)
+                if (is3DMode)
                 {
-                    float targetYaw = (dirToPlayer > 0f) ? 105f : -105f;
-                    Quaternion targetRot = Quaternion.Euler(0f, targetYaw, 0f);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 5.0f);
+                    Vector3 flatDir = pTr.position - transform.position;
+                    flatDir.y = 0f;
+                    if (flatDir.sqrMagnitude > 0.01f)
+                    {
+                        // Preserve upright humanoid rotation; skip if static mesh imported with -90 X pitch
+                        if (Mathf.Abs(baseRotation.eulerAngles.x) < 10f || baseRotation.eulerAngles.x > 350f)
+                        {
+                            Quaternion targetRot = Quaternion.LookRotation(flatDir.normalized);
+                            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 5.0f);
+                        }
+                    }
+                }
+                else
+                {
+                    float dirToPlayer = Mathf.Sign(pTr.position.x - transform.position.x);
+                    if (Mathf.Abs(dirToPlayer) > 0.01f)
+                    {
+                        float targetYaw = (dirToPlayer > 0f) ? 105f : -105f;
+                        Quaternion targetRot = Quaternion.Euler(0f, targetYaw, 0f);
+                        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 5.0f);
+                    }
                 }
             }
             else if (!isTalking && patrolRangeX <= 0.25f)
@@ -120,7 +234,7 @@ namespace HoaVaMau.Gameplay
 
                 if (KeybindingManager.IsActionPressed(GameAction.Interact))
                 {
-                    AdvanceDialogue();
+                    AdvanceDialogue(pTr, is3DMode);
                 }
             }
             else if (activePromptOwner == this)
@@ -133,7 +247,7 @@ namespace HoaVaMau.Gameplay
             if (isTalking && activeDialogueOwner == this)
             {
                 dialogueDisplayTimer -= Time.deltaTime;
-                if (dialogueDisplayTimer <= 0f || distX > interactRadius + 1.4f)
+                if (dialogueDisplayTimer <= 0f || planarDist > interactRadius + 1.5f)
                 {
                     EndDialogue();
                 }
@@ -145,7 +259,7 @@ namespace HoaVaMau.Gameplay
             if (patrolPauseTimer > 0f)
             {
                 patrolPauseTimer -= dt;
-                if (animator != null) animator.CrossFadeInFixedTime("Idle", 0.25f);
+                TryPlayAnimatorState("Idle", 0.25f, true);
                 return;
             }
 
@@ -162,7 +276,7 @@ namespace HoaVaMau.Gameplay
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0f, yaw, 0f), dt * 6f);
         }
 
-        private void AdvanceDialogue()
+        private void AdvanceDialogue(Transform pTr, bool is3DMode)
         {
             if (dialogueLines == null || dialogueLines.Length == 0) return;
 
@@ -175,7 +289,7 @@ namespace HoaVaMau.Gameplay
 
             isTalking = true;
             activeDialogueOwner = this;
-            dialogueDisplayTimer = 4.8f;
+            dialogueDisplayTimer = 5.2f;
 
             // Face An toward the NPC
             if (player != null)
@@ -183,12 +297,20 @@ namespace HoaVaMau.Gameplay
                 float dirToNpc = Mathf.Sign(transform.position.x - player.transform.position.x);
                 if (Mathf.Abs(dirToNpc) > 0.01f) player.SetFacingDirection(dirToNpc);
             }
+            else if (is3DMode && pTr != null)
+            {
+                Vector3 toNpc = transform.position - pTr.position;
+                toNpc.y = 0f;
+                if (toNpc.sqrMagnitude > 0.01f)
+                {
+                    pTr.rotation = Quaternion.LookRotation(toNpc.normalized);
+                }
+            }
 
-            // Trigger expressive NPC talking or waving animation
             if (animator != null && defaultAnimState != "Sit")
             {
                 string talkState = (currentLineIndex == 0) ? "Talk" : "Wave";
-                animator.CrossFadeInFixedTime(talkState, 0.25f);
+                TryPlayAnimatorState(talkState, 0.25f, true);
             }
 
             if (sharedSpeakerText != null) sharedSpeakerText.text = npcName.ToUpperInvariant();
@@ -205,41 +327,39 @@ namespace HoaVaMau.Gameplay
                 activeDialogueOwner = null;
                 if (sharedDialogueGroup != null) sharedDialogueGroup.alpha = 0f;
             }
-            if (animator != null && !string.IsNullOrEmpty(defaultAnimState))
-            {
-                animator.CrossFadeInFixedTime(defaultAnimState, 0.35f);
-            }
+            TryPlayAnimatorState(defaultAnimState, 0.35f, true);
         }
 
         private void UpdateKeyGlyphPosition()
         {
+            EnsureSharedCanvas();
             if (sharedKeyGlyphRect == null || sharedKeyGlyphGroup == null) return;
             Camera cam = Camera.main;
             if (cam == null) return;
 
             float bob = Mathf.Sin(Time.unscaledTime * 2.6f) * 0.06f;
-            Vector3 worldPos = transform.position + new Vector3(0f, 2.15f + bob, 0f);
+            Vector3 worldPos = transform.position + new Vector3(0f, 2.05f + bob, 0f);
             Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
             if (screenPos.z > 0f)
             {
                 sharedKeyGlyphRect.position = screenPos;
-                sharedKeyGlyphGroup.alpha = isTalking ? 0.35f : 0.85f;
+                sharedKeyGlyphGroup.alpha = isTalking ? 0.35f : 0.88f;
             }
         }
 
         private static void EnsureSharedCanvas()
         {
-            if (sharedNpcCanvas != null) return;
+            if (sharedNpcCanvas != null && sharedKeyGlyphRect != null && sharedDialogueGroup != null) return;
 
             var existing = GameObject.Find("Canvas_VillageNPC_Interactions");
             if (existing != null)
             {
-                sharedNpcCanvas = existing.GetComponent<Canvas>();
-                return;
+                if (Application.isPlaying) Destroy(existing);
+                else DestroyImmediate(existing);
             }
 
             var canvasGO = new GameObject("Canvas_VillageNPC_Interactions", typeof(Canvas), typeof(CanvasScaler));
-            DontDestroyOnLoad(canvasGO);
+            if (Application.isPlaying) DontDestroyOnLoad(canvasGO);
             sharedNpcCanvas = canvasGO.GetComponent<Canvas>();
             sharedNpcCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
             sharedNpcCanvas.sortingOrder = 460;
@@ -260,7 +380,7 @@ namespace HoaVaMau.Gameplay
             sharedKeyGlyphRect.sizeDelta = new Vector2(44f, 44f);
 
             var fill = glyphGO.GetComponent<Image>();
-            fill.color = new Color(1f, 1f, 1f, 0.08f);
+            fill.color = new Color(0.06f, 0.09f, 0.14f, 0.25f);
             fill.raycastTarget = false;
 
             CreateEdge(sharedKeyGlyphRect, "T", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -1.5f), Vector2.zero);
@@ -278,8 +398,9 @@ namespace HoaVaMau.Gameplay
             var ktxt = keyTxtGO.GetComponent<Text>();
             ktxt.font = uiFont;
             ktxt.fontSize = 20;
+            ktxt.fontStyle = FontStyle.Bold;
             ktxt.alignment = TextAnchor.MiddleCenter;
-            ktxt.color = new Color(1f, 1f, 1f, 0.74f);
+            ktxt.color = new Color(1f, 1f, 1f, 0.88f);
             ktxt.text = "E";
             ktxt.raycastTarget = false;
 
@@ -344,7 +465,7 @@ namespace HoaVaMau.Gameplay
             rt.offsetMin = offsetMin;
             rt.offsetMax = offsetMax;
             var img = go.GetComponent<Image>();
-            img.color = new Color(1f, 1f, 1f, 0.48f);
+            img.color = new Color(1f, 1f, 1f, 0.54f);
             img.raycastTarget = false;
         }
     }

@@ -1,3 +1,4 @@
+#pragma warning disable CS0618
 #if UNITY_EDITOR
 using System.IO;
 using System.Collections.Generic;
@@ -1284,7 +1285,7 @@ namespace HoaVaMau.Editor
         private static void RegisterScenesInBuildSettings()
         {
             var scenes = new List<EditorBuildSettingsScene>();
-            string[] paths = { MainMenuScenePath, OverhaulScenePath, "Assets/Scenes/canh1.unity" };
+            string[] paths = { MainMenuScenePath, OverhaulScenePath, "Assets/Scenes/CaMau_1954_Village.unity", "Assets/Scenes/canh1.unity" };
             foreach (var p in paths)
             {
                 if (File.Exists(p))

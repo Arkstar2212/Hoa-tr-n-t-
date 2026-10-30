@@ -48,18 +48,33 @@ namespace HoaVaMau.Gameplay
             {
                 Material mat = new Material(unlitShader);
                 mat.color = arcColorStart;
-                lineRend.material = mat;
+                lineRend.sharedMaterial = mat;
             }
+            lineRend.enabled = false;
+            lineRend.positionCount = 0;
         }
 
         private void CreateLandingMarker()
         {
+            Transform existingMarker = transform.Find("Trajectory_LandingMarker");
+            if (existingMarker != null)
+            {
+                landingMarker = existingMarker;
+                landingMarker.gameObject.SetActive(false);
+                return;
+            }
+
             GameObject markerGO = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             markerGO.name = "Trajectory_LandingMarker";
             markerGO.transform.SetParent(transform);
             markerGO.transform.localScale = new Vector3(0.42f, 0.02f, 0.42f);
 
-            Destroy(markerGO.GetComponent<Collider>());
+            var col = markerGO.GetComponent<Collider>();
+            if (col != null)
+            {
+                if (Application.isPlaying) Destroy(col);
+                else DestroyImmediate(col);
+            }
 
             Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
             if (unlitShader != null)

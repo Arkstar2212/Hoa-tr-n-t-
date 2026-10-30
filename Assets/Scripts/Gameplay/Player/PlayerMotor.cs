@@ -23,9 +23,9 @@ namespace HoaVaMau.Gameplay
         public float Acceleration { get; set; } = 26f;
         public float Deceleration { get; set; } = 30f;
 
-        public float JumpForce { get; set; } = 8.6f;
+        public float JumpForce { get; set; } = 6.2f; // Planet of Lana grounded vertical jump height (~0.85m)
         public float MinJumpTime { get; set; } = 0.12f;
-        public float Gravity { get; set; } = 23f;
+        public float Gravity { get; set; } = 22.5f;
         public float FallGravityMultiplier { get; set; } = 1.4f;
         public float TerminalVelocity { get; set; } = 14.5f;
         public float CoyoteTimeDuration { get; set; } = 0.16f;

@@ -15,7 +15,7 @@ namespace HoaVaMau.Gameplay
     public class InteractableCrate : MonoBehaviour
     {
         [Header("Dimensions & Physics")]
-        [SerializeField] private Vector3 boxSize = new Vector3(1.4f, 1.4f, 1.0f);
+        [SerializeField] private Vector3 boxSize = new Vector3(0.92f, 0.92f, 1.0f);
         [SerializeField] private float mass = 60f;
         [SerializeField] private float moveSpeed = 2.1f;
         [SerializeField] private LayerMask obstacleMask = ~0;
@@ -90,6 +90,28 @@ namespace HoaVaMau.Gameplay
 
             boxCollider.size = boxSize;
             boxCollider.center = new Vector3(0f, boxSize.y * 0.5f, 0f);
+
+            AlignChildMeshToBase();
+        }
+
+        /// <summary>
+        /// Đồng bộ chính xác đáy của MeshRenderer với đáy của BoxCollider tại Y = 0 (tránh lún đất).
+        /// </summary>
+        public void AlignChildMeshToBase()
+        {
+            var meshFilter = GetComponentInChildren<MeshFilter>();
+            if (meshFilter != null && meshFilter.sharedMesh != null)
+            {
+                var child = meshFilter.transform;
+                float rawMeshHeight = meshFilter.sharedMesh.bounds.size.y;
+                if (rawMeshHeight > 0.0001f)
+                {
+                    float targetScale = boxSize.y / rawMeshHeight;
+                    child.localScale = new Vector3(targetScale, targetScale, targetScale);
+                }
+                float meshCenterOffsetY = meshFilter.sharedMesh.bounds.center.y * child.localScale.y;
+                child.localPosition = new Vector3(0f, (boxSize.y * 0.5f) - meshCenterOffsetY, 0f);
+            }
         }
 
         /// <summary>
@@ -134,7 +156,7 @@ namespace HoaVaMau.Gameplay
         public Vector3 GetPlayerAnchorPosition(int side)
         {
             float halfWidth = boxSize.x * 0.5f;
-            float playerOffset = 0.52f; // Distance between player center and crate side
+            float playerOffset = 0.44f; // Distance between player center and crate side (arms touching crate)
             float targetX = transform.position.x + side * (halfWidth + playerOffset);
             return new Vector3(targetX, transform.position.y, 0f);
         }

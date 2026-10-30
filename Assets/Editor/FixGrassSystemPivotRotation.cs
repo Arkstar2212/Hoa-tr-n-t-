@@ -91,7 +91,7 @@ namespace HoaDo.EditorTools
             }
 
             // 3. Đảm bảo PlayerShaderPositionTracker không can thiệp méo đỉnh
-            var tracker = GameObject.FindFirstObjectByType<HoaDo.Environment.PlayerShaderPositionTracker>();
+            var tracker = GameObject.FindAnyObjectByType<HoaDo.Environment.PlayerShaderPositionTracker>();
             if (tracker != null)
             {
                 // Reset global shader vectors về trạng thái an toàn

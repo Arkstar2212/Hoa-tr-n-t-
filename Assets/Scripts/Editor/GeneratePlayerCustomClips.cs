@@ -83,7 +83,6 @@ namespace HoaVaMau.Editor
             AddCurve(clip, "Left Hand Down-Up", duration, samples, t => -0.15f);
             AddCurve(clip, "Right Hand Down-Up", duration, samples, t => -0.15f);
 
-            SetLoop(clip);
             SaveOrUpdateAsset(clip, path);
             return AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
         }
@@ -153,48 +152,80 @@ namespace HoaVaMau.Editor
             AddCurve(clip, "Left Forearm Stretch", duration, samples, t => -0.55f);
             AddCurve(clip, "Right Forearm Stretch", duration, samples, t => -0.55f);
 
-            SetLoop(clip);
             SaveOrUpdateAsset(clip, path);
             return AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+        }
+
+        private static void AddFingerGripCurves(AnimationClip clip, float duration, int samples, string prefix, float curl)
+        {
+            string[] fingers = new[]
+            {
+                "Thumb 1", "Thumb 2", "Thumb 3",
+                "Index 1", "Index 2", "Index 3",
+                "Middle 1", "Middle 2", "Middle 3",
+                "Ring 1", "Ring 2", "Ring 3",
+                "Little 1", "Little 2", "Little 3"
+            };
+
+            foreach (var f in fingers)
+            {
+                AddCurve(clip, $"{prefix} {f} Stretched", duration, samples, t => curl);
+            }
+            AddCurve(clip, $"{prefix} Thumb Spread", duration, samples, t => -0.25f);
         }
 
         private static AnimationClip CreateRopeHangClip()
         {
             string path = $"{CustomClipsDir}/An_Rope_Hang_Idle.anim";
             var clip = new AnimationClip { name = "An_Rope_Hang_Idle" };
-            float duration = 1.6f;
-            int samples = 30;
+            float duration = 1.8f;
+            int samples = 45;
 
-            // 1. Root suspended
-            AddCurve(clip, "RootT.x", duration, samples, t => 0f);
-            AddCurve(clip, "RootT.y", duration, samples, t => Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.015f);
-            AddCurve(clip, "RootT.z", duration, samples, t => 0f);
+            // 1. Root suspension height matching Hero Humanoid standard (1.124m)
+            AddCurve(clip, "RootT.x", duration, samples, t => -0.004f);
+            AddCurve(clip, "RootT.y", duration, samples, t => 1.124f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.015f);
+            AddCurve(clip, "RootT.z", duration, samples, t => -0.012f);
 
-            // 2. Hanging spine
-            AddCurve(clip, "Spine Front-Back", duration, samples, t => -0.06f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.02f);
-            AddCurve(clip, "Chest Front-Back", duration, samples, t => 0.04f);
-            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => 0.15f); // Looking slightly up towards rope anchor
+            // 2. Spine & Chest natural suspension under gravity
+            AddCurve(clip, "Spine Front-Back", duration, samples, t => -0.02f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.015f);
+            AddCurve(clip, "Chest Front-Back", duration, samples, t => 0.06f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.025f);
+            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => 0.22f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.015f); // Looking up at grip
 
-            // 3. Hands raised up overhead gripping the vertical rope
-            AddCurve(clip, "Right Arm Down-Up", duration, samples, t => 0.85f);
-            AddCurve(clip, "Right Arm Front-Back", duration, samples, t => 0.12f);
-            AddCurve(clip, "Right Forearm Stretch", duration, samples, t => 0.45f);
-            AddCurve(clip, "Right Hand Down-Up", duration, samples, t => -0.10f);
+            // 3. Elevated Clavicles supporting full body hanging weight
+            AddCurve(clip, "Right Shoulder Down-Up", duration, samples, t => 1.27f);
+            AddCurve(clip, "Right Shoulder Front-Back", duration, samples, t => 0.72f);
+            AddCurve(clip, "Left Shoulder Down-Up", duration, samples, t => 1.16f);
+            AddCurve(clip, "Left Shoulder Front-Back", duration, samples, t => 0.52f);
 
-            AddCurve(clip, "Left Arm Down-Up", duration, samples, t => 0.72f);
-            AddCurve(clip, "Left Arm Front-Back", duration, samples, t => 0.10f);
-            AddCurve(clip, "Left Forearm Stretch", duration, samples, t => 0.35f);
-            AddCurve(clip, "Left Hand Down-Up", duration, samples, t => -0.10f);
+            // 4. Staggered overhead grip (Planet of Lana style: Right hand high, Left hand ~15cm lower)
+            AddCurve(clip, "Right Arm Down-Up", duration, samples, t => 0.78f);
+            AddCurve(clip, "Right Arm Front-Back", duration, samples, t => 0.28f);
+            AddCurve(clip, "Right Arm Twist In-Out", duration, samples, t => 0.50f);
+            AddCurve(clip, "Right Forearm Stretch", duration, samples, t => 0.73f);
+            AddCurve(clip, "Right Forearm Twist In-Out", duration, samples, t => -0.67f);
+            AddCurve(clip, "Right Hand Down-Up", duration, samples, t => -0.12f);
 
-            // 4. Legs hanging loosely with gentle rope embrace
-            AddCurve(clip, "Left Upper Leg Front-Back", duration, samples, t => -0.12f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.03f);
-            AddCurve(clip, "Right Upper Leg Front-Back", duration, samples, t => -0.08f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.03f);
-            AddCurve(clip, "Left Lower Leg Stretch", duration, samples, t => -0.28f);
-            AddCurve(clip, "Right Lower Leg Stretch", duration, samples, t => -0.22f);
+            AddCurve(clip, "Left Arm Down-Up", duration, samples, t => 0.76f);
+            AddCurve(clip, "Left Arm Front-Back", duration, samples, t => 0.32f);
+            AddCurve(clip, "Left Arm Twist In-Out", duration, samples, t => 0.48f);
+            AddCurve(clip, "Left Forearm Stretch", duration, samples, t => 0.69f);
+            AddCurve(clip, "Left Forearm Twist In-Out", duration, samples, t => -0.62f);
+            AddCurve(clip, "Left Hand Down-Up", duration, samples, t => -0.12f);
+
+            // 5. Solid cylinder grip on rope (tight fists around rope)
+            AddFingerGripCurves(clip, duration, samples, "Right", -0.80f);
+            AddFingerGripCurves(clip, duration, samples, "Left", -0.80f);
+
+            // 6. Relaxed legs dangling along rope
+            AddCurve(clip, "Left Upper Leg Front-Back", duration, samples, t => -0.10f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.02f);
+            AddCurve(clip, "Right Upper Leg Front-Back", duration, samples, t => -0.06f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.02f);
+            AddCurve(clip, "Left Upper Leg In-Out", duration, samples, t => 0.08f);
+            AddCurve(clip, "Right Upper Leg In-Out", duration, samples, t => -0.05f);
+            AddCurve(clip, "Left Lower Leg Stretch", duration, samples, t => -0.24f);
+            AddCurve(clip, "Right Lower Leg Stretch", duration, samples, t => -0.18f);
             AddCurve(clip, "Left Foot Up-Down", duration, samples, t => -0.15f);
             AddCurve(clip, "Right Foot Up-Down", duration, samples, t => -0.15f);
 
-            SetLoop(clip);
             SaveOrUpdateAsset(clip, path);
             return AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
         }
@@ -203,59 +234,120 @@ namespace HoaVaMau.Editor
         {
             string path = $"{CustomClipsDir}/An_Rope_Climb_Up.anim";
             var clip = new AnimationClip { name = "An_Rope_Climb_Up" };
-            float duration = 0.85f;
-            int samples = 30;
+            float duration = 0.90f;
+            int samples = 45;
 
-            // 1. Root vertical impulse upward
+            // 1. Root vertical impulse upward (2 pulls per loop at suspended height ~1.124m)
             AddCurve(clip, "RootT.y", duration, samples, t =>
             {
-                float phase = (t / duration) * Mathf.PI * 2f;
-                return Mathf.Sin(phase) * 0.035f;
+                float phase = (t / duration) * Mathf.PI * 4f;
+                return 1.124f + Mathf.Sin(phase) * 0.035f;
             });
             AddCurve(clip, "RootT.x", duration, samples, t => 0f);
-            AddCurve(clip, "RootT.z", duration, samples, t => 0f);
+            AddCurve(clip, "RootT.z", duration, samples, t => -0.012f);
 
-            // 2. Spine flex
-            AddCurve(clip, "Spine Front-Back", duration, samples, t => 0.10f);
-            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => 0.22f); // Eyes on climb path
+            // 2. Spine & Chest flex + rotation towards reaching hand
+            AddCurve(clip, "Spine Front-Back", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 4f;
+                return 0.08f + 0.04f * Mathf.Sin(phase);
+            });
+            AddCurve(clip, "Chest Front-Back", duration, samples, t => 0.10f);
+            AddCurve(clip, "Spine Twist Left-Right", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f;
+                return 0.12f * Mathf.Sin(phase);
+            });
+            AddCurve(clip, "Chest Twist Left-Right", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f;
+                return 0.10f * Mathf.Sin(phase);
+            });
+            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => 0.28f); // Looking focused upward at rope grip
 
             // 3. Hand-over-hand climbing upward
+            AddCurve(clip, "Right Shoulder Down-Up", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f;
+                return 1.20f + 0.25f * Mathf.Sin(phase);
+            });
+            AddCurve(clip, "Right Shoulder Front-Back", duration, samples, t => 0.65f);
             AddCurve(clip, "Right Arm Down-Up", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f;
-                return 0.70f + 0.25f * Mathf.Sin(phase);
+                return 0.75f + 0.22f * Mathf.Sin(phase);
             });
-            AddCurve(clip, "Left Arm Down-Up", duration, samples, t =>
-            {
-                float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
-                return 0.70f + 0.25f * Mathf.Sin(phase);
-            });
+            AddCurve(clip, "Right Arm Front-Back", duration, samples, t => 0.30f);
+            AddCurve(clip, "Right Arm Twist In-Out", duration, samples, t => 0.50f);
             AddCurve(clip, "Right Forearm Stretch", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f;
-                return 0.25f + 0.35f * Mathf.Max(0f, Mathf.Sin(phase));
+                return 0.60f + 0.30f * Mathf.Sin(phase);
             });
+            AddCurve(clip, "Right Forearm Twist In-Out", duration, samples, t => -0.65f);
+            AddCurve(clip, "Right Hand Down-Up", duration, samples, t => -0.12f);
+
+            AddCurve(clip, "Left Shoulder Down-Up", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
+                return 1.20f + 0.25f * Mathf.Sin(phase);
+            });
+            AddCurve(clip, "Left Shoulder Front-Back", duration, samples, t => 0.65f);
+            AddCurve(clip, "Left Arm Down-Up", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
+                return 0.75f + 0.22f * Mathf.Sin(phase);
+            });
+            AddCurve(clip, "Left Arm Front-Back", duration, samples, t => 0.30f);
+            AddCurve(clip, "Left Arm Twist In-Out", duration, samples, t => 0.48f);
             AddCurve(clip, "Left Forearm Stretch", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
-                return 0.25f + 0.35f * Mathf.Max(0f, Mathf.Sin(phase));
+                return 0.60f + 0.30f * Mathf.Sin(phase);
             });
+            AddCurve(clip, "Left Forearm Twist In-Out", duration, samples, t => -0.62f);
+            AddCurve(clip, "Left Hand Down-Up", duration, samples, t => -0.12f);
 
-            // 4. Legs stepping / tucking upward
+            // 4. Tight grip on rope
+            AddFingerGripCurves(clip, duration, samples, "Right", -0.80f);
+            AddFingerGripCurves(clip, duration, samples, "Left", -0.80f);
+
+            // 5. Athletic leg tucking & bicycling (Planet of Lana standard)
             AddCurve(clip, "Left Upper Leg Front-Back", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f;
-                return -0.25f + 0.28f * Mathf.Sin(phase);
+                return -0.10f + 0.38f * Mathf.Max(0f, -Mathf.Sin(phase));
             });
+            AddCurve(clip, "Left Lower Leg Stretch", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f;
+                return -0.20f - 0.45f * Mathf.Max(0f, -Mathf.Sin(phase));
+            });
+            AddCurve(clip, "Left Foot Up-Down", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f;
+                return 0.18f * Mathf.Max(0f, -Mathf.Sin(phase)) - 0.12f;
+            });
+
             AddCurve(clip, "Right Upper Leg Front-Back", duration, samples, t =>
             {
-                float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
-                return -0.25f + 0.28f * Mathf.Sin(phase);
+                float phase = (t / duration) * Mathf.PI * 2f;
+                return -0.10f + 0.38f * Mathf.Max(0f, Mathf.Sin(phase));
             });
-            AddCurve(clip, "Left Lower Leg Stretch", duration, samples, t => -0.40f);
-            AddCurve(clip, "Right Lower Leg Stretch", duration, samples, t => -0.40f);
+            AddCurve(clip, "Right Lower Leg Stretch", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f;
+                return -0.20f - 0.45f * Mathf.Max(0f, Mathf.Sin(phase));
+            });
+            AddCurve(clip, "Right Foot Up-Down", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f;
+                return 0.18f * Mathf.Max(0f, Mathf.Sin(phase)) - 0.12f;
+            });
 
-            SetLoop(clip);
+            AddCurve(clip, "Left Upper Leg In-Out", duration, samples, t => 0.06f);
+            AddCurve(clip, "Right Upper Leg In-Out", duration, samples, t => -0.05f);
+
             SaveOrUpdateAsset(clip, path);
             return AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
         }
@@ -264,51 +356,86 @@ namespace HoaVaMau.Editor
         {
             string path = $"{CustomClipsDir}/An_Rope_Climb_Down.anim";
             var clip = new AnimationClip { name = "An_Rope_Climb_Down" };
-            float duration = 0.85f;
-            int samples = 30;
+            float duration = 0.90f;
+            int samples = 45;
 
-            // 1. Root lowering impulse
+            // 1. Root lowering impulse at suspended height ~1.124m
             AddCurve(clip, "RootT.y", duration, samples, t =>
             {
-                float phase = (t / duration) * Mathf.PI * 2f;
-                return -Mathf.Sin(phase) * 0.035f;
+                float phase = (t / duration) * Mathf.PI * 4f;
+                return 1.124f - Mathf.Sin(phase) * 0.025f;
             });
             AddCurve(clip, "RootT.x", duration, samples, t => 0f);
-            AddCurve(clip, "RootT.z", duration, samples, t => 0f);
+            AddCurve(clip, "RootT.z", duration, samples, t => -0.012f);
 
-            // 2. Spine straight
-            AddCurve(clip, "Spine Front-Back", duration, samples, t => -0.05f);
-            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => -0.15f); // Looking down
+            // 2. Spine & Head: looking downward along descent route
+            AddCurve(clip, "Spine Front-Back", duration, samples, t => -0.04f);
+            AddCurve(clip, "Chest Front-Back", duration, samples, t => 0.04f);
+            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => -0.22f);
 
-            // 3. Hand-over-hand descending downward
+            // 3. Hand-under-hand descending downward
+            AddCurve(clip, "Right Shoulder Down-Up", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f;
+                return 1.05f - 0.20f * Mathf.Sin(phase);
+            });
+            AddCurve(clip, "Right Shoulder Front-Back", duration, samples, t => 0.60f);
             AddCurve(clip, "Right Arm Down-Up", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f;
-                return 0.65f - 0.22f * Mathf.Sin(phase);
+                return 0.65f - 0.20f * Mathf.Sin(phase);
             });
+            AddCurve(clip, "Right Arm Front-Back", duration, samples, t => 0.28f);
+            AddCurve(clip, "Right Arm Twist In-Out", duration, samples, t => 0.48f);
+            AddCurve(clip, "Right Forearm Stretch", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f;
+                return 0.50f - 0.25f * Mathf.Sin(phase);
+            });
+            AddCurve(clip, "Right Forearm Twist In-Out", duration, samples, t => -0.65f);
+            AddCurve(clip, "Right Hand Down-Up", duration, samples, t => -0.12f);
+
+            AddCurve(clip, "Left Shoulder Down-Up", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
+                return 1.05f - 0.20f * Mathf.Sin(phase);
+            });
+            AddCurve(clip, "Left Shoulder Front-Back", duration, samples, t => 0.60f);
             AddCurve(clip, "Left Arm Down-Up", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
-                return 0.65f - 0.22f * Mathf.Sin(phase);
+                return 0.65f - 0.20f * Mathf.Sin(phase);
             });
-            AddCurve(clip, "Right Forearm Stretch", duration, samples, t => 0.35f);
-            AddCurve(clip, "Left Forearm Stretch", duration, samples, t => 0.35f);
+            AddCurve(clip, "Left Arm Front-Back", duration, samples, t => 0.28f);
+            AddCurve(clip, "Left Arm Twist In-Out", duration, samples, t => 0.48f);
+            AddCurve(clip, "Left Forearm Stretch", duration, samples, t =>
+            {
+                float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
+                return 0.50f - 0.25f * Mathf.Sin(phase);
+            });
+            AddCurve(clip, "Left Forearm Twist In-Out", duration, samples, t => -0.62f);
+            AddCurve(clip, "Left Hand Down-Up", duration, samples, t => -0.12f);
 
-            // 4. Legs extending down along rope
+            // 4. Tight grip on rope
+            AddFingerGripCurves(clip, duration, samples, "Right", -0.80f);
+            AddFingerGripCurves(clip, duration, samples, "Left", -0.80f);
+
+            // 5. Relaxed legs extending downward along rope line
             AddCurve(clip, "Left Upper Leg Front-Back", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f;
-                return -0.15f - 0.20f * Mathf.Sin(phase);
+                return -0.14f - 0.08f * Mathf.Sin(phase);
             });
             AddCurve(clip, "Right Upper Leg Front-Back", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
-                return -0.15f - 0.20f * Mathf.Sin(phase);
+                return -0.14f - 0.08f * Mathf.Sin(phase);
             });
-            AddCurve(clip, "Left Lower Leg Stretch", duration, samples, t => -0.30f);
-            AddCurve(clip, "Right Lower Leg Stretch", duration, samples, t => -0.30f);
+            AddCurve(clip, "Left Lower Leg Stretch", duration, samples, t => -0.22f);
+            AddCurve(clip, "Right Lower Leg Stretch", duration, samples, t => -0.22f);
+            AddCurve(clip, "Left Foot Up-Down", duration, samples, t => -0.20f);
+            AddCurve(clip, "Right Foot Up-Down", duration, samples, t => -0.20f);
 
-            SetLoop(clip);
             SaveOrUpdateAsset(clip, path);
             return AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
         }
@@ -353,10 +480,17 @@ namespace HoaVaMau.Editor
 
         private static void SaveOrUpdateAsset(AnimationClip clip, string path)
         {
+            SetLoop(clip);
             var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
             if (existing != null)
             {
-                EditorUtility.CopySerialized(clip, existing);
+                existing.ClearCurves();
+                var bindings = AnimationUtility.GetCurveBindings(clip);
+                foreach (var b in bindings)
+                {
+                    AnimationUtility.SetEditorCurve(existing, b, AnimationUtility.GetEditorCurve(clip, b));
+                }
+                SetLoop(existing);
                 EditorUtility.SetDirty(existing);
             }
             else

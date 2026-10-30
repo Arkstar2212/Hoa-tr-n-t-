@@ -1,3 +1,4 @@
+#pragma warning disable 0414
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Playables;
@@ -354,7 +355,7 @@ namespace HoaVaMau.Gameplay
                 playerObject = GameObject.FindGameObjectWithTag("Player");
                 if (playerObject == null)
                 {
-                    var pCtrl = FindFirstObjectByType<PlayerController>();
+                    var pCtrl = FindAnyObjectByType<PlayerController>();
                     if (pCtrl != null) playerObject = pCtrl.gameObject;
                 }
             }

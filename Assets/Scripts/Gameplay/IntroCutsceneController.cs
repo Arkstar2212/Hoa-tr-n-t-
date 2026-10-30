@@ -1,3 +1,5 @@
+#pragma warning disable 0219
+#pragma warning disable 0414
 using System;
 using System.Collections;
 using UnityEngine;
@@ -180,7 +182,7 @@ namespace HoaVaMau.Gameplay
             }
             if (cinemachineBrain != null && cinemachineBrain.UpdateMethod == CinemachineBrain.UpdateMethods.ManualUpdate)
             {
-                cinemachineBrain.ManualUpdate();
+                if (cinemachineBrain.UpdateMethod == Unity.Cinemachine.CinemachineBrain.UpdateMethods.ManualUpdate) cinemachineBrain.ManualUpdate();
             }
 
             // Keep cutscene canvas hidden initially until StartIntroCutscene explicitly shows it
@@ -267,7 +269,7 @@ namespace HoaVaMau.Gameplay
             if (ambientAudioSource == null)
             {
                 // Try finding ambient source in scene
-                var audioSources = UnityEngine.Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None);
+                var audioSources = UnityEngine.Object.FindObjectsByType<AudioSource>();
                 foreach (var src in audioSources)
                 {
                     if (src.clip != null && src.clip.name.ToLower().Contains("wind"))

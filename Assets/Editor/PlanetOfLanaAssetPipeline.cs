@@ -142,7 +142,7 @@ namespace HoaDo.EditorTools
             Undo.RegisterFullObjectHierarchyUndo(ledge01, "Stage Lana Authentic Platform");
 
             // Clean up old obsolete duplicate grass carpets
-            var oldCarpets = GameObject.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None);
+            var oldCarpets = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include);
             int cleanedCount = 0;
             foreach (var sr in oldCarpets)
             {

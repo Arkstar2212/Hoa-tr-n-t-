@@ -19,6 +19,7 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float impulseStrength = 14.0f;
 
         private PlayerController playerInside;
+        private HoaVaMau.Test3D.Player3DController player3DInside;
         private Transform visualChild;
         private Vector3 initialChildScale = Vector3.one;
         private Quaternion initialChildRot = Quaternion.identity;
@@ -99,13 +100,22 @@ namespace HoaVaMau.Gameplay
 
         private void OnTriggerEnter(Collider other)
         {
-            var player = other.GetComponent<PlayerController>();
+            var player = other.GetComponentInParent<PlayerController>();
             if (player != null)
             {
                 playerInside = player;
                 player.SetHidingInBush(true);
                 float dir = player.FacingDirection != 0 ? player.FacingDirection : 1f;
                 TriggerRustle(dir, 1.0f);
+                return;
+            }
+
+            var p3d = other.GetComponentInParent<HoaVaMau.Test3D.Player3DController>();
+            if (p3d != null)
+            {
+                player3DInside = p3d;
+                p3d.SetHidingInBush(true);
+                TriggerRustle(1f, 1.0f);
             }
         }
 
@@ -122,11 +132,19 @@ namespace HoaVaMau.Gameplay
                     TriggerRustle(playerInside.FacingDirection, 0.45f);
                 }
             }
+            else if (player3DInside != null)
+            {
+                player3DInside.Concealment = player3DInside.IsCrouching ? crouchingConcealment : standingConcealment;
+                if (player3DInside.PlanarSpeed > 0.25f && Mathf.Abs(wobbleVelocity) < 2.0f)
+                {
+                    TriggerRustle(Mathf.Sign(player3DInside.transform.forward.x + 0.01f), 0.45f);
+                }
+            }
         }
 
         private void OnTriggerExit(Collider other)
         {
-            var player = other.GetComponent<PlayerController>();
+            var player = other.GetComponentInParent<PlayerController>();
             if (player != null && player == playerInside)
             {
                 player.SetHidingInBush(false);
@@ -134,6 +152,16 @@ namespace HoaVaMau.Gameplay
                 float dir = player.FacingDirection != 0 ? player.FacingDirection : 1f;
                 TriggerRustle(dir, 0.75f);
                 playerInside = null;
+                return;
+            }
+
+            var p3d = other.GetComponentInParent<HoaVaMau.Test3D.Player3DController>();
+            if (p3d != null && p3d == player3DInside)
+            {
+                p3d.SetHidingInBush(false);
+                p3d.Concealment = 0f;
+                TriggerRustle(1f, 0.75f);
+                player3DInside = null;
             }
         }
     }

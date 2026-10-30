@@ -1,12 +1,13 @@
 using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace HoaVaMau.Gameplay
 {
     /// <summary>
     /// Contextual diegetic trigger for the Planet of Lana Prompt System.
-    /// Places translucent, minimalist controller/keyboard glyphs in the world
-    /// at key obstacle checkpoints (e.g. Rope, Ravine Jump, Fallen Trunk Crawl, Crate Grab).
-    /// Immediately fades out when the player executes the matching action or exits the area.
+    /// Supports both 2.5D Overhaul and 3D Ca Mau 1954 Village under both Input System & Legacy Input.
     /// </summary>
     [RequireComponent(typeof(Collider))]
     public class ContextualPromptTrigger : MonoBehaviour
@@ -16,7 +17,7 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private Transform worldAnchor;
         [SerializeField] private bool showOnceOnly = true;
         [SerializeField] private bool hideOnMatchingInput = true;
-        [SerializeField] private float overrideDuration = 0f; // 0 = stay active until input or exit
+        [SerializeField] private float overrideDuration = 0f;
 
         [Header("State")]
         private bool hasTriggered = false;
@@ -55,7 +56,8 @@ namespace HoaVaMau.Gameplay
             isPlayerInside = true;
             if (PlanetOfLanaPromptSystem.Instance != null)
             {
-                PlanetOfLanaPromptSystem.Instance.ShowPrompt(promptType, "", worldAnchor, overrideDuration);
+                float dur = overrideDuration > 0.05f ? overrideDuration : 6.0f;
+                PlanetOfLanaPromptSystem.Instance.ShowPrompt(promptType, "", worldAnchor, dur);
             }
         }
 
@@ -87,43 +89,62 @@ namespace HoaVaMau.Gameplay
 
         private bool HasMatchingInputPressed()
         {
+#if ENABLE_INPUT_SYSTEM
+            var kb = Keyboard.current;
+            if (kb != null)
+            {
+                switch (promptType)
+                {
+                    case PlanetOfLanaPromptSystem.PromptType.Move:
+                        return kb.wKey.isPressed || kb.aKey.isPressed || kb.sKey.isPressed || kb.dKey.isPressed ||
+                               kb.leftArrowKey.isPressed || kb.rightArrowKey.isPressed || kb.upArrowKey.isPressed || kb.downArrowKey.isPressed;
+                    case PlanetOfLanaPromptSystem.PromptType.Jump:
+                        return kb.spaceKey.wasPressedThisFrame || KeybindingManager.IsActionPressed(GameAction.Jump);
+                    case PlanetOfLanaPromptSystem.PromptType.Crawl:
+                        return kb.cKey.wasPressedThisFrame || kb.sKey.wasPressedThisFrame || kb.leftCtrlKey.wasPressedThisFrame ||
+                               KeybindingManager.IsActionPressed(GameAction.Crouch);
+                    case PlanetOfLanaPromptSystem.PromptType.ClimbLedge:
+                        return kb.wKey.wasPressedThisFrame || kb.upArrowKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame;
+                    case PlanetOfLanaPromptSystem.PromptType.Interact:
+                        return kb.eKey.wasPressedThisFrame || KeybindingManager.IsActionPressed(GameAction.Interact);
+                    case PlanetOfLanaPromptSystem.PromptType.RopeGrab:
+                        return kb.fKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame || kb.eKey.wasPressedThisFrame;
+                    case PlanetOfLanaPromptSystem.PromptType.PushPull:
+                        return kb.eKey.wasPressedThisFrame || KeybindingManager.IsActionPressed(GameAction.Interact);
+                }
+            }
+            return false;
+#else
             switch (promptType)
             {
                 case PlanetOfLanaPromptSystem.PromptType.Move:
                     return Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D) ||
                            Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) ||
                            Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0.35f;
-
                 case PlanetOfLanaPromptSystem.PromptType.Jump:
                     return Input.GetKeyDown(KeyCode.Space) || Input.GetButtonDown("Jump");
-
                 case PlanetOfLanaPromptSystem.PromptType.Crawl:
                     return Input.GetKeyDown(KeyCode.C) || Input.GetKeyDown(KeyCode.S) ||
                            Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.DownArrow);
-
                 case PlanetOfLanaPromptSystem.PromptType.ClimbLedge:
-                    return Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow) ||
-                           Input.GetKeyDown(KeyCode.Space);
-
+                    return Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.Space);
                 case PlanetOfLanaPromptSystem.PromptType.Interact:
                     return Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0);
-
                 case PlanetOfLanaPromptSystem.PromptType.RopeGrab:
-                    return Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.Space) ||
-                           Input.GetKeyDown(KeyCode.E);
-
+                    return Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.E);
                 case PlanetOfLanaPromptSystem.PromptType.PushPull:
                     return Input.GetKeyDown(KeyCode.E) || Input.GetMouseButton(0);
-
                 default:
                     return false;
             }
+#endif
         }
 
-        private bool IsPlayer(Collider col)
+        private static bool IsPlayer(Collider col)
         {
             return col.CompareTag("Player") ||
-                   col.GetComponent<PlayerController>() != null ||
+                   col.GetComponentInParent<PlayerController>() != null ||
+                   col.GetComponentInParent<HoaVaMau.Test3D.Player3DController>() != null ||
                    col.name.Contains("Minh") ||
                    col.name.Contains("Player") ||
                    col.name.Contains("An");

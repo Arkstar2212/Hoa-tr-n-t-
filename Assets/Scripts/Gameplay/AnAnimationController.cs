@@ -35,7 +35,7 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private bool enableKeyShortcuts = true;
 
         [Header("Hiển thị giao diện điều khiển trên màn hình (OnScreen GUI)")]
-        [SerializeField] private bool showOnScreenGui = true;
+        [SerializeField] private bool showOnScreenGui = false;
 
         [Header("Xoay mặt mượt mà")]
         [SerializeField] private bool smoothFacing = true;
@@ -168,6 +168,68 @@ namespace HoaVaMau.Gameplay
         {
             if (animator == null || !animator.isHuman) return;
 
+            // Rope IK: Khóa bàn tay bám chắc chắn vào dây thừng theo chuẩn Planet of Lana
+            if (playerController != null &&
+                (playerController.CurrentState == PlayerState.RopeGrab || playerController.CurrentState == PlayerState.RopeClimb) &&
+                playerController.RopeHandler != null && playerController.RopeHandler.CurrentRope != null)
+            {
+                var rope = playerController.RopeHandler.CurrentRope;
+                Vector3 ropeGrabPos = rope.GetPlayerRopePosition(playerController);
+                float radAngle = rope.CurrentAngleRadians;
+                Vector3 ropeTangent = new Vector3(Mathf.Sin(radAngle), -Mathf.Cos(radAngle), 0f);
+                Quaternion ropeHandRot = Quaternion.LookRotation(Vector3.forward, -ropeTangent);
+
+                if (currentPlayingState == "RopeHang")
+                {
+                    // Staggered grip: Tay phải nắm trên (+10cm), tay trái nắm dưới (-10cm)
+                    Vector3 rHandTarget = ropeGrabPos + ropeTangent * 0.10f;
+                    Vector3 lHandTarget = ropeGrabPos - ropeTangent * 0.10f;
+
+                    animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0.95f);
+                    animator.SetIKPosition(AvatarIKGoal.RightHand, rHandTarget);
+                    animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0.85f);
+                    animator.SetIKRotation(AvatarIKGoal.RightHand, ropeHandRot);
+
+                    animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.95f);
+                    animator.SetIKPosition(AvatarIKGoal.LeftHand, lHandTarget);
+                    animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0.85f);
+                    animator.SetIKRotation(AvatarIKGoal.LeftHand, ropeHandRot);
+                }
+                else
+                {
+                    // Khi đang trèo: Hand-over-hand bám dọc theo trục dây thừng
+                    Vector3 rHandAnim = animator.GetIKPosition(AvatarIKGoal.RightHand);
+                    Vector3 lHandAnim = animator.GetIKPosition(AvatarIKGoal.LeftHand);
+
+                    Vector3 rProjected = ropeGrabPos + Vector3.Project(rHandAnim - ropeGrabPos, ropeTangent);
+                    Vector3 lProjected = ropeGrabPos + Vector3.Project(lHandAnim - ropeGrabPos, ropeTangent);
+
+                    animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0.90f);
+                    animator.SetIKPosition(AvatarIKGoal.RightHand, rProjected);
+                    animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0.80f);
+                    animator.SetIKRotation(AvatarIKGoal.RightHand, ropeHandRot);
+
+                    animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.90f);
+                    animator.SetIKPosition(AvatarIKGoal.LeftHand, lProjected);
+                    animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0.80f);
+                    animator.SetIKRotation(AvatarIKGoal.LeftHand, ropeHandRot);
+                }
+
+                // LookAt IK: Nhìn theo trục dây lên trên khi leo hoặc nhìn xuống khi tụt
+                float lookOffset = (currentPlayingState == "RopeClimbDown") ? -1.0f : 1.5f;
+                Vector3 ropeLookTarget = ropeGrabPos + ropeTangent * lookOffset;
+                animator.SetLookAtWeight(0.70f, 0.1f, 0.80f, 0.0f, 0.4f);
+                animator.SetLookAtPosition(ropeLookTarget);
+                return;
+            }
+            else
+            {
+                animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0f);
+                animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0f);
+                animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0f);
+                animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0f);
+            }
+
             bool isCrouchedState = (currentPlayingState == "Crouch" || currentPlayingState == "CrouchWalk" || currentPlayingState == "CrouchIdle" ||
                                    mode == AnAnimationMode.ForceCrouch ||
                                    (playerController != null && playerController.IsCrouching));
@@ -224,8 +286,13 @@ namespace HoaVaMau.Gameplay
 
                 // Khóa hoàn toàn trục X và Z của xương Hips theo vị trí thực của nhân vật (100% In-Place)
                 // Ngăn chặn triệt để hiện tượng mesh chạy tiến ra trước Collider rồi bị giật lùi lại khi lặp vòng
-                hipPos.x = rootPos.x;
-                hipPos.z = rootPos.z;
+                if (currentPlayingState != "RopeHang" && currentPlayingState != "RopeClimbUp" && currentPlayingState != "RopeClimbDown" && currentPlayingState != "RopeClimb")
+                {
+                    hipPos.x = rootPos.x;
+                    hipPos.z = rootPos.z;
+    
+                }
+
 
                 // Khi đang leo trèo (Climb), quỹ đạo độ cao Y đã được PlayerLedgeClimber.EvaluateClimbTrajectory điều khiển mượt mà
                 if (currentPlayingState == "Climb")
@@ -366,6 +433,10 @@ namespace HoaVaMau.Gameplay
 
         private void UpdateFacingRotation()
         {
+            if (playerController != null && (playerController.CurrentState == PlayerState.RopeGrab || playerController.CurrentState == PlayerState.RopeClimb))
+            {
+                return;
+            }
             if (playerController != null)
             {
                 if (playerController.CurrentState == PlayerState.LedgeClimb || playerController.CurrentState == PlayerState.LedgeGrab)
@@ -514,6 +585,7 @@ namespace HoaVaMau.Gameplay
                 }
                 else
                 {
+                    if (throwPhase == ThrowAnimPhase.None && animator.speed != 1f) animator.speed = 1f;
                     isCrouching = playerController.IsCrouching;
                     isCrawling = playerController.IsCrawling;
 
@@ -843,7 +915,7 @@ namespace HoaVaMau.Gameplay
 
         private void OnGUI()
         {
-            if (!showOnScreenGui || !Application.isPlaying) return;
+            if (true) return;
 
             GUILayout.BeginArea(new Rect(20, 20, 360, 280), GUI.skin.box);
             GUILayout.Label("<color=#38bdf8><b>🎮 ĐIỀU KHIỂN NHÂN VẬT AN (HOA VÀ MÁU)</b></color>", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 14 });

@@ -13,7 +13,7 @@ namespace HoaDo.EditorTools
             int undoGroup = Undo.GetCurrentGroup();
 
             // 1. BỎ HOÀN TOÀN FOG / GODRAYS (Xóa các dải sương mù che mờ màn hình)
-            var godrayRenderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+            var godrayRenderers = UnityEngine.Object.FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include);
             int removedFogCount = 0;
             foreach (var r in godrayRenderers)
             {
@@ -74,7 +74,7 @@ namespace HoaDo.EditorTools
             EditorUtility.SetDirty(motesMat);
 
             // 3. TẮT HOẶC CẬP NHẬT TOÀN BỘ PARTICLE TRONG SCENE
-            var allPS = UnityEngine.Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None);
+            var allPS = UnityEngine.Object.FindObjectsByType<ParticleSystem>(FindObjectsInactive.Include);
             int fixedParticleCount = 0;
             foreach (var ps in allPS)
             {

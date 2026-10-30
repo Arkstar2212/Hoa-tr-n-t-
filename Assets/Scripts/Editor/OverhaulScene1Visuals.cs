@@ -919,7 +919,7 @@ namespace HoaVaMau.Editor
 
             var crateGO = new GameObject("Obstacle04_PushPull_WoodenCrate");
             crateGO.transform.SetParent(obstaclesRoot.transform, false);
-            crateGO.transform.position = new Vector3(30.60f, -0.71f, 0f);
+            crateGO.transform.position = new Vector3(30.00f, -1.10f, 0f);
             crateGO.transform.rotation = Quaternion.identity;
 
             if (crateModel != null)
@@ -933,7 +933,7 @@ namespace HoaVaMau.Editor
                 visualInst.transform.localRotation = Quaternion.identity;
 
                 // Proportional puzzle crate: strictly normalized to 0.78m height (waist-height to An)
-                float targetH = 0.78f;
+                float targetH = 0.92f;
                 var mf = visualInst.GetComponentInChildren<MeshFilter>();
                 if (mf != null && mf.sharedMesh != null && mf.sharedMesh.bounds.size.y > 0.0001f)
                 {
@@ -944,7 +944,7 @@ namespace HoaVaMau.Editor
                 }
                 else
                 {
-                    visualInst.transform.localScale = new Vector3(0.78f, 0.78f, 0.78f);
+                    visualInst.transform.localScale = new Vector3(0.92f, 0.92f, 0.92f);
                     visualInst.transform.localPosition = Vector3.zero;
                 }
                 foreach (var embCam in visualInst.GetComponentsInChildren<Camera>(true)) UnityEngine.Object.DestroyImmediate(embCam.gameObject);
@@ -959,14 +959,14 @@ namespace HoaVaMau.Editor
             {
                 var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 cube.transform.SetParent(crateGO.transform, false);
-                cube.transform.localScale = new Vector3(0.78f, 0.78f, 0.78f);
+                cube.transform.localScale = new Vector3(0.92f, 0.92f, 0.92f);
                 UnityEngine.Object.DestroyImmediate(cube.GetComponent<Collider>());
                 if (crateMat != null) cube.GetComponent<MeshRenderer>().sharedMaterial = crateMat;
             }
 
             var crateBC = crateGO.AddComponent<BoxCollider>();
-            crateBC.size = new Vector3(0.78f, 0.78f, 0.78f);
-            crateBC.center = Vector3.zero;
+            crateBC.size = new Vector3(0.92f, 0.92f, 1.0f);
+            crateBC.center = new Vector3(0f, 0.46f, 0f);
 
             var crateRB = crateGO.AddComponent<Rigidbody>();
             crateRB.mass = 22f;

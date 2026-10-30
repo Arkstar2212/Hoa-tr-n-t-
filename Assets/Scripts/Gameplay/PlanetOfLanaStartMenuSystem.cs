@@ -1,3 +1,4 @@
+#pragma warning disable 0414
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -1407,7 +1408,16 @@ namespace HoaVaMau.Gameplay
             isAsyncLoadingStarted = true;
             float startTime = Time.unscaledTime;
 
-            asyncSceneLoadOp = SceneManager.LoadSceneAsync(targetGameplaySceneName);
+            string sceneToLoad = targetGameplaySceneName;
+            if (currentSaveMode == SaveModalMode.Continue)
+            {
+                var slotData = HoaVaMauSaveSystem.GetSlotData(HoaVaMauSaveSystem.ActiveSlotIndex);
+                if (slotData != null && slotData.isOccupied && !string.IsNullOrEmpty(slotData.savedSceneName))
+                {
+                    sceneToLoad = slotData.savedSceneName;
+                }
+            }
+            asyncSceneLoadOp = SceneManager.LoadSceneAsync(sceneToLoad);
             if (asyncSceneLoadOp != null)
             {
                 asyncSceneLoadOp.allowSceneActivation = false;
@@ -1437,7 +1447,7 @@ namespace HoaVaMau.Gameplay
             {
                 Debug.LogWarning($"[StartMenu] Scene '{targetGameplaySceneName}' not found in Build Settings! Loading via synchronous fallback.");
                 yield return new WaitForSecondsRealtime(botwMinLoadingDuration);
-                SceneManager.LoadScene(targetGameplaySceneName);
+                SceneManager.LoadScene(sceneToLoad);
             }
         }
 

@@ -42,8 +42,8 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float airDamping = 0.988f;
         [Range(4, 20)]
         [SerializeField] private int constraintIterations = 14;
-        [SerializeField] private float maxSwingSpeed = 12.0f;
-        [SerializeField] private float maxSwingAngle = 55.0f; // Max deflection angle (degrees)
+        [SerializeField] private float maxSwingSpeed = 2.0f;
+        [SerializeField] private float maxSwingAngle = 6.0f; // Max deflection angle (degrees) - Planet of Lana neat rope
 
         [Header("Ambient Breeze (Gentle Wiggle)")]
         [SerializeField] private bool enableAmbientWiggle = true;
@@ -51,9 +51,9 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float windFrequency = 1.25f;
 
         [Header("Player Interaction (Planet of Lana Standard)")]
-        [SerializeField] private float playerSwingForce = 38.0f; // Resonant pendulum torque
+        [SerializeField] private float playerSwingForce = 0.0f; // No violent resonant momentum swing
         [SerializeField] private float climbWiggleForce = 0.25f;
-        [SerializeField] private float momentumTransferRatio = 0.90f; // Transfer ratio of jump velocity into initial swing
+        [SerializeField] private float momentumTransferRatio = 0.0f; // Stable grab without launch velocity
 
         [Header("Visuals")]
         [SerializeField] private Color ropeColor = new Color(0.60f, 0.45f, 0.28f);
@@ -205,8 +205,8 @@ namespace HoaVaMau.Gameplay
             // Restoring torque from gravity: alpha_g = -(g / L) * sin(theta)
             float gravityTorque = -(gravity / effLength) * Mathf.Sin(currentAngle);
 
-            // Natural aerodynamic damping on the swinging body
-            float bodyDamping = 0.28f;
+            // Fast natural settling damping on the rope (Planet of Lana standard)
+            float bodyDamping = 4.5f;
 
             // Smooth user swing input
             smoothedSwingInput = Mathf.MoveTowards(smoothedSwingInput, currentSwingInput, dt * 5.5f);
@@ -553,7 +553,7 @@ namespace HoaVaMau.Gameplay
             float vx = angularVelocity * effLength * Mathf.Cos(currentAngle);
             float vy = angularVelocity * effLength * Mathf.Sin(currentAngle);
             Vector3 vel = new Vector3(vx, vy, 0f);
-            return Vector3.ClampMagnitude(vel, maxSwingSpeed);
+            return Vector3.zero; // Planet of Lana: no chaotic slingshot launch velocity
         }
 
         public void ReleasePlayer(PlayerController player)

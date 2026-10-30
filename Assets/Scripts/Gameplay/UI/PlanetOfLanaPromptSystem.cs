@@ -1,14 +1,17 @@
-﻿using System.Collections;
+#pragma warning disable 0414
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace HoaVaMau.Gameplay
 {
     /// <summary>
     /// Minimalist, contextual in-game prompt UI for "Hoa trên Đất Đỏ" strictly adhering to Planet of Lana aesthetic.
-    /// Displays elegant rounded keycap icons with simplified contextual action indicators.
-    /// Never clutters the screen with static text boxes.
+    /// Supports both 2.5D Overhaul and 3D Ca Mau 1954 Village under Input System & Legacy Input.
     /// </summary>
     [DisallowMultipleComponent]
     public class PlanetOfLanaPromptSystem : MonoBehaviour
@@ -17,13 +20,13 @@ namespace HoaVaMau.Gameplay
 
         public enum PromptType
         {
-            Move,       // [A] [D]
+            Move,       // [A] [D] / [WASD]
             Jump,       // [Space]
             Crawl,      // [S] / [C]
             ClimbLedge, // [W]
             Interact,   // [E]
             RopeGrab,   // [F]
-            PushPull    // [Hold LMB]
+            PushPull    // [E] / [Hold LMB]
         }
 
         [Header("Appearance & Timing")]
@@ -31,7 +34,6 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float autoHideDuration = 4.5f;
         [SerializeField] private Vector3 screenOffset = new Vector3(0f, 85f, 0f);
 
-        // Internal Runtime UI
         private Canvas promptCanvas;
         private CanvasGroup promptCanvasGroup;
         private RectTransform promptRootRect;
@@ -57,14 +59,13 @@ namespace HoaVaMau.Gameplay
 
         private void Start()
         {
-            // Show initial movement prompt at game start
             StartCoroutine(ShowInitialMovementPrompt());
         }
 
         private IEnumerator ShowInitialMovementPrompt()
         {
-            // Do not show movement pill if tutorial controller is handling it or if cutscene is active
-            if (Object.FindAnyObjectByType<PlanetOfLanaTutorialController>() != null)
+            if (Object.FindAnyObjectByType<PlanetOfLanaTutorialController>() != null ||
+                Object.FindAnyObjectByType<CaMau3DUIGuideController>() != null)
             {
                 yield break;
             }
@@ -77,26 +78,36 @@ namespace HoaVaMau.Gameplay
         {
             if (!isShowing) return;
 
-            // If tracking an in-world object, project to screen coordinates
             if (trackedWorldTarget != null && Camera.main != null)
             {
                 Vector3 screenPos = Camera.main.WorldToScreenPoint(trackedWorldTarget.position + Vector3.up * 1.5f) + screenOffset;
-                if (screenPos.z > 0)
+                if (screenPos.z > 0f)
                 {
                     promptRootRect.position = screenPos;
                 }
             }
 
-            // Dismiss Move prompt as soon as player walks
-            if (keyCapText != null && keyCapText.text.Contains("A") && (Input.GetAxisRaw("Horizontal") != 0))
+            if (keyCapText != null && keyCapText.text.Contains("A") && HasMoveInput())
             {
                 HidePrompt();
             }
         }
 
-        /// <summary>
-        /// Display a minimalist key prompt badge in Planet of Lana style.
-        /// </summary>
+        private static bool HasMoveInput()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var kb = Keyboard.current;
+            if (kb != null && (kb.aKey.isPressed || kb.dKey.isPressed || kb.wKey.isPressed || kb.sKey.isPressed ||
+                               kb.leftArrowKey.isPressed || kb.rightArrowKey.isPressed))
+            {
+                return true;
+            }
+            return false;
+#else
+            return Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0.05f;
+#endif
+        }
+
         public void ShowPrompt(PromptType type, string actionLabel, Transform worldAnchor = null, float duration = 4.0f)
         {
             if (activePromptRoutine != null) StopCoroutine(activePromptRoutine);
@@ -115,23 +126,26 @@ namespace HoaVaMau.Gameplay
             isShowing = true;
             trackedWorldTarget = worldAnchor;
 
-            // Configure Keycap Label according to type
             string keyString = "[ A ] [ D ]";
             switch (type)
             {
                 case PromptType.Move: keyString = "[ A ]  [ D ]"; break;
                 case PromptType.Jump: keyString = "[ SPACE ]"; break;
-                case PromptType.Crawl: keyString = "[ S ]"; break;
+                case PromptType.Crawl: keyString = "[ C ]"; break;
                 case PromptType.ClimbLedge: keyString = "[ W ]"; break;
                 case PromptType.Interact: keyString = "[ E ]"; break;
                 case PromptType.RopeGrab: keyString = "[ F ]"; break;
-                case PromptType.PushPull: keyString = "[ GIỮ CHUỘT TRÁI ]"; break;
+                case PromptType.PushPull: keyString = "[ E ]"; break;
             }
 
             if (keyCapText != null) keyCapText.text = keyString;
-            if (actionLabelText != null) actionLabelText.text = actionLabel.ToUpper();
+            if (actionLabelText != null)
+            {
+                bool hasLabel = !string.IsNullOrEmpty(actionLabel);
+                actionLabelText.text = hasLabel ? actionLabel.ToUpper() : "";
+                if (actionPillBg != null) actionPillBg.gameObject.SetActive(hasLabel);
+            }
 
-            // Default to bottom center if no world anchor
             if (trackedWorldTarget == null)
             {
                 promptRootRect.anchorMin = new Vector2(0.5f, 0.12f);
@@ -139,7 +153,6 @@ namespace HoaVaMau.Gameplay
                 promptRootRect.anchoredPosition = Vector2.zero;
             }
 
-            // Fade In
             float elapsed = 0f;
             while (elapsed < fadeDuration)
             {
@@ -149,10 +162,7 @@ namespace HoaVaMau.Gameplay
             }
             promptCanvasGroup.alpha = 1f;
 
-            // Hold
-            yield return new WaitForSeconds(duration);
-
-            // Fade Out
+            yield return new WaitForSeconds(Mathf.Max(0.5f, duration));
             yield return FadeOutRoutine();
         }
 
@@ -193,7 +203,6 @@ namespace HoaVaMau.Gameplay
             scaler.referenceResolution = new Vector2(1920, 1080);
             scaler.matchWidthOrHeight = 0.5f;
 
-            // Root Badge Container
             GameObject rootGo = new GameObject("PromptBadgeRoot", typeof(RectTransform), typeof(CanvasGroup), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter));
             rootGo.transform.SetParent(canvasGo.transform, false);
 
@@ -226,11 +235,10 @@ namespace HoaVaMau.Gameplay
                 try { promptFont = Resources.GetBuiltinResource<Font>("Arial.ttf"); } catch { }
             }
 
-            // 1. Key Badge (Solid White Pill with Dark Key Icon)
             GameObject keyBadgeGo = new GameObject("KeyBadge", typeof(Image), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter));
             keyBadgeGo.transform.SetParent(rootGo.transform, false);
             keyCapBg = keyBadgeGo.GetComponent<Image>();
-            keyCapBg.color = new Color(1f, 1f, 1f, 0.95f); // Crisp white keycap
+            keyCapBg.color = new Color(1f, 1f, 1f, 0.95f);
 
             var keyLayout = keyBadgeGo.GetComponent<HorizontalLayoutGroup>();
             keyLayout.padding = new RectOffset(12, 12, 6, 6);
@@ -246,14 +254,13 @@ namespace HoaVaMau.Gameplay
             keyCapText.fontSize = 15;
             keyCapText.fontStyle = FontStyle.Bold;
             keyCapText.alignment = TextAnchor.MiddleCenter;
-            keyCapText.color = new Color(0.05f, 0.08f, 0.14f, 1.0f); // Dark background navy contrast
+            keyCapText.color = new Color(0.05f, 0.08f, 0.14f, 1.0f);
             keyCapText.text = "[ A ]  [ D ]";
 
-            // 2. Action Label (Translucent Dark Pill with White Text)
             GameObject actionGo = new GameObject("ActionBadge", typeof(Image), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter));
             actionGo.transform.SetParent(rootGo.transform, false);
             actionPillBg = actionGo.GetComponent<Image>();
-            actionPillBg.color = new Color(0.04f, 0.07f, 0.12f, 0.75f); // Deep navy translucent pill
+            actionPillBg.color = new Color(0.04f, 0.07f, 0.12f, 0.75f);
 
             var actLayout = actionGo.GetComponent<HorizontalLayoutGroup>();
             actLayout.padding = new RectOffset(14, 14, 6, 6);
@@ -273,4 +280,3 @@ namespace HoaVaMau.Gameplay
         }
     }
 }
-

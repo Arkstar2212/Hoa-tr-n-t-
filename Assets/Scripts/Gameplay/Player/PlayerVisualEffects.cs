@@ -25,6 +25,8 @@ namespace HoaVaMau.Gameplay
         public float PushLeanAngle { get; set; } = 14.0f;
         public float PullLeanAngle { get; set; } = -11.0f;
         public float RopeAngle { get; set; } = 0f;
+        public float SwingLagAngle { get; set; } = 0f;
+        public float HandOffsetHeight { get; set; } = 1.20f;
 
         public float BaseVisualScaleX => baseVisualScaleX;
         public float BaseVisualScaleY => baseVisualScaleY;
@@ -111,7 +113,9 @@ namespace HoaVaMau.Gameplay
                 // In Unity, when facing left (facingDirection < 0), yRot is 180 deg.
                 // Rotating around Z when Y=180 inverts world Z rotation.
                 // Multiplying by facingDirection guarantees correct world tilt along the rope in both directions.
-                zRot = facingDirection * RopeAngle;
+                // SwingLagAngle adds authentic Planet of Lana inertia lag to the body.
+                // Thân người được PlayerRopeHandler điều khiển trực tiếp ở root transform
+                zRot = 0f;
             }
 
             visualTransform.localEulerAngles = new Vector3(0f, yRot, zRot);
@@ -126,6 +130,7 @@ namespace HoaVaMau.Gameplay
             {
                 visualTransform.localScale = new Vector3(baseVisualScaleX, baseVisualScaleY, baseVisualScaleZ);
             }
+
             visualTransform.localPosition = Vector3.zero;
 
             if (currentState != PlayerState.PushPull && currentState != PlayerState.Carrying && !isCrawling)

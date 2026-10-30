@@ -78,6 +78,7 @@ namespace HoaVaMau.Gameplay
         private Text vsyncBtnText;
 
         private PlayerController player;
+        private HoaVaMau.Test3D.Player3DController player3D;
 
         public bool IsPaused => isPaused;
 
@@ -233,6 +234,10 @@ namespace HoaVaMau.Gameplay
 
             if (player == null) FindPlayerReference();
             if (player != null) player.enabled = false;
+            if (player3D == null) FindPlayerReference();
+            if (player3D != null) player3D.enabled = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
 
             AttenuateAudio(true);
 
@@ -269,6 +274,12 @@ namespace HoaVaMau.Gameplay
             Time.timeScale = 1.0f;
 
             if (player != null) player.enabled = true;
+            if (player3D != null) player3D.enabled = true;
+            if (UnityEngine.Object.FindAnyObjectByType<HoaVaMau.ThirdPersonOrbitCamera>() != null)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
 
             AttenuateAudio(false);
 
@@ -295,7 +306,14 @@ namespace HoaVaMau.Gameplay
 
             Vector3 savePos = (player != null) ? player.transform.position : new Vector3(0f, -1.77f, 0f);
             int slot = HoaVaMauSaveSystem.ActiveSlotIndex;
-            HoaVaMauSaveSystem.SaveCurrentGameState(slot, "Chương 1: Đất Đỏ Cà Mau", "Bờ Sông Đất Đỏ", 0, savePos);
+            if (player == null && player3D == null) FindPlayerReference();
+            savePos = (player != null) ? player.transform.position : ((player3D != null) ? player3D.transform.position : new Vector3(0f, -1.77f, 0f));
+            string activeScene = SceneManager.GetActiveScene().name;
+            bool isCaMau3D = activeScene == "CaMau_1954_Village" || (player == null && player3D != null);
+            string chap = isCaMau3D ? "Chương 2: Xóm Rạch Gốc 1954" : "Chương 1: Đất Đỏ Cà Mau";
+            string loc = isCaMau3D ? "Làng Ven Sông Cà Mau 1954" : "Bờ Sông Đất Đỏ";
+            int cpIdx = CheckpointManager.Instance != null ? Mathf.Max(1, CheckpointManager.Instance.CurrentCheckpointIndex) : (isCaMau3D ? 10 : 0);
+            HoaVaMauSaveSystem.SaveCurrentGameState(slot, chap, loc, cpIdx, savePos, true, activeScene);
         }
 
         private void HandleAutosaveEvent(bool success, string location)
@@ -393,7 +411,7 @@ namespace HoaVaMau.Gameplay
             {
                 duckedSources.Clear();
                 originalVolumes.Clear();
-                var sources = UnityEngine.Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None);
+                var sources = UnityEngine.Object.FindObjectsByType<AudioSource>();
                 foreach (var s in sources)
                 {
                     if (s == sfxSource || !s.isPlaying) continue;
@@ -451,6 +469,7 @@ namespace HoaVaMau.Gameplay
         private void FindPlayerReference()
         {
             player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
+            player3D = UnityEngine.Object.FindAnyObjectByType<HoaVaMau.Test3D.Player3DController>();
         }
 
         private void EnsureEventSystem()

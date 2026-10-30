@@ -12,6 +12,8 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float forwardCheckDist = 0.85f;
         [SerializeField] private float headHeight = 1.6f;
         [SerializeField] private float chestHeight = 1.0f;
+        [SerializeField] private float minLedgeReach = 0.60f;
+        [SerializeField] private float maxLedgeReach = 2.15f;
         [SerializeField] private LayerMask obstacleMask = ~0; // Default to all layers
 
         [Header("Position Offsets")]
@@ -67,7 +69,7 @@ namespace HoaVaMau.Gameplay
 
             // Chỉ bám gờ khi mép tường nằm đúng tầm tay với khi nhảy / rơi (cao hơn bàn chân từ 0.6m đến 2.35m)
             float ledgeHeightAboveFeet = topY - origin.y;
-            if (ledgeHeightAboveFeet < 0.6f || ledgeHeightAboveFeet > 2.35f)
+            if (ledgeHeightAboveFeet < minLedgeReach || ledgeHeightAboveFeet > maxLedgeReach)
             {
                 return false;
             }

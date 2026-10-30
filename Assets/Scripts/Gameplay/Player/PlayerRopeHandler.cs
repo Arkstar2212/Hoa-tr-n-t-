@@ -14,7 +14,7 @@ namespace HoaVaMau.Gameplay
         private RopeController currentRope;
         private float ropeAttachCooldown = 0f;
 
-        public float HandOffsetHeight { get; set; } = 1.35f; // Khoảng cách từ gốc tọa độ chân lên đến bàn tay nắm dây
+        public float HandOffsetHeight { get; set; } = 1.20f; // Khoảng cách từ gốc tọa độ chân lên đến bàn tay nắm dây (chuẩn 1.20m theo Boy_Character)
         public float CurrentRopeAngle => currentRope != null ? currentRope.CurrentAngleDegrees : 0f;
 
         public bool CanAttachToRope => ropeAttachCooldown <= 0f;
@@ -75,10 +75,10 @@ namespace HoaVaMau.Gameplay
                 currentRope.Climb(player, verticalInput * climbSpeed * dt);
             }
 
-            // 2. Lấy đà đung đưa con lắc khi bấm A / D (hoặc cần gạt trái/phải)
+            // 2. Chuyển hướng mặt theo phím A / D (Chuẩn Planet of Lana: gọn lẹ, không momentum swing tích lũy phóng người)
             if (Mathf.Abs(horizontalInput) > 0.05f)
             {
-                currentRope.ApplySwingInput(horizontalInput, dt);
+                // No momentum swing pumping
                 player.SetFacingDirection(Mathf.Sign(horizontalInput));
             }
             else if (Mathf.Abs(currentRope.AngularVelocity) > 0.45f)
@@ -87,19 +87,29 @@ namespace HoaVaMau.Gameplay
                 player.SetFacingDirection(Mathf.Sign(currentRope.AngularVelocity));
             }
 
-            // 3. Cập nhật vị trí nhân vật theo đốt dây đang bám
+            // 3. Cập nhật vị trí và góc xoay nhân vật theo đốt dây đang bám (Planet of Lana standard)
             Vector3 ropeGrabPos = currentRope.GetPlayerRopePosition(player);
-            transform.position = new Vector3(ropeGrabPos.x, ropeGrabPos.y - HandOffsetHeight, 0f);
+            float ropeAngle = currentRope.CurrentAngleDegrees;
+            float angVel = currentRope.AngularVelocity;
+            float lagAngle = -Mathf.Clamp(angVel * 3.5f, -14f, 14f);
+            float totalTiltAngle = ropeAngle + lagAngle;
+
+            Quaternion ropeTilt = Quaternion.AngleAxis(totalTiltAngle, Vector3.forward);
+            Vector3 pivotOffset = ropeTilt * new Vector3(0f, HandOffsetHeight, 0f);
+
+            float facingYaw = (player.FacingDirection > 0) ? 90f : -90f;
+            transform.rotation = ropeTilt * Quaternion.Euler(0f, facingYaw, 0f);
+            transform.position = ropeGrabPos - pivotOffset;
 
             // 4. Bật nhảy phóng khỏi dây thừng (Planet of Lana Athletic Leap Arc)
             if (jumpPressed)
             {
-                Vector3 ropeTanVel = currentRope.GetReleaseVelocity();
+                Vector3 ropeTanVel = Vector3.zero;
 
                 // Thả tay rơi tự do nếu đang nhấn giữ phím xuống [S]
                 if (verticalInput < -0.4f)
                 {
-                    releaseVelocity = new Vector3(ropeTanVel.x * 0.75f, Mathf.Min(ropeTanVel.y, 0f), 0f);
+                    releaseVelocity = Vector3.zero;
                 }
                 else
                 {
@@ -108,14 +118,14 @@ namespace HoaVaMau.Gameplay
                         ? Mathf.Sign(horizontalInput)
                         : (Mathf.Abs(ropeTanVel.x) > 0.4f ? Mathf.Sign(ropeTanVel.x) : player.FacingDirection);
 
-                    float launchSpeedX = Mathf.Abs(ropeTanVel.x) * 1.15f + 3.4f;
-                    float launchSpeedY = Mathf.Max(ropeTanVel.y, 0f) * 0.75f + 6.6f;
+                    float launchSpeedX = 3.2f;
+                    float launchSpeedY = (player != null && player.Motor != null) ? player.Motor.JumpForce : 6.2f;
 
                     releaseVelocity = new Vector3(launchDir * launchSpeedX, launchSpeedY, 0f);
                     player.SetFacingDirection(launchDir);
                 }
 
-                ropeAttachCooldown = 0.45f;
+                ropeAttachCooldown = 0.35f;
                 DetachFromRope(player, releaseVelocity);
                 return false; // Released
             }
@@ -132,6 +142,10 @@ namespace HoaVaMau.Gameplay
             }
 
             if (charController != null) charController.enabled = true;
+
+            // Đặt lại góc nghiêng nhân vật thẳng đứng theo hướng mặt
+            float facingYaw = (player.FacingDirection > 0) ? 90f : -90f;
+            transform.rotation = Quaternion.Euler(0f, facingYaw, 0f);
 
             if (Mathf.Abs(releaseVelocity.x) > 0.1f)
             {

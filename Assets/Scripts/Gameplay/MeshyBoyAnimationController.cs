@@ -114,6 +114,7 @@ namespace HoaVaMau.Gameplay
                 if (animator == null) return;
             }
 
+            if (GetComponent<HoaVaMau.Test3D.Player3DController>() != null) { showOnScreenGui = false; enabled = false; return; }
             if (animator.applyRootMotion) animator.applyRootMotion = false;
 
             if (!Application.isPlaying) return;
@@ -256,6 +257,12 @@ namespace HoaVaMau.Gameplay
 
         public void SetupComponents()
         {
+            if (GetComponent<HoaVaMau.Test3D.Player3DController>() != null)
+            {
+                showOnScreenGui = false;
+                enabled = false;
+                return;
+            }
             if (animator == null) animator = GetComponent<Animator>();
             if (characterController == null) characterController = GetComponent<CharacterController>();
             if (playerController == null) playerController = GetComponent<PlayerController>();
@@ -836,7 +843,7 @@ namespace HoaVaMau.Gameplay
 
         private void OnGUI()
         {
-            if (!showOnScreenGui || !Application.isPlaying) return;
+            if (true) return;
 
             GUILayout.BeginArea(new Rect(20, 20, 360, 280), GUI.skin.box);
             GUILayout.Label("<color=#38bdf8><b>🎮 MESHY BOY TEST CONTROLLER</b></color>", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 14 });

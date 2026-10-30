@@ -558,7 +558,7 @@ namespace HoaVaMau.EditorTools
             Camera mainCam = Camera.main;
             if (mainCam == null)
             {
-                var cams = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
+                var cams = UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include);
                 if (cams.Length > 0) mainCam = cams[0];
             }
 

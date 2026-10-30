@@ -41,7 +41,7 @@ namespace HoaDo.EditorTools
 
         private static void EnsurePlayerPositionTracker()
         {
-            var tracker = GameObject.FindFirstObjectByType<HoaDo.Environment.PlayerShaderPositionTracker>();
+            var tracker = GameObject.FindAnyObjectByType<HoaDo.Environment.PlayerShaderPositionTracker>();
             if (tracker == null)
             {
                 var envSystems = GameObject.Find("10_EnvironmentSystems");

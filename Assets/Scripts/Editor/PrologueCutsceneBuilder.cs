@@ -15,7 +15,7 @@ namespace HoaVaMau.EditorScripts
             var playerGO = GameObject.FindGameObjectWithTag("Player");
             if (playerGO == null)
             {
-                var pCtrl = Object.FindFirstObjectByType<HoaVaMau.Gameplay.PlayerController>();
+                var pCtrl = Object.FindAnyObjectByType<HoaVaMau.Gameplay.PlayerController>();
                 if (pCtrl != null) playerGO = pCtrl.gameObject;
             }
 

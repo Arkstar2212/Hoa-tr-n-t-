@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using HoaVaMau.Test3D;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -9,7 +10,7 @@ namespace HoaVaMau.Gameplay
 {
     /// <summary>
     /// Manages player checkpoints and instantaneous failure respawn (Planet of Lana style).
-    /// There is no health bar: being caught or falling resets the player to the latest safe checkpoint.
+    /// Supports both 2.5D PlayerController (Overhaul) and 3D Player3DController (CaMau_1954_Village).
     /// </summary>
     public class CheckpointManager : MonoBehaviour
     {
@@ -17,13 +18,24 @@ namespace HoaVaMau.Gameplay
 
         [Header("Respawn Settings")]
         [SerializeField] private Vector3 currentCheckpointPos = new Vector3(0.0f, -1.77f, 0f);
-        [SerializeField] private float fallDeathY = -1.5f; // Immediately triggers respawn on falling below platform ground (0.0)
+        [SerializeField] private float fallDeathY = -1.5f;
 
         private Vector3 initialSpawnPosition = new Vector3(0.0f, -1.77f, 0f);
         private int currentCheckpointIndex = 0;
         private PlayerController player;
+        private Player3DController player3D;
         private EnemyController[] enemies;
         private bool isRespawning = false;
+
+        public Vector3 CurrentCheckpointPos => currentCheckpointPos;
+        public int CurrentCheckpointIndex => currentCheckpointIndex;
+
+        public void ConfigureDefaults(Vector3 initialPos, float deathY)
+        {
+            currentCheckpointPos = initialPos;
+            initialSpawnPosition = initialPos;
+            fallDeathY = deathY;
+        }
 
         private void Awake()
         {
@@ -52,12 +64,22 @@ namespace HoaVaMau.Gameplay
                     initialSpawnPosition = currentCheckpointPos;
                 }
             }
+            if (player == null && player3D == null)
+            {
+                player3D = Object.FindAnyObjectByType<Player3DController>();
+                if (player3D != null && (currentCheckpointPos == Vector3.zero || currentCheckpointPos == new Vector3(0f, -1.77f, 0f)))
+                {
+                    currentCheckpointPos = player3D.transform.position;
+                    initialSpawnPosition = currentCheckpointPos;
+                }
+            }
             enemies = Object.FindObjectsByType<EnemyController>();
         }
 
         private void Update()
         {
             if (isRespawning) return;
+            if (PauseMenuController.Instance != null && PauseMenuController.Instance.IsPaused) return;
 
             // [R] Quick Respawn key
             bool rPressed = false;
@@ -72,8 +94,11 @@ namespace HoaVaMau.Gameplay
                 return;
             }
 
-            // Fall off platform or into pit detection
             if (player != null && player.transform.position.y < fallDeathY)
+            {
+                OnPlayerCaught();
+            }
+            else if (player == null && player3D != null && player3D.transform.position.y < fallDeathY)
             {
                 OnPlayerCaught();
             }
@@ -81,7 +106,8 @@ namespace HoaVaMau.Gameplay
 
         public void SetCheckpoint(Vector3 pos, int index = 0)
         {
-            currentCheckpointPos = new Vector3(pos.x, pos.y, 0f);
+            bool is3D = (player == null && (player3D != null || Object.FindAnyObjectByType<Player3DController>() != null));
+            currentCheckpointPos = is3D ? pos : new Vector3(pos.x, pos.y, 0f);
             if (index > currentCheckpointIndex)
             {
                 currentCheckpointIndex = index;
@@ -119,23 +145,26 @@ namespace HoaVaMau.Gameplay
             isRespawning = true;
             Debug.Log("<color=#e05a47>[CheckpointManager]</color> Player caught / fallen! Respawning at checkpoint...");
 
-            // Report telemetry to DDA engine
             if (DynamicDifficultyManager.Instance != null)
             {
                 DynamicDifficultyManager.Instance.RecordPlayerFailure(currentCheckpointPos);
             }
 
-            // Brief pause for dramatic impact
             yield return new WaitForSeconds(0.2f);
 
-            if (player == null)
-            {
-                player = Object.FindAnyObjectByType<PlayerController>();
-            }
+            FindReferences();
 
             if (player != null)
             {
                 player.RespawnAt(currentCheckpointPos);
+            }
+            else if (player3D != null)
+            {
+                player3D.RespawnAt(currentCheckpointPos);
+                if (CaMau3DUIGuideController.Instance != null)
+                {
+                    CaMau3DUIGuideController.ShowNarrativeToast("ĐIỂM LƯU AN TOÀN", "An đã quay trở lại bờ đất an toàn.", 2.4f);
+                }
             }
 
             if (Camera.main != null)
@@ -147,7 +176,6 @@ namespace HoaVaMau.Gameplay
                 }
             }
 
-            // Reset all enemies to default patrol / watch cycle
             if (enemies == null || enemies.Length == 0)
             {
                 enemies = Object.FindObjectsByType<EnemyController>();
