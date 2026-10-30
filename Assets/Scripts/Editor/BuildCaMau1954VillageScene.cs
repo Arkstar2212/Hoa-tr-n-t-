@@ -937,7 +937,7 @@ namespace HoaVaMau.Editor
             // ==========================================
             // 18. PLAYER SETUP: BÉ AN (FULL 3D MOVEMENT)
             // ==========================================
-            var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabsPath}/Characters/PF_Player_MeshyBoy.prefab");
+            var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/Boy_Character/Boy_Character_Model.prefab");
             if (playerPrefab == null) playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/Boy_Character/Boy_Character.fbx");
             GameObject playerObj = null;
             if (playerPrefab != null)
@@ -959,8 +959,8 @@ namespace HoaVaMau.Editor
 
                 var old2DAnim = playerObj.GetComponent("AnAnimationController") as MonoBehaviour;
                 if (old2DAnim != null) UnityEngine.Object.DestroyImmediate(old2DAnim);
-                var oldMeshyAnim = playerObj.GetComponent("MeshyBoyAnimationController") as MonoBehaviour;
-                if (oldMeshyAnim != null) UnityEngine.Object.DestroyImmediate(oldMeshyAnim);
+
+
 
                 var oldLedge = playerObj.GetComponent("LedgeGrabDetector") as MonoBehaviour;
                 if (oldLedge != null) UnityEngine.Object.DestroyImmediate(oldLedge);
@@ -996,7 +996,7 @@ namespace HoaVaMau.Editor
                 {
                     if (a is Avatar av) { boyAvatar = av; break; }
                 }
-                var ctrl3D = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Player3D_An.controller");
+                var ctrl3D = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Player_An.controller");
 
                 if (boyAvatar != null) anim.avatar = boyAvatar;
                 if (ctrl3D != null) anim.runtimeAnimatorController = ctrl3D;
@@ -2463,7 +2463,7 @@ namespace HoaVaMau.Editor
             var cam = Camera.main;
             if (p == null || cam == null) return;
 
-            var idleClip = AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/TripoModels/Boy_Character/Hero_Loco_Idle_Loop_IP.anim");
+            var idleClip = AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/Animations/Hero/Loco/Hero_Loco_Idle_Loop_IP.fbx");
             if (idleClip != null) idleClip.SampleAnimation(p, 0f);
 
             switch (shotName)

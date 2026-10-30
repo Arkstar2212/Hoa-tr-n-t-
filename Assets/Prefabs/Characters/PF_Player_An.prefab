@@ -358,6 +358,7 @@ MonoBehaviour:
   smoothFacing: 1
   turnSpeed: 720
   isCutsceneActive: 0
+  crouchHeadLookWeight: 0.85
 --- !u!114 &5157432560309562316
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -394,7 +395,7 @@ MonoBehaviour:
   runLeanAngle: 10.5
   pushLeanAngle: 14
   pullLeanAngle: -11
-  climbDuration: 1.05
+  climbDuration: 1.22
   maxClimbForwardLean: 24
   autoClimbOnLedgeGrab: 0
   carrySocket: {fileID: 4050149011516317745}
@@ -418,6 +419,8 @@ MonoBehaviour:
   forwardCheckDist: 0.85
   headHeight: 1.6
   chestHeight: 1
+  minLedgeReach: 0.6
+  maxLedgeReach: 2.15
   obstacleMask:
     serializedVersion: 2
     m_Bits: 4294967295

@@ -7,6 +7,8 @@ description: 2D/2.5D character locomotion, Animator Controller states, New Input
 
 This skill governs the player controller, 2D physics movement, and Animator state machine in **Hoa trên đất đỏ**.
 
+> **CRITICAL — Canonical Player Stack & Post-Pull Redundant Controller Cleanup**: Always read [`PLAYER_CONTROLLER_STANDARD.md`](../../../PLAYER_CONTROLLER_STANDARD.md) in the project root before touching any player prefab, script, or `.controller` asset, and whenever redundant controllers reappear after a `git pull` (run `Tools -> Hoa Tren Dat Do -> Enforce Canonical Player Controller (Post-Pull Cleanup)`).
+
 ## 1. Controller Architecture & Separation of Concerns
 
 Separate physics movement from visual animation:

@@ -484,7 +484,7 @@ namespace HoaVaMau.Editor
             GameObject mainCamGO = GameObject.Find("Main Camera");
             Camera mainCam = mainCamGO != null ? mainCamGO.GetComponent<Camera>() : Camera.main;
 
-            var allCams = Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var allCams = Object.FindObjectsByType<Camera>(FindObjectsInactive.Include);
             foreach (var c in allCams)
             {
                 if (c == null) continue;
@@ -507,7 +507,7 @@ namespace HoaVaMau.Editor
                 }
             }
 
-            var allLights = Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var allLights = Object.FindObjectsByType<Light>(FindObjectsInactive.Include);
             foreach (var l in allLights)
             {
                 if (l == null) continue;
@@ -521,8 +521,33 @@ namespace HoaVaMau.Editor
                 }
             }
 
-            // 2. Locate and repair An_Player
-            GameObject playerGO = GameObject.Find("An_Player");
+            // 2. Locate and repair An_Player (including replacing broken Missing Prefab shells)
+            GameObject playerGO = null;
+            if (playerGO == null) playerGO = GameObject.Find("An_Player");
+            if (playerGO == null)
+            {
+                var p3dCheck = Object.FindAnyObjectByType<Player3DController>();
+                if (p3dCheck != null) playerGO = p3dCheck.gameObject;
+            }
+            Transform playerParent = playerGO != null ? playerGO.transform.parent : null;
+            if (playerGO != null && (PrefabUtility.IsPrefabAssetMissing(playerGO) || playerGO.GetComponentInChildren<SkinnedMeshRenderer>(true) == null))
+            {
+                Object.DestroyImmediate(playerGO);
+                playerGO = null;
+            }
+            if (playerGO == null)
+            {
+                GameObject modelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/Boy_Character/Boy_Character_Model.prefab")
+                                      ?? AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/Boy_Character/Boy_Character.fbx");
+                if (modelPrefab != null)
+                {
+                    playerGO = playerParent != null
+                        ? (GameObject)PrefabUtility.InstantiatePrefab(modelPrefab, playerParent)
+                        : (GameObject)PrefabUtility.InstantiatePrefab(modelPrefab);
+                    playerGO.name = "An_Player";
+                }
+            }
+            if (playerGO == null) playerGO = GameObject.Find("An_Player");
             if (playerGO == null)
             {
                 var p3dExisting = Object.FindAnyObjectByType<Player3DController>();
@@ -534,8 +559,8 @@ namespace HoaVaMau.Editor
                 playerGO.SetActive(true);
                 playerGO.tag = "Player";
 
-                // Remove any 2D leftover scripts (especially [ExecuteAlways] MeshyBoyAnimationController!)
-                var meshy2D = playerGO.GetComponent<MeshyBoyAnimationController>();
+                // Remove any 2D leftover scripts on 3D village player
+                var meshy2D = playerGO.GetComponent("MeshyBoyAnimationController") as MonoBehaviour;
                 if (meshy2D != null) Object.DestroyImmediate(meshy2D);
                 var pc2D = playerGO.GetComponent<PlayerController>();
                 if (pc2D != null) Object.DestroyImmediate(pc2D);
@@ -571,8 +596,8 @@ namespace HoaVaMau.Editor
                     anim.enabled = true;
                     anim.applyRootMotion = false;
                     anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-                    var boyCtrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Player3D_An.controller")
-                               ?? AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/TripoModels/Boy_Character/Boy_AnimatorController.controller");
+                    var boyCtrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Player_An.controller");
+
                     if (boyCtrl != null) anim.runtimeAnimatorController = boyCtrl;
                     EditorUtility.SetDirty(anim);
                 }
@@ -585,6 +610,17 @@ namespace HoaVaMau.Editor
                 cc.center = new Vector3(0f, 0.575f, 0f);
                 cc.stepOffset = 0.32f;
                 cc.slopeLimit = 50f;
+                cc.skinWidth = 0.02f;
+
+                var interSys = Object.FindAnyObjectByType<InteractionSystem3D>();
+                if (interSys != null)
+                {
+                    SerializedObject interSO = new SerializedObject(interSys);
+                    var pTransProp = interSO.FindProperty("playerTransform");
+                    if (pTransProp != null) pTransProp.objectReferenceValue = playerGO.transform;
+                    interSO.ApplyModifiedPropertiesWithoutUndo();
+                    EditorUtility.SetDirty(interSys);
+                }
 
                 // Ensure Player3DController & wire references
                 var p3d = playerGO.GetComponent<Player3DController>();

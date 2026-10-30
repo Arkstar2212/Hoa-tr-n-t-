@@ -12,7 +12,7 @@ public static class Canh1SceneBuilder
     private const string SpritesDir = "Assets/Textures/Canh1_Sprites";
     private const string ShipSpritePath = "Assets/Textures/Canh1_Sprites/TransportShip_1954_Card.png";
     private const string BoyModelPath = "Assets/TripoModels/Boy_Character/Boy_Character.fbx";
-    private const string BoyAnimCtrlPath = "Assets/TripoModels/Boy_Character/Boy_AnimatorController.controller";
+    private const string BoyAnimCtrlPath = "Assets/Animations/Controllers/AC_Player_An.controller";
     private const string WaterMatPath = "Assets/Materials/M_StylizedWater_Sunset.mat";
     private const string SkyMatPath = "Assets/Materials/M_StylizedSky_Sunset.mat";
     private const string SunMatPath = "Assets/Materials/M_StylizedSun_Sunset.mat";

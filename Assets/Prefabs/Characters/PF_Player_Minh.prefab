@@ -570,7 +570,7 @@ MonoBehaviour:
   runLeanAngle: 10.5
   pushLeanAngle: 14
   pullLeanAngle: -11
-  climbDuration: 2.167
+  climbDuration: 1.22
   maxClimbForwardLean: 24
   autoClimbOnLedgeGrab: 0
   carrySocket: {fileID: 0}
@@ -597,6 +597,7 @@ MonoBehaviour:
   smoothFacing: 1
   turnSpeed: 720
   isCutsceneActive: 0
+  crouchHeadLookWeight: 0.85
 --- !u!1 &1581725309901114070
 GameObject:
   m_ObjectHideFlags: 0

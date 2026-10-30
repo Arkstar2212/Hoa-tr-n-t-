@@ -52,6 +52,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 74f1560d286276548af0e35e68c09065, type: 2}
+    - target: {fileID: -844805246511577238, guid: cc824bcacbf74a84ababb262dadab822, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: 19e1a74b9299e254a866ddd4c21b9ac9, type: 2}
     - target: {fileID: 919132149155446097, guid: cc824bcacbf74a84ababb262dadab822, type: 3}
       propertyPath: m_Name
       value: PF_StiltedHouse_Thatched

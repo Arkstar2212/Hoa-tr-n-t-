@@ -8,6 +8,9 @@ namespace HoaVaMau.Editor
     public static class GeneratePlayerCustomClips
     {
         private const string CustomClipsDir = "Assets/Animations/Hero/Custom";
+        private const string CrouchIdleFbx = "Assets/Animations/Hero/Stealth/Hero_Stealth_Crouch_Idle_Loop.fbx";
+        private const string CrouchWalkFbx = "Assets/Animations/Hero/Stealth/Hero_Stealth_Crouch_Walk_Fwd_IP.fbx";
+        private const string BoyCharacterFbx = "Assets/TripoModels/Boy_Character/Boy_Character.fbx";
 
         [MenuItem("Hoa va Mau/Animation/Generate Custom Player Humanoid Clips")]
         public static void GenerateClipsAndConfigureControllers()
@@ -18,19 +21,20 @@ namespace HoaVaMau.Editor
                 AssetDatabase.Refresh();
             }
 
-            var crouchIdleClip = CreateCrouchIdleClip();
-            var crouchWalkClip = CreateCrouchWalkClip();
-            var ropeHangClip   = CreateRopeHangClip();
+            // Sử dụng trực tiếp FBX chuẩn của dự án cho CrouchIdle, Crouch và Climb (không bao giờ ghi đè bằng clip tự sinh)
+            var crouchIdleClip = LoadFbxClip(CrouchIdleFbx);
+            var crouchWalkClip = LoadFbxClip(CrouchWalkFbx);
+            var climbClip = LoadFbxClip(BoyCharacterFbx, "climb");
+
+            var ropeHangClip      = CreateRopeHangClip();
             var ropeClimbUpClip   = CreateRopeClimbUpClip();
             var ropeClimbDownClip = CreateRopeClimbDownClip();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            // Configure Animator Controllers
             string[] controllers = new[]
             {
-                "Assets/TripoModels/Boy_Character/Boy_AnimatorController.controller",
                 "Assets/Animations/Controllers/AC_Player_An.controller"
             };
 
@@ -39,121 +43,31 @@ namespace HoaVaMau.Editor
                 var ctrl = AssetDatabase.LoadAssetAtPath<AnimatorController>(ctrlPath);
                 if (ctrl != null)
                 {
-                    ConfigureController(ctrl, crouchIdleClip, crouchWalkClip, ropeHangClip, ropeClimbUpClip, ropeClimbDownClip);
+                    ConfigureController(ctrl, crouchIdleClip, crouchWalkClip, climbClip, ropeHangClip, ropeClimbUpClip, ropeClimbDownClip);
                 }
             }
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("<color=#4ade80>[CustomClips]</color> <b>Successfully generated 5 custom Humanoid clips and configured Animator Controllers!</b>");
+            Debug.Log("<color=#4ade80>[CustomClips]</color> <b>Đã tạo 3 clip Rope Humanoid và đồng bộ chuẩn Crouch / Climb cho Animator Controllers!</b>");
         }
 
-        private static AnimationClip CreateCrouchIdleClip()
+        private static AnimationClip LoadFbxClip(string fbxPath, string exactClipName = null)
         {
-            string path = $"{CustomClipsDir}/An_Crouch_Idle.anim";
-            var clip = new AnimationClip { name = "An_Crouch_Idle" };
-            float duration = 1.6f;
-            int samples = 30;
+            var assets = AssetDatabase.LoadAllAssetsAtPath(fbxPath);
+            if (assets == null) return null;
 
-            // 1. Lowered Root Center of Gravity
-            AddCurve(clip, "RootT.y", duration, samples, t => -0.32f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.012f);
-            AddCurve(clip, "RootT.x", duration, samples, t => 0f);
-            AddCurve(clip, "RootT.z", duration, samples, t => 0f);
-
-            // 2. Spine angled forward ~20 deg with gentle breathing
-            AddCurve(clip, "Spine Front-Back", duration, samples, t => 0.35f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.025f);
-            AddCurve(clip, "Chest Front-Back", duration, samples, t => 0.22f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.035f);
-            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => -0.18f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.015f);
-
-            // 3. Deep squat knee bend & foot contact
-            AddCurve(clip, "Left Upper Leg Front-Back", duration, samples, t => -0.65f);
-            AddCurve(clip, "Right Upper Leg Front-Back", duration, samples, t => -0.62f);
-            AddCurve(clip, "Left Lower Leg Stretch", duration, samples, t => -0.72f);
-            AddCurve(clip, "Right Lower Leg Stretch", duration, samples, t => -0.68f);
-            AddCurve(clip, "Left Foot Up-Down", duration, samples, t => 0.22f);
-            AddCurve(clip, "Right Foot Up-Down", duration, samples, t => 0.22f);
-
-            // 4. Arms bent, hands resting gently near knees
-            AddCurve(clip, "Left Arm Down-Up", duration, samples, t => -0.35f);
-            AddCurve(clip, "Right Arm Down-Up", duration, samples, t => -0.35f);
-            AddCurve(clip, "Left Arm Front-Back", duration, samples, t => 0.25f);
-            AddCurve(clip, "Right Arm Front-Back", duration, samples, t => 0.25f);
-            AddCurve(clip, "Left Forearm Stretch", duration, samples, t => -0.55f);
-            AddCurve(clip, "Right Forearm Stretch", duration, samples, t => -0.55f);
-            AddCurve(clip, "Left Hand Down-Up", duration, samples, t => -0.15f);
-            AddCurve(clip, "Right Hand Down-Up", duration, samples, t => -0.15f);
-
-            SaveOrUpdateAsset(clip, path);
-            return AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
-        }
-
-        private static AnimationClip CreateCrouchWalkClip()
-        {
-            string path = $"{CustomClipsDir}/An_Crouch_Walk.anim";
-            var clip = new AnimationClip { name = "An_Crouch_Walk" };
-            float duration = 1.0f;
-            int samples = 30;
-
-            // 1. Lowered Root Center of Gravity with rhythmic step bob
-            AddCurve(clip, "RootT.y", duration, samples, t => -0.30f + Mathf.Sin(t * Mathf.PI * 4f / duration) * 0.022f);
-            AddCurve(clip, "RootT.x", duration, samples, t => 0f);
-            AddCurve(clip, "RootT.z", duration, samples, t => 0f);
-
-            // 2. Spine leaning forward in stealth locomotion
-            AddCurve(clip, "Spine Front-Back", duration, samples, t => 0.32f + Mathf.Sin(t * Mathf.PI * 4f / duration) * 0.02f);
-            AddCurve(clip, "Chest Front-Back", duration, samples, t => 0.20f + Mathf.Sin(t * Mathf.PI * 4f / duration) * 0.02f);
-            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => -0.18f);
-
-            // 3. Stride cycle (Left Leg and Right Leg alternating)
-            AddCurve(clip, "Left Upper Leg Front-Back", duration, samples, t =>
+            foreach (var a in assets)
             {
-                float phase = (t / duration) * Mathf.PI * 2f;
-                return -0.65f + 0.35f * Mathf.Sin(phase);
-            });
-            AddCurve(clip, "Right Upper Leg Front-Back", duration, samples, t =>
-            {
-                float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
-                return -0.65f + 0.35f * Mathf.Sin(phase);
-            });
-            AddCurve(clip, "Left Lower Leg Stretch", duration, samples, t =>
-            {
-                float phase = (t / duration) * Mathf.PI * 2f;
-                return -0.70f + 0.30f * Mathf.Max(0f, -Mathf.Sin(phase));
-            });
-            AddCurve(clip, "Right Lower Leg Stretch", duration, samples, t =>
-            {
-                float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
-                return -0.70f + 0.30f * Mathf.Max(0f, -Mathf.Sin(phase));
-            });
-            AddCurve(clip, "Left Foot Up-Down", duration, samples, t =>
-            {
-                float phase = (t / duration) * Mathf.PI * 2f;
-                return 0.20f + 0.15f * Mathf.Cos(phase);
-            });
-            AddCurve(clip, "Right Foot Up-Down", duration, samples, t =>
-            {
-                float phase = (t / duration) * Mathf.PI * 2f + Mathf.PI;
-                return 0.20f + 0.15f * Mathf.Cos(phase);
-            });
-
-            // 4. Arms counterbalance forward swing
-            AddCurve(clip, "Left Arm Front-Back", duration, samples, t =>
-            {
-                float phase = (t / duration) * Mathf.PI * 2f;
-                return 0.20f - 0.22f * Mathf.Sin(phase);
-            });
-            AddCurve(clip, "Right Arm Front-Back", duration, samples, t =>
-            {
-                float phase = (t / duration) * Mathf.PI * 2f;
-                return 0.20f + 0.22f * Mathf.Sin(phase);
-            });
-            AddCurve(clip, "Left Arm Down-Up", duration, samples, t => -0.32f);
-            AddCurve(clip, "Right Arm Down-Up", duration, samples, t => -0.32f);
-            AddCurve(clip, "Left Forearm Stretch", duration, samples, t => -0.55f);
-            AddCurve(clip, "Right Forearm Stretch", duration, samples, t => -0.55f);
-
-            SaveOrUpdateAsset(clip, path);
-            return AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+                if (a is AnimationClip c && !c.name.StartsWith("__preview__"))
+                {
+                    if (string.IsNullOrEmpty(exactClipName) || string.Equals(c.name, exactClipName, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        return c;
+                    }
+                }
+            }
+            return null;
         }
 
         private static void AddFingerGripCurves(AnimationClip clip, float duration, int samples, string prefix, float curl)
@@ -181,23 +95,19 @@ namespace HoaVaMau.Editor
             float duration = 1.8f;
             int samples = 45;
 
-            // 1. Root suspension height matching Hero Humanoid standard (1.124m)
             AddCurve(clip, "RootT.x", duration, samples, t => -0.004f);
             AddCurve(clip, "RootT.y", duration, samples, t => 1.124f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.015f);
             AddCurve(clip, "RootT.z", duration, samples, t => -0.012f);
 
-            // 2. Spine & Chest natural suspension under gravity
             AddCurve(clip, "Spine Front-Back", duration, samples, t => -0.02f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.015f);
             AddCurve(clip, "Chest Front-Back", duration, samples, t => 0.06f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.025f);
-            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => 0.22f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.015f); // Looking up at grip
+            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => 0.22f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.015f);
 
-            // 3. Elevated Clavicles supporting full body hanging weight
             AddCurve(clip, "Right Shoulder Down-Up", duration, samples, t => 1.27f);
             AddCurve(clip, "Right Shoulder Front-Back", duration, samples, t => 0.72f);
             AddCurve(clip, "Left Shoulder Down-Up", duration, samples, t => 1.16f);
             AddCurve(clip, "Left Shoulder Front-Back", duration, samples, t => 0.52f);
 
-            // 4. Staggered overhead grip (Planet of Lana style: Right hand high, Left hand ~15cm lower)
             AddCurve(clip, "Right Arm Down-Up", duration, samples, t => 0.78f);
             AddCurve(clip, "Right Arm Front-Back", duration, samples, t => 0.28f);
             AddCurve(clip, "Right Arm Twist In-Out", duration, samples, t => 0.50f);
@@ -212,11 +122,9 @@ namespace HoaVaMau.Editor
             AddCurve(clip, "Left Forearm Twist In-Out", duration, samples, t => -0.62f);
             AddCurve(clip, "Left Hand Down-Up", duration, samples, t => -0.12f);
 
-            // 5. Solid cylinder grip on rope (tight fists around rope)
             AddFingerGripCurves(clip, duration, samples, "Right", -0.80f);
             AddFingerGripCurves(clip, duration, samples, "Left", -0.80f);
 
-            // 6. Relaxed legs dangling along rope
             AddCurve(clip, "Left Upper Leg Front-Back", duration, samples, t => -0.10f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.02f);
             AddCurve(clip, "Right Upper Leg Front-Back", duration, samples, t => -0.06f + Mathf.Sin(t * Mathf.PI * 2f / duration) * 0.02f);
             AddCurve(clip, "Left Upper Leg In-Out", duration, samples, t => 0.08f);
@@ -237,7 +145,6 @@ namespace HoaVaMau.Editor
             float duration = 0.90f;
             int samples = 45;
 
-            // 1. Root vertical impulse upward (2 pulls per loop at suspended height ~1.124m)
             AddCurve(clip, "RootT.y", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 4f;
@@ -246,7 +153,6 @@ namespace HoaVaMau.Editor
             AddCurve(clip, "RootT.x", duration, samples, t => 0f);
             AddCurve(clip, "RootT.z", duration, samples, t => -0.012f);
 
-            // 2. Spine & Chest flex + rotation towards reaching hand
             AddCurve(clip, "Spine Front-Back", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 4f;
@@ -263,9 +169,8 @@ namespace HoaVaMau.Editor
                 float phase = (t / duration) * Mathf.PI * 2f;
                 return 0.10f * Mathf.Sin(phase);
             });
-            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => 0.28f); // Looking focused upward at rope grip
+            AddCurve(clip, "Head Nod Down-Up", duration, samples, t => 0.28f);
 
-            // 3. Hand-over-hand climbing upward
             AddCurve(clip, "Right Shoulder Down-Up", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f;
@@ -308,11 +213,9 @@ namespace HoaVaMau.Editor
             AddCurve(clip, "Left Forearm Twist In-Out", duration, samples, t => -0.62f);
             AddCurve(clip, "Left Hand Down-Up", duration, samples, t => -0.12f);
 
-            // 4. Tight grip on rope
             AddFingerGripCurves(clip, duration, samples, "Right", -0.80f);
             AddFingerGripCurves(clip, duration, samples, "Left", -0.80f);
 
-            // 5. Athletic leg tucking & bicycling (Planet of Lana standard)
             AddCurve(clip, "Left Upper Leg Front-Back", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f;
@@ -359,7 +262,6 @@ namespace HoaVaMau.Editor
             float duration = 0.90f;
             int samples = 45;
 
-            // 1. Root lowering impulse at suspended height ~1.124m
             AddCurve(clip, "RootT.y", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 4f;
@@ -368,12 +270,10 @@ namespace HoaVaMau.Editor
             AddCurve(clip, "RootT.x", duration, samples, t => 0f);
             AddCurve(clip, "RootT.z", duration, samples, t => -0.012f);
 
-            // 2. Spine & Head: looking downward along descent route
             AddCurve(clip, "Spine Front-Back", duration, samples, t => -0.04f);
             AddCurve(clip, "Chest Front-Back", duration, samples, t => 0.04f);
             AddCurve(clip, "Head Nod Down-Up", duration, samples, t => -0.22f);
 
-            // 3. Hand-under-hand descending downward
             AddCurve(clip, "Right Shoulder Down-Up", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f;
@@ -416,11 +316,9 @@ namespace HoaVaMau.Editor
             AddCurve(clip, "Left Forearm Twist In-Out", duration, samples, t => -0.62f);
             AddCurve(clip, "Left Hand Down-Up", duration, samples, t => -0.12f);
 
-            // 4. Tight grip on rope
             AddFingerGripCurves(clip, duration, samples, "Right", -0.80f);
             AddFingerGripCurves(clip, duration, samples, "Left", -0.80f);
 
-            // 5. Relaxed legs extending downward along rope line
             AddCurve(clip, "Left Upper Leg Front-Back", duration, samples, t =>
             {
                 float phase = (t / duration) * Mathf.PI * 2f;
@@ -503,18 +401,28 @@ namespace HoaVaMau.Editor
             AnimatorController ctrl,
             AnimationClip crouchIdle,
             AnimationClip crouchWalk,
+            AnimationClip climbClip,
             AnimationClip ropeHang,
             AnimationClip ropeClimbUp,
             AnimationClip ropeClimbDown)
         {
+            // Bật iKPass cho toàn bộ Layer (phải gán lại mảng ctrl.layers để lưu vào asset)
+            var layers = ctrl.layers;
+            for (int i = 0; i < layers.Length; i++)
+            {
+                layers[i].iKPass = true;
+            }
+            ctrl.layers = layers;
+
             var sm = ctrl.layers[0].stateMachine;
 
-            // 1. Update Crouch & CrouchIdle states
-            SetStateMotion(sm, "CrouchIdle", crouchIdle);
-            SetStateMotion(sm, "Crouch", crouchWalk);
+            // 1. Gán CrouchIdle, Crouch và Climb chuẩn của dự án
+            if (crouchIdle != null) SetStateMotion(sm, "CrouchIdle", crouchIdle, true, ikOnFeet: true);
+            if (crouchWalk != null) SetStateMotion(sm, "Crouch", crouchWalk, true, ikOnFeet: true);
+            if (climbClip != null) SetStateMotion(sm, "Climb", climbClip, true, ikOnFeet: false);
 
-            // 2. Update Rope states
-            SetStateMotion(sm, "RopeClimb", ropeClimbUp); // Fallback / legacy state name
+            // 2. Gán các state Rope
+            SetStateMotion(sm, "RopeClimb", ropeClimbUp, false);
             SetStateMotion(sm, "RopeHang", ropeHang, true);
             SetStateMotion(sm, "RopeClimbUp", ropeClimbUp, true);
             SetStateMotion(sm, "RopeClimbDown", ropeClimbDown, true);
@@ -522,7 +430,7 @@ namespace HoaVaMau.Editor
             EditorUtility.SetDirty(ctrl);
         }
 
-        private static void SetStateMotion(AnimatorStateMachine sm, string stateName, Motion motion, bool createIfMissing = false)
+        private static void SetStateMotion(AnimatorStateMachine sm, string stateName, Motion motion, bool createIfMissing = false, bool ikOnFeet = false)
         {
             AnimatorState targetState = null;
             foreach (var child in sm.states)
@@ -542,6 +450,7 @@ namespace HoaVaMau.Editor
             if (targetState != null)
             {
                 targetState.motion = motion;
+                targetState.iKOnFeet = ikOnFeet;
             }
         }
     }

@@ -8,13 +8,13 @@ namespace HoaVaMau.Editor
 {
     /// <summary>
     /// Công cụ Editor tự động:
-    /// 1. Cấu hình Rig Humanoid & Loop Time cho toàn bộ Animation Mixamo và Model NPC 3D.
+    /// 1. Cấu hình Rig Humanoid & Loop Time cho toàn bộ Animation Mixamo và Model NPC 3D (bảo toàn cài đặt Based Upon Feet đã tinh chỉnh).
     /// 2. Tạo bộ Animator Controller cho NPC (AC_NPC_Female, AC_NPC_Male, AC_NPC_ElderlyMan, AC_NPC_Social_Waving).
     /// 3. Tự động gắn Animator + Avatar + Controller vào các Prefab NPC hiện có và tạo Prefab NPC sẵn sàng diễn hoạt.
     /// </summary>
     public static class ConfigureImportedMixamoAnimations
     {
-        private const string AutoSyncSessionKey = "HoaVaMau_NPC_Animations_Synced_v3";
+        private const string AutoSyncSessionKey = "HoaVaMau_NPC_Animations_Synced_v4";
 
         [InitializeOnLoadMethod]
         private static void OnEditorLoadedAutoSync()
@@ -67,7 +67,7 @@ namespace HoaVaMau.Editor
             AssetDatabase.StartAssetEditing();
             try
             {
-                // 1. Configure Animation FBX files
+                // 1. Configure Animation FBX files (preserving existing calibrated clip settings)
                 string[] animGuids = AssetDatabase.FindAssets("t:Model", animFolders);
                 foreach (string guid in animGuids)
                 {
@@ -87,34 +87,72 @@ namespace HoaVaMau.Editor
                         modified = true;
                     }
 
-                    var clips = importer.defaultClipAnimations;
+                    bool usedDefaults = false;
+                    var clips = importer.clipAnimations;
+                    if (clips == null || clips.Length == 0)
+                    {
+                        clips = importer.defaultClipAnimations;
+                        usedDefaults = true;
+                    }
+
                     if (clips != null && clips.Length > 0)
                     {
                         string fileName = Path.GetFileNameWithoutExtension(path);
-                        bool shouldLoop = fileName.Contains("Loop", System.StringComparison.OrdinalIgnoreCase) ||
+                        bool isTransition = fileName.Contains("_To_", System.StringComparison.OrdinalIgnoreCase);
+
+                        bool shouldLoop = !isTransition && (
+                                          fileName.Contains("Loop", System.StringComparison.OrdinalIgnoreCase) ||
                                           fileName.Contains("Idle", System.StringComparison.OrdinalIgnoreCase) ||
                                           fileName.Contains("Walk", System.StringComparison.OrdinalIgnoreCase) ||
+                                          fileName.Contains("Crawl", System.StringComparison.OrdinalIgnoreCase) ||
+                                          fileName.Contains("Crouch", System.StringComparison.OrdinalIgnoreCase) ||
                                           fileName.Contains("Sneak", System.StringComparison.OrdinalIgnoreCase) ||
                                           fileName.Contains("Run", System.StringComparison.OrdinalIgnoreCase) ||
                                           fileName.Contains("Waving", System.StringComparison.OrdinalIgnoreCase) ||
                                           fileName.Contains("Crying", System.StringComparison.OrdinalIgnoreCase) ||
-                                          fileName.Contains("Talking", System.StringComparison.OrdinalIgnoreCase);
+                                          fileName.Contains("Talking", System.StringComparison.OrdinalIgnoreCase));
 
+                        bool isAerialOrHang = fileName.Contains("Hanging", System.StringComparison.OrdinalIgnoreCase) ||
+                                              fileName.Contains("Jump", System.StringComparison.OrdinalIgnoreCase) ||
+                                              fileName.Contains("Fall", System.StringComparison.OrdinalIgnoreCase) ||
+                                              fileName.Contains("Traverse", System.StringComparison.OrdinalIgnoreCase);
+
+                        bool isGroundedStealthOrLoco = !isAerialOrHang && (
+                                                       fileName.Contains("Crouch", System.StringComparison.OrdinalIgnoreCase) ||
+                                                       fileName.Contains("Crawl", System.StringComparison.OrdinalIgnoreCase) ||
+                                                       fileName.Contains("Sneak", System.StringComparison.OrdinalIgnoreCase) ||
+                                                       fileName.Contains("Walk", System.StringComparison.OrdinalIgnoreCase) ||
+                                                       fileName.Contains("Run", System.StringComparison.OrdinalIgnoreCase) ||
+                                                       fileName.Contains("Idle", System.StringComparison.OrdinalIgnoreCase));
+
+                        bool clipChanged = usedDefaults;
                         foreach (var clip in clips)
                         {
-                            clip.name = fileName;
-                            if (shouldLoop)
+                            if (clip.name != fileName) { clip.name = fileName; clipChanged = true; }
+                            if (shouldLoop && (!clip.loopTime || !clip.loopPose))
                             {
                                 clip.loopTime = true;
                                 clip.loopPose = true;
+                                clipChanged = true;
                             }
-                            clip.lockRootRotation = true;
-                            clip.lockRootHeightY = true;
-                            clip.lockRootPositionXZ = true;
+                            if (!clip.lockRootRotation) { clip.lockRootRotation = true; clipChanged = true; }
+                            if (!clip.lockRootHeightY) { clip.lockRootHeightY = true; clipChanged = true; }
+                            if (!clip.lockRootPositionXZ) { clip.lockRootPositionXZ = true; clipChanged = true; }
+
+                            if (isGroundedStealthOrLoco && (clip.keepOriginalPositionY || !clip.heightFromFeet))
+                            {
+                                clip.keepOriginalPositionY = false; // Based Upon Feet
+                                clip.heightFromFeet = true;
+                                clip.heightOffset = 0f;
+                                clipChanged = true;
+                            }
                         }
 
-                        importer.clipAnimations = clips;
-                        modified = true;
+                        if (clipChanged)
+                        {
+                            importer.clipAnimations = clips;
+                            modified = true;
+                        }
                     }
 
                     if (modified)
@@ -310,7 +348,6 @@ namespace HoaVaMau.Editor
             }
 
             var sm = controller.layers[0].stateMachine;
-            // Clear existing states to avoid duplicates
             var existingStates = sm.states;
             for (int i = existingStates.Length - 1; i >= 0; i--)
             {

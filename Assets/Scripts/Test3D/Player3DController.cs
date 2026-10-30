@@ -102,8 +102,8 @@ namespace HoaVaMau.Test3D
         private void Awake()
         {
             // Disable any leftover 2D controllers on the 3D player so they never override rotation or Animator
-            var meshy2D = GetComponent<MeshyBoyAnimationController>();
-            if (meshy2D != null) meshy2D.enabled = false;
+            // Canonical 2D controllers disabled on 3D player
+
             var player2D = GetComponent<PlayerController>();
             if (player2D != null) player2D.enabled = false;
             var anAnim2D = GetComponent<AnAnimationController>();

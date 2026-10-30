@@ -1479,7 +1479,7 @@ namespace HoaVaMau.Editor
             var animator = player.GetComponent<Animator>();
             if (animator != null)
             {
-                var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Hero_GapBung.controller");
+                var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Player_An.controller");
                 if (controller != null) animator.runtimeAnimatorController = controller;
             }
 

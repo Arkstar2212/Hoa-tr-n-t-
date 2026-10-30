@@ -23,7 +23,7 @@ namespace HoaVaMau.Gameplay
         [Header("Locomotion Speeds")]
         [SerializeField] private float walkSpeed = 2.4f;
         [SerializeField] private float sprintSpeed = 4.2f; // Tốc độ chạy tự nhiên, không quá nhanh
-        [SerializeField] private float crouchSpeed = 1.8f;
+        [SerializeField] private float crouchSpeed = 1.15f;
         [SerializeField] private float crawlSpeed = 1.2f;
         [SerializeField] private float pushPullSpeed = 2.1f;
         [SerializeField] private float acceleration = 26f;
@@ -51,7 +51,7 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float pullLeanAngle = -11.0f;
 
         [Header("Cinematic Ledge Climbing")]
-        [SerializeField] private float climbDuration = 1.05f;
+        [SerializeField] private float climbDuration = 1.22f;
         [SerializeField] private float maxClimbForwardLean = 24f;
         [SerializeField] private bool autoClimbOnLedgeGrab = false; // Mặc định bám gờ chờ người chơi bấm W/Up để leo lên
 
@@ -99,28 +99,9 @@ namespace HoaVaMau.Gameplay
         public PlayerVisualEffects VisualEffects { get { EnsureInitialized(); return visualEffects; } }
 
         /// <summary>
-        /// Cung cấp vị trí camera tập trung chính xác (Theo dõi hông nhân vật khi leo vách)
+        /// Cung cấp vị trí camera tập trung chính xác (Theo dõi mượt mà khi leo vách không giật khung hình)
         /// </summary>
-        public Vector3 CameraTargetPosition
-        {
-            get
-            {
-                if (CurrentState == PlayerState.LedgeClimb || CurrentState == PlayerState.LedgeGrab)
-                {
-                    if (hipBone == null) hipBone = transform.Find("Armature/BoneRoot/Hip");
-                    if (hipBone != null)
-                    {
-                        return new Vector3(hipBone.position.x, hipBone.position.y - 0.9f, 0f);
-                    }
-                    else if (ledgeClimber != null)
-                    {
-                        float t = Mathf.Clamp01(ledgeClimber.ClimbProgress);
-                        return Vector3.Lerp(ledgeClimber.ClimbStartPos, ledgeClimber.ClimbEndPos, t);
-                    }
-                }
-                return transform.position;
-            }
-        }
+        public Vector3 CameraTargetPosition => transform.position;
 
         // Legacy compatibility properties
         public float Concealment { get; set; } = 0f;
@@ -154,8 +135,7 @@ namespace HoaVaMau.Gameplay
 
             if (GetComponent<AnAnimationController>() == null)
             {
-                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
-                if (meshyAnim == null) meshyAnim = gameObject.AddComponent<MeshyBoyAnimationController>();
+                gameObject.AddComponent<AnAnimationController>();
             }
 
             SetupCarrySocket();
@@ -339,8 +319,6 @@ namespace HoaVaMau.Gameplay
                 // Planet of Lana dynamic swing lag: thân người có độ trễ quán tính theo vận tốc góc con lắc
                 float angVel = ropeHandler.CurrentRope.AngularVelocity;
                 visualEffects.SwingLagAngle = -Mathf.Clamp(angVel * 3.5f, -14f, 14f);
-
-
             }
             else
             {
@@ -388,8 +366,6 @@ namespace HoaVaMau.Gameplay
                     {
                         var anAnim = GetComponent<AnAnimationController>();
                         if (anAnim != null) anAnim.OnLanded(lastFallVelocityY);
-                        var meshyAnim = GetComponent<MeshyBoyAnimationController>();
-                        if (meshyAnim != null) meshyAnim.OnLanded(lastFallVelocityY);
                     }
                     airTime = 0f;
                     lastFallVelocityY = 0f;
@@ -470,8 +446,6 @@ namespace HoaVaMau.Gameplay
 
             var anAnim = GetComponent<AnAnimationController>();
             if (anAnim != null) anAnim.OnLedgeHangStarted();
-            var meshyAnim = GetComponent<MeshyBoyAnimationController>();
-            if (meshyAnim != null) meshyAnim.OnLedgeHangStarted();
 
             if (autoClimbOnLedgeGrab)
             {
@@ -483,10 +457,6 @@ namespace HoaVaMau.Gameplay
         {
             CurrentState = PlayerState.LedgeClimb;
             ledgeClimber.StartClimbing();
-            var anAnim = GetComponent<AnAnimationController>();
-            if (anAnim != null) anAnim.OnClimbStarted();
-            var meshyAnim = GetComponent<MeshyBoyAnimationController>();
-            if (meshyAnim != null) meshyAnim.OnClimbStarted();
         }
 
         private void HandleLedgeGrab()
@@ -502,13 +472,11 @@ namespace HoaVaMau.Gameplay
                 SetFacingDirection(-FacingDirection);
                 var anAnim = GetComponent<AnAnimationController>();
                 if (anAnim != null) anAnim.OnClimbCancelled();
-                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
-                if (meshyAnim != null) meshyAnim.OnClimbCancelled();
                 return;
             }
 
             // Người chơi chủ động bấm phím [W] hoặc [Mũi tên lên] (hoặc phím nhảy) để leo lên đỉnh vách đá
-            bool wantsClimb = inputReader.Vertical > 0.2f;
+            bool wantsClimb = inputReader.Vertical > 0.2f || (inputReader.JumpPressed && !pushingAway);
             if (wantsClimb)
             {
                 StartClimbUp();
@@ -523,8 +491,6 @@ namespace HoaVaMau.Gameplay
                 motor.Velocity = new Vector3(-FacingDirection * 1.0f, -2.0f, 0f);
                 var anAnim = GetComponent<AnAnimationController>();
                 if (anAnim != null) anAnim.OnClimbCancelled();
-                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
-                if (meshyAnim != null) meshyAnim.OnClimbCancelled();
                 return;
             }
         }
@@ -544,10 +510,6 @@ namespace HoaVaMau.Gameplay
                 motor.Velocity = Vector3.zero;
                 CurrentState = PlayerState.Grounded;
                 visualEffects.ResetScale();
-                var anAnim = GetComponent<AnAnimationController>();
-                if (anAnim != null) anAnim.OnClimbFinished();
-                var meshyAnim = GetComponent<MeshyBoyAnimationController>();
-                if (meshyAnim != null) meshyAnim.OnClimbFinished();
             }
         }
 
@@ -658,7 +620,14 @@ namespace HoaVaMau.Gameplay
         {
             if (!Application.isPlaying) return;
 
-            if (Input.GetKeyDown(KeyCode.F1))
+            bool f1Pressed = false;
+#if ENABLE_INPUT_SYSTEM
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb != null && kb.f1Key.wasPressedThisFrame) f1Pressed = true;
+#else
+            if (Input.GetKeyDown(KeyCode.F1)) f1Pressed = true;
+#endif
+            if (f1Pressed)
             {
                 showDebugHUD = !showDebugHUD;
             }
@@ -696,8 +665,6 @@ namespace HoaVaMau.Gameplay
             GUIStyle subStyle = new GUIStyle(GUI.skin.label) { fontSize = 10, normal = { textColor = new Color(0.8f, 0.85f, 0.9f) } };
             string ropeHint = (nearbyRope != null && CurrentState != PlayerState.RopeGrab && CurrentState != PlayerState.RopeClimb) ? " | <color=#fb923c><b>[F] Leo dây</b></color>" : "";
             GUI.Label(new Rect(26f, 36f, bannerW - 20f, 18f), $"Tốc độ: {Velocity.x:F1} m/s | Hướng: {(FacingDirection > 0 ? "Phải" : "Trái")}{ropeHint}", subStyle);
-
-            // F1 toggles minimalist dev stats only. Full screen text box removed in favor of Planet of Lana minimalist in-game prompts.
         }
     }
 }

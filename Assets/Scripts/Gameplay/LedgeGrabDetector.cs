@@ -17,8 +17,31 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private LayerMask obstacleMask = ~0; // Default to all layers
 
         [Header("Position Offsets")]
-        [SerializeField] private float wallHangOffset = 0.28f;
-        [SerializeField] private float platformLandForward = 0.42f;
+        [SerializeField] private float wallHangOffset = 0.24f;
+        [SerializeField] private float platformLandForward = 0.46f;
+
+        private Animator cachedAnimator;
+
+        public Vector3 LastLedgeCorner { get; private set; }
+        public bool HasValidLedgeCorner { get; private set; }
+
+        private float GetCharacterScaleFactor()
+        {
+            if (cachedAnimator == null) cachedAnimator = GetComponent<Animator>();
+            if (cachedAnimator == null) cachedAnimator = GetComponentInChildren<Animator>();
+
+            if (cachedAnimator != null && cachedAnimator.isHuman)
+            {
+                // Minh (Boy_Character @ scale 1.15) has humanScale ~0.5408 => worldHumanScale ~0.622 => factor = 1.0
+                float worldHumanScale = cachedAnimator.humanScale * Mathf.Max(0.1f, transform.lossyScale.y);
+                if (worldHumanScale > 0.1f)
+                {
+                    return Mathf.Clamp(worldHumanScale / 0.622f, 0.70f, 1.85f);
+                }
+            }
+
+            return Mathf.Clamp(transform.lossyScale.y / 1.15f, 0.75f, 1.75f);
+        }
 
         /// <summary>
         /// Attempts to detect a valid ledge in the facing direction.
@@ -27,13 +50,15 @@ namespace HoaVaMau.Gameplay
         {
             hangPos = Vector3.zero;
             platformLandPos = Vector3.zero;
+            HasValidLedgeCorner = false;
 
+            float scaleFactor = GetCharacterScaleFactor();
             Vector3 origin = transform.position;
             Vector3 forward = new Vector3(facingDir, 0f, 0f);
 
             // 1. Quét tìm bề mặt tường thẳng đứng ở tầm ngực / vai
-            Vector3 chestOrigin = origin + Vector3.up * chestHeight;
-            Vector3 waistOrigin = origin + Vector3.up * (chestHeight * 0.65f);
+            Vector3 chestOrigin = origin + Vector3.up * (chestHeight * Mathf.Lerp(1f, scaleFactor, 0.5f));
+            Vector3 waistOrigin = origin + Vector3.up * (chestHeight * 0.55f * Mathf.Lerp(1f, scaleFactor, 0.5f));
 
             RaycastHit wallHit;
             bool hitWall = Physics.Raycast(chestOrigin, forward, out wallHit, forwardCheckDist, obstacleMask, QueryTriggerInteraction.Ignore)
@@ -57,7 +82,7 @@ namespace HoaVaMau.Gameplay
             // 3. Bắn tia từ trên xuống để tìm chính xác mặt phẳng đỉnh gờ (topY)
             float wallX = wallHit.point.x;
             Vector3 downOrigin = new Vector3(wallX + facingDir * 0.22f, origin.y + headHeight + 0.45f, 0f);
-            if (!Physics.Raycast(downOrigin, Vector3.down, out RaycastHit ledgeHit, 2.2f, obstacleMask, QueryTriggerInteraction.Ignore))
+            if (!Physics.Raycast(downOrigin, Vector3.down, out RaycastHit ledgeHit, 2.4f, obstacleMask, QueryTriggerInteraction.Ignore))
             {
                 return false;
             }
@@ -67,25 +92,33 @@ namespace HoaVaMau.Gameplay
 
             float topY = ledgeHit.point.y;
 
-            // Chỉ bám gờ khi mép tường nằm đúng tầm tay với khi nhảy / rơi (cao hơn bàn chân từ 0.6m đến 2.35m)
+            // Chỉ bám gờ khi mép tường nằm đúng tầm tay với khi nhảy / rơi (cao hơn bàn chân từ 0.6m đến 2.15m)
             float ledgeHeightAboveFeet = topY - origin.y;
             if (ledgeHeightAboveFeet < minLedgeReach || ledgeHeightAboveFeet > maxLedgeReach)
             {
                 return false;
             }
 
-            // Vị trí bắt đầu bám (hangPos): Áp sát ngay mặt trước của vách tường (wallX - facingDir * wallHangOffset),
-            // với hai tay vươn thẳng bám đúng vào góc gờ (topY). Gốc tọa độ chân nằm cách mép gờ 1.70m về phía dưới.
-            float hangX = wallX - facingDir * wallHangOffset;
-            float hangY = topY - 1.70f;
-            if (Physics.Raycast(new Vector3(hangX, topY, 0f), Vector3.down, out RaycastHit floorHit, 3.5f, obstacleMask, QueryTriggerInteraction.Ignore))
+            LastLedgeCorner = new Vector3(wallX, topY, 0f);
+            HasValidLedgeCorner = true;
+
+            // Vị trí bắt đầu bám (hangPos) chuẩn theo tỉ lệ xương thực tế của nhân vật:
+            // Với Minh (scaleFactor=1.0), Hips cách mặt tường 0.24m và thấp hơn gờ 0.38m (root thấp hơn gờ 0.97m),
+            // giúp hai bàn tay bám khít đúng góc gờ (wallX, topY) và chân phải đạp sát mặt tường thẳng đứng.
+            float calibratedWallOffset = Mathf.Clamp(wallHangOffset, 0.20f, 0.25f) * scaleFactor;
+            float calibratedHangDrop = 0.86f * scaleFactor;
+
+            float hangX = wallX - facingDir * calibratedWallOffset;
+            float hangY = topY - calibratedHangDrop;
+            if (Physics.Raycast(new Vector3(hangX, topY - 0.05f, 0f), Vector3.down, out RaycastHit floorHit, calibratedHangDrop + 0.5f, obstacleMask, QueryTriggerInteraction.Ignore))
             {
                 hangY = Mathf.Max(hangY, floorHit.point.y);
             }
             hangPos = new Vector3(hangX, hangY, 0f);
 
-            // Vị trí kết thúc trèo (platformLandPos): Đứng vững trên mặt phẳng đỉnh platform, cách mép gờ 0.42m
-            float landX = wallX + facingDir * platformLandForward;
+            // Vị trí kết thúc trèo (platformLandPos): Đứng vững trên mặt phẳng đỉnh platform, không trượt xa quá mức
+            float calibratedLandForward = Mathf.Clamp(platformLandForward, 0.38f, 0.48f) * scaleFactor;
+            float landX = wallX + facingDir * calibratedLandForward;
             platformLandPos = new Vector3(landX, topY, 0f);
 
             return true;

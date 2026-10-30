@@ -337,7 +337,7 @@ namespace HoaVaMau.Editor
                 // Animator Controller
                 Animator anim = playerGo.GetComponent<Animator>();
                 if (anim == null) anim = playerGo.AddComponent<Animator>();
-                anim.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Player3D_Interaction.controller");
+                anim.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_Player_An.controller");
 
                 // Assign player to camera follow
                 camFollow.SetTarget(playerGo.transform);

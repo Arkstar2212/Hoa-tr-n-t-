@@ -35,16 +35,16 @@ namespace HoaVaMau.Editor
             { "Assets/Models/Meshy_AI_Forest_Patrol_Jeep_0927160125_texture.fbx", "Assets/Models/Vehicles/SM_PatrolJeep.fbx" },
 
             // Controllers previously in Models
-            { "Assets/Models/gap bung.controller", "Assets/Animations/Controllers/AC_Hero_GapBung.controller" },
-            { "Assets/Models/GapbungPlayerController.controller", "Assets/Animations/Controllers/AC_Hero_GapBungPlayer.controller" },
-            { "Assets/Models/Player3D_InteractionController.controller", "Assets/Animations/Controllers/AC_Player3D_Interaction.controller" },
+
+
+
             { "Assets/Animations/Hero/An_Hero_AnimatorController.controller", "Assets/Animations/Controllers/AC_Player_An.controller" },
 
             // ========================================================
             // 2. PREFABS -> Categorized (Characters, Environment, Foliage, Props, Vehicles)
             // ========================================================
             { "Assets/Prefabs/Player_An.prefab", "Assets/Prefabs/Characters/PF_Player_An.prefab" },
-            { "Assets/Prefabs/Player_MeshyBoy.prefab", "Assets/Prefabs/Characters/PF_Player_MeshyBoy.prefab" },
+
 
             { "Assets/Prefabs/NhaSanGo.prefab", "Assets/Prefabs/Environment/PF_StiltedHouse_Wood.prefab" },
             { "Assets/Prefabs/Nhà Sàn Lá.prefab", "Assets/Prefabs/Environment/PF_StiltedHouse_Thatched.prefab" },

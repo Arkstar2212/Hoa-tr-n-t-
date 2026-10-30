@@ -2068,7 +2068,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -6341870812657150275, guid: e92aaa74888da254a8ca0c2469819cef, type: 3}
   m_Bones:
@@ -2580,7 +2580,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6538107832056628482}
   - component: {fileID: 1479073161288377232}
-  - component: {fileID: 2116021557488787353}
   m_Layer: 0
   m_Name: Boy_Character_Model
   m_TagString: Untagged
@@ -2615,8 +2614,8 @@ Animator:
   m_GameObject: {fileID: 8572121818980453681}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: e92aaa74888da254a8ca0c2469819cef, type: 3}
-  m_Controller: {fileID: 9100000, guid: 1135f207cd0bac24081b94c49cba351f, type: 2}
-  m_CullingMode: 1
+  m_Controller: {fileID: 9100000, guid: d77968aa378c4e84fb44d1a1bd7a4dc6, type: 2}
+  m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
@@ -2627,24 +2626,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &2116021557488787353
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8572121818980453681}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 71af859860d593645bd718e434ce4f84, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.MeshyBoyAnimationController
-  activeAnimation: 0
-  enableKeyShortcuts: 1
-  showOnScreenGui: 1
-  autoDetectMovement: 1
-  runSpeedThreshold: 3.6
-  faceMovementDirection: 1
 --- !u!1 &8764417048045662019
 GameObject:
   m_ObjectHideFlags: 0
