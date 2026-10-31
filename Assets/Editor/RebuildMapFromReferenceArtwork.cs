@@ -1531,6 +1531,13 @@ namespace HoaDo.Editor
             var matWood = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/GhibliModular/M_Ghibli_PierPlank.mat");
             if (matWood == null) matWood = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/M_Village_Road_NamBo.mat");
 
+            var texFoliage = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Textures/Tree/Tree_FrontLeaves.png");
+            var texTop = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Textures/Tree/Lana_Foliage_Top.png");
+            var texWide = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Textures/Tree/Tree_Lana_WideCanopy.png");
+            if (texFoliage == null) texFoliage = sprite;
+            if (texTop == null) texTop = sprite;
+            if (texWide == null) texWide = sprite;
+
             string pName = prefab.name.ToLower();
             string sName = (sprite != null ? sprite.name.ToLower() : "");
             bool isPalm = pName.Contains("coconut") || pName.Contains("palm") || sName.Contains("coconut");
@@ -1543,82 +1550,96 @@ namespace HoaDo.Editor
                 // 3D Wood Trunk Column
                 CreateTreeTrunkCylinder(treeObj.transform, new Vector3(0.20f, 1.8f, 0.10f), new Vector3(0.22f, 1.8f, 0.22f), matWood);
 
-                // 1. Back Shadow Fill (offset Z + 0.30m, dark tone to completely plug holes)
-                CreateFoliageSubCard(treeObj.transform, "Palm_Back_ShadowFill", sprite, mat, new Vector3(0f, 0f, 0.30f), Quaternion.identity, Vector3.one, new Color(0.25f, 0.45f, 0.22f, 1.0f), baseOrder - 10);
+                // Multi-radial frond cards (360-degree roundness)
+                CreateFoliageSubCard(treeObj.transform, "Palm_Card_90Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 90f, 0f), Vector3.one, new Color(0.85f, 0.95f, 0.80f, 1.0f), baseOrder - 2);
+                CreateFoliageSubCard(treeObj.transform, "Palm_Card_45Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 45f, 0f), Vector3.one * 0.95f, new Color(0.80f, 0.90f, 0.75f, 1.0f), baseOrder - 1);
+                CreateFoliageSubCard(treeObj.transform, "Palm_Card_135Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 135f, 0f), Vector3.one * 0.95f, new Color(0.80f, 0.90f, 0.75f, 1.0f), baseOrder - 1);
 
-                // 2. Flipped Core Blocker (bridges gaps between fronds)
-                CreateFoliageSubCard(treeObj.transform, "Palm_Core_Blocker", sprite, mat, new Vector3(0.15f, 0.20f, 0.15f), Quaternion.Euler(0f, 180f, 0f), new Vector3(0.90f, 0.90f, 1.0f), new Color(0.35f, 0.55f, 0.28f, 1.0f), baseOrder - 5);
+                // Core blocker and wings
+                CreateFoliageSubCard(treeObj.transform, "Palm_Core_Blocker", texFoliage, new Vector3(0.15f, 3.2f, 0.15f), Quaternion.identity, new Vector3(1.1f, 1.1f, 1.0f), new Color(0.65f, 0.85f, 0.45f, 1.0f), baseOrder + 2);
+                CreateFoliageSubCard(treeObj.transform, "Palm_Wing_Left", sprite, mat, new Vector3(-0.6f, 2.0f, -0.15f), Quaternion.Euler(15f, -42f, -8f), new Vector3(0.80f, 0.80f, 1.0f), new Color(0.75f, 0.90f, 0.55f, 1.0f), baseOrder + 5);
+                CreateFoliageSubCard(treeObj.transform, "Palm_Wing_Right", sprite, mat, new Vector3(0.6f, 2.0f, -0.15f), Quaternion.Euler(15f, 42f, 8f), new Vector3(0.80f, 0.80f, 1.0f), new Color(0.75f, 0.90f, 0.55f, 1.0f), baseOrder + 5);
 
-                // 3. Left Wing Fronds (angled -42 deg)
-                CreateFoliageSubCard(treeObj.transform, "Palm_Wing_Left", sprite, mat, new Vector3(-0.6f, 2.0f, -0.15f), Quaternion.Euler(15f, -42f, -8f), new Vector3(0.75f, 0.75f, 1.0f), new Color(0.65f, 0.82f, 0.45f, 1.0f), baseOrder + 5);
-
-                // 4. Right Wing Fronds (angled +42 deg)
-                CreateFoliageSubCard(treeObj.transform, "Palm_Wing_Right", sprite, mat, new Vector3(0.6f, 2.0f, -0.15f), Quaternion.Euler(15f, 42f, 8f), new Vector3(0.75f, 0.75f, 1.0f), new Color(0.65f, 0.82f, 0.45f, 1.0f), baseOrder + 5);
-
-                // 5. Top Crown Fronds Dome (pitched forward 38 deg for full 3D overhead umbrella)
-                CreateFoliageSubCard(treeObj.transform, "Palm_Top_CrownDome", sprite, mat, new Vector3(0.35f, 3.8f, -0.35f), Quaternion.Euler(38f, 0f, 0f), new Vector3(0.85f, 0.70f, 1.0f), new Color(0.75f, 0.92f, 0.55f, 1.0f), baseOrder + 15);
+                // Overhead umbrella crown domes (pitched for zero top-down holes)
+                CreateFoliageSubCard(treeObj.transform, "Palm_Top_FrontDome", texTop, new Vector3(0.20f, 3.7f, -0.35f), Quaternion.Euler(68f, 0f, 0f), new Vector3(1.25f, 1.10f, 1.0f), new Color(0.85f, 0.98f, 0.65f, 1.0f), baseOrder + 15);
+                CreateFoliageSubCard(treeObj.transform, "Palm_Top_BackDome", texTop, new Vector3(0.20f, 3.9f, 0.35f), Quaternion.Euler(-68f, 0f, 0f), new Vector3(1.25f, 1.10f, 1.0f), new Color(0.70f, 0.88f, 0.50f, 1.0f), baseOrder + 12);
             }
             else if (isBanana)
             {
-                // 1. Back Shadow Fill
-                CreateFoliageSubCard(treeObj.transform, "Banana_Back_ShadowFill", sprite, mat, new Vector3(0f, 0f, 0.25f), Quaternion.identity, Vector3.one, new Color(0.26f, 0.46f, 0.22f, 1.0f), baseOrder - 8);
+                // Wood Trunk Column
+                CreateTreeTrunkCylinder(treeObj.transform, new Vector3(0f, 0.70f, 0f), new Vector3(0.22f, 0.70f, 0.22f), matWood);
 
-                // 2. Flipped Core Blocker
-                CreateFoliageSubCard(treeObj.transform, "Banana_Core_Blocker", sprite, mat, new Vector3(0f, 0.15f, 0.12f), Quaternion.Euler(0f, 180f, 0f), new Vector3(0.92f, 0.92f, 1.0f), new Color(0.38f, 0.58f, 0.30f, 1.0f), baseOrder - 4);
+                // Radial fan cards
+                CreateFoliageSubCard(treeObj.transform, "Banana_Card_90Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 90f, 0f), Vector3.one, new Color(0.80f, 0.92f, 0.75f, 1.0f), baseOrder - 2);
+                CreateFoliageSubCard(treeObj.transform, "Banana_Card_45Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 45f, 0f), Vector3.one * 0.95f, new Color(0.75f, 0.88f, 0.70f, 1.0f), baseOrder - 1);
+                CreateFoliageSubCard(treeObj.transform, "Banana_Card_135Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 135f, 0f), Vector3.one * 0.95f, new Color(0.75f, 0.88f, 0.70f, 1.0f), baseOrder - 1);
 
-                // 3. Left Fan
-                CreateFoliageSubCard(treeObj.transform, "Banana_Wing_Left", sprite, mat, new Vector3(-0.7f, 1.2f, -0.12f), Quaternion.Euler(14f, -36f, -6f), new Vector3(0.75f, 0.75f, 1.0f), new Color(0.68f, 0.85f, 0.48f, 1.0f), baseOrder + 4);
+                // Dense center fill
+                CreateFoliageSubCard(treeObj.transform, "Banana_Center_DenseFill", texFoliage, new Vector3(0f, 1.5f, 0f), Quaternion.identity, new Vector3(1.1f, 1.0f, 1.0f), new Color(0.65f, 0.85f, 0.45f, 1.0f), baseOrder + 2);
 
-                // 4. Right Fan
-                CreateFoliageSubCard(treeObj.transform, "Banana_Wing_Right", sprite, mat, new Vector3(0.7f, 1.2f, -0.12f), Quaternion.Euler(14f, 36f, 6f), new Vector3(0.75f, 0.75f, 1.0f), new Color(0.68f, 0.85f, 0.48f, 1.0f), baseOrder + 4);
-
-                // 5. Top Crown Dome (pitched forward 34 deg)
-                CreateFoliageSubCard(treeObj.transform, "Banana_Top_CrownDome", sprite, mat, new Vector3(0f, 2.5f, -0.30f), Quaternion.Euler(34f, 0f, 0f), new Vector3(0.85f, 0.70f, 1.0f), new Color(0.78f, 0.94f, 0.58f, 1.0f), baseOrder + 12);
+                // Overhead crown domes
+                CreateFoliageSubCard(treeObj.transform, "Banana_Top_FrontDome", texTop, new Vector3(0f, 2.2f, -0.30f), Quaternion.Euler(65f, 0f, 0f), new Vector3(1.15f, 1.05f, 1.0f), new Color(0.85f, 0.98f, 0.65f, 1.0f), baseOrder + 15);
+                CreateFoliageSubCard(treeObj.transform, "Banana_Top_BackDome", texTop, new Vector3(0f, 2.4f, 0.30f), Quaternion.Euler(-65f, 0f, 0f), new Vector3(1.15f, 1.05f, 1.0f), new Color(0.70f, 0.88f, 0.50f, 1.0f), baseOrder + 12);
             }
             else if (isBamboo)
             {
-                // 1. Back Shadow Fill
-                CreateFoliageSubCard(treeObj.transform, "Bamboo_Back_ShadowFill", sprite, mat, new Vector3(0f, 0f, 0.35f), Quaternion.identity, new Vector3(1.04f, 1.04f, 1.0f), new Color(0.22f, 0.38f, 0.20f, 1.0f), baseOrder - 10);
+                // Multi-radial cluster cards
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Card_90Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 90f, 0f), Vector3.one, new Color(0.80f, 0.90f, 0.75f, 1.0f), baseOrder - 2);
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Card_45Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 45f, 0f), Vector3.one * 0.95f, new Color(0.75f, 0.85f, 0.70f, 1.0f), baseOrder - 1);
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Card_135Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 135f, 0f), Vector3.one * 0.95f, new Color(0.75f, 0.85f, 0.70f, 1.0f), baseOrder - 1);
 
-                // 2. Flipped Core Blocker
-                CreateFoliageSubCard(treeObj.transform, "Bamboo_Core_Flipped", sprite, mat, new Vector3(0f, 0.15f, 0.15f), Quaternion.Euler(0f, 180f, 0f), new Vector3(0.96f, 0.96f, 1.0f), new Color(0.38f, 0.58f, 0.32f, 1.0f), baseOrder - 4);
+                // Dense center fill
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Center_DenseFill", texWide, new Vector3(0f, 1.8f, 0f), Quaternion.identity, new Vector3(1.2f, 1.1f, 1.0f), new Color(0.60f, 0.80f, 0.40f, 1.0f), baseOrder + 2);
 
-                // 3. Left Wing Cluster
-                CreateFoliageSubCard(treeObj.transform, "Bamboo_Wing_Left", sprite, mat, new Vector3(-0.8f, 1.5f, -0.12f), Quaternion.Euler(10f, -32f, -4f), new Vector3(0.78f, 0.78f, 1.0f), new Color(0.62f, 0.80f, 0.42f, 1.0f), baseOrder + 4);
-
-                // 4. Right Wing Cluster
-                CreateFoliageSubCard(treeObj.transform, "Bamboo_Wing_Right", sprite, mat, new Vector3(0.8f, 1.5f, -0.12f), Quaternion.Euler(10f, 32f, 4f), new Vector3(0.78f, 0.78f, 1.0f), new Color(0.65f, 0.84f, 0.46f, 1.0f), baseOrder + 4);
-
-                // 5. Top Crown Dome (pitched forward 30 deg)
-                CreateFoliageSubCard(treeObj.transform, "Bamboo_Top_CrownDome", sprite, mat, new Vector3(0f, 2.8f, -0.30f), Quaternion.Euler(30f, 0f, 0f), new Vector3(0.85f, 0.70f, 1.0f), new Color(0.76f, 0.92f, 0.55f, 1.0f), baseOrder + 12);
+                // Overhead crown domes
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Top_FrontDome", texTop, new Vector3(0f, 2.6f, -0.30f), Quaternion.Euler(65f, 0f, 0f), new Vector3(1.20f, 1.05f, 1.0f), new Color(0.82f, 0.96f, 0.62f, 1.0f), baseOrder + 15);
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Top_BackDome", texTop, new Vector3(0f, 2.8f, 0.30f), Quaternion.Euler(-65f, 0f, 0f), new Vector3(1.20f, 1.05f, 1.0f), new Color(0.68f, 0.86f, 0.48f, 1.0f), baseOrder + 12);
             }
             else // Canopy Trees, Fruit Trees, Hero Banyan, Slender Trees, Bushes
             {
+                bool isHeroOrBanyan = name.Contains("Hero") || name.Contains("Banyan");
                 if (!isBush)
                 {
-                    float trunkRad = (name.Contains("Hero") || name.Contains("Banyan")) ? 0.60f : 0.40f;
-                    float trunkH = (name.Contains("Hero") || name.Contains("Banyan")) ? 0.55f : 0.45f;
-                    CreateTreeTrunkCylinder(treeObj.transform, new Vector3(0f, trunkH, 0.20f), new Vector3(trunkRad, trunkH, trunkRad), matWood);
+                    float trunkRad = isHeroOrBanyan ? 0.60f : 0.32f;
+                    float trunkH = isHeroOrBanyan ? 1.00f : 0.75f;
+                    CreateTreeTrunkCylinder(treeObj.transform, new Vector3(0f, trunkH, 0.10f), new Vector3(trunkRad, trunkH, trunkRad), matWood);
                 }
 
-                // 1. Back Shadow Fill (offset Z + 0.35m, dark tone to completely plug holes)
-                CreateFoliageSubCard(treeObj.transform, "Canopy_Back_ShadowFill", sprite, mat, new Vector3(0f, 0f, 0.35f), Quaternion.identity, Vector3.one, new Color(0.24f, 0.42f, 0.20f, 1.0f), baseOrder - 10);
+                // 1. Radial vertical cards (360-degree roundness, zero wafer-thin profile)
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Card_90Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 90f, 0f), Vector3.one, new Color(0.78f, 0.88f, 0.72f, 1f), baseOrder - 1);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Card_45Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 45f, 0f), Vector3.one * 0.98f, new Color(0.82f, 0.92f, 0.78f, 1f), baseOrder);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Card_135Deg", sprite, mat, Vector3.zero, Quaternion.Euler(0f, 135f, 0f), Vector3.one * 0.98f, new Color(0.82f, 0.92f, 0.78f, 1f), baseOrder);
 
-                // 2. Flipped Core Fork Blocker (specifically covers negative-space gaps in branch fork)
-                CreateFoliageSubCard(treeObj.transform, "Canopy_Core_ForkBlocker", sprite, mat, new Vector3(0f, 0.15f, 0.18f), Quaternion.Euler(0f, 180f, 0f), new Vector3(0.95f, 0.95f, 1.0f), new Color(0.32f, 0.52f, 0.24f, 1.0f), baseOrder - 5);
+                // 2. Multi-layer fork dense fill (completely covers negative-space branch fork gap)
+                float forkY = isBush ? 0.8f : (isHeroOrBanyan ? 1.4f : 1.2f);
+                float midY = isBush ? 1.2f : (isHeroOrBanyan ? 1.9f : 1.6f);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Fork_DenseFill_Lower", texFoliage, new Vector3(0f, forkY, 0f), Quaternion.identity, new Vector3(1.35f, 1.20f, 1f), new Color(0.55f, 0.75f, 0.40f, 1f), baseOrder + 2);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Fork_DenseFill_Mid", texWide, new Vector3(0f, midY, 0f), Quaternion.identity, new Vector3(1.40f, 1.25f, 1f), new Color(0.60f, 0.80f, 0.45f, 1f), baseOrder + 4);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Fork_DenseFill_Back", texFoliage, new Vector3(0f, forkY + 0.2f, 0.20f), Quaternion.Euler(0f, 180f, 0f), new Vector3(1.35f, 1.20f, 1f), new Color(0.40f, 0.60f, 0.30f, 1f), baseOrder - 5);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Fork_DenseFill_Cross", texFoliage, new Vector3(0f, forkY + 0.2f, 0f), Quaternion.Euler(0f, 90f, 0f), new Vector3(1.30f, 1.15f, 1f), new Color(0.50f, 0.70f, 0.35f, 1f), baseOrder + 3);
 
-                // 3. Left 3D Wing (angled -38 deg)
-                CreateFoliageSubCard(treeObj.transform, "Canopy_Wing_Left", sprite, mat, new Vector3(-1.1f, 1.1f, -0.15f), Quaternion.Euler(12f, -38f, -6f), new Vector3(0.70f, 0.70f, 1.0f), new Color(0.52f, 0.74f, 0.32f, 1.0f), baseOrder + 5);
+                // 3. Multi-directional overhead umbrella canopy dome (plugs any steep/top-down view holes completely)
+                float topY = isBush ? 1.4f : (isHeroOrBanyan ? 2.2f : 2.0f);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Overhead_FrontDome", texTop, new Vector3(0f, topY - 0.1f, -0.65f), Quaternion.Euler(68f, 0f, 0f), new Vector3(1.45f, 1.25f, 1f), new Color(0.85f, 0.98f, 0.65f, 1f), baseOrder + 15);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Overhead_BackDome", texTop, new Vector3(0f, topY + 0.2f, 0.65f), Quaternion.Euler(-68f, 0f, 0f), new Vector3(1.45f, 1.25f, 1f), new Color(0.70f, 0.88f, 0.50f, 1f), baseOrder + 12);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Overhead_LeftDome", texWide, new Vector3(-0.75f, topY - 0.2f, -0.30f), Quaternion.Euler(65f, -50f, 0f), new Vector3(1.35f, 1.15f, 1f), new Color(0.80f, 0.95f, 0.60f, 1f), baseOrder + 14);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Overhead_RightDome", texWide, new Vector3(0.75f, topY - 0.2f, -0.30f), Quaternion.Euler(65f, 50f, 0f), new Vector3(1.35f, 1.15f, 1f), new Color(0.80f, 0.95f, 0.60f, 1f), baseOrder + 14);
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Crown_CenterCap", texTop, new Vector3(0f, topY + 0.25f, 0f), Quaternion.Euler(80f, 0f, 0f), new Vector3(1.40f, 1.30f, 1f), new Color(0.85f, 0.98f, 0.65f, 1f), baseOrder + 18);
 
-                // 4. Right 3D Wing (angled +38 deg)
-                CreateFoliageSubCard(treeObj.transform, "Canopy_Wing_Right", sprite, mat, new Vector3(1.1f, 1.1f, -0.15f), Quaternion.Euler(12f, 38f, 6f), new Vector3(0.70f, 0.70f, 1.0f), new Color(0.58f, 0.80f, 0.36f, 1.0f), baseOrder + 5);
-
-                // 5. Top 3D Overhead Crown Dome (pitched 34 deg forward to crown the tree with a lush 3D umbrella dome from overhead cameras)
-                float topY = isBush ? 1.4f : 2.6f;
-                CreateFoliageSubCard(treeObj.transform, "Canopy_Top_CrownDome", sprite, mat, new Vector3(0f, topY, -0.38f), Quaternion.Euler(34f, 0f, 0f), new Vector3(0.90f, 0.75f, 1.0f), new Color(0.68f, 0.88f, 0.42f, 1.0f), baseOrder + 15);
+                // Lower aprons for wide trees
+                if (isHeroOrBanyan)
+                {
+                    CreateFoliageSubCard(treeObj.transform, "Canopy_Lower_FrontApron", texWide, new Vector3(0.3f, 1.4f, -0.7f), Quaternion.Euler(65f, 15f, 0f), new Vector3(1.40f, 1.20f, 1f), new Color(0.65f, 0.85f, 0.45f, 1f), baseOrder + 16);
+                    CreateFoliageSubCard(treeObj.transform, "Canopy_Lower_LeftApron", texWide, new Vector3(-0.4f, 1.4f, -0.7f), Quaternion.Euler(65f, -15f, 0f), new Vector3(1.40f, 1.20f, 1f), new Color(0.65f, 0.85f, 0.45f, 1f), baseOrder + 16);
+                }
             }
 
             return treeObj;
+        }
+
+        private static GameObject CreateFoliageSubCard(Transform parent, string name, Sprite sprite, Vector3 localPos, Quaternion localRot, Vector3 localScale, Color color, int sortingOrder)
+        {
+            return CreateFoliageSubCard(parent, name, sprite, null, localPos, localRot, localScale, color, sortingOrder);
         }
 
         private static GameObject CreateFoliageSubCard(Transform parent, string name, Sprite sprite, Material material, Vector3 localPos, Quaternion localRot, Vector3 localScale, Color color, int sortingOrder)
@@ -1819,13 +1840,58 @@ namespace HoaDo.Editor
                 cap.radius = 0.35f;
             }
 
+            // Replace NPC_Villager_Carrier_Tu with NPC_Friend_Minh (Bé Minh - Bạn của An, rigged 3D child with waving animation)
+            var tuNpc = GameObject.Find("NPC_Villager_Carrier_Tu");
+            if (tuNpc != null) Object.DestroyImmediate(tuNpc);
+
+            var minhNpc = GameObject.Find("NPC_Friend_Minh");
+            if (minhNpc == null)
+            {
+                var minhPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Characters/PF_Player_Minh.prefab");
+                if (minhPrefab != null)
+                {
+                    var npcRoot = GetOrCreateRoot("CaMau_1954_Village/NPCs");
+                    minhNpc = (GameObject)PrefabUtility.InstantiatePrefab(minhPrefab, npcRoot.transform);
+                    minhNpc.name = "NPC_Friend_Minh";
+
+                    // Strip player controller components
+                    var pc = minhNpc.GetComponent<PlayerController>();
+                    if (pc != null) Object.DestroyImmediate(pc);
+                    var anAnim = minhNpc.GetComponent<AnAnimationController>();
+                    if (anAnim != null) Object.DestroyImmediate(anAnim);
+                    var ccMinh = minhNpc.GetComponent<CharacterController>();
+                    if (ccMinh != null) Object.DestroyImmediate(ccMinh);
+
+                    // Setup NPC capsule collider
+                    var cap = minhNpc.GetComponent<CapsuleCollider>();
+                    if (cap == null) cap = minhNpc.AddComponent<CapsuleCollider>();
+                    cap.center = new Vector3(0f, 0.68f, 0f);
+                    cap.height = 1.35f;
+                    cap.radius = 0.35f;
+
+                    // Assign lively social waving animator
+                    var anim = minhNpc.GetComponent<Animator>();
+                    if (anim != null)
+                    {
+                        var wavingCtrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/Controllers/AC_NPC_Social_Waving.controller");
+                        if (wavingCtrl != null) anim.runtimeAnimatorController = wavingCtrl;
+                    }
+                }
+            }
+            if (minhNpc != null)
+            {
+                minhNpc.transform.position = new Vector3(4.0f, UNIFORM_GROUND_Y + 0.10f, 0.5f);
+                minhNpc.transform.rotation = Quaternion.Euler(0f, 220f, 0f); // Facing An as he arrives
+                minhNpc.transform.localScale = Vector3.one * 1.15f;
+            }
+
             // Explicitly position all known NPCs to authentic, lively village locations
             SetNpcPosition("NPC_Mother_An", new Vector3(20.0f, UNIFORM_GROUND_Y + 0.10f, 22.0f));
             SetNpcPosition("NPC_Villager_Waving_Mother", new Vector3(26.0f, UNIFORM_GROUND_Y + 0.10f, 1.2f));
             SetNpcPosition("NPC_Elderly_VillageChief", new Vector3(-4.0f, UNIFORM_GROUND_Y + 0.10f, 10.0f));
             SetNpcPosition("NPC_Elderly_UncleBa", new Vector3(13.5f, UNIFORM_GROUND_Y + 0.10f, 4.5f));
             SetNpcPosition("NPC_Villager_Farewell_Elder", new Vector3(27.0f, UNIFORM_GROUND_Y + 0.10f, 3.8f));
-            SetNpcPosition("NPC_Villager_Carrier_Tu", new Vector3(4.0f, UNIFORM_GROUND_Y + 0.10f, 0.5f));
+            SetNpcPosition("NPC_Friend_Minh", new Vector3(4.0f, UNIFORM_GROUND_Y + 0.10f, 0.5f), 220f);
             SetNpcPosition("NPC_Baby_Toddler", new Vector3(-11.0f, UNIFORM_GROUND_Y + 0.10f, 1.5f));
             SetNpcPosition("NPC_Female_WaterCarrier", new Vector3(14.5f, UNIFORM_GROUND_Y + 0.10f, 3.5f));
             SetNpcPosition("NPC_Villager_Gardener", new Vector3(48.0f, UNIFORM_GROUND_Y + 0.10f, 22.0f), 130f);
@@ -1938,8 +2004,8 @@ namespace HoaDo.Editor
                 // 6. Ông Ba near central crossroads
                 { "Trigger_06_ElderBa", ("Ông Ba", "[E] Chào hỏi", "Ông Ba: 'Đi đứng cẩn thận nghe con!'", new Vector3(13.5f, UNIFORM_GROUND_Y + 0.5f, 4.5f), 2.4f) },
 
-                // 7. Anh Tư gánh hàng trên đường làng (thanh niên xóm)
-                { "Trigger_07_RoadVillagerTu", ("Anh Tư", "[E] Trò chuyện", "Anh Tư: 'An đó hả? Má em mới gửi rổ rau tươi qua, anh đem giùm nè. Đi chơi đâu thì nhớ về sớm ăn cơm nghen!'", new Vector3(4.0f, UNIFORM_GROUND_Y + 0.5f, 0.5f), 2.4f) },
+                // 7. Bé Minh - Bạn của An trên đường làng
+                { "Trigger_07_RoadVillagerTu", ("Minh (Bạn của An)", "[E] Trò chuyện", "Minh: 'An ơi! Lát nữa ra mé rạch hái bần với bắt ốc với tao hông? Nãy tao mới thấy bầy cá thòi lòi nhảy vui lắm!'", new Vector3(4.0f, UNIFORM_GROUND_Y + 0.5f, 0.5f), 2.4f) },
 
                 // 8. Bác Trưởng Xóm near the sacred plaza
                 { "Trigger_08_VillageChief", ("Bác Trưởng Xóm", "[E] Hỏi thăm", "Bác Hai: 'Năm nay xóm mình trúng lúa!'", new Vector3(-4.0f, UNIFORM_GROUND_Y + 0.5f, 10.0f), 2.4f) },
