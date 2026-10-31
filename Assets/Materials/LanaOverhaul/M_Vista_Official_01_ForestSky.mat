@@ -31,10 +31,11 @@ Material:
     m_Floats:
     - _BottomFeather: 0
     - _CloudRadianceIntensity: 0.38
-    - _LeftFeather: 0
-    - _RightFeather: 0
+    - _LeftFeather: 0.25
+    - _RightFeather: 0.25
     - _SkyClarity: 1.05
     - _SunbeamIntensity: 0.2
+    - _TopFeather: 0.35
     m_Colors:
     - _CloudRadianceColor: {r: 1, g: 0.97999996, b: 0.9, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}

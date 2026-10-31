@@ -184,7 +184,8 @@ namespace HoaVaMau.Editor
             RenderSettings.ambientSkyColor = new Color(0.96f, 0.82f, 0.65f);
             RenderSettings.ambientEquatorColor = new Color(0.72f, 0.62f, 0.45f);
             RenderSettings.ambientGroundColor = new Color(0.35f, 0.32f, 0.25f);
-            Material skyboxMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Shaders/Uber Stylized Water/Demo/Sky/SKy 22.mat");
+            Material skyboxMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Backdrop_Sky/M_Skybox_CaMau_Panorama.mat");
+            if (skyboxMat == null) skyboxMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Shaders/Uber Stylized Water/Demo/Sky/SKy 22.mat");
             if (skyboxMat != null)
             {
                 RenderSettings.skybox = skyboxMat;
@@ -236,7 +237,8 @@ namespace HoaVaMau.Editor
             if (skyMat != null)
             {
                 GameObject skyBackdrop = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                skyBackdrop.name = "Backdrop_SkySunset";
+                skyBackdrop.name = "Backdrop_SkySunset_Deprecated";
+                HoaVaMau.EditorTools.SetupSurroundingSkyPanorama.Execute();
                 skyBackdrop.transform.SetParent(bgGroup.transform, false);
                 skyBackdrop.transform.position = new Vector3(0f, 18f, 74f);
                 skyBackdrop.transform.rotation = Quaternion.Euler(0, 180f, 0);
@@ -1015,7 +1017,7 @@ namespace HoaVaMau.Editor
             cam.orthographic = false;
             cam.fieldOfView = 60.0f; // Góc nhìn 3D chuẩn game góc nhìn thứ 3
             cam.nearClipPlane = 0.2f;
-            cam.farClipPlane = 250f;
+            cam.farClipPlane = 400f;
             cam.clearFlags = CameraClearFlags.Skybox;
 
             var urpCam = camObj.AddComponent<UniversalAdditionalCameraData>();
