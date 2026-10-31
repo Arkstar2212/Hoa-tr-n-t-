@@ -1795,6 +1795,36 @@ namespace HoaDo.Editor
                 }
             }
 
+            // Ensure NPC_Villager_Gardener (Chú Năm) is a fully rigged, animated 3D villager (standing upright with AC_NPC_Male)
+            var gardener = GameObject.Find("NPC_Villager_Gardener");
+            if (gardener != null && gardener.GetComponentInChildren<Animator>() == null)
+            {
+                var parent = gardener.transform.parent;
+                Object.DestroyImmediate(gardener);
+                gardener = null;
+            }
+            if (gardener == null)
+            {
+                var gardenerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Characters/NPCs/PF_NPC_Villager_04.prefab");
+                if (gardenerPrefab != null)
+                {
+                    var npcRoot = GetOrCreateRoot("CaMau_1954_Village/NPCs");
+                    gardener = (GameObject)PrefabUtility.InstantiatePrefab(gardenerPrefab, npcRoot.transform);
+                    gardener.name = "NPC_Villager_Gardener";
+                }
+            }
+            if (gardener != null)
+            {
+                gardener.transform.position = new Vector3(48.0f, UNIFORM_GROUND_Y, 22.0f);
+                gardener.transform.rotation = Quaternion.Euler(0f, 130f, 0f); // Upright facing path
+                gardener.transform.localScale = Vector3.one * 1.38f;
+                var cap = gardener.GetComponent<CapsuleCollider>();
+                if (cap == null) cap = gardener.AddComponent<CapsuleCollider>();
+                cap.center = new Vector3(0f, 0.70f, 0f);
+                cap.height = 1.6f;
+                cap.radius = 0.35f;
+            }
+
             // Explicitly position all known NPCs to authentic, lively village locations
             SetNpcPosition("NPC_Mother_An", new Vector3(20.0f, UNIFORM_GROUND_Y + 0.10f, 22.0f));
             SetNpcPosition("NPC_Villager_Waving_Mother", new Vector3(26.0f, UNIFORM_GROUND_Y + 0.10f, 1.2f));
@@ -1804,7 +1834,7 @@ namespace HoaDo.Editor
             SetNpcPosition("NPC_Villager_Carrier_Tu", new Vector3(4.0f, UNIFORM_GROUND_Y + 0.10f, 0.5f));
             SetNpcPosition("NPC_Baby_Toddler", new Vector3(-11.0f, UNIFORM_GROUND_Y + 0.10f, 1.5f));
             SetNpcPosition("NPC_Female_WaterCarrier", new Vector3(14.5f, UNIFORM_GROUND_Y + 0.10f, 3.5f));
-            SetNpcPosition("NPC_Villager_Gardener", new Vector3(48.0f, UNIFORM_GROUND_Y + 0.10f, 22.0f));
+            SetNpcPosition("NPC_Villager_Gardener", new Vector3(48.0f, UNIFORM_GROUND_Y + 0.10f, 22.0f), 130f);
             SetNpcPosition("NPC_Child_Playing_Boy", new Vector3(-8.0f, UNIFORM_GROUND_Y + 0.10f, 11.0f));
             SetNpcPosition("NPC_Child_Playing_Girl", new Vector3(-10.0f, UNIFORM_GROUND_Y + 0.10f, 10.0f));
             SetNpcPosition("NPC_Ferryman_UncleBay", new Vector3(56.0f, 0.25f, -22.0f));
@@ -1831,12 +1861,16 @@ namespace HoaDo.Editor
             }
         }
 
-        private static void SetNpcPosition(string name, Vector3 pos)
+        private static void SetNpcPosition(string name, Vector3 pos, float rotY = float.NaN)
         {
             var go = GameObject.Find(name);
             if (go != null)
             {
                 go.transform.position = pos;
+                if (!float.IsNaN(rotY))
+                {
+                    go.transform.rotation = Quaternion.Euler(0f, rotY, 0f);
+                }
                 EditorUtility.SetDirty(go);
             }
         }
@@ -1886,43 +1920,101 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 14. Concise & Authentic Southern Vietnamese Game Dialogues
+        // 14. Concise & Authentic Southern Vietnamese Game Dialogues & Quest Triggers
         // =========================================================================
         private static void UpdateDialogueTriggersConcise()
         {
-            var conciseDialogues = new Dictionary<string, (string title, string prompt, string action)>
+            var conciseDialogues = new Dictionary<string, (string title, string prompt, string action, Vector3 pos, float radius)>
             {
-                { "Trigger_01_Mother", ("Má", "[E] Trò chuyện", "Má: 'Về sớm ăn cơm nghen con!'") },
-                { "Trigger_02_DogVang", ("Chó Vàng", "[E] Xoa đầu", "Gâu! Chú chó mừng rỡ vẫy đuôi.") },
-                { "Trigger_03_ChickenCoop", ("Ổ Trứng", "[E] Nhặt trứng", "Nhặt được 3 quả trứng gà ấm.") },
-                { "Trigger_04_SoilPouch", ("Túi Đất", "[E] Mở xem", "Nắm đất phù sa Cà Mau ấm áp.") },
-                { "Trigger_05_VillageWell", ("Giếng Làng", "[E] Múc nước", "Nước giếng mát rượi, ngọt lịm.") },
-                { "Trigger_06_ElderBa", ("Ông Ba", "[E] Chào hỏi", "Ông Ba: 'Đi đứng cẩn thận nghe con!'") },
-                { "Trigger_07_RoadVillagerTu", ("Bác Tư", "[E] Trò chuyện", "Bác Tư: 'Rau tươi má gửi nè con.'") },
-                { "Trigger_08_VillageChief", ("Bác Trưởng Xóm", "[E] Hỏi thăm", "Bác Hai: 'Năm nay xóm mình trúng lúa!'") },
-                { "Trigger_09_VillageKids", ("Lũ Bạn", "[E] Bắn bi", "Tụi nhỏ: 'An ơi, vô bắn bi nè!'") },
-                { "Trigger_10_GourdTrellis", ("Giàn Bầu", "[E] Ngắm", "Trái bầu non xanh mướt đu đưa.") },
-                { "Trigger_11_BabyToddler", ("Bé Út", "[E] Chơi đùa", "Bé Út: Cười toe toét vẫy tay.") },
-                { "Trigger_12_Gardener", ("Chú Năm", "[E] Trò chuyện", "Chú Năm: 'Bầu ngọt lắm, hái một trái đi con.'") },
-                { "Trigger_13_WaterBuffalo", ("Trâu Mộng", "[E] Xoa đầu", "Nghé ọ! Chú trâu nhai cỏ hiền lành.") },
-                { "Trigger_14_FarmerRiceField", ("Bác Ba Nông Dân", "[E] Đưa cơm", "Bác Ba: 'Cảm ơn con, cơm má nấu ngon quá!'") },
-                { "Trigger_15_RiverBench", ("Ghế Gỗ", "[E] Hóng mát", "Gió sông thổi mát rượi.") },
-                { "Trigger_16_Ferryman", ("Bác Lái Đò", "[E] Hỏi đò", "Bác Ba: 'Lên mau, chuẩn bị nhổ sào rồi!'") }
+                // 1. Má (Mẹ An) at House 04 master cottage porch
+                { "Trigger_01_Mother", ("Má", "[E] Trò chuyện", "Má: 'Về sớm ăn cơm nghen con!'", new Vector3(20.0f, UNIFORM_GROUND_Y + 0.5f, 22.0f), 2.4f) },
+
+                // 2. Chó Vàng on House 06 porch (West beachside cottage)
+                { "Trigger_02_DogVang", ("Chó Vàng", "[E] Xoa đầu", "Gâu! Chú chó mừng rỡ vẫy đuôi.", new Vector3(-36.5f, UNIFORM_GROUND_Y + 0.3f, 8.5f), 2.2f) },
+
+                // 3. Ổ Trứng at House 02 backyard
+                { "Trigger_03_ChickenCoop", ("Ổ Trứng", "[E] Nhặt trứng", "Nhặt được 3 quả trứng gà ấm.", new Vector3(-25.0f, UNIFORM_GROUND_Y + 0.3f, 29.0f), 2.0f) },
+
+                // 4. Túi Đất (Đất phù sa thiêng liêng dưới cội Đa Thần đình làng)
+                { "Trigger_04_SoilPouch", ("Túi Đất", "[E] Mở xem", "Nắm đất phù sa Cà Mau ấm áp.", new Vector3(-6.0f, UNIFORM_GROUND_Y + 0.3f, 11.5f), 2.4f) },
+
+                // 5. Lu Nước / Giếng Làng (Ceramic jars near House 02 & 04)
+                { "Trigger_05_VillageWell", ("Giếng Làng", "[E] Múc nước", "Nước giếng mát rượi, ngọt lịm.", new Vector3(-24.5f, UNIFORM_GROUND_Y + 0.4f, 26.5f), 2.4f) },
+
+                // 6. Ông Ba near central crossroads
+                { "Trigger_06_ElderBa", ("Ông Ba", "[E] Chào hỏi", "Ông Ba: 'Đi đứng cẩn thận nghe con!'", new Vector3(13.5f, UNIFORM_GROUND_Y + 0.5f, 4.5f), 2.4f) },
+
+                // 7. Bác Tư gánh hàng trên đường làng
+                { "Trigger_07_RoadVillagerTu", ("Bác Tư", "[E] Trò chuyện", "Bác Tư: 'Rau tươi má gửi nè con.'", new Vector3(4.0f, UNIFORM_GROUND_Y + 0.5f, 0.5f), 2.4f) },
+
+                // 8. Bác Trưởng Xóm near the sacred plaza
+                { "Trigger_08_VillageChief", ("Bác Trưởng Xóm", "[E] Hỏi thăm", "Bác Hai: 'Năm nay xóm mình trúng lúa!'", new Vector3(-4.0f, UNIFORM_GROUND_Y + 0.5f, 10.0f), 2.4f) },
+
+                // 9. Lũ Bạn chơi bắn bi dưới bóng cây đa
+                { "Trigger_09_VillageKids", ("Lũ Bạn", "[E] Bắn bi", "Tụi nhỏ: 'An ơi, vô bắn bi nè!'", new Vector3(-9.0f, UNIFORM_GROUND_Y + 0.4f, 10.5f), 2.5f) },
+
+                // 10. Giàn Bầu cạnh House 04 garden
+                { "Trigger_10_GourdTrellis", ("Giàn Bầu", "[E] Ngắm", "Trái bầu non xanh mướt đu đưa.", new Vector3(34.0f, UNIFORM_GROUND_Y + 0.5f, 24.0f), 2.4f) },
+
+                // 11. Bé Út chơi trước sân House 06
+                { "Trigger_11_BabyToddler", ("Bé Út", "[E] Chơi đùa", "Bé Út: Cười toe toét vẫy tay.", new Vector3(-11.0f, UNIFORM_GROUND_Y + 0.4f, 1.5f), 2.2f) },
+
+                // 12. Chú Năm (Bác làm vườn) tại vườn cây House 05
+                { "Trigger_12_Gardener", ("Chú Năm", "[E] Trò chuyện", "Chú Năm: 'Bầu ngọt lắm, hái một trái đi con.'", new Vector3(48.0f, UNIFORM_GROUND_Y + 0.5f, 22.0f), 2.4f) },
+
+                // 13. Chú Trâu Mộng gặm cỏ sườn Đông
+                { "Trigger_13_WaterBuffalo", ("Trâu Mộng", "[E] Xoa đầu", "Nghé ọ! Chú trâu nhai cỏ hiền lành.", new Vector3(42.0f, UNIFORM_GROUND_Y + 0.5f, 18.0f), 2.6f) },
+
+                // 14. Bác Ba Nông Dân tại bờ ruộng lúa
+                { "Trigger_14_FarmerRiceField", ("Bác Ba Nông Dân", "[E] Đưa cơm", "Bác Ba: 'Cảm ơn con, cơm má nấu ngon quá!'", new Vector3(15.0f, UNIFORM_GROUND_Y + 0.5f, 62.0f), 2.8f) },
+
+                // 15. Ghế Gỗ Dưới Cây Đa ngắm biển
+                { "Trigger_15_RiverBench", ("Ghế Gỗ", "[E] Hóng mát", "Gió sông thổi mát rượi.", new Vector3(-1.2f, UNIFORM_GROUND_Y + 0.3f, 12.5f), 2.2f) },
+
+                // 16. Bác Lái Đò tại Bến Đò Sông Đốc
+                { "Trigger_16_Ferryman", ("Bác Lái Đò", "[E] Hỏi đò", "Bác Ba: 'Lên mau, chuẩn bị nhổ sào rồi!'", new Vector3(56.0f, 0.4f, -22.0f), 2.6f) }
             };
 
-            var allTriggers = Object.FindObjectsByType<HoaVaMau.Test3D.InteractableObject3D>(FindObjectsSortMode.None);
-            foreach (var trigger in allTriggers)
+            var triggersRoot = GetOrCreateRoot("CaMau_1954_Village/Gameplay_Triggers");
+            foreach (var kvp in conciseDialogues)
             {
-                if (trigger == null) continue;
-                if (conciseDialogues.TryGetValue(trigger.gameObject.name, out var data))
+                string tName = kvp.Key;
+                var data = kvp.Value;
+                var tObj = GameObject.Find(tName);
+                if (tObj == null)
                 {
-                    var so = new SerializedObject(trigger);
-                    so.FindProperty("objectTitle").stringValue = data.title;
-                    so.FindProperty("promptMessage").stringValue = data.prompt;
-                    so.FindProperty("actionMessage").stringValue = data.action;
-                    so.ApplyModifiedProperties();
-                    EditorUtility.SetDirty(trigger);
+                    tObj = new GameObject(tName);
+                    tObj.transform.parent = triggersRoot.transform;
+                    var col = tObj.AddComponent<SphereCollider>();
+                    col.isTrigger = true;
+                    col.radius = data.radius;
+                    tObj.AddComponent<HoaVaMau.Test3D.InteractableObject3D>();
                 }
+                tObj.transform.parent = triggersRoot.transform;
+                tObj.transform.position = data.pos;
+
+                var comp = tObj.GetComponent<HoaVaMau.Test3D.InteractableObject3D>();
+                if (comp != null)
+                {
+                    comp.objectTitle = data.title;
+                    comp.promptMessage = data.prompt;
+                    comp.actionMessage = data.action;
+                    comp.interactionRadius = data.radius;
+                    var col = tObj.GetComponent<SphereCollider>();
+                    if (col != null)
+                    {
+                        col.radius = data.radius;
+                        col.isTrigger = true;
+                    }
+                    EditorUtility.SetDirty(comp);
+                }
+                EditorUtility.SetDirty(tObj);
+            }
+
+            var guide = Object.FindFirstObjectByType<CaMau3DUIGuideController>();
+            if (guide != null)
+            {
+                guide.RefreshSceneTargets();
             }
         }
 
