@@ -33,12 +33,12 @@ Material:
     - _ColorStrength: 0.55
     - _Cutoff: 0.05
     - _EnablePlayerPush: 1
-    - _GrassStiffness: 1.2
+    - _GrassStiffness: 1
     - _PushStrength: 0.85
-    - _Turbulence: 0.18
+    - _Turbulence: 0.35
     - _UseVertexColorTint: 0
-    - _WindFrequency: 1.2
-    - _WindSwayStrength: 0.15
+    - _WindFrequency: 1.6
+    - _WindSwayStrength: 0.25
     m_Colors:
     - _BaseShadowColor: {r: 0.4, g: 0.3, b: 0.12, a: 1}
     - _MidColor: {r: 0.88, g: 0.72, b: 0.2, a: 1}
