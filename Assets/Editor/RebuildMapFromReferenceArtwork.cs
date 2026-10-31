@@ -39,7 +39,6 @@ namespace HoaDo.Editor
             }
 
             var matPierWood = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/GhibliModular/M_Ghibli_PierPlank.mat");
-            var matCrateWood = GetOrCreateMaterial("Assets/Materials/M_Crate_RusticWood.mat", new Color(0.55f, 0.40f, 0.28f, 1.0f), "Assets/Shaders/Uber Stylized Water/Demo/Terrain/sand_01_color_2k.png", new Vector2(4f, 4f));
             var matBamboo = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/CaMau/M_CaMau_Bamboo.mat");
             var matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/LanaOverhaul/M_Lana_RockUnderbelly.mat");
             if (matRock == null) matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/GhibliModular/M_Ghibli_PebbleRock.mat");
@@ -78,8 +77,8 @@ namespace HoaDo.Editor
             // 8. Build Central Sacred Shade Tree & Courtyard (volumetric 3D, upright, zero animation)
             BuildCentralSacredTreeAndPlaza(matRock);
 
-            // 9. Build Coastal Piers, Harbor Complex & Traditional Boats (proper wood materials on all crates)
-            BuildCoastalPiersAndBoats(matPierWood, matThatched, matCrateWood);
+            // 9. Build Coastal Piers, Harbor Complex & Traditional Boats (NO CRATES / NO BARRELS)
+            BuildCoastalPiersAndBoats(matPierWood, matThatched);
 
             // 10. Build Rice Paddies with straight parallel rows & old sway animation, plus duck pond
             BuildRicePaddiesAndDuckPond(matRiceGreen, matRiceGolden, matWater, matGrass, matBamboo, matThatched);
@@ -222,12 +221,29 @@ namespace HoaDo.Editor
                 "Cliff_West_Coastal", "Cliff_East_HarborHead", "Gate_Village_North",
                 "Road_North_StraightPaddyAisle", "VillageExit_NorthGate_Transition",
                 "Sky_Surround_Cylinder_360", "Backdrop_SkyNorth_Panoramic",
-                "Crate_01", "Crate_02", "Crate_WestPier"
+                "Crate_01", "Crate_02", "Crate_WestPier", "Barrel_01", "Barrel_02"
             };
             foreach (var name in standalone)
             {
                 var obj = GameObject.Find(name);
                 if (obj != null) Object.DestroyImmediate(obj);
+            }
+
+            // Aggressive purge: Completely eradicate ANY crate, barrel, or thùng from entire scene
+            var allSceneObjects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            var toPurge = new System.Collections.Generic.List<GameObject>();
+            foreach (var go in allSceneObjects)
+            {
+                if (go == null) continue;
+                string n = go.name.ToLower();
+                if (n.Contains("crate") || n.Contains("barrel") || n.Contains("thung") || n.Contains("cargo"))
+                {
+                    toPurge.Add(go);
+                }
+            }
+            foreach (var go in toPurge)
+            {
+                if (go != null) Object.DestroyImmediate(go);
             }
         }
 
@@ -828,7 +844,7 @@ namespace HoaDo.Editor
         // =========================================================================
         // 9. Coastal Piers, Harbor Complex & Traditional Boats
         // =========================================================================
-        private static void BuildCoastalPiersAndBoats(Material matPierWood, Material matThatched, Material matCrateWood)
+        private static void BuildCoastalPiersAndBoats(Material matPierWood, Material matThatched)
         {
             var pierRoot = GetOrCreateRoot("CaMau_1954_Village/Village_Areas/08_Ben_Xuong");
             var waterRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/WaterSystem_3D");
@@ -929,22 +945,10 @@ namespace HoaDo.Editor
             InstantiateBoat(sampanOpen, boatsRoot.transform, "Boat_RightHarbor_Approach", new Vector3(32.0f, -0.55f, -26.5f), 1.30f, -35.0f);
             InstantiateBoat(sampanCovered, boatsRoot.transform, "Boat_RightHarbor_Docked", new Vector3(68.5f, -0.55f, -22.0f), 1.20f, 95.0f);
 
-            var cratePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Props/PF_Prop_CargoCrate_3D.prefab");
-            var barrelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Props/PF_Prop_SaltFish_Barrel.prefab");
+            // STRICT RULE: ZERO CRATES / ZERO BARRELS / NO "THÙNG" PROPS ALLOWED
             var basketPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Props/PF_Prop_Bamboo_Basket.prefab");
             var netPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Props/PF_Prop_Fishing_Net.prefab");
 
-            if (cratePrefab != null)
-            {
-                CreateTexturedCrate(cratePrefab, pierRoot.transform, "Crate_01", new Vector3(58.5f, 0.35f, -21.5f), 1.0f, matCrateWood);
-                CreateTexturedCrate(cratePrefab, pierRoot.transform, "Crate_02", new Vector3(59.5f, 0.35f, -21.8f), 0.9f, matCrateWood);
-                CreateTexturedCrate(cratePrefab, pierRoot.transform, "Crate_WestPier", new Vector3(-28.5f, 0.35f, -12.5f), 1.0f, matCrateWood);
-            }
-            if (barrelPrefab != null)
-            {
-                InstantiateProp(barrelPrefab, pierRoot.transform, "Barrel_01", new Vector3(61.5f, 0.35f, -21.2f), 1.1f);
-                InstantiateProp(barrelPrefab, pierRoot.transform, "Barrel_02", new Vector3(62.2f, 0.35f, -21.8f), 1.0f);
-            }
             if (basketPrefab != null)
             {
                 InstantiateProp(basketPrefab, pierRoot.transform, "Basket_01", new Vector3(57.0f, 0.35f, -20.5f), 1.15f);
@@ -961,19 +965,6 @@ namespace HoaDo.Editor
                 net2.name = "DryingNet_EastHarbor";
                 net2.transform.position = new Vector3(57.5f, 0.7f, -18.5f);
                 net2.transform.localScale = Vector3.one * 1.25f;
-            }
-        }
-
-        private static void CreateTexturedCrate(GameObject prefab, Transform parent, string name, Vector3 pos, float scale, Material matWood)
-        {
-            var p = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
-            p.name = name;
-            p.transform.position = pos;
-            p.transform.localScale = Vector3.one * scale;
-
-            if (matWood != null)
-            {
-                foreach (var r in p.GetComponentsInChildren<MeshRenderer>()) r.sharedMaterial = matWood;
             }
         }
 
