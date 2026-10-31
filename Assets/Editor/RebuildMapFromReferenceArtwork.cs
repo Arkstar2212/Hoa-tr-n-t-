@@ -22,12 +22,12 @@ namespace HoaDo.Editor
 
             Debug.Log("[RebuildMap] Starting 1:1 reconstruction with sky, straight transition road, village gate, and clean beach...");
 
-            // 1. Materials setup
-            var matGrass = GetOrCreateMaterial("Assets/Materials/M_CaMau_Landscape_Grass.mat", new Color(0.48f, 0.68f, 0.28f, 1.0f), "Assets/Textures/Grass/meadow_turf.png", new Vector2(12f, 12f));
-            var matRedDirt = GetOrCreateMaterial("Assets/Materials/M_Village_Road_NamBo.mat", new Color(0.72f, 0.54f, 0.38f, 1.0f), "Assets/Shaders/Uber Stylized Water/Demo/Terrain/sand_01_color_2k.png", new Vector2(8f, 8f));
-            var matSand = GetOrCreateMaterial("Assets/Materials/M_Seabed_Sand.mat", new Color(0.88f, 0.80f, 0.62f, 1.0f), "Assets/Shaders/Uber Stylized Water/Demo/Terrain/sand_01_color_2k.png", new Vector2(10f, 10f));
-            var matRiceGreen = GetOrCreateMaterial("Assets/Materials/LanaOverhaul/M_RiceCrop_LushGreen.mat", new Color(0.48f, 0.78f, 0.22f, 1.0f), "Assets/Textures/Grass/meadow_turf.png", new Vector2(8f, 8f));
-            var matRiceGolden = GetOrCreateMaterial("Assets/Materials/LanaOverhaul/M_RiceCrop_GoldenRipe.mat", new Color(0.85f, 0.75f, 0.25f, 1.0f), "Assets/Textures/Grass/meadow_turf.png", new Vector2(8f, 8f));
+            // 1. Materials setup (Unified Seamless 2K Textures - ZERO checkerboard / ZERO square patches)
+            var matGrass = GetOrCreateMaterial("Assets/Materials/M_CaMau_Landscape_Grass.mat", new Color(0.52f, 0.72f, 0.30f, 1.0f), "Assets/Shaders/Uber Stylized Water/Demo/Terrain/ground_05_baseColor_2k.png", new Vector2(8f, 3f));
+            var matRedDirt = GetOrCreateMaterial("Assets/Materials/M_Village_Road_NamBo.mat", new Color(0.72f, 0.54f, 0.38f, 1.0f), "Assets/Shaders/Uber Stylized Water/Demo/Terrain/sand_01_color_2k.png", new Vector2(4f, 4f));
+            var matSand = GetOrCreateMaterial("Assets/Materials/M_Seabed_Sand.mat", new Color(0.88f, 0.80f, 0.62f, 1.0f), "Assets/Shaders/Uber Stylized Water/Demo/Terrain/sand_01_color_2k.png", new Vector2(8f, 3f));
+            var matRiceGreen = GetOrCreateMaterial("Assets/Materials/LanaOverhaul/M_RiceCrop_LushGreen.mat", new Color(0.46f, 0.78f, 0.22f, 1.0f), "Assets/Shaders/Uber Stylized Water/Demo/Terrain/ground_05_baseColor_2k.png", new Vector2(1.5f, 1.0f));
+            var matRiceGolden = GetOrCreateMaterial("Assets/Materials/LanaOverhaul/M_RiceCrop_GoldenRipe.mat", new Color(0.88f, 0.74f, 0.22f, 1.0f), "Assets/Shaders/Uber Stylized Water/Demo/Terrain/ground_05_baseColor_2k.png", new Vector2(1.5f, 1.0f));
 
             var matWater = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/M_RiverWater_Canh1.mat");
             if (matWater == null) matWater = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/LanaOverhaul/M_LivingOcean_WaterSurface.mat");
@@ -121,7 +121,17 @@ namespace HoaDo.Editor
             mat.mainTextureScale = tiling;
             if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", col);
             if (mat.HasProperty("_Color")) mat.SetColor("_Color", col);
-            mat.SetFloat("_Smoothness", 0.08f);
+            mat.SetFloat("_Smoothness", 0.05f);
+
+            if (path.Contains("Grass"))
+            {
+                var normTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Shaders/Uber Stylized Water/Demo/Terrain/ground_05_normal_gl_2k.png");
+                if (normTex != null && mat.HasProperty("_BumpMap"))
+                {
+                    mat.SetTexture("_BumpMap", normTex);
+                    mat.EnableKeyword("_NORMALMAP");
+                }
+            }
             EditorUtility.SetDirty(mat);
             return mat;
         }
@@ -221,7 +231,9 @@ namespace HoaDo.Editor
                 "Cliff_West_Coastal", "Cliff_East_HarborHead", "Gate_Village_North",
                 "Road_North_StraightPaddyAisle", "VillageExit_NorthGate_Transition",
                 "Sky_Surround_Cylinder_360", "Backdrop_SkyNorth_Panoramic",
-                "Crate_01", "Crate_02", "Crate_WestPier", "Barrel_01", "Barrel_02"
+                "Crate_01", "Crate_02", "Crate_WestPier", "Barrel_01", "Barrel_02",
+                "Terrain_West_Headland", "Terrain_West_BeachSlope",
+                "Terrain_East_Headland", "Terrain_East_BeachSlope"
             };
             foreach (var name in standalone)
             {
@@ -450,21 +462,21 @@ namespace HoaDo.Editor
         {
             var terrainRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/Terrain_3D");
 
-            // A. Central Ground Plain (Top surface exactly at Y = 0.50m)
+            // A. Single Unified Continuous Ground Plain (Top surface exactly at Y = 0.50m, 320m wide continuous)
             var unifiedPlain = GameObject.CreatePrimitive(PrimitiveType.Cube);
             unifiedPlain.name = "Terrain_Unified_Ground_Base";
             unifiedPlain.transform.parent = terrainRoot.transform;
             unifiedPlain.transform.position = new Vector3(0.0f, UNIFORM_GROUND_Y - 0.25f, 38.0f);
-            unifiedPlain.transform.localScale = new Vector3(160.0f, 0.50f, 96.0f);
+            unifiedPlain.transform.localScale = new Vector3(320.0f, 0.50f, 96.0f);
             unifiedPlain.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
-            // B. Clean Sandy Shoreline Slope (Smooth transition down to sea, NO ROCKS ON SAND)
+            // B. Single Unified Continuous Sandy Shoreline Slope (Smooth transition down to sea, 320m wide continuous)
             var beachSlope = GameObject.CreatePrimitive(PrimitiveType.Cube);
             beachSlope.name = "Terrain_Beach_Slope";
             beachSlope.transform.parent = terrainRoot.transform;
             beachSlope.transform.position = new Vector3(0.0f, -0.04f, -14.0f);
             beachSlope.transform.rotation = Quaternion.Euler(7.7f, 0f, 0f);
-            beachSlope.transform.localScale = new Vector3(165.0f, 0.50f, 8.5f);
+            beachSlope.transform.localScale = new Vector3(320.0f, 0.50f, 8.5f);
             beachSlope.GetComponent<MeshRenderer>().sharedMaterial = matSand;
 
             // C. Sea Bed Floor (Extending deeply under the sea)
@@ -475,44 +487,12 @@ namespace HoaDo.Editor
             seaBed.transform.localScale = new Vector3(600.0f, 0.6f, 280.0f);
             seaBed.GetComponent<MeshRenderer>().sharedMaterial = matSand;
 
-            // D. West Headland Extension (Eliminating floating box cutoff on left)
-            var westHeadland = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            westHeadland.name = "Terrain_West_Headland";
-            westHeadland.transform.parent = terrainRoot.transform;
-            westHeadland.transform.position = new Vector3(-120.0f, UNIFORM_GROUND_Y - 0.25f, 38.0f);
-            westHeadland.transform.localScale = new Vector3(80.0f, 0.50f, 96.0f);
-            westHeadland.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
-
-            var westBeach = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            westBeach.name = "Terrain_West_BeachSlope";
-            westBeach.transform.parent = terrainRoot.transform;
-            westBeach.transform.position = new Vector3(-120.0f, -0.04f, -14.0f);
-            westBeach.transform.rotation = Quaternion.Euler(7.7f, 0f, 0f);
-            westBeach.transform.localScale = new Vector3(80.0f, 0.50f, 8.5f);
-            westBeach.GetComponent<MeshRenderer>().sharedMaterial = matSand;
-
-            // E. East Headland Extension (Eliminating floating box cutoff on right)
-            var eastHeadland = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            eastHeadland.name = "Terrain_East_Headland";
-            eastHeadland.transform.parent = terrainRoot.transform;
-            eastHeadland.transform.position = new Vector3(120.0f, UNIFORM_GROUND_Y - 0.25f, 38.0f);
-            eastHeadland.transform.localScale = new Vector3(80.0f, 0.50f, 96.0f);
-            eastHeadland.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
-
-            var eastBeach = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            eastBeach.name = "Terrain_East_BeachSlope";
-            eastBeach.transform.parent = terrainRoot.transform;
-            eastBeach.transform.position = new Vector3(120.0f, -0.04f, -14.0f);
-            eastBeach.transform.rotation = Quaternion.Euler(7.7f, 0f, 0f);
-            eastBeach.transform.localScale = new Vector3(80.0f, 0.50f, 8.5f);
-            eastBeach.GetComponent<MeshRenderer>().sharedMaterial = matSand;
-
-            // F. Northern Backdrop Hill (Low gentle hill behind paddies)
+            // D. Northern Backdrop Hill (Low gentle hill behind paddies, 320m wide continuous)
             var northHill = GameObject.CreatePrimitive(PrimitiveType.Cube);
             northHill.name = "Terrain_North_Backdrop_Hill";
             northHill.transform.parent = terrainRoot.transform;
             northHill.transform.position = new Vector3(0.0f, 1.45f, 88.0f);
-            northHill.transform.localScale = new Vector3(280.0f, 1.9f, 16.0f);
+            northHill.transform.localScale = new Vector3(320.0f, 1.9f, 16.0f);
             northHill.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
             // G. ROCK CLIFFS FLANKING THE RICE FIELDS ONLY (Mounds blend with grass, real rock outcrops on top)
