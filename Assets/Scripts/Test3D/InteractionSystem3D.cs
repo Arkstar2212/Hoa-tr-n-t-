@@ -207,8 +207,8 @@ namespace HoaVaMau.Test3D
                 promptStyle.normal.textColor = Color.white;
 
                 string text = $"[ {closestInteractable.objectTitle} ]\n{closestInteractable.promptMessage}";
-                float width = 400f;
-                float height = 65f;
+                float width = 640f;
+                float height = 70f;
                 float x = (Screen.width - width) * 0.5f;
                 float y = Screen.height - 150f;
 
@@ -222,14 +222,15 @@ namespace HoaVaMau.Test3D
                 msgStyle.fontSize = 20;
                 msgStyle.fontStyle = FontStyle.Bold;
                 msgStyle.alignment = TextAnchor.MiddleCenter;
-                msgStyle.normal.textColor = new Color(0.3f, 1.0f, 0.6f, 1.0f);
+                msgStyle.normal.textColor = new Color(0.98f, 0.92f, 0.78f, 1.0f);
 
-                float width = 420f;
-                float height = 50f;
+                msgStyle.wordWrap = true;
+                float width = 960f;
+                float height = 72f;
                 float x = (Screen.width - width) * 0.5f;
                 float y = Screen.height - 80f;
 
-                GUI.backgroundColor = new Color(0.05f, 0.2f, 0.1f, 0.9f);
+                GUI.backgroundColor = new Color(0.04f, 0.08f, 0.14f, 0.92f);
                 GUI.Box(new Rect(x, y, width, height), currentHUDMessage, msgStyle);
             }
         }

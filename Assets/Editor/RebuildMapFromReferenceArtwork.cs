@@ -922,13 +922,7 @@ namespace HoaDo.Editor
                 if (matRock != null) stone.GetComponent<MeshRenderer>().sharedMaterial = matRock;
             }
 
-            var matWood = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/GhibliModular/M_Ghibli_PierPlank.mat");
-            var bench = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            bench.name = "Bench_Under_CentralTree";
-            bench.transform.parent = stoneRingRoot.transform;
-            bench.transform.position = centerTreePos + new Vector3(4.8f, 0.25f, -0.5f);
-            bench.transform.localScale = new Vector3(1.8f, 0.5f, 0.9f);
-            if (matWood != null) bench.GetComponent<MeshRenderer>().sharedMaterial = matWood;
+
         }
 
         // =========================================================================
@@ -1944,8 +1938,8 @@ namespace HoaDo.Editor
                 // 6. Ông Ba near central crossroads
                 { "Trigger_06_ElderBa", ("Ông Ba", "[E] Chào hỏi", "Ông Ba: 'Đi đứng cẩn thận nghe con!'", new Vector3(13.5f, UNIFORM_GROUND_Y + 0.5f, 4.5f), 2.4f) },
 
-                // 7. Bác Tư gánh hàng trên đường làng
-                { "Trigger_07_RoadVillagerTu", ("Bác Tư", "[E] Trò chuyện", "Bác Tư: 'Rau tươi má gửi nè con.'", new Vector3(4.0f, UNIFORM_GROUND_Y + 0.5f, 0.5f), 2.4f) },
+                // 7. Anh Tư gánh hàng trên đường làng (thanh niên xóm)
+                { "Trigger_07_RoadVillagerTu", ("Anh Tư", "[E] Trò chuyện", "Anh Tư: 'An đó hả? Má em mới gửi rổ rau tươi qua, anh đem giùm nè. Đi chơi đâu thì nhớ về sớm ăn cơm nghen!'", new Vector3(4.0f, UNIFORM_GROUND_Y + 0.5f, 0.5f), 2.4f) },
 
                 // 8. Bác Trưởng Xóm near the sacred plaza
                 { "Trigger_08_VillageChief", ("Bác Trưởng Xóm", "[E] Hỏi thăm", "Bác Hai: 'Năm nay xóm mình trúng lúa!'", new Vector3(-4.0f, UNIFORM_GROUND_Y + 0.5f, 10.0f), 2.4f) },
