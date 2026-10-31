@@ -899,20 +899,7 @@ namespace HoaDo.Editor
             if (largeTreePrefab == null) largeTreePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Trees/PF_Branch_Cluster_Tree.prefab");
             if (largeTreePrefab != null)
             {
-                var sacredTree = (GameObject)PrefabUtility.InstantiatePrefab(largeTreePrefab, vegRoot.transform);
-                sacredTree.name = "Tree_Hero_CentralSacredBanyan";
-                sacredTree.transform.position = centerTreePos;
-                sacredTree.transform.rotation = Quaternion.identity;
-                sacredTree.transform.localScale = Vector3.one * 1.65f;
-                StripAnimationComponents(sacredTree);
-
-                var srs = sacredTree.GetComponentsInChildren<SpriteRenderer>(true);
-                int baseOrder = 3000 + Mathf.RoundToInt(-centerTreePos.z * 20f);
-                foreach (var sr in srs)
-                {
-                    sr.sortingLayerName = "Default";
-                    sr.sortingOrder = baseOrder;
-                }
+                InstantiateVolumetric3DTree(largeTreePrefab, vegRoot.transform, "Tree_Hero_CentralSacredBanyan", centerTreePos, 1.65f);
             }
 
             var stoneRingRoot = new GameObject("Tree_Central_StoneRing");
@@ -1512,30 +1499,162 @@ namespace HoaDo.Editor
 
         private static GameObject InstantiateSingleArtTree(GameObject prefab, Transform parent, string name, Vector3 pos, float scale, float rotY = 0f, float rotX = 0f)
         {
+            return InstantiateVolumetric3DTree(prefab, parent, name, pos, scale, rotY, rotX);
+        }
+
+        private static void InstantiateVolumetricTree(GameObject prefab, Transform parent, string name, Vector3 pos, float scale)
+        {
+            InstantiateVolumetric3DTree(prefab, parent, name, pos, scale, Random.Range(-10f, 10f), 0f);
+        }
+
+        // =========================================================================
+        // 12.1 Universal Volumetric 3D Tree Generator (Zero Holes, Full 3D Dome)
+        // =========================================================================
+        private static GameObject InstantiateVolumetric3DTree(GameObject prefab, Transform parent, string name, Vector3 pos, float scale, float rotY = 0f, float rotX = 0f)
+        {
             if (prefab == null) return null;
             var treeObj = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
             treeObj.name = name;
             treeObj.transform.position = pos;
-            treeObj.transform.rotation = Quaternion.Euler(0f, rotY, 0f); // 100% thẳng đứng (upright, zero tilt)
+            treeObj.transform.rotation = Quaternion.Euler(0f, rotY, 0f);
             treeObj.transform.localScale = Vector3.one * scale;
 
             StripAnimationComponents(treeObj);
 
-            // Sorting order calibrated strictly to Z coordinate for positive, clean layering without depth conflicts
             int baseOrder = 3000 + Mathf.RoundToInt(-pos.z * 20f);
-            var srs = treeObj.GetComponentsInChildren<SpriteRenderer>(true);
-            foreach (var sr in srs)
+            var rootSr = treeObj.GetComponent<SpriteRenderer>();
+            if (rootSr == null) rootSr = treeObj.GetComponentInChildren<SpriteRenderer>();
+            if (rootSr == null) return treeObj;
+
+            Sprite sprite = rootSr.sprite;
+            Material mat = rootSr.sharedMaterial;
+
+            treeObj.name = name;
+            rootSr.sortingLayerName = "Default";
+            rootSr.sortingOrder = baseOrder;
+            rootSr.color = Color.white;
+
+            var matWood = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/GhibliModular/M_Ghibli_PierPlank.mat");
+            if (matWood == null) matWood = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/M_Village_Road_NamBo.mat");
+
+            string pName = prefab.name.ToLower();
+            string sName = (sprite != null ? sprite.name.ToLower() : "");
+            bool isPalm = pName.Contains("coconut") || pName.Contains("palm") || sName.Contains("coconut");
+            bool isBanana = pName.Contains("banana") || sName.Contains("banana");
+            bool isBamboo = pName.Contains("bamboo") || sName.Contains("bamboo");
+            bool isBush = pName.Contains("bush") || sName.Contains("bush");
+
+            if (isPalm)
             {
-                sr.sortingLayerName = "Default";
-                sr.sortingOrder = baseOrder;
+                // 3D Wood Trunk Column
+                CreateTreeTrunkCylinder(treeObj.transform, new Vector3(0.20f, 1.8f, 0.10f), new Vector3(0.22f, 1.8f, 0.22f), matWood);
+
+                // 1. Back Shadow Fill (offset Z + 0.30m, dark tone to completely plug holes)
+                CreateFoliageSubCard(treeObj.transform, "Palm_Back_ShadowFill", sprite, mat, new Vector3(0f, 0f, 0.30f), Quaternion.identity, Vector3.one, new Color(0.25f, 0.45f, 0.22f, 1.0f), baseOrder - 10);
+
+                // 2. Flipped Core Blocker (bridges gaps between fronds)
+                CreateFoliageSubCard(treeObj.transform, "Palm_Core_Blocker", sprite, mat, new Vector3(0.15f, 0.20f, 0.15f), Quaternion.Euler(0f, 180f, 0f), new Vector3(0.90f, 0.90f, 1.0f), new Color(0.35f, 0.55f, 0.28f, 1.0f), baseOrder - 5);
+
+                // 3. Left Wing Fronds (angled -42 deg)
+                CreateFoliageSubCard(treeObj.transform, "Palm_Wing_Left", sprite, mat, new Vector3(-0.6f, 2.0f, -0.15f), Quaternion.Euler(15f, -42f, -8f), new Vector3(0.75f, 0.75f, 1.0f), new Color(0.65f, 0.82f, 0.45f, 1.0f), baseOrder + 5);
+
+                // 4. Right Wing Fronds (angled +42 deg)
+                CreateFoliageSubCard(treeObj.transform, "Palm_Wing_Right", sprite, mat, new Vector3(0.6f, 2.0f, -0.15f), Quaternion.Euler(15f, 42f, 8f), new Vector3(0.75f, 0.75f, 1.0f), new Color(0.65f, 0.82f, 0.45f, 1.0f), baseOrder + 5);
+
+                // 5. Top Crown Fronds Dome (pitched forward 38 deg for full 3D overhead umbrella)
+                CreateFoliageSubCard(treeObj.transform, "Palm_Top_CrownDome", sprite, mat, new Vector3(0.35f, 3.8f, -0.35f), Quaternion.Euler(38f, 0f, 0f), new Vector3(0.85f, 0.70f, 1.0f), new Color(0.75f, 0.92f, 0.55f, 1.0f), baseOrder + 15);
+            }
+            else if (isBanana)
+            {
+                // 1. Back Shadow Fill
+                CreateFoliageSubCard(treeObj.transform, "Banana_Back_ShadowFill", sprite, mat, new Vector3(0f, 0f, 0.25f), Quaternion.identity, Vector3.one, new Color(0.26f, 0.46f, 0.22f, 1.0f), baseOrder - 8);
+
+                // 2. Flipped Core Blocker
+                CreateFoliageSubCard(treeObj.transform, "Banana_Core_Blocker", sprite, mat, new Vector3(0f, 0.15f, 0.12f), Quaternion.Euler(0f, 180f, 0f), new Vector3(0.92f, 0.92f, 1.0f), new Color(0.38f, 0.58f, 0.30f, 1.0f), baseOrder - 4);
+
+                // 3. Left Fan
+                CreateFoliageSubCard(treeObj.transform, "Banana_Wing_Left", sprite, mat, new Vector3(-0.7f, 1.2f, -0.12f), Quaternion.Euler(14f, -36f, -6f), new Vector3(0.75f, 0.75f, 1.0f), new Color(0.68f, 0.85f, 0.48f, 1.0f), baseOrder + 4);
+
+                // 4. Right Fan
+                CreateFoliageSubCard(treeObj.transform, "Banana_Wing_Right", sprite, mat, new Vector3(0.7f, 1.2f, -0.12f), Quaternion.Euler(14f, 36f, 6f), new Vector3(0.75f, 0.75f, 1.0f), new Color(0.68f, 0.85f, 0.48f, 1.0f), baseOrder + 4);
+
+                // 5. Top Crown Dome (pitched forward 34 deg)
+                CreateFoliageSubCard(treeObj.transform, "Banana_Top_CrownDome", sprite, mat, new Vector3(0f, 2.5f, -0.30f), Quaternion.Euler(34f, 0f, 0f), new Vector3(0.85f, 0.70f, 1.0f), new Color(0.78f, 0.94f, 0.58f, 1.0f), baseOrder + 12);
+            }
+            else if (isBamboo)
+            {
+                // 1. Back Shadow Fill
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Back_ShadowFill", sprite, mat, new Vector3(0f, 0f, 0.35f), Quaternion.identity, new Vector3(1.04f, 1.04f, 1.0f), new Color(0.22f, 0.38f, 0.20f, 1.0f), baseOrder - 10);
+
+                // 2. Flipped Core Blocker
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Core_Flipped", sprite, mat, new Vector3(0f, 0.15f, 0.15f), Quaternion.Euler(0f, 180f, 0f), new Vector3(0.96f, 0.96f, 1.0f), new Color(0.38f, 0.58f, 0.32f, 1.0f), baseOrder - 4);
+
+                // 3. Left Wing Cluster
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Wing_Left", sprite, mat, new Vector3(-0.8f, 1.5f, -0.12f), Quaternion.Euler(10f, -32f, -4f), new Vector3(0.78f, 0.78f, 1.0f), new Color(0.62f, 0.80f, 0.42f, 1.0f), baseOrder + 4);
+
+                // 4. Right Wing Cluster
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Wing_Right", sprite, mat, new Vector3(0.8f, 1.5f, -0.12f), Quaternion.Euler(10f, 32f, 4f), new Vector3(0.78f, 0.78f, 1.0f), new Color(0.65f, 0.84f, 0.46f, 1.0f), baseOrder + 4);
+
+                // 5. Top Crown Dome (pitched forward 30 deg)
+                CreateFoliageSubCard(treeObj.transform, "Bamboo_Top_CrownDome", sprite, mat, new Vector3(0f, 2.8f, -0.30f), Quaternion.Euler(30f, 0f, 0f), new Vector3(0.85f, 0.70f, 1.0f), new Color(0.76f, 0.92f, 0.55f, 1.0f), baseOrder + 12);
+            }
+            else // Canopy Trees, Fruit Trees, Hero Banyan, Slender Trees, Bushes
+            {
+                if (!isBush)
+                {
+                    float trunkRad = (name.Contains("Hero") || name.Contains("Banyan")) ? 0.60f : 0.40f;
+                    float trunkH = (name.Contains("Hero") || name.Contains("Banyan")) ? 0.55f : 0.45f;
+                    CreateTreeTrunkCylinder(treeObj.transform, new Vector3(0f, trunkH, 0.20f), new Vector3(trunkRad, trunkH, trunkRad), matWood);
+                }
+
+                // 1. Back Shadow Fill (offset Z + 0.35m, dark tone to completely plug holes)
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Back_ShadowFill", sprite, mat, new Vector3(0f, 0f, 0.35f), Quaternion.identity, Vector3.one, new Color(0.24f, 0.42f, 0.20f, 1.0f), baseOrder - 10);
+
+                // 2. Flipped Core Fork Blocker (specifically covers negative-space gaps in branch fork)
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Core_ForkBlocker", sprite, mat, new Vector3(0f, 0.15f, 0.18f), Quaternion.Euler(0f, 180f, 0f), new Vector3(0.95f, 0.95f, 1.0f), new Color(0.32f, 0.52f, 0.24f, 1.0f), baseOrder - 5);
+
+                // 3. Left 3D Wing (angled -38 deg)
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Wing_Left", sprite, mat, new Vector3(-1.1f, 1.1f, -0.15f), Quaternion.Euler(12f, -38f, -6f), new Vector3(0.70f, 0.70f, 1.0f), new Color(0.52f, 0.74f, 0.32f, 1.0f), baseOrder + 5);
+
+                // 4. Right 3D Wing (angled +38 deg)
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Wing_Right", sprite, mat, new Vector3(1.1f, 1.1f, -0.15f), Quaternion.Euler(12f, 38f, 6f), new Vector3(0.70f, 0.70f, 1.0f), new Color(0.58f, 0.80f, 0.36f, 1.0f), baseOrder + 5);
+
+                // 5. Top 3D Overhead Crown Dome (pitched 34 deg forward to crown the tree with a lush 3D umbrella dome from overhead cameras)
+                float topY = isBush ? 1.4f : 2.6f;
+                CreateFoliageSubCard(treeObj.transform, "Canopy_Top_CrownDome", sprite, mat, new Vector3(0f, topY, -0.38f), Quaternion.Euler(34f, 0f, 0f), new Vector3(0.90f, 0.75f, 1.0f), new Color(0.68f, 0.88f, 0.42f, 1.0f), baseOrder + 15);
             }
 
             return treeObj;
         }
 
-        private static void InstantiateVolumetricTree(GameObject prefab, Transform parent, string name, Vector3 pos, float scale)
+        private static GameObject CreateFoliageSubCard(Transform parent, string name, Sprite sprite, Material material, Vector3 localPos, Quaternion localRot, Vector3 localScale, Color color, int sortingOrder)
         {
-            InstantiateSingleArtTree(prefab, parent, name, pos, scale, Random.Range(-10f, 10f), 0f);
+            var go = new GameObject(name);
+            go.transform.parent = parent;
+            go.transform.localPosition = localPos;
+            go.transform.localRotation = localRot;
+            go.transform.localScale = localScale;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            if (material != null) sr.sharedMaterial = material;
+            sr.color = color;
+            sr.sortingLayerName = "Default";
+            sr.sortingOrder = sortingOrder;
+            return go;
+        }
+
+        private static void CreateTreeTrunkCylinder(Transform parent, Vector3 localPos, Vector3 localScale, Material mat)
+        {
+            var trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            trunk.name = "Trunk_3D_SolidCore";
+            trunk.transform.parent = parent;
+            trunk.transform.localPosition = localPos;
+            trunk.transform.localRotation = Quaternion.identity;
+            trunk.transform.localScale = localScale;
+            if (mat != null) trunk.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            var col = trunk.GetComponent<Collider>();
+            if (col != null) UnityEngine.Object.DestroyImmediate(col);
         }
 
         private static void StripAnimationComponents(GameObject go)
