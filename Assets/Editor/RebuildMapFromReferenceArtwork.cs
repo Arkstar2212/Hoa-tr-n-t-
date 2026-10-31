@@ -234,7 +234,8 @@ namespace HoaDo.Editor
             {
                 "Cliff_West_Coastal", "Cliff_East_HarborHead", "Gate_Village_North",
                 "Road_North_StraightPaddyAisle", "VillageExit_NorthGate_Transition",
-                "Sky_Surround_Cylinder_360", "Backdrop_SkyNorth_Panoramic",
+                "Sky_Surround_Cylinder_360", "Sky_Surround_Dome_360", "Backdrop_SkyNorth_Panoramic",
+                "Clouds_Atmosphere_3D",
                 "Crate_01", "Crate_02", "Crate_WestPier", "Barrel_01", "Barrel_02",
                 "Terrain_West_Headland", "Terrain_West_BeachSlope",
                 "Terrain_East_Headland", "Terrain_East_BeachSlope",
@@ -277,28 +278,26 @@ namespace HoaDo.Editor
             var bgRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/Background_Atmosphere");
             bgRoot.SetActive(true);
 
-            // 1. Grand 360-degree Sky Enclosure Material (5K Hand-painted sky with soft clouds & sun)
-            var matSkyDome = GetOrCreateUnlitMaterial(
-                "Assets/Materials/Environment/Backdrop_Sky/M_Sky_Backdrop_Surround.mat",
-                "Assets/Textures/Sky/Sky_Cloud_Krita_5120x2160.png",
-                false, 2000);
+            // Clean up any old cylinder enclosure or previous mesh domes to guarantee ZERO stitching seams
+            var oldDome = bgRoot.transform.Find("Sky_Surround_Dome_360");
+            if (oldDome != null) Object.DestroyImmediate(oldDome.gameObject);
+            var oldCyl = bgRoot.transform.Find("Sky_Surround_Cylinder_360");
+            if (oldCyl != null) Object.DestroyImmediate(oldCyl.gameObject);
+            var oldClouds = bgRoot.transform.Find("Clouds_Atmosphere_3D");
+            if (oldClouds != null) Object.DestroyImmediate(oldClouds.gameObject);
 
-            // 2. 360-degree Inward Cylindrical Sky Enclosure (Radius 340m, Height 260m)
-            var cylObj = new GameObject("Sky_Surround_Dome_360");
-            cylObj.transform.parent = bgRoot.transform;
-            cylObj.transform.position = new Vector3(0f, 20f, 0f);
-            cylObj.transform.rotation = Quaternion.identity;
-            cylObj.transform.localScale = Vector3.one;
+            // 1. Configure Authentic Daylight 360 Cubemap Skybox (sky_22_2k: 100% Seamless, Zero Seam Lines, Warm Daylight)
+            var skyMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Backdrop_Sky/M_Skybox_Village_CubemapDaylight.mat");
+            if (skyMat != null)
+            {
+                skyMat.SetFloat("_Rotation", 180f);
+                skyMat.SetFloat("_Exposure", 1.25f);
+                skyMat.SetColor("_Tint", new Color(0.80f, 0.92f, 1.15f, 1.0f));
+                EditorUtility.SetDirty(skyMat);
+                RenderSettings.skybox = skyMat;
+            }
 
-            var mf = cylObj.AddComponent<MeshFilter>();
-            mf.sharedMesh = CreateInwardCylinderMesh(340f, 260f, 20f, 64, 3);
-
-            var mr = cylObj.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = matSkyDome;
-            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            mr.receiveShadows = false;
-
-            // 3. Southern Far Horizon - Deep Ocean Meeting Sky
+            // 2. Southern Far Horizon - Deep Ocean Meeting Sky
             var matSeaHorizon = GetOrCreateUnlitMaterial(
                 "Assets/Materials/Environment/Backdrop_Sky/M_Backdrop_SeaHorizon.mat",
                 "Assets/Textures/Backgrounds_Lana/BG_Lana_SeaHorizon_Sunset.png",
@@ -313,124 +312,6 @@ namespace HoaDo.Editor
             seaHorizon.GetComponent<MeshRenderer>().sharedMaterial = matSeaHorizon;
             var cSea = seaHorizon.GetComponent<Collider>();
             if (cSea != null) Object.DestroyImmediate(cSea);
-
-            // 6. Physical 3D Clouds Flock (Clouds_Atmosphere_3D)
-            BuildPhysical3DClouds(bgRoot.transform);
-        }
-
-        private static void BuildPhysical3DClouds(Transform parent)
-        {
-            var cloudsRoot = new GameObject("Clouds_Atmosphere_3D");
-            cloudsRoot.transform.parent = parent;
-
-            string[] cloudMats = new string[]
-            {
-                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Lana_Cloud_01_CumulusHero.mat",
-                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Lana_Cloud_02_WideBank.mat",
-                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Lana_Cloud_03_HighWisps.mat",
-                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Lana_Cloud_04_GoldenHorizon.mat",
-                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Cloud_Mid_CumulusBank01.mat",
-                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Cloud_Mid_SoftBank03.mat"
-            };
-
-            // Cloud 3D billboarding data: (X, Y, Z, scaleX, scaleY, rotX, rotY, matIdx)
-            float[,] cloudSpecs = new float[,]
-            {
-                // North Horizon / Over Rice Fields & Gate
-                { -25f, 34f,  70f, 68f, 26f, 18f,   0f, 0 }, // Hero Cumulus
-                {  38f, 38f,  85f, 85f, 30f, 16f,   0f, 1 }, // Wide Bank
-                {   0f, 26f, 115f, 110f, 32f, 12f,   0f, 3 }, // Golden Horizon
-                { -60f, 44f,  50f, 60f, 20f, 22f,   0f, 2 }, // High Wisps
-                {  65f, 32f,  40f, 75f, 24f, 20f,   0f, 5 }, // Soft Bank
-
-                // Center Sky / Above Village & Sacred Tree
-                { -10f, 42f,  15f, 80f, 32f, 25f,   0f, 0 }, // Big Cumulus Over Center
-                {  30f, 46f,  10f, 55f, 22f, 25f,   0f, 4 }, // East Fluff
-                { -35f, 48f,   5f, 58f, 24f, 25f,   0f, 2 }, // West Fluff
-                {   0f, 54f,  35f, 90f, 34f, 30f,   0f, 1 }, // Zenith Cloud Bank
-
-                // Flanks & Coastal Sea
-                { -70f, 36f, -20f, 65f, 22f, 22f,   0f, 5 }, // West Shore Wisp
-                {  70f, 36f, -20f, 65f, 22f, 22f,   0f, 4 }, // East Shore Cluster
-                { -95f, 35f,  95f, 80f, 28f, 15f,   0f, 1 }, // North-West Distant Bank
-                {  95f, 35f,  95f, 80f, 28f, 15f,   0f, 3 }, // North-East Golden Bank
-
-                // South Horizon / Over Sea
-                { -50f, 26f, -90f, 90f, 28f, -15f, 180f, 1 }, // Sea Cloud Bank West
-                {  45f, 28f,-100f, 95f, 30f, -15f, 180f, 0 }, // Sea Cloud Bank East
-                {   5f, 24f,-125f, 105f, 30f, -12f, 180f, 3 }  // Sea Horizon Bank Center
-            };
-
-            for (int i = 0; i < cloudSpecs.GetLength(0); i++)
-            {
-                var cObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                cObj.name = $"Cloud_3D_Atmo_{i + 1:D2}";
-                cObj.transform.parent = cloudsRoot.transform;
-                cObj.transform.position = new Vector3(cloudSpecs[i, 0], cloudSpecs[i, 1], cloudSpecs[i, 2]);
-                cObj.transform.rotation = Quaternion.Euler(cloudSpecs[i, 5], cloudSpecs[i, 6], 0f);
-                cObj.transform.localScale = new Vector3(cloudSpecs[i, 3], cloudSpecs[i, 4], 1f);
-
-                int mIdx = (int)cloudSpecs[i, 7] % cloudMats.Length;
-                var cMat = AssetDatabase.LoadAssetAtPath<Material>(cloudMats[mIdx]);
-                if (cMat != null) cObj.GetComponent<MeshRenderer>().sharedMaterial = cMat;
-
-                var col = cObj.GetComponent<Collider>();
-                if (col != null) Object.DestroyImmediate(col);
-            }
-        }
-
-        private static Mesh CreateInwardCylinderMesh(float radius, float height, float yCenter, int segments, int uRepeats)
-        {
-            Mesh mesh = new Mesh();
-            mesh.name = "Inward_Sky_Cylinder_Mesh";
-
-            int vertCount = (segments + 1) * 2;
-            Vector3[] vertices = new Vector3[vertCount];
-            Vector3[] normals = new Vector3[vertCount];
-            Vector2[] uvs = new Vector2[vertCount];
-            int[] triangles = new int[segments * 6];
-
-            float yBottom = yCenter - height * 0.35f;
-            float yTop = yCenter + height * 0.65f;
-
-            for (int i = 0; i <= segments; i++)
-            {
-                float ratio = (float)i / segments;
-                float angle = ratio * Mathf.PI * 2f;
-                float x = Mathf.Sin(angle) * radius;
-                float z = Mathf.Cos(angle) * radius;
-
-                int idxBottom = i * 2;
-                int idxTop = i * 2 + 1;
-
-                vertices[idxBottom] = new Vector3(x, yBottom, z);
-                vertices[idxTop] = new Vector3(x, yTop, z);
-
-                normals[idxBottom] = new Vector3(-x, 0f, -z).normalized;
-                normals[idxTop] = new Vector3(-x, 0f, -z).normalized;
-
-                uvs[idxBottom] = new Vector2(ratio * uRepeats, 0f);
-                uvs[idxTop] = new Vector2(ratio * uRepeats, 1f);
-
-                if (i < segments)
-                {
-                    int triIdx = i * 6;
-                    triangles[triIdx + 0] = idxBottom;
-                    triangles[triIdx + 1] = idxTop;
-                    triangles[triIdx + 2] = idxBottom + 2;
-
-                    triangles[triIdx + 3] = idxBottom + 2;
-                    triangles[triIdx + 4] = idxTop;
-                    triangles[triIdx + 5] = idxTop + 2;
-                }
-            }
-
-            mesh.vertices = vertices;
-            mesh.normals = normals;
-            mesh.uv = uvs;
-            mesh.triangles = triangles;
-            mesh.RecalculateBounds();
-            return mesh;
         }
 
         // =========================================================================
@@ -1856,10 +1737,10 @@ namespace HoaDo.Editor
             if (cam != null)
             {
                 // Elevated Overhead Perspective framing Village, Sea, Rice Fields, Village Gate, AND the Sky:
-                // Camera at (-4.5, 48, -50), pitched 36 deg down looking north
-                cam.transform.position = new Vector3(-4.5f, 48.0f, -50.0f);
-                cam.transform.rotation = Quaternion.Euler(36.0f, 0.0f, 0.0f);
-                cam.fieldOfView = 54.0f;
+                // Camera at (-4.5, 40, -58), pitched 28 deg down looking north for expansive seamless sky framing
+                cam.transform.position = new Vector3(-4.5f, 40.0f, -58.0f);
+                cam.transform.rotation = Quaternion.Euler(28.0f, 0.0f, 0.0f);
+                cam.fieldOfView = 58.0f;
                 cam.nearClipPlane = 0.3f;
                 cam.farClipPlane = 1200.0f;
                 EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
