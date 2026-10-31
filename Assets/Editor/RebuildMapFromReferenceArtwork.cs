@@ -40,7 +40,8 @@ namespace HoaDo.Editor
 
             var matPierWood = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/GhibliModular/M_Ghibli_PierPlank.mat");
             var matBamboo = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/CaMau/M_CaMau_Bamboo.mat");
-            var matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/LanaOverhaul/M_Lana_RockUnderbelly.mat");
+            var matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Rocks/M_Rock_Platform_01.mat");
+            if (matRock == null) matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/TripoModels/rock_outcrop_3d_model/Materials/rock_outcrop_3d_model.mat");
             if (matRock == null) matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/GhibliModular/M_Ghibli_PebbleRock.mat");
 
             var matThatched = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Nhà tranh.mat");
@@ -89,13 +90,16 @@ namespace HoaDo.Editor
             // 12. Place Tropical Foliage & Living Village Props (3D volumetric upright trees, colored clothesline)
             BuildTropicalFoliageAndProps(matBamboo, matRedDirt, matPierWood);
 
-            // 13. Position Spawn Points & NPCs
+            // 13. Position Spawn Points & NPCs (Grounded firmly, zero sinking)
             PositionSpawnPointsAndNPCs();
 
-            // 14. Setup Lighting & Atmosphere
+            // 14. Update Dialogue Triggers (Concise, authentic Southern Vietnamese dialogues)
+            UpdateDialogueTriggersConcise();
+
+            // 15. Setup Lighting & Atmosphere
             SetupLightingAndAtmosphere();
 
-            // 15. Setup Cameras (Overview with Sky + Gameplay)
+            // 16. Setup Cameras (Overview with Sky + Gameplay)
             SetupCameras();
 
             Physics.SyncTransforms();
@@ -233,7 +237,12 @@ namespace HoaDo.Editor
                 "Sky_Surround_Cylinder_360", "Backdrop_SkyNorth_Panoramic",
                 "Crate_01", "Crate_02", "Crate_WestPier", "Barrel_01", "Barrel_02",
                 "Terrain_West_Headland", "Terrain_West_BeachSlope",
-                "Terrain_East_Headland", "Terrain_East_BeachSlope"
+                "Terrain_East_Headland", "Terrain_East_BeachSlope",
+                "Cliff_West_Rice_North", "Cliff_West_Rice_South",
+                "Cliff_East_Rice_North", "Cliff_East_Rice_South",
+                "Terrain_North_Backdrop_Hill", "MountainRanges_3D_Flanking",
+                "MountainRange_West_Flank", "MountainRange_East_Flank", "MountainRange_North_Backdrop",
+                "Backdrop_Western_MistyHills", "Backdrop_Eastern_MistyHills"
             };
             foreach (var name in standalone)
             {
@@ -248,7 +257,8 @@ namespace HoaDo.Editor
             {
                 if (go == null) continue;
                 string n = go.name.ToLower();
-                if (n.Contains("crate") || n.Contains("barrel") || n.Contains("thung") || n.Contains("cargo"))
+                if (n.Contains("crate") || n.Contains("barrel") || n.Contains("thung") || n.Contains("cargo") ||
+                    n.Contains("cliff_west_rice") || n.Contains("cliff_east_rice") || n.Contains("terrain_north_backdrop"))
                 {
                     toPurge.Add(go);
                 }
@@ -288,39 +298,7 @@ namespace HoaDo.Editor
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             mr.receiveShadows = false;
 
-            // 3. Northern Horizon - Lush Rolling Green Hills & Misty Tropical Forest (Directly behind Rice Fields & Village Gate)
-            var matMistyHills = GetOrCreateUnlitMaterial(
-                "Assets/Materials/Environment/Backdrop_Sky/M_Backdrop_MistyHills.mat",
-                "Assets/Textures/Backgrounds_Lana/BG_Lana_MainSkyHills_Official.png",
-                true, 2990);
-
-            var hillsNorth = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            hillsNorth.name = "Backdrop_Northern_MistyHills_Mid";
-            hillsNorth.transform.parent = bgRoot.transform;
-            hillsNorth.transform.position = new Vector3(0.0f, 22.0f, 105.0f);
-            hillsNorth.transform.rotation = Quaternion.Euler(0f, 0f, 0f); // Facing South towards village & camera
-            hillsNorth.transform.localScale = new Vector3(320.0f, 44.0f, 1f);
-            hillsNorth.GetComponent<MeshRenderer>().sharedMaterial = matMistyHills;
-            var cNorth = hillsNorth.GetComponent<Collider>();
-            if (cNorth != null) Object.DestroyImmediate(cNorth);
-
-            // 4. Northern Far Distance - Towering Misty Mountain Peaks
-            var matFarMountains = GetOrCreateUnlitMaterial(
-                "Assets/Materials/Environment/Backdrop_Sky/M_Backdrop_FarMountains.mat",
-                "Assets/Textures/Backgrounds_Lana/T_Lana_GrandUnified_Background.png",
-                true, 2980);
-
-            var mountainsNorth = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            mountainsNorth.name = "Backdrop_Northern_FarMountains";
-            mountainsNorth.transform.parent = bgRoot.transform;
-            mountainsNorth.transform.position = new Vector3(0.0f, 38.0f, 145.0f);
-            mountainsNorth.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
-            mountainsNorth.transform.localScale = new Vector3(440.0f, 70.0f, 1f);
-            mountainsNorth.GetComponent<MeshRenderer>().sharedMaterial = matFarMountains;
-            var cMnt = mountainsNorth.GetComponent<Collider>();
-            if (cMnt != null) Object.DestroyImmediate(cMnt);
-
-            // 5. Southern Far Horizon - Deep Ocean Meeting Sky
+            // 3. Southern Far Horizon - Deep Ocean Meeting Sky
             var matSeaHorizon = GetOrCreateUnlitMaterial(
                 "Assets/Materials/Environment/Backdrop_Sky/M_Backdrop_SeaHorizon.mat",
                 "Assets/Textures/Backgrounds_Lana/BG_Lana_SeaHorizon_Sunset.png",
@@ -487,24 +465,10 @@ namespace HoaDo.Editor
             seaBed.transform.localScale = new Vector3(600.0f, 0.6f, 280.0f);
             seaBed.GetComponent<MeshRenderer>().sharedMaterial = matSand;
 
-            // D. Northern Backdrop Hill (Low gentle hill behind paddies, 320m wide continuous)
-            var northHill = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            northHill.name = "Terrain_North_Backdrop_Hill";
-            northHill.transform.parent = terrainRoot.transform;
-            northHill.transform.position = new Vector3(0.0f, 1.45f, 88.0f);
-            northHill.transform.localScale = new Vector3(320.0f, 1.9f, 16.0f);
-            northHill.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
+            // D. 3D Mountain Ranges Flanking Both Sides of Rice Fields & Northern Mountain Pass
+            BuildFlanking3DMountainRanges(terrainRoot.transform, matGrass, matRock);
 
-            // G. ROCK CLIFFS FLANKING THE RICE FIELDS ONLY (Mounds blend with grass, real rock outcrops on top)
-            // Left (West) Flank: X ~ -65 to -78, Z ~ 42 to 74
-            BuildRockyCliff(terrainRoot.transform, "Cliff_West_Rice_North", new Vector3(-68.0f, 2.5f, 66.0f), new Vector3(20.0f, 4.0f, 22.0f), matGrass);
-            BuildRockyCliff(terrainRoot.transform, "Cliff_West_Rice_South", new Vector3(-64.0f, 2.0f, 48.0f), new Vector3(18.0f, 3.2f, 18.0f), matGrass);
-
-            // Right (East) Flank: X ~ +56 to +74, Z ~ 42 to 74
-            BuildRockyCliff(terrainRoot.transform, "Cliff_East_Rice_North", new Vector3(68.0f, 2.5f, 68.0f), new Vector3(20.0f, 4.0f, 22.0f), matGrass);
-            BuildRockyCliff(terrainRoot.transform, "Cliff_East_Rice_South", new Vector3(66.0f, 2.0f, 48.0f), new Vector3(18.0f, 3.2f, 18.0f), matGrass);
-
-            // H. Stone Retaining Wall along upper beach border
+            // E. Stone Retaining Wall along upper beach border
             BuildBeachRetainingWall(terrainRoot.transform, matRock);
         }
 
@@ -527,30 +491,257 @@ namespace HoaDo.Editor
             if (mat != null) wall.GetComponent<MeshRenderer>().sharedMaterial = mat;
         }
 
-        private static void BuildRockyCliff(Transform parent, string name, Vector3 pos, Vector3 size, Material matGrass)
+        // =========================================================================
+        // 4.1. 3D Mountain Ranges Flanking Rice Fields & North Mountain Pass
+        // =========================================================================
+        private static void BuildFlanking3DMountainRanges(Transform parent, Material matGrass, Material matRock)
         {
-            var cliffMound = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cliffMound.name = name;
-            cliffMound.transform.parent = parent;
-            cliffMound.transform.position = pos;
-            cliffMound.transform.localScale = size;
-            if (matGrass != null) cliffMound.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
+            var mountainRoot = new GameObject("MountainRanges_3D_Flanking");
+            mountainRoot.transform.parent = parent;
 
-            var rockPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Rocks/PF_LanaVN_Rock_01_LargeOutcrop.prefab");
-            if (rockPrefab == null) rockPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Rocks/PF_Rock_Cliff_Large.prefab");
-            if (rockPrefab != null)
+            // Load rich 3D rock models (100% volumetric 3D meshes, ZERO flat 2D cutouts)
+            var rockPlatformPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/PF_Rock_Platform_CliffLedge.prefab");
+            if (rockPlatformPrefab == null) rockPlatformPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Platform_01.fbx");
+
+            var rockCragPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/rock_outcrop_3d_model/rock_outcrop_3d_model.fbx");
+            if (rockCragPrefab == null) rockCragPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/PF_Rock_Outcrop.prefab");
+
+            var rockLargeBoulder = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Optimized/SM_Rock_Large_BlenderOptimized.fbx");
+            if (rockLargeBoulder == null) rockLargeBoulder = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/PF_Rock_Large_01.prefab");
+
+            var rockMediumBoulder = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Optimized/SM_Rock_Medium_02_BlenderOptimized.fbx");
+            if (rockMediumBoulder == null) rockMediumBoulder = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Medium_01.fbx");
+
+            var heroBanyanPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Foliage/PF_LanaVN_Tree_01_HeroBanyan.prefab");
+            if (heroBanyanPrefab == null) heroBanyanPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Foliage/PF_Foliage_Canopy_Banyan.prefab");
+
+            var coconutPalmPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Foliage/PF_Foliage_Coconut_Palm.prefab");
+            var bananaPalmPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Foliage/PF_Foliage_Banana_Palm.prefab");
+
+            // -------------------------------------------------------------
+            // A. WEST FLANK MOUNTAIN RANGE (Dãy Núi Tây Bao Quanh Cánh Đồng Lúa)
+            // Spanning X: -60 to -115, Z: 20 to 92
+            // -------------------------------------------------------------
+            var westRoot = new GameObject("MountainRange_West_Flank");
+            westRoot.transform.parent = mountainRoot.transform;
+
+            // Organic smooth hill meshes (Zero flat box steps, smooth zero-tangent connection to Y = 0.50m)
+            CreateOrganicHillMesh(westRoot.transform, "Hill_West_RiceFlank", new Vector3(-80.0f, UNIFORM_GROUND_Y, 58.0f), 48.0f, 68.0f, 5.8f, matGrass);
+            CreateOrganicHillMesh(westRoot.transform, "Hill_West_VillageFlank", new Vector3(-76.0f, UNIFORM_GROUND_Y, 20.0f), 44.0f, 42.0f, 4.8f, matGrass);
+
+            // Tier 1 & 2: 3D Rock Platforms along the inner edge facing rice paddies
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Platform_01", new Vector3(-60.0f, 0.9f, 72.0f), new Vector3(3.0f, 2.4f, 2.8f), new Vector3(0f, 25f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Platform_02", new Vector3(-62.5f, 1.5f, 62.0f), new Vector3(3.4f, 2.8f, 3.2f), new Vector3(0f, -15f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Platform_03", new Vector3(-59.0f, 1.0f, 50.0f), new Vector3(2.8f, 2.2f, 2.6f), new Vector3(0f, 40f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Platform_04", new Vector3(-63.0f, 2.0f, 40.0f), new Vector3(3.6f, 3.0f, 3.4f), new Vector3(0f, 10f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Platform_05", new Vector3(-68.0f, 3.0f, 70.0f), new Vector3(4.0f, 3.6f, 3.8f), new Vector3(0f, -35f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Platform_06", new Vector3(-70.0f, 3.4f, 56.0f), new Vector3(4.2f, 4.0f, 3.8f), new Vector3(0f, 60f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Platform_07", new Vector3(-72.0f, 3.2f, 42.0f), new Vector3(3.8f, 3.4f, 3.4f), new Vector3(0f, -20f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Platform_08", new Vector3(-66.0f, 2.4f, 28.0f), new Vector3(3.4f, 2.6f, 3.2f), new Vector3(0f, 15f, 0f), matRock);
+
+            // Tier 3: Towering 3D Rock Crags / Monoliths (Towering stone karsts rising into sky)
+            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Crag_01", new Vector3(-67.0f, 2.6f, 74.0f), new Vector3(7.0f, 10.0f, 6.5f), new Vector3(0f, 30f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Crag_02", new Vector3(-74.0f, 4.0f, 64.0f), new Vector3(8.5f, 13.0f, 8.0f), new Vector3(0f, -45f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Crag_03", new Vector3(-68.0f, 3.2f, 54.0f), new Vector3(7.5f, 11.0f, 7.0f), new Vector3(0f, 75f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Crag_04", new Vector3(-75.0f, 4.2f, 44.0f), new Vector3(9.0f, 13.5f, 8.5f), new Vector3(0f, -10f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Crag_05", new Vector3(-71.0f, 3.4f, 34.0f), new Vector3(8.0f, 11.5f, 7.5f), new Vector3(0f, 110f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Crag_HighPeak", new Vector3(-84.0f, 5.5f, 58.0f), new Vector3(11.0f, 17.0f, 10.0f), new Vector3(0f, 15f, 0f), matRock);
+
+            // 3D Boulders along footing
+            InstantiateRock(rockLargeBoulder, westRoot.transform, "West_Boulder_01", new Vector3(-58.5f, UNIFORM_GROUND_Y + 0.3f, 67.0f), new Vector3(2.4f, 1.8f, 2.2f), new Vector3(10f, 45f, 0f));
+            InstantiateRock(rockMediumBoulder, westRoot.transform, "West_Boulder_02", new Vector3(-57.8f, UNIFORM_GROUND_Y + 0.2f, 46.0f), new Vector3(2.0f, 1.6f, 2.0f), new Vector3(-15f, 80f, 5f));
+            InstantiateRock(rockLargeBoulder, westRoot.transform, "West_Boulder_03", new Vector3(-64.0f, UNIFORM_GROUND_Y + 0.5f, 34.0f), new Vector3(2.6f, 2.0f, 2.4f), new Vector3(5f, -30f, 10f));
+
+            // Crowning Vegetation on West Ridge
+            if (heroBanyanPrefab != null)
             {
-                var r1 = (GameObject)PrefabUtility.InstantiatePrefab(rockPrefab, parent);
-                r1.name = $"{name}_Outcrop1";
-                r1.transform.position = pos + new Vector3(Random.Range(-1.5f, 1.5f), size.y * 0.4f, Random.Range(-3f, 3f));
-                r1.transform.localScale = Vector3.one * 1.6f;
-
-                var r2 = (GameObject)PrefabUtility.InstantiatePrefab(rockPrefab, parent);
-                r2.name = $"{name}_Outcrop2";
-                r2.transform.position = pos + new Vector3(Random.Range(-1.5f, 1.5f), size.y * 0.2f, Random.Range(-6f, 6f));
-                r2.transform.rotation = Quaternion.Euler(0f, 45f, 0f);
-                r2.transform.localScale = Vector3.one * 1.3f;
+                InstantiateVolumetricTree(heroBanyanPrefab, westRoot.transform, "West_Ridge_Banyan_01", new Vector3(-77.0f, 5.2f, 68.0f), 1.60f);
+                InstantiateVolumetricTree(heroBanyanPrefab, westRoot.transform, "West_Ridge_Banyan_02", new Vector3(-78.0f, 4.8f, 40.0f), 1.50f);
             }
+            if (coconutPalmPrefab != null)
+            {
+                InstantiateVolumetricTree(coconutPalmPrefab, westRoot.transform, "West_Cliff_Palm_01", new Vector3(-64.0f, 2.4f, 66.0f), 1.25f);
+                InstantiateVolumetricTree(coconutPalmPrefab, westRoot.transform, "West_Cliff_Palm_02", new Vector3(-63.0f, 2.0f, 46.0f), 1.20f);
+                InstantiateVolumetricTree(coconutPalmPrefab, westRoot.transform, "West_Cliff_Palm_03", new Vector3(-69.0f, 3.8f, 55.0f), 1.30f);
+            }
+            if (bananaPalmPrefab != null)
+            {
+                InstantiateVolumetricTree(bananaPalmPrefab, westRoot.transform, "West_Cliff_Banana_01", new Vector3(-59.0f, 0.7f, 58.0f), 1.35f);
+                InstantiateVolumetricTree(bananaPalmPrefab, westRoot.transform, "West_Cliff_Banana_02", new Vector3(-61.0f, 1.2f, 38.0f), 1.40f);
+            }
+
+            // -------------------------------------------------------------
+            // B. EAST FLANK MOUNTAIN RANGE (Dãy Núi Đông Bao Quanh Đầm Vịt & Đồng Lúa)
+            // Spanning X: 55 to 115, Z: 20 to 92
+            // -------------------------------------------------------------
+            var eastRoot = new GameObject("MountainRange_East_Flank");
+            eastRoot.transform.parent = mountainRoot.transform;
+
+            // Organic smooth hill meshes
+            CreateOrganicHillMesh(eastRoot.transform, "Hill_East_RiceFlank", new Vector3(80.0f, UNIFORM_GROUND_Y, 58.0f), 48.0f, 68.0f, 5.8f, matGrass);
+            CreateOrganicHillMesh(eastRoot.transform, "Hill_East_VillageFlank", new Vector3(76.0f, UNIFORM_GROUND_Y, 20.0f), 44.0f, 42.0f, 4.8f, matGrass);
+
+            // Tier 1 & 2: 3D Rock Platforms (including Duck Pond rocky basin)
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Platform_Pond_01", new Vector3(56.0f, 0.5f, 74.0f), new Vector3(3.2f, 2.0f, 2.8f), new Vector3(0f, -40f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Platform_Pond_02", new Vector3(58.0f, 0.7f, 64.0f), new Vector3(3.0f, 2.2f, 2.6f), new Vector3(0f, 15f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Platform_03", new Vector3(62.0f, 1.4f, 52.0f), new Vector3(3.4f, 2.6f, 3.0f), new Vector3(0f, -25f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Platform_04", new Vector3(64.0f, 1.8f, 40.0f), new Vector3(3.6f, 2.8f, 3.2f), new Vector3(0f, 35f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Platform_05", new Vector3(70.0f, 3.0f, 70.0f), new Vector3(4.0f, 3.6f, 3.8f), new Vector3(0f, 50f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Platform_06", new Vector3(72.0f, 3.4f, 56.0f), new Vector3(4.2f, 4.0f, 3.8f), new Vector3(0f, -55f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Platform_07", new Vector3(71.0f, 3.2f, 42.0f), new Vector3(3.8f, 3.4f, 3.4f), new Vector3(0f, 20f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Platform_08", new Vector3(67.0f, 2.4f, 28.0f), new Vector3(3.4f, 2.6f, 3.2f), new Vector3(0f, -10f, 0f), matRock);
+
+            // Tier 3: Towering 3D Rock Crags / Monoliths
+            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Crag_01", new Vector3(68.0f, 2.8f, 74.0f), new Vector3(7.2f, 10.2f, 6.6f), new Vector3(0f, -35f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Crag_02", new Vector3(75.0f, 4.1f, 64.0f), new Vector3(8.8f, 13.2f, 8.2f), new Vector3(0f, 50f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Crag_03", new Vector3(69.0f, 3.3f, 54.0f), new Vector3(7.8f, 11.2f, 7.2f), new Vector3(0f, -80f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Crag_04", new Vector3(76.0f, 4.4f, 44.0f), new Vector3(9.2f, 13.8f, 8.8f), new Vector3(0f, 20f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Crag_05", new Vector3(72.0f, 3.5f, 34.0f), new Vector3(8.2f, 11.8f, 7.8f), new Vector3(0f, -115f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Crag_HighPeak", new Vector3(85.0f, 5.6f, 58.0f), new Vector3(11.5f, 17.5f, 10.5f), new Vector3(0f, -25f, 0f), matRock);
+
+            // 3D Boulders along footing
+            InstantiateRock(rockLargeBoulder, eastRoot.transform, "East_Boulder_01", new Vector3(54.0f, UNIFORM_GROUND_Y + 0.3f, 68.0f), new Vector3(2.4f, 1.8f, 2.2f), new Vector3(5f, -40f, 10f));
+            InstantiateRock(rockMediumBoulder, eastRoot.transform, "East_Boulder_02", new Vector3(56.5f, UNIFORM_GROUND_Y + 0.2f, 48.0f), new Vector3(2.0f, 1.6f, 2.0f), new Vector3(15f, 60f, -5f));
+            InstantiateRock(rockLargeBoulder, eastRoot.transform, "East_Boulder_03", new Vector3(62.0f, UNIFORM_GROUND_Y + 0.4f, 35.0f), new Vector3(2.6f, 2.0f, 2.4f), new Vector3(-10f, 25f, 0f));
+
+            // Crowning Vegetation on East Ridge
+            if (heroBanyanPrefab != null)
+            {
+                InstantiateVolumetricTree(heroBanyanPrefab, eastRoot.transform, "East_Ridge_Banyan_01", new Vector3(78.0f, 5.2f, 68.0f), 1.60f);
+                InstantiateVolumetricTree(heroBanyanPrefab, eastRoot.transform, "East_Ridge_Banyan_02", new Vector3(79.0f, 4.8f, 40.0f), 1.50f);
+            }
+            if (coconutPalmPrefab != null)
+            {
+                InstantiateVolumetricTree(coconutPalmPrefab, eastRoot.transform, "East_Cliff_Palm_01", new Vector3(60.0f, 1.8f, 72.0f), 1.25f);
+                InstantiateVolumetricTree(coconutPalmPrefab, eastRoot.transform, "East_Cliff_Palm_02", new Vector3(64.0f, 2.4f, 52.0f), 1.20f);
+                InstantiateVolumetricTree(coconutPalmPrefab, eastRoot.transform, "East_Cliff_Palm_03", new Vector3(70.0f, 3.8f, 56.0f), 1.30f);
+            }
+            if (bananaPalmPrefab != null)
+            {
+                InstantiateVolumetricTree(bananaPalmPrefab, eastRoot.transform, "East_Cliff_Banana_01", new Vector3(55.0f, 0.7f, 60.0f), 1.35f);
+                InstantiateVolumetricTree(bananaPalmPrefab, eastRoot.transform, "East_Cliff_Banana_02", new Vector3(59.0f, 1.2f, 42.0f), 1.40f);
+            }
+
+            // -------------------------------------------------------------
+            // C. NORTHERN BACKDROP MOUNTAIN PASS (Đèo Núi Phía Bắc Khung Cổng Làng)
+            // Continuous rolling mountain ridge behind the paddies with a central pass for the Village Gate road
+            // -------------------------------------------------------------
+            var northRoot = new GameObject("MountainRange_North_Backdrop");
+            northRoot.transform.parent = mountainRoot.transform;
+
+            CreateOrganicHillMesh(northRoot.transform, "Hill_North_West", new Vector3(-50.0f, UNIFORM_GROUND_Y, 92.0f), 78.0f, 24.0f, 5.2f, matGrass);
+            CreateOrganicHillMesh(northRoot.transform, "Hill_North_East", new Vector3(45.0f, UNIFORM_GROUND_Y, 92.0f), 86.0f, 24.0f, 5.2f, matGrass);
+
+            // Framing rock monoliths and platforms flanking the Village Gate pass
+            InstantiateRock(rockPlatformPrefab, northRoot.transform, "North_Gate_Pass_West", new Vector3(-16.0f, 1.2f, 80.0f), new Vector3(3.0f, 2.4f, 2.8f), new Vector3(0f, 35f, 0f), matRock);
+            InstantiateRock(rockPlatformPrefab, northRoot.transform, "North_Gate_Pass_East", new Vector3(3.0f, 1.2f, 80.0f), new Vector3(3.0f, 2.4f, 2.8f), new Vector3(0f, -35f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_Pass_Crag_West", new Vector3(-20.0f, 2.5f, 85.0f), new Vector3(6.5f, 9.5f, 6.0f), new Vector3(0f, 20f, 0f), matRock);
+            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_Pass_Crag_East", new Vector3(7.0f, 2.5f, 85.0f), new Vector3(6.5f, 9.5f, 6.0f), new Vector3(0f, -20f, 0f), matRock);
+        }
+
+        private static GameObject InstantiateRock(GameObject prefab, Transform parent, string name, Vector3 pos, Vector3 scale, Vector3 rot, Material overrideMat = null)
+        {
+            if (prefab == null) return null;
+            GameObject obj;
+            if (PrefabUtility.IsPartOfPrefabAsset(prefab))
+            {
+                obj = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+            }
+            else
+            {
+                obj = Object.Instantiate(prefab, parent);
+            }
+            obj.name = name;
+            obj.transform.position = pos;
+            obj.transform.localScale = scale;
+            obj.transform.rotation = Quaternion.Euler(rot);
+
+            if (overrideMat != null)
+            {
+                foreach (var r in obj.GetComponentsInChildren<Renderer>())
+                {
+                    r.sharedMaterial = overrideMat;
+                }
+            }
+            return obj;
+        }
+
+        private static GameObject CreateOrganicHillMesh(Transform parent, string name, Vector3 center, float width, float length, float maxHeight, Material mat, float groundY = UNIFORM_GROUND_Y)
+        {
+            int segmentsX = 16;
+            int segmentsZ = 16;
+            int numVertices = (segmentsX + 1) * (segmentsZ + 1);
+            var vertices = new Vector3[numVertices];
+            var uvs = new Vector2[numVertices];
+            var triangles = new int[segmentsX * segmentsZ * 6];
+
+            float halfW = width * 0.5f;
+            float halfL = length * 0.5f;
+
+            for (int z = 0; z <= segmentsZ; z++)
+            {
+                float tz = (float)z / segmentsZ;
+                float posZ = Mathf.Lerp(-halfL, halfL, tz);
+                float bellZ = Mathf.Sin(tz * Mathf.PI);
+
+                for (int x = 0; x <= segmentsX; x++)
+                {
+                    float tx = (float)x / segmentsX;
+                    float posX = Mathf.Lerp(-halfW, halfW, tx);
+                    float bellX = Mathf.Sin(tx * Mathf.PI);
+
+                    // Organic bell dome smoothly meeting Y = 0 on all 4 boundaries
+                    float shapeFactor = Mathf.Pow(Mathf.Clamp01(bellX * bellZ), 0.75f);
+                    float y = groundY + (maxHeight * shapeFactor);
+
+                    int idx = z * (segmentsX + 1) + x;
+                    vertices[idx] = new Vector3(posX, y - groundY, posZ);
+                    uvs[idx] = new Vector2(tx * (width / 16f), tz * (length / 16f));
+                }
+            }
+
+            int triIndex = 0;
+            for (int z = 0; z < segmentsZ; z++)
+            {
+                for (int x = 0; x < segmentsX; x++)
+                {
+                    int row1 = z * (segmentsX + 1) + x;
+                    int row2 = (z + 1) * (segmentsX + 1) + x;
+
+                    triangles[triIndex++] = row1;
+                    triangles[triIndex++] = row2;
+                    triangles[triIndex++] = row1 + 1;
+
+                    triangles[triIndex++] = row1 + 1;
+                    triangles[triIndex++] = row2;
+                    triangles[triIndex++] = row2 + 1;
+                }
+            }
+
+            var mesh = new Mesh();
+            mesh.name = $"{name}_Mesh";
+            mesh.vertices = vertices;
+            mesh.uv = uvs;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+
+            var hillObj = new GameObject(name);
+            hillObj.transform.parent = parent;
+            hillObj.transform.position = new Vector3(center.x, groundY, center.z);
+            hillObj.transform.rotation = Quaternion.identity;
+            hillObj.transform.localScale = Vector3.one;
+
+            var mf = hillObj.AddComponent<MeshFilter>();
+            mf.sharedMesh = mesh;
+
+            var mr = hillObj.AddComponent<MeshRenderer>();
+            if (mat != null) mr.sharedMaterial = mat;
+
+            var mc = hillObj.AddComponent<MeshCollider>();
+            mc.sharedMesh = mesh;
+
+            return hillObj;
         }
 
         // =========================================================================
@@ -1443,35 +1634,163 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 13. Spawn Points & NPCs (Grounded cleanly on UNIFORM_GROUND_Y)
+        // 13. Spawn Points & NPCs (Grounded firmly, zero sinking, precise foot calibration)
         // =========================================================================
         private static void PositionSpawnPointsAndNPCs()
         {
             var playerSpawn = GameObject.Find("PlayerSpawn");
             if (playerSpawn == null) playerSpawn = new GameObject("PlayerSpawn");
-            playerSpawn.transform.position = new Vector3(-6.0f, UNIFORM_GROUND_Y + 0.05f, 8.0f);
+            playerSpawn.transform.position = new Vector3(-6.0f, UNIFORM_GROUND_Y + 0.10f, 8.0f);
             playerSpawn.transform.rotation = Quaternion.identity;
 
             var player = GameObject.Find("CaMau_1954_Village/Player");
+            if (player == null) player = GameObject.Find("Player");
             if (player != null) player.transform.position = playerSpawn.transform.position;
 
-            var mother = GameObject.Find("NPC_Mother_An");
-            if (mother != null) mother.transform.position = new Vector3(20.0f, UNIFORM_GROUND_Y + 0.05f, 22.0f);
+            // Calibrate An_Player CharacterController center & height to align precisely with mesh feet
+            var anPlayer = GameObject.Find("An_Player");
+            if (anPlayer != null)
+            {
+                var cc = anPlayer.GetComponent<CharacterController>();
+                if (cc != null)
+                {
+                    cc.center = new Vector3(0f, 0.48f, 0f);
+                    cc.height = 1.16f;
+                    cc.radius = 0.25f;
+                    cc.stepOffset = 0.30f;
+                    EditorUtility.SetDirty(cc);
+                }
+            }
 
-            var chief = GameObject.Find("NPC_Elderly_VillageChief");
-            if (chief != null) chief.transform.position = new Vector3(-4.0f, UNIFORM_GROUND_Y + 0.05f, 10.0f);
+            // Explicitly position all known NPCs to authentic, lively village locations
+            SetNpcPosition("NPC_Mother_An", new Vector3(20.0f, UNIFORM_GROUND_Y + 0.10f, 22.0f));
+            SetNpcPosition("NPC_Villager_Waving_Mother", new Vector3(26.0f, UNIFORM_GROUND_Y + 0.10f, 1.2f));
+            SetNpcPosition("NPC_Elderly_VillageChief", new Vector3(-4.0f, UNIFORM_GROUND_Y + 0.10f, 10.0f));
+            SetNpcPosition("NPC_Elderly_UncleBa", new Vector3(13.5f, UNIFORM_GROUND_Y + 0.10f, 4.5f));
+            SetNpcPosition("NPC_Villager_Farewell_Elder", new Vector3(27.0f, UNIFORM_GROUND_Y + 0.10f, 3.8f));
+            SetNpcPosition("NPC_Villager_Carrier_Tu", new Vector3(4.0f, UNIFORM_GROUND_Y + 0.10f, 0.5f));
+            SetNpcPosition("NPC_Baby_Toddler", new Vector3(-11.0f, UNIFORM_GROUND_Y + 0.10f, 1.5f));
+            SetNpcPosition("NPC_Female_WaterCarrier", new Vector3(14.5f, UNIFORM_GROUND_Y + 0.10f, 3.5f));
+            SetNpcPosition("NPC_Villager_Gardener", new Vector3(48.0f, UNIFORM_GROUND_Y + 0.10f, 22.0f));
+            SetNpcPosition("NPC_Child_Playing_Boy", new Vector3(-8.0f, UNIFORM_GROUND_Y + 0.10f, 11.0f));
+            SetNpcPosition("NPC_Child_Playing_Girl", new Vector3(-10.0f, UNIFORM_GROUND_Y + 0.10f, 10.0f));
+            SetNpcPosition("NPC_Ferryman_UncleBay", new Vector3(56.0f, 0.25f, -22.0f));
 
-            var ferryman = GameObject.Find("NPC_Ferryman_UncleBay");
-            if (ferryman != null) ferryman.transform.position = new Vector3(56.0f, 0.25f, -22.0f);
+            // Dynamically ground Player and EVERY NPC in the scene with exact foot calibration
+            var allSceneObjects = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            foreach (var go in allSceneObjects)
+            {
+                if (go == null) continue;
+                if (go.name.StartsWith("NPC_") || go.name.Contains("Player"))
+                {
+                    float targetY = UNIFORM_GROUND_Y;
+                    if (go.name.Contains("Ferryman"))
+                    {
+                        targetY = 0.20f; // On pier / boat deck
+                    }
+                    GroundCharacterPrecisely(go, targetY);
+                }
+            }
 
-            var gardener = GameObject.Find("NPC_Villager_Gardener");
-            if (gardener != null) gardener.transform.position = new Vector3(48.0f, UNIFORM_GROUND_Y + 0.05f, 22.0f);
+            if (player != null && playerSpawn != null)
+            {
+                playerSpawn.transform.position = player.transform.position;
+            }
+        }
 
-            var childrenBoy = GameObject.Find("NPC_Child_Playing_Boy");
-            if (childrenBoy != null) childrenBoy.transform.position = new Vector3(-8.0f, UNIFORM_GROUND_Y + 0.05f, 11.0f);
+        private static void SetNpcPosition(string name, Vector3 pos)
+        {
+            var go = GameObject.Find(name);
+            if (go != null)
+            {
+                go.transform.position = pos;
+                EditorUtility.SetDirty(go);
+            }
+        }
 
-            var childrenGirl = GameObject.Find("NPC_Child_Playing_Girl");
-            if (childrenGirl != null) childrenGirl.transform.position = new Vector3(-10.0f, UNIFORM_GROUND_Y + 0.05f, 10.0f);
+        private static void GroundCharacterPrecisely(GameObject character, float targetGroundY)
+        {
+            if (character == null) return;
+
+            var renderers = character.GetComponentsInChildren<Renderer>();
+            if (renderers == null || renderers.Length == 0) return;
+
+            Bounds combinedBounds = new Bounds();
+            bool hasValidBounds = false;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (!renderers[i].enabled || renderers[i] is ParticleSystemRenderer) continue;
+                if (!hasValidBounds)
+                {
+                    combinedBounds = renderers[i].bounds;
+                    hasValidBounds = true;
+                }
+                else
+                {
+                    combinedBounds.Encapsulate(renderers[i].bounds);
+                }
+            }
+
+            if (!hasValidBounds) return;
+
+            // Align lowest vertex of feet exactly with targetGroundY + 0.005m
+            float currentLowestY = combinedBounds.min.y;
+            float desiredLowestY = targetGroundY + 0.005f;
+            float deltaY = desiredLowestY - currentLowestY;
+
+            character.transform.position += new Vector3(0f, deltaY, 0f);
+
+            // Also synchronize CapsuleCollider if present so collider bottom aligns with feet
+            var cap = character.GetComponent<CapsuleCollider>();
+            if (cap != null)
+            {
+                float localBottom = (desiredLowestY - character.transform.position.y);
+                cap.center = new Vector3(cap.center.x, localBottom + (cap.height * 0.5f), cap.center.z);
+                EditorUtility.SetDirty(cap);
+            }
+
+            EditorUtility.SetDirty(character);
+        }
+
+        // =========================================================================
+        // 14. Concise & Authentic Southern Vietnamese Game Dialogues
+        // =========================================================================
+        private static void UpdateDialogueTriggersConcise()
+        {
+            var conciseDialogues = new Dictionary<string, (string title, string prompt, string action)>
+            {
+                { "Trigger_01_Mother", ("Má", "[E] Trò chuyện", "Má: 'Về sớm ăn cơm nghen con!'") },
+                { "Trigger_02_DogVang", ("Chó Vàng", "[E] Xoa đầu", "Gâu! Chú chó mừng rỡ vẫy đuôi.") },
+                { "Trigger_03_ChickenCoop", ("Ổ Trứng", "[E] Nhặt trứng", "Nhặt được 3 quả trứng gà ấm.") },
+                { "Trigger_04_SoilPouch", ("Túi Đất", "[E] Mở xem", "Nắm đất phù sa Cà Mau ấm áp.") },
+                { "Trigger_05_VillageWell", ("Giếng Làng", "[E] Múc nước", "Nước giếng mát rượi, ngọt lịm.") },
+                { "Trigger_06_ElderBa", ("Ông Ba", "[E] Chào hỏi", "Ông Ba: 'Đi đứng cẩn thận nghe con!'") },
+                { "Trigger_07_RoadVillagerTu", ("Bác Tư", "[E] Trò chuyện", "Bác Tư: 'Rau tươi má gửi nè con.'") },
+                { "Trigger_08_VillageChief", ("Bác Trưởng Xóm", "[E] Hỏi thăm", "Bác Hai: 'Năm nay xóm mình trúng lúa!'") },
+                { "Trigger_09_VillageKids", ("Lũ Bạn", "[E] Bắn bi", "Tụi nhỏ: 'An ơi, vô bắn bi nè!'") },
+                { "Trigger_10_GourdTrellis", ("Giàn Bầu", "[E] Ngắm", "Trái bầu non xanh mướt đu đưa.") },
+                { "Trigger_11_BabyToddler", ("Bé Út", "[E] Chơi đùa", "Bé Út: Cười toe toét vẫy tay.") },
+                { "Trigger_12_Gardener", ("Chú Năm", "[E] Trò chuyện", "Chú Năm: 'Bầu ngọt lắm, hái một trái đi con.'") },
+                { "Trigger_13_WaterBuffalo", ("Trâu Mộng", "[E] Xoa đầu", "Nghé ọ! Chú trâu nhai cỏ hiền lành.") },
+                { "Trigger_14_FarmerRiceField", ("Bác Ba Nông Dân", "[E] Đưa cơm", "Bác Ba: 'Cảm ơn con, cơm má nấu ngon quá!'") },
+                { "Trigger_15_RiverBench", ("Ghế Gỗ", "[E] Hóng mát", "Gió sông thổi mát rượi.") },
+                { "Trigger_16_Ferryman", ("Bác Lái Đò", "[E] Hỏi đò", "Bác Ba: 'Lên mau, chuẩn bị nhổ sào rồi!'") }
+            };
+
+            var allTriggers = Object.FindObjectsByType<HoaVaMau.Test3D.InteractableObject3D>(FindObjectsSortMode.None);
+            foreach (var trigger in allTriggers)
+            {
+                if (trigger == null) continue;
+                if (conciseDialogues.TryGetValue(trigger.gameObject.name, out var data))
+                {
+                    var so = new SerializedObject(trigger);
+                    so.FindProperty("objectTitle").stringValue = data.title;
+                    so.FindProperty("promptMessage").stringValue = data.prompt;
+                    so.FindProperty("actionMessage").stringValue = data.action;
+                    so.ApplyModifiedProperties();
+                    EditorUtility.SetDirty(trigger);
+                }
+            }
         }
 
         // =========================================================================

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using HoaVaMau.Test3D;
@@ -29,7 +29,7 @@ namespace HoaVaMau.Gameplay
         [Header("Arrival Title Card")]
         [SerializeField] private bool showOpeningArrivalBanner = true;
         [SerializeField] private string villageTitle = "XÓM RẠCH GỐC  •  CÀ MAU 1954";
-        [SerializeField] private string villageSubtitle = "Bến quê thanh bình  —  Những ngày chuẩn bị tập kết";
+        [SerializeField] private string villageSubtitle = "Bến quê thanh bình";
 
         private Canvas uiCanvas;
         private Font uiFont;
@@ -804,3 +804,4 @@ namespace HoaVaMau.Gameplay
         }
     }
 }
+
