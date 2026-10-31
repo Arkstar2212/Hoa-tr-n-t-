@@ -127,6 +127,44 @@ namespace HoaDo.Editor
             return mat;
         }
 
+        private static Material GetOrCreateUnlitMaterial(string path, string texPath, bool transparent, int renderQueue)
+        {
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            mat.shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (!string.IsNullOrEmpty(texPath))
+            {
+                var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
+                if (tex != null) mat.mainTexture = tex;
+            }
+            mat.SetFloat("_Surface", transparent ? 1f : 0f);
+            mat.SetFloat("_Blend", 0f); // Alpha blend
+            mat.SetFloat("_Cull", 0f);  // Double-sided
+            mat.SetFloat("_ZWrite", transparent ? 0f : 1f);
+            mat.renderQueue = renderQueue;
+            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", Color.white);
+            if (mat.HasProperty("_Color")) mat.SetColor("_Color", Color.white);
+
+            if (transparent)
+            {
+                mat.SetOverrideTag("RenderType", "Transparent");
+                mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                mat.DisableKeyword("_SURFACE_TYPE_OPAQUE");
+            }
+            else
+            {
+                mat.SetOverrideTag("RenderType", "Opaque");
+                mat.EnableKeyword("_SURFACE_TYPE_OPAQUE");
+                mat.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            }
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
         private static void ConfigureRiceMaterials()
         {
             var matNames = new string[] { "Mat_Rice_Meshy", "Mat_Rice_Tripo" };
@@ -201,44 +239,138 @@ namespace HoaDo.Editor
             var bgRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/Background_Atmosphere");
             bgRoot.SetActive(true);
 
-            if (matSky == null)
-            {
-                matSky = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Backdrop_Sky/M_Sky_Backdrop_Surround.mat");
-            }
-            if (matSky != null)
-            {
-                var skyTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Sky/Sky_Cloud_Krita_5120x2160.png");
-                if (skyTex == null) skyTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/T_Lana_ContinuousCosmicSky_Seamless.png");
-                if (skyTex != null) matSky.mainTexture = skyTex;
-                if (matSky.HasProperty("_Exposure")) matSky.SetFloat("_Exposure", 1.15f);
-                if (matSky.HasProperty("_Tint")) matSky.SetColor("_Tint", Color.white);
-                EditorUtility.SetDirty(matSky);
-            }
+            // 1. Grand 360-degree Sky Enclosure Material (5K Hand-painted sky with soft clouds & sun)
+            var matSkyDome = GetOrCreateUnlitMaterial(
+                "Assets/Materials/Environment/Backdrop_Sky/M_Sky_Backdrop_Surround.mat",
+                "Assets/Textures/Sky/Sky_Cloud_Krita_5120x2160.png",
+                false, 2000);
 
-            // A. Northern Panoramic Sky Canvas (Directly behind northern hills and village gate)
-            // Visible prominently in overview camera and ground gameplay camera
-            var skyNorth = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            skyNorth.name = "Backdrop_SkyNorth_Panoramic";
-            skyNorth.transform.parent = bgRoot.transform;
-            skyNorth.transform.position = new Vector3(-5.0f, 26.0f, 96.0f);
-            skyNorth.transform.rotation = Quaternion.Euler(0f, 0f, 0f); // Facing South
-            skyNorth.transform.localScale = new Vector3(220.0f, 52.0f, 1f);
-            if (matSky != null) skyNorth.GetComponent<MeshRenderer>().sharedMaterial = matSky;
-
-            // B. 360-degree Inward Cylindrical Sky Enclosure (Radius 145m, Height 120m)
-            var cylObj = new GameObject("Sky_Surround_Cylinder_360");
+            // 2. 360-degree Inward Cylindrical Sky Enclosure (Radius 340m, Height 260m)
+            var cylObj = new GameObject("Sky_Surround_Dome_360");
             cylObj.transform.parent = bgRoot.transform;
-            cylObj.transform.position = new Vector3(0f, 25f, 15f);
+            cylObj.transform.position = new Vector3(0f, 20f, 0f);
             cylObj.transform.rotation = Quaternion.identity;
             cylObj.transform.localScale = Vector3.one;
 
             var mf = cylObj.AddComponent<MeshFilter>();
-            mf.sharedMesh = CreateInwardCylinderMesh(145f, 120f, 25f, 64, 3);
+            mf.sharedMesh = CreateInwardCylinderMesh(340f, 260f, 20f, 64, 3);
 
             var mr = cylObj.AddComponent<MeshRenderer>();
-            if (matSky != null) mr.sharedMaterial = matSky;
+            mr.sharedMaterial = matSkyDome;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             mr.receiveShadows = false;
+
+            // 3. Northern Horizon - Lush Rolling Green Hills & Misty Tropical Forest (Directly behind Rice Fields & Village Gate)
+            var matMistyHills = GetOrCreateUnlitMaterial(
+                "Assets/Materials/Environment/Backdrop_Sky/M_Backdrop_MistyHills.mat",
+                "Assets/Textures/Backgrounds_Lana/BG_Lana_MainSkyHills_Official.png",
+                true, 2990);
+
+            var hillsNorth = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            hillsNorth.name = "Backdrop_Northern_MistyHills_Mid";
+            hillsNorth.transform.parent = bgRoot.transform;
+            hillsNorth.transform.position = new Vector3(0.0f, 22.0f, 105.0f);
+            hillsNorth.transform.rotation = Quaternion.Euler(0f, 0f, 0f); // Facing South towards village & camera
+            hillsNorth.transform.localScale = new Vector3(320.0f, 44.0f, 1f);
+            hillsNorth.GetComponent<MeshRenderer>().sharedMaterial = matMistyHills;
+            var cNorth = hillsNorth.GetComponent<Collider>();
+            if (cNorth != null) Object.DestroyImmediate(cNorth);
+
+            // 4. Northern Far Distance - Towering Misty Mountain Peaks
+            var matFarMountains = GetOrCreateUnlitMaterial(
+                "Assets/Materials/Environment/Backdrop_Sky/M_Backdrop_FarMountains.mat",
+                "Assets/Textures/Backgrounds_Lana/T_Lana_GrandUnified_Background.png",
+                true, 2980);
+
+            var mountainsNorth = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            mountainsNorth.name = "Backdrop_Northern_FarMountains";
+            mountainsNorth.transform.parent = bgRoot.transform;
+            mountainsNorth.transform.position = new Vector3(0.0f, 38.0f, 145.0f);
+            mountainsNorth.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+            mountainsNorth.transform.localScale = new Vector3(440.0f, 70.0f, 1f);
+            mountainsNorth.GetComponent<MeshRenderer>().sharedMaterial = matFarMountains;
+            var cMnt = mountainsNorth.GetComponent<Collider>();
+            if (cMnt != null) Object.DestroyImmediate(cMnt);
+
+            // 5. Southern Far Horizon - Deep Ocean Meeting Sky
+            var matSeaHorizon = GetOrCreateUnlitMaterial(
+                "Assets/Materials/Environment/Backdrop_Sky/M_Backdrop_SeaHorizon.mat",
+                "Assets/Textures/Backgrounds_Lana/BG_Lana_SeaHorizon_Sunset.png",
+                false, 2985);
+
+            var seaHorizon = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            seaHorizon.name = "Backdrop_Southern_SeaHorizon";
+            seaHorizon.transform.parent = bgRoot.transform;
+            seaHorizon.transform.position = new Vector3(0.0f, 16.0f, -280.0f);
+            seaHorizon.transform.rotation = Quaternion.Euler(0f, 180f, 0f); // Facing North towards village & camera
+            seaHorizon.transform.localScale = new Vector3(600.0f, 44.0f, 1f);
+            seaHorizon.GetComponent<MeshRenderer>().sharedMaterial = matSeaHorizon;
+            var cSea = seaHorizon.GetComponent<Collider>();
+            if (cSea != null) Object.DestroyImmediate(cSea);
+
+            // 6. Physical 3D Clouds Flock (Clouds_Atmosphere_3D)
+            BuildPhysical3DClouds(bgRoot.transform);
+        }
+
+        private static void BuildPhysical3DClouds(Transform parent)
+        {
+            var cloudsRoot = new GameObject("Clouds_Atmosphere_3D");
+            cloudsRoot.transform.parent = parent;
+
+            string[] cloudMats = new string[]
+            {
+                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Lana_Cloud_01_CumulusHero.mat",
+                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Lana_Cloud_02_WideBank.mat",
+                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Lana_Cloud_03_HighWisps.mat",
+                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Lana_Cloud_04_GoldenHorizon.mat",
+                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Cloud_Mid_CumulusBank01.mat",
+                "Assets/Materials/LanaOverhaul/SpriteMats/M_Spr_T_Cloud_Mid_SoftBank03.mat"
+            };
+
+            // Cloud 3D billboarding data: (X, Y, Z, scaleX, scaleY, rotX, rotY, matIdx)
+            float[,] cloudSpecs = new float[,]
+            {
+                // North Horizon / Over Rice Fields & Gate
+                { -25f, 34f,  70f, 68f, 26f, 18f,   0f, 0 }, // Hero Cumulus
+                {  38f, 38f,  85f, 85f, 30f, 16f,   0f, 1 }, // Wide Bank
+                {   0f, 26f, 115f, 110f, 32f, 12f,   0f, 3 }, // Golden Horizon
+                { -60f, 44f,  50f, 60f, 20f, 22f,   0f, 2 }, // High Wisps
+                {  65f, 32f,  40f, 75f, 24f, 20f,   0f, 5 }, // Soft Bank
+
+                // Center Sky / Above Village & Sacred Tree
+                { -10f, 42f,  15f, 80f, 32f, 25f,   0f, 0 }, // Big Cumulus Over Center
+                {  30f, 46f,  10f, 55f, 22f, 25f,   0f, 4 }, // East Fluff
+                { -35f, 48f,   5f, 58f, 24f, 25f,   0f, 2 }, // West Fluff
+                {   0f, 54f,  35f, 90f, 34f, 30f,   0f, 1 }, // Zenith Cloud Bank
+
+                // Flanks & Coastal Sea
+                { -70f, 36f, -20f, 65f, 22f, 22f,   0f, 5 }, // West Shore Wisp
+                {  70f, 36f, -20f, 65f, 22f, 22f,   0f, 4 }, // East Shore Cluster
+                { -95f, 35f,  95f, 80f, 28f, 15f,   0f, 1 }, // North-West Distant Bank
+                {  95f, 35f,  95f, 80f, 28f, 15f,   0f, 3 }, // North-East Golden Bank
+
+                // South Horizon / Over Sea
+                { -50f, 26f, -90f, 90f, 28f, -15f, 180f, 1 }, // Sea Cloud Bank West
+                {  45f, 28f,-100f, 95f, 30f, -15f, 180f, 0 }, // Sea Cloud Bank East
+                {   5f, 24f,-125f, 105f, 30f, -12f, 180f, 3 }  // Sea Horizon Bank Center
+            };
+
+            for (int i = 0; i < cloudSpecs.GetLength(0); i++)
+            {
+                var cObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                cObj.name = $"Cloud_3D_Atmo_{i + 1:D2}";
+                cObj.transform.parent = cloudsRoot.transform;
+                cObj.transform.position = new Vector3(cloudSpecs[i, 0], cloudSpecs[i, 1], cloudSpecs[i, 2]);
+                cObj.transform.rotation = Quaternion.Euler(cloudSpecs[i, 5], cloudSpecs[i, 6], 0f);
+                cObj.transform.localScale = new Vector3(cloudSpecs[i, 3], cloudSpecs[i, 4], 1f);
+
+                int mIdx = (int)cloudSpecs[i, 7] % cloudMats.Length;
+                var cMat = AssetDatabase.LoadAssetAtPath<Material>(cloudMats[mIdx]);
+                if (cMat != null) cObj.GetComponent<MeshRenderer>().sharedMaterial = cMat;
+
+                var col = cObj.GetComponent<Collider>();
+                if (col != null) Object.DestroyImmediate(col);
+            }
         }
 
         private static Mesh CreateInwardCylinderMesh(float radius, float height, float yCenter, int segments, int uRepeats)
@@ -302,7 +434,7 @@ namespace HoaDo.Editor
         {
             var terrainRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/Terrain_3D");
 
-            // A. Unified Ground Plain (Top surface exactly at Y = 0.50m)
+            // A. Central Ground Plain (Top surface exactly at Y = 0.50m)
             var unifiedPlain = GameObject.CreatePrimitive(PrimitiveType.Cube);
             unifiedPlain.name = "Terrain_Unified_Ground_Base";
             unifiedPlain.transform.parent = terrainRoot.transform;
@@ -319,32 +451,64 @@ namespace HoaDo.Editor
             beachSlope.transform.localScale = new Vector3(165.0f, 0.50f, 8.5f);
             beachSlope.GetComponent<MeshRenderer>().sharedMaterial = matSand;
 
-            // C. Sea Bed Floor
+            // C. Sea Bed Floor (Extending deeply under the sea)
             var seaBed = GameObject.CreatePrimitive(PrimitiveType.Cube);
             seaBed.name = "Terrain_Sea_Bed";
             seaBed.transform.parent = terrainRoot.transform;
-            seaBed.transform.position = new Vector3(0.0f, -2.5f, -36.0f);
-            seaBed.transform.localScale = new Vector3(200.0f, 0.6f, 45.0f);
+            seaBed.transform.position = new Vector3(0.0f, -3.2f, -140.0f);
+            seaBed.transform.localScale = new Vector3(600.0f, 0.6f, 280.0f);
             seaBed.GetComponent<MeshRenderer>().sharedMaterial = matSand;
 
-            // D. Northern Backdrop Hill (Low gentle hill behind paddies)
+            // D. West Headland Extension (Eliminating floating box cutoff on left)
+            var westHeadland = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            westHeadland.name = "Terrain_West_Headland";
+            westHeadland.transform.parent = terrainRoot.transform;
+            westHeadland.transform.position = new Vector3(-120.0f, UNIFORM_GROUND_Y - 0.25f, 38.0f);
+            westHeadland.transform.localScale = new Vector3(80.0f, 0.50f, 96.0f);
+            westHeadland.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
+
+            var westBeach = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            westBeach.name = "Terrain_West_BeachSlope";
+            westBeach.transform.parent = terrainRoot.transform;
+            westBeach.transform.position = new Vector3(-120.0f, -0.04f, -14.0f);
+            westBeach.transform.rotation = Quaternion.Euler(7.7f, 0f, 0f);
+            westBeach.transform.localScale = new Vector3(80.0f, 0.50f, 8.5f);
+            westBeach.GetComponent<MeshRenderer>().sharedMaterial = matSand;
+
+            // E. East Headland Extension (Eliminating floating box cutoff on right)
+            var eastHeadland = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            eastHeadland.name = "Terrain_East_Headland";
+            eastHeadland.transform.parent = terrainRoot.transform;
+            eastHeadland.transform.position = new Vector3(120.0f, UNIFORM_GROUND_Y - 0.25f, 38.0f);
+            eastHeadland.transform.localScale = new Vector3(80.0f, 0.50f, 96.0f);
+            eastHeadland.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
+
+            var eastBeach = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            eastBeach.name = "Terrain_East_BeachSlope";
+            eastBeach.transform.parent = terrainRoot.transform;
+            eastBeach.transform.position = new Vector3(120.0f, -0.04f, -14.0f);
+            eastBeach.transform.rotation = Quaternion.Euler(7.7f, 0f, 0f);
+            eastBeach.transform.localScale = new Vector3(80.0f, 0.50f, 8.5f);
+            eastBeach.GetComponent<MeshRenderer>().sharedMaterial = matSand;
+
+            // F. Northern Backdrop Hill (Low gentle hill behind paddies)
             var northHill = GameObject.CreatePrimitive(PrimitiveType.Cube);
             northHill.name = "Terrain_North_Backdrop_Hill";
             northHill.transform.parent = terrainRoot.transform;
             northHill.transform.position = new Vector3(0.0f, 1.45f, 88.0f);
-            northHill.transform.localScale = new Vector3(180.0f, 1.9f, 16.0f);
+            northHill.transform.localScale = new Vector3(280.0f, 1.9f, 16.0f);
             northHill.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
-            // E. ROCK CLIFFS FLANKING THE RICE FIELDS ONLY (None on beach sand)
+            // G. ROCK CLIFFS FLANKING THE RICE FIELDS ONLY (Mounds blend with grass, real rock outcrops on top)
             // Left (West) Flank: X ~ -65 to -78, Z ~ 42 to 74
-            BuildRockyCliff(terrainRoot.transform, "Cliff_West_Rice_North", new Vector3(-68.0f, 3.5f, 66.0f), new Vector3(20.0f, 6.0f, 22.0f), matRock);
-            BuildRockyCliff(terrainRoot.transform, "Cliff_West_Rice_South", new Vector3(-64.0f, 3.0f, 48.0f), new Vector3(18.0f, 5.0f, 18.0f), matRock);
+            BuildRockyCliff(terrainRoot.transform, "Cliff_West_Rice_North", new Vector3(-68.0f, 2.5f, 66.0f), new Vector3(20.0f, 4.0f, 22.0f), matGrass);
+            BuildRockyCliff(terrainRoot.transform, "Cliff_West_Rice_South", new Vector3(-64.0f, 2.0f, 48.0f), new Vector3(18.0f, 3.2f, 18.0f), matGrass);
 
             // Right (East) Flank: X ~ +56 to +74, Z ~ 42 to 74
-            BuildRockyCliff(terrainRoot.transform, "Cliff_East_Rice_North", new Vector3(68.0f, 3.5f, 68.0f), new Vector3(20.0f, 6.0f, 22.0f), matRock);
-            BuildRockyCliff(terrainRoot.transform, "Cliff_East_Rice_South", new Vector3(66.0f, 3.0f, 48.0f), new Vector3(18.0f, 5.0f, 18.0f), matRock);
+            BuildRockyCliff(terrainRoot.transform, "Cliff_East_Rice_North", new Vector3(68.0f, 2.5f, 68.0f), new Vector3(20.0f, 4.0f, 22.0f), matGrass);
+            BuildRockyCliff(terrainRoot.transform, "Cliff_East_Rice_South", new Vector3(66.0f, 2.0f, 48.0f), new Vector3(18.0f, 3.2f, 18.0f), matGrass);
 
-            // F. Stone Retaining Wall along upper beach border
+            // H. Stone Retaining Wall along upper beach border
             BuildBeachRetainingWall(terrainRoot.transform, matRock);
         }
 
@@ -367,14 +531,14 @@ namespace HoaDo.Editor
             if (mat != null) wall.GetComponent<MeshRenderer>().sharedMaterial = mat;
         }
 
-        private static void BuildRockyCliff(Transform parent, string name, Vector3 pos, Vector3 size, Material mat)
+        private static void BuildRockyCliff(Transform parent, string name, Vector3 pos, Vector3 size, Material matGrass)
         {
-            var cliff = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cliff.name = name;
-            cliff.transform.parent = parent;
-            cliff.transform.position = pos;
-            cliff.transform.localScale = size;
-            if (mat != null) cliff.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            var cliffMound = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cliffMound.name = name;
+            cliffMound.transform.parent = parent;
+            cliffMound.transform.position = pos;
+            cliffMound.transform.localScale = size;
+            if (matGrass != null) cliffMound.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
             var rockPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Rocks/PF_LanaVN_Rock_01_LargeOutcrop.prefab");
             if (rockPrefab == null) rockPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Rocks/PF_Rock_Cliff_Large.prefab");
@@ -382,14 +546,14 @@ namespace HoaDo.Editor
             {
                 var r1 = (GameObject)PrefabUtility.InstantiatePrefab(rockPrefab, parent);
                 r1.name = $"{name}_Outcrop1";
-                r1.transform.position = pos + new Vector3(Random.Range(-2f, 2f), size.y * 0.35f, Random.Range(-4f, 4f));
-                r1.transform.localScale = Vector3.one * 1.8f;
+                r1.transform.position = pos + new Vector3(Random.Range(-1.5f, 1.5f), size.y * 0.4f, Random.Range(-3f, 3f));
+                r1.transform.localScale = Vector3.one * 1.6f;
 
                 var r2 = (GameObject)PrefabUtility.InstantiatePrefab(rockPrefab, parent);
                 r2.name = $"{name}_Outcrop2";
-                r2.transform.position = pos + new Vector3(Random.Range(-2f, 2f), size.y * 0.15f, Random.Range(-8f, 8f));
+                r2.transform.position = pos + new Vector3(Random.Range(-1.5f, 1.5f), size.y * 0.2f, Random.Range(-6f, 6f));
                 r2.transform.rotation = Quaternion.Euler(0f, 45f, 0f);
-                r2.transform.localScale = Vector3.one * 1.5f;
+                r2.transform.localScale = Vector3.one * 1.3f;
             }
         }
 
@@ -400,30 +564,30 @@ namespace HoaDo.Editor
         {
             var waterRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/WaterSystem_3D");
 
-            // Main Ocean Surface Quad (Y = -0.58m, Z: [-55, -12], X: [-100, +100])
+            // Vast Ocean Surface Quad: Extends from shoreline Z=-12m down to far horizon Z=-280m, width 600m
             var ocean = GameObject.CreatePrimitive(PrimitiveType.Quad);
             ocean.name = "Ocean_Turquoise_Surface";
             ocean.transform.parent = waterRoot.transform;
-            ocean.transform.position = new Vector3(0.0f, -0.58f, -34.0f);
+            ocean.transform.position = new Vector3(0.0f, -0.58f, -145.0f);
             ocean.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            ocean.transform.localScale = new Vector3(200.0f, 46.0f, 1f);
+            ocean.transform.localScale = new Vector3(600.0f, 275.0f, 1f);
             ocean.GetComponent<MeshRenderer>().sharedMaterial = matWater;
 
-            // Submerged Rocks & Reefs in deep water (Z <= -24m)
+            // Submerged Rocks & Reefs in deep water (Gently recessed under water for turquoise depth)
             float[,] reefCoords = new float[,]
             {
-                { -65f, -1.1f, -28f, 2.8f },
-                { -48f, -0.95f, -32f, 3.2f },
-                { -35f, -0.90f, -24f, 2.4f },
-                { -15f, -0.85f, -30f, 3.6f },
-                {   0f, -0.80f, -26f, 2.9f },
-                {  18f, -0.92f, -32f, 3.5f },
-                {  36f, -0.85f, -28f, 2.7f },
-                {  50f, -1.05f, -34f, 3.8f },
-                { -55f, -0.95f, -42f, 4.0f },
-                { -10f, -1.10f, -44f, 4.5f },
-                {  25f, -1.00f, -42f, 4.2f },
-                {  70f, -0.95f, -38f, 3.5f }
+                { -65f, -1.8f, -28f, 2.8f },
+                { -48f, -1.6f, -32f, 3.2f },
+                { -35f, -1.5f, -24f, 2.4f },
+                { -15f, -1.5f, -30f, 3.6f },
+                {   0f, -1.4f, -26f, 2.9f },
+                {  18f, -1.6f, -32f, 3.5f },
+                {  36f, -1.5f, -28f, 2.7f },
+                {  50f, -1.7f, -34f, 3.8f },
+                { -55f, -1.6f, -42f, 4.0f },
+                { -10f, -1.8f, -44f, 4.5f },
+                {  25f, -1.7f, -42f, 4.2f },
+                {  70f, -1.6f, -38f, 3.5f }
             };
 
             for (int i = 0; i < reefCoords.GetLength(0); i++)
@@ -431,8 +595,8 @@ namespace HoaDo.Editor
                 var rk = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 rk.name = $"Submerged_Reef_{i + 1:D2}";
                 rk.transform.parent = waterRoot.transform;
-                rk.transform.position = new Vector3(reefCoords[i, 0], reefCoords[i, 1] - 0.5f, reefCoords[i, 2]);
-                rk.transform.localScale = new Vector3(reefCoords[i, 3] * 3.5f, reefCoords[i, 3] * 1.2f, reefCoords[i, 3] * 3.0f);
+                rk.transform.position = new Vector3(reefCoords[i, 0], reefCoords[i, 1], reefCoords[i, 2]);
+                rk.transform.localScale = new Vector3(reefCoords[i, 3] * 3.5f, 0.45f, reefCoords[i, 3] * 3.0f);
                 if (matRock != null) rk.GetComponent<MeshRenderer>().sharedMaterial = matRock;
             }
         }
@@ -1353,19 +1517,21 @@ namespace HoaDo.Editor
                 sun.shadows = LightShadows.Soft;
             }
 
+            // Authentic daylight 360 cubemap skybox (sky_22_2k with clouds & soft sun)
+            var skyMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Backdrop_Sky/M_Skybox_Village_CubemapDaylight.mat");
+            if (skyMat != null)
+            {
+                RenderSettings.skybox = skyMat;
+            }
+
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = new Color(0.85f, 0.92f, 1.0f, 1.0f);
             RenderSettings.ambientEquatorColor = new Color(0.72f, 0.82f, 0.65f, 1.0f);
             RenderSettings.ambientGroundColor = new Color(0.55f, 0.45f, 0.35f, 1.0f);
             RenderSettings.ambientIntensity = 1.15f;
 
-            var skyMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Backdrop_Sky/M_Skybox_CaMau_Panorama.mat");
-            if (skyMat != null)
-            {
-                RenderSettings.skybox = skyMat;
-            }
-
             RenderSettings.fog = false;
+            DynamicGI.UpdateEnvironment();
         }
 
         // =========================================================================
@@ -1378,12 +1544,12 @@ namespace HoaDo.Editor
             if (cam != null)
             {
                 // Elevated Overhead Perspective framing Village, Sea, Rice Fields, Village Gate, AND the Sky:
-                // Camera at (-4.5, 62, -46), pitched 48 deg down looking north
-                cam.transform.position = new Vector3(-4.5f, 62.0f, -46.0f);
-                cam.transform.rotation = Quaternion.Euler(48.0f, 0.0f, 0.0f);
-                cam.fieldOfView = 56.0f;
+                // Camera at (-4.5, 48, -50), pitched 36 deg down looking north
+                cam.transform.position = new Vector3(-4.5f, 48.0f, -50.0f);
+                cam.transform.rotation = Quaternion.Euler(36.0f, 0.0f, 0.0f);
+                cam.fieldOfView = 54.0f;
                 cam.nearClipPlane = 0.3f;
-                cam.farClipPlane = 500.0f;
+                cam.farClipPlane = 1200.0f;
                 EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
                 Debug.Log("[RebuildMap] Camera set to Overview with Sky Framing!");
             }
