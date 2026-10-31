@@ -20,7 +20,7 @@ namespace HoaDo.Editor
                 EditorSceneManager.OpenScene("Assets/Scenes/CaMau_1954_Village.unity");
             }
 
-            Debug.Log("[RebuildMap] Starting 1:1 reconstruction with uniform ground, straight animated rice, and flanking cliffs...");
+            Debug.Log("[RebuildMap] Starting 1:1 reconstruction with sky, straight transition road, village gate, and clean beach...");
 
             // 1. Materials setup
             var matGrass = GetOrCreateMaterial("Assets/Materials/M_CaMau_Landscape_Grass.mat", new Color(0.48f, 0.68f, 0.28f, 1.0f), "Assets/Textures/Grass/meadow_turf.png", new Vector2(12f, 12f));
@@ -52,49 +52,57 @@ namespace HoaDo.Editor
                 EditorUtility.SetDirty(matThatched);
             }
 
+            var matSkySurround = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Backdrop_Sky/M_Sky_Backdrop_Surround.mat");
+
             // Configure Rice shader materials for automatic wind sway
             ConfigureRiceMaterials();
 
             // 2. Clear previous dynamic layout
             ClearOldSceneLayout();
 
-            // 3. Build 3D Terrain (All on ONE uniform ground elevation: UNIFORM_GROUND_Y = 0.50m)
+            // 3. Build 3D Sky Enclosure & Northern Panoramic Canvas
+            BuildSkyBackdropAndSurround(matSkySurround);
+
+            // 4. Build 3D Terrain (Pristine clean beach, zero rocks on sand, uniform Y = 0.50m)
             Build3DTerrain(matGrass, matSand, matRock);
 
-            // 4. Build Turquoise Ocean & Underwater Rocks
-            BuildTurquoiseOceanAndReefs(matWater, matRock, matSand);
+            // 5. Build Turquoise Ocean & Underwater Reefs (Clean sandy beach)
+            BuildTurquoiseOceanAndReefs(matWater, matRock);
 
-            // 5. Build Earthen Road Network & Plazas (resting on UNIFORM_GROUND_Y)
+            // 6. Build Earthen Road Network including Central Straight Road through Rice Fields
             BuildEarthenRoadNetwork(matRedDirt);
 
-            // 6. Build the 10 Thatched Cottages (grounded firmly, tight wall colliders)
+            // 7. Build the 10 Thatched Cottages (grounded firmly, tight wall colliders)
             Build10ThatchedCottages(matThatched);
 
-            // 7. Build Central Sacred Shade Tree & Courtyard (volumetric 3D, upright, zero animation)
+            // 8. Build Central Sacred Shade Tree & Courtyard (volumetric 3D, upright, zero animation)
             BuildCentralSacredTreeAndPlaza(matRock);
 
-            // 8. Build Coastal Piers, Harbor Complex & Traditional Boats (proper wood materials on all crates)
+            // 9. Build Coastal Piers, Harbor Complex & Traditional Boats (proper wood materials on all crates)
             BuildCoastalPiersAndBoats(matPierWood, matThatched, matCrateWood);
 
-            // 9. Build Rice Paddies with straight parallel rows & old sway animation, plus duck pond
+            // 10. Build Rice Paddies with straight parallel rows & old sway animation, plus duck pond
             BuildRicePaddiesAndDuckPond(matRiceGreen, matRiceGolden, matWater, matGrass, matBamboo, matThatched);
 
-            // 10. Place Tropical Foliage & Living Village Props (3D volumetric upright trees, colored clothesline)
+            // 11. Build Village Gate (Cổng Làng) & Scene Transition Trigger at North Exit
+            BuildVillageGateAndSceneTransition();
+
+            // 12. Place Tropical Foliage & Living Village Props (3D volumetric upright trees, colored clothesline)
             BuildTropicalFoliageAndProps(matBamboo, matRedDirt, matPierWood);
 
-            // 11. Position Spawn Points & NPCs
+            // 13. Position Spawn Points & NPCs
             PositionSpawnPointsAndNPCs();
 
-            // 12. Setup Lighting & Atmosphere
+            // 14. Setup Lighting & Atmosphere
             SetupLightingAndAtmosphere();
 
-            // 13. Setup Cameras (Overview & Gameplay)
+            // 15. Setup Cameras (Overview with Sky + Gameplay)
             SetupCameras();
 
             Physics.SyncTransforms();
             EditorSceneManager.MarkSceneDirty(activeScene);
             EditorSceneManager.SaveScene(activeScene);
-            Debug.Log("[RebuildMap] Ca Mau Coastal Village Rebuilt Successfully with Uniform Ground, Straight Animated Rice, Flanking Rocks, and Tight Colliders!");
+            Debug.Log("[RebuildMap] Ca Mau Coastal Village Rebuilt Successfully: Sky added, beach rocks removed, straight road with Village Gate and scene transition trigger established!");
         }
 
         private static Material GetOrCreateMaterial(string path, Color col, string texPath, Vector2 tiling)
@@ -152,6 +160,7 @@ namespace HoaDo.Editor
                 "CaMau_1954_Village/Environment/Village_Houses_Network",
                 "CaMau_1954_Village/Environment/Village_Fences_Network",
                 "CaMau_1954_Village/Environment/Vegetation_3D",
+                "CaMau_1954_Village/Environment/Background_Atmosphere",
                 "CaMau_1954_Village/Environment/09_Natural_Painterly_Background",
                 "CaMau_1954_Village/Village_Areas/08_Ben_Xuong"
             };
@@ -172,12 +181,9 @@ namespace HoaDo.Editor
 
             string[] standalone = new string[]
             {
-                "Fence_Overlook_Railing", "House_1_ForegroundRight", "House_2_NhaAn_Central",
-                "House_3_CenterBack", "House_4_Orchard_BacHai", "House_5_North_Neighbor",
-                "House_6_Beachside_BacBa", "House_7_Paddy_FarmerHut", "House_8_Far_North",
-                "House_9_Beachhead", "House_10_Far_NW", "Distant_Green_Hills_Chain",
-                "Bay_Fishing_Ships", "Beach_Sampans", "Pier_Dock_Shelter", "Wooden_Pier_MainDeck",
-                "Wooden_Pier_THead", "Terrain_Overlook_Ridge", "Terrain_Overlook_Slope",
+                "Cliff_West_Coastal", "Cliff_East_HarborHead", "Gate_Village_North",
+                "Road_North_StraightPaddyAisle", "VillageExit_NorthGate_Transition",
+                "Sky_Surround_Cylinder_360", "Backdrop_SkyNorth_Panoramic",
                 "Crate_01", "Crate_02", "Crate_WestPier"
             };
             foreach (var name in standalone)
@@ -188,14 +194,115 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 3. 3D Terrain Construction (All land at UNIFORM_GROUND_Y = 0.50m)
+        // 3. Sky Backdrop & Atmospheric Surround
+        // =========================================================================
+        private static void BuildSkyBackdropAndSurround(Material matSky)
+        {
+            var bgRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/Background_Atmosphere");
+            bgRoot.SetActive(true);
+
+            if (matSky == null)
+            {
+                matSky = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Backdrop_Sky/M_Sky_Backdrop_Surround.mat");
+            }
+            if (matSky != null)
+            {
+                var skyTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Sky/Sky_Cloud_Krita_5120x2160.png");
+                if (skyTex == null) skyTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/T_Lana_ContinuousCosmicSky_Seamless.png");
+                if (skyTex != null) matSky.mainTexture = skyTex;
+                if (matSky.HasProperty("_Exposure")) matSky.SetFloat("_Exposure", 1.15f);
+                if (matSky.HasProperty("_Tint")) matSky.SetColor("_Tint", Color.white);
+                EditorUtility.SetDirty(matSky);
+            }
+
+            // A. Northern Panoramic Sky Canvas (Directly behind northern hills and village gate)
+            // Visible prominently in overview camera and ground gameplay camera
+            var skyNorth = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            skyNorth.name = "Backdrop_SkyNorth_Panoramic";
+            skyNorth.transform.parent = bgRoot.transform;
+            skyNorth.transform.position = new Vector3(-5.0f, 26.0f, 96.0f);
+            skyNorth.transform.rotation = Quaternion.Euler(0f, 0f, 0f); // Facing South
+            skyNorth.transform.localScale = new Vector3(220.0f, 52.0f, 1f);
+            if (matSky != null) skyNorth.GetComponent<MeshRenderer>().sharedMaterial = matSky;
+
+            // B. 360-degree Inward Cylindrical Sky Enclosure (Radius 145m, Height 120m)
+            var cylObj = new GameObject("Sky_Surround_Cylinder_360");
+            cylObj.transform.parent = bgRoot.transform;
+            cylObj.transform.position = new Vector3(0f, 25f, 15f);
+            cylObj.transform.rotation = Quaternion.identity;
+            cylObj.transform.localScale = Vector3.one;
+
+            var mf = cylObj.AddComponent<MeshFilter>();
+            mf.sharedMesh = CreateInwardCylinderMesh(145f, 120f, 25f, 64, 3);
+
+            var mr = cylObj.AddComponent<MeshRenderer>();
+            if (matSky != null) mr.sharedMaterial = matSky;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+        }
+
+        private static Mesh CreateInwardCylinderMesh(float radius, float height, float yCenter, int segments, int uRepeats)
+        {
+            Mesh mesh = new Mesh();
+            mesh.name = "Inward_Sky_Cylinder_Mesh";
+
+            int vertCount = (segments + 1) * 2;
+            Vector3[] vertices = new Vector3[vertCount];
+            Vector3[] normals = new Vector3[vertCount];
+            Vector2[] uvs = new Vector2[vertCount];
+            int[] triangles = new int[segments * 6];
+
+            float yBottom = yCenter - height * 0.35f;
+            float yTop = yCenter + height * 0.65f;
+
+            for (int i = 0; i <= segments; i++)
+            {
+                float ratio = (float)i / segments;
+                float angle = ratio * Mathf.PI * 2f;
+                float x = Mathf.Sin(angle) * radius;
+                float z = Mathf.Cos(angle) * radius;
+
+                int idxBottom = i * 2;
+                int idxTop = i * 2 + 1;
+
+                vertices[idxBottom] = new Vector3(x, yBottom, z);
+                vertices[idxTop] = new Vector3(x, yTop, z);
+
+                normals[idxBottom] = new Vector3(-x, 0f, -z).normalized;
+                normals[idxTop] = new Vector3(-x, 0f, -z).normalized;
+
+                uvs[idxBottom] = new Vector2(ratio * uRepeats, 0f);
+                uvs[idxTop] = new Vector2(ratio * uRepeats, 1f);
+
+                if (i < segments)
+                {
+                    int triIdx = i * 6;
+                    triangles[triIdx + 0] = idxBottom;
+                    triangles[triIdx + 1] = idxTop;
+                    triangles[triIdx + 2] = idxBottom + 2;
+
+                    triangles[triIdx + 3] = idxBottom + 2;
+                    triangles[triIdx + 4] = idxTop;
+                    triangles[triIdx + 5] = idxTop + 2;
+                }
+            }
+
+            mesh.vertices = vertices;
+            mesh.normals = normals;
+            mesh.uv = uvs;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        // =========================================================================
+        // 4. 3D Terrain Construction (Pristine clean beach, zero rocks on sand)
         // =========================================================================
         private static void Build3DTerrain(Material matGrass, Material matSand, Material matRock)
         {
             var terrainRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/Terrain_3D");
 
             // A. Unified Ground Plain (Top surface exactly at Y = 0.50m)
-            // Spanning X: [-80, +80], Z: [-10, +86]
             var unifiedPlain = GameObject.CreatePrimitive(PrimitiveType.Cube);
             unifiedPlain.name = "Terrain_Unified_Ground_Base";
             unifiedPlain.transform.parent = terrainRoot.transform;
@@ -203,7 +310,7 @@ namespace HoaDo.Editor
             unifiedPlain.transform.localScale = new Vector3(160.0f, 0.50f, 96.0f);
             unifiedPlain.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
-            // B. Sandy Shoreline Slope (Smooth transition from Y = 0.50m at Z = -10 down to -0.58m at Z = -18m)
+            // B. Clean Sandy Shoreline Slope (Smooth transition down to sea, NO ROCKS ON SAND)
             var beachSlope = GameObject.CreatePrimitive(PrimitiveType.Cube);
             beachSlope.name = "Terrain_Beach_Slope";
             beachSlope.transform.parent = terrainRoot.transform;
@@ -212,7 +319,7 @@ namespace HoaDo.Editor
             beachSlope.transform.localScale = new Vector3(165.0f, 0.50f, 8.5f);
             beachSlope.GetComponent<MeshRenderer>().sharedMaterial = matSand;
 
-            // C. Sea Bed Floor (Y = -2.5m, X: [-100, +100], Z: [-55, -15])
+            // C. Sea Bed Floor
             var seaBed = GameObject.CreatePrimitive(PrimitiveType.Cube);
             seaBed.name = "Terrain_Sea_Bed";
             seaBed.transform.parent = terrainRoot.transform;
@@ -220,28 +327,24 @@ namespace HoaDo.Editor
             seaBed.transform.localScale = new Vector3(200.0f, 0.6f, 45.0f);
             seaBed.GetComponent<MeshRenderer>().sharedMaterial = matSand;
 
-            // D. Northern Backdrop Hill (Y = 1.75m, Z: [+84, +98])
+            // D. Northern Backdrop Hill (Low gentle hill behind paddies)
             var northHill = GameObject.CreatePrimitive(PrimitiveType.Cube);
             northHill.name = "Terrain_North_Backdrop_Hill";
             northHill.transform.parent = terrainRoot.transform;
-            northHill.transform.position = new Vector3(0.0f, 1.75f, 88.0f);
-            northHill.transform.localScale = new Vector3(180.0f, 2.5f, 16.0f);
+            northHill.transform.position = new Vector3(0.0f, 1.45f, 88.0f);
+            northHill.transform.localScale = new Vector3(180.0f, 1.9f, 16.0f);
             northHill.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
-            // E. ROCK CLIFFS FLANKING THE RICE FIELDS (Left & Right Flanks of Northern Paddys)
+            // E. ROCK CLIFFS FLANKING THE RICE FIELDS ONLY (None on beach sand)
             // Left (West) Flank: X ~ -65 to -78, Z ~ 42 to 74
             BuildRockyCliff(terrainRoot.transform, "Cliff_West_Rice_North", new Vector3(-68.0f, 3.5f, 66.0f), new Vector3(20.0f, 6.0f, 22.0f), matRock);
             BuildRockyCliff(terrainRoot.transform, "Cliff_West_Rice_South", new Vector3(-64.0f, 3.0f, 48.0f), new Vector3(18.0f, 5.0f, 18.0f), matRock);
 
-            // Right (East) Flank: X ~ +56 to +74, Z ~ 42 to 74 (framing the duck pond & fields)
+            // Right (East) Flank: X ~ +56 to +74, Z ~ 42 to 74
             BuildRockyCliff(terrainRoot.transform, "Cliff_East_Rice_North", new Vector3(68.0f, 3.5f, 68.0f), new Vector3(20.0f, 6.0f, 22.0f), matRock);
             BuildRockyCliff(terrainRoot.transform, "Cliff_East_Rice_South", new Vector3(66.0f, 3.0f, 48.0f), new Vector3(18.0f, 5.0f, 18.0f), matRock);
 
-            // Coastal boundary cliffs (far ends of beach)
-            BuildRockyCliff(terrainRoot.transform, "Cliff_West_Coastal", new Vector3(-72.0f, 2.0f, -14.0f), new Vector3(18.0f, 7.0f, 22.0f), matRock);
-            BuildRockyCliff(terrainRoot.transform, "Cliff_East_HarborHead", new Vector3(72.0f, 2.2f, -12.0f), new Vector3(18.0f, 8.0f, 24.0f), matRock);
-
-            // F. Stone Retaining Wall along Beach Border (Y = 0.52m)
+            // F. Stone Retaining Wall along upper beach border
             BuildBeachRetainingWall(terrainRoot.transform, matRock);
         }
 
@@ -250,9 +353,7 @@ namespace HoaDo.Editor
             var wallRoot = new GameObject("Beach_Stone_RetainingWall");
             wallRoot.transform.parent = parent;
 
-            // Segment 1: West (X: -65 to -36)
             CreateWallSegment(wallRoot.transform, "Wall_West", new Vector3(-50.5f, UNIFORM_GROUND_Y + 0.08f, -8.5f), new Vector3(29.0f, 0.35f, 0.8f), matRock);
-            // Segment 2: Center (X: -12 to +36)
             CreateWallSegment(wallRoot.transform, "Wall_Center", new Vector3(12.0f, UNIFORM_GROUND_Y + 0.08f, -8.5f), new Vector3(48.0f, 0.35f, 0.8f), matRock);
         }
 
@@ -275,7 +376,6 @@ namespace HoaDo.Editor
             cliff.transform.localScale = size;
             if (mat != null) cliff.GetComponent<MeshRenderer>().sharedMaterial = mat;
 
-            // Scatter natural rock prefabs on the cliff
             var rockPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Rocks/PF_LanaVN_Rock_01_LargeOutcrop.prefab");
             if (rockPrefab == null) rockPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Rocks/PF_Rock_Cliff_Large.prefab");
             if (rockPrefab != null)
@@ -294,9 +394,9 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 4. Turquoise Ocean & Underwater Coral Reefs
+        // 5. Turquoise Ocean & Underwater Coral Reefs (Pristine clean beach sand)
         // =========================================================================
-        private static void BuildTurquoiseOceanAndReefs(Material matWater, Material matRock, Material matSand)
+        private static void BuildTurquoiseOceanAndReefs(Material matWater, Material matRock)
         {
             var waterRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/WaterSystem_3D");
 
@@ -309,7 +409,7 @@ namespace HoaDo.Editor
             ocean.transform.localScale = new Vector3(200.0f, 46.0f, 1f);
             ocean.GetComponent<MeshRenderer>().sharedMaterial = matWater;
 
-            // Submerged Rocks & Reefs
+            // Submerged Rocks & Reefs in deep water (Z <= -24m)
             float[,] reefCoords = new float[,]
             {
                 { -65f, -1.1f, -28f, 2.8f },
@@ -335,37 +435,10 @@ namespace HoaDo.Editor
                 rk.transform.localScale = new Vector3(reefCoords[i, 3] * 3.5f, reefCoords[i, 3] * 1.2f, reefCoords[i, 3] * 3.0f);
                 if (matRock != null) rk.GetComponent<MeshRenderer>().sharedMaterial = matRock;
             }
-
-            // Shoreline Sea Boulders along beach
-            var rockOutcropPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Rocks/PF_LanaVN_Rock_01_LargeOutcrop.prefab");
-            float[,] beachRockCoords = new float[,]
-            {
-                { -62f, -0.3f, -15.5f, 2.2f },
-                { -50f, -0.2f, -14.0f, 1.8f },
-                { -38f, -0.35f, -16.5f, 2.0f },
-                { -28f, -0.25f, -13.5f, 1.5f },
-                { -14f, -0.4f, -17.0f, 2.4f },
-                {  -4f, -0.35f, -15.5f, 1.9f },
-                {   8f, -0.2f, -13.8f, 1.6f },
-                {  16f, -0.38f, -16.2f, 2.1f },
-                {  42f, -0.3f, -14.5f, 2.5f },
-                {  68f, -0.1f, -12.5f, 3.0f }
-            };
-
-            for (int i = 0; i < beachRockCoords.GetLength(0); i++)
-            {
-                if (rockOutcropPrefab != null)
-                {
-                    var rk = (GameObject)PrefabUtility.InstantiatePrefab(rockOutcropPrefab, waterRoot.transform);
-                    rk.name = $"Shore_Boulder_{i + 1:D2}";
-                    rk.transform.position = new Vector3(beachRockCoords[i, 0], beachRockCoords[i, 1], beachRockCoords[i, 2]);
-                    rk.transform.localScale = Vector3.one * beachRockCoords[i, 3];
-                }
-            }
         }
 
         // =========================================================================
-        // 5. Earthen Road Network & Plazas (Resting cleanly at UNIFORM_GROUND_Y = 0.505m)
+        // 6. Earthen Road Network including Central Straight Road through Rice Fields
         // =========================================================================
         private static void BuildEarthenRoadNetwork(Material matRedDirt)
         {
@@ -390,16 +463,26 @@ namespace HoaDo.Editor
             northRoad.transform.localScale = new Vector3(115.0f, 4.2f, 1f);
             northRoad.GetComponent<MeshRenderer>().sharedMaterial = matRedDirt;
 
-            // 3. Central-North connector path
+            // 3. Central-North connector path (connecting Central Tree Plaza to North Road)
             var northConnector = GameObject.CreatePrimitive(PrimitiveType.Quad);
             northConnector.name = "Road_Center_To_North";
             northConnector.transform.parent = pathsRoot.transform;
-            northConnector.transform.position = new Vector3(-6.0f, yPath, 25.0f);
+            northConnector.transform.position = new Vector3(-6.5f, yPath, 25.0f);
             northConnector.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            northConnector.transform.localScale = new Vector3(4.5f, 20.0f, 1f);
+            northConnector.transform.localScale = new Vector3(4.8f, 20.0f, 1f);
             northConnector.GetComponent<MeshRenderer>().sharedMaterial = matRedDirt;
 
-            // 4. West Road to House 1, House 2, House 6 & West Pier
+            // 4. STRAIGHT CENTRAL ROAD THROUGH RICE FIELDS (CON ĐƯỜNG THẲNG NỐI CỔNG LÀNG SANG SCENE KHÁC)
+            // Running straight North from Z = 36m to Z = 82m through the rice paddies
+            var straightPaddyRoad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            straightPaddyRoad.name = "Road_North_StraightPaddyAisle";
+            straightPaddyRoad.transform.parent = pathsRoot.transform;
+            straightPaddyRoad.transform.position = new Vector3(-7.0f, yPath + 0.002f, 58.0f);
+            straightPaddyRoad.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            straightPaddyRoad.transform.localScale = new Vector3(4.8f, 45.0f, 1f);
+            straightPaddyRoad.GetComponent<MeshRenderer>().sharedMaterial = matRedDirt;
+
+            // 5. West Road to House 1, House 2, House 6 & West Pier
             var westRoad = GameObject.CreatePrimitive(PrimitiveType.Quad);
             westRoad.name = "Road_West_To_House6_And_Pier";
             westRoad.transform.parent = pathsRoot.transform;
@@ -408,7 +491,7 @@ namespace HoaDo.Editor
             westRoad.transform.localScale = new Vector3(32.0f, 4.8f, 1f);
             westRoad.GetComponent<MeshRenderer>().sharedMaterial = matRedDirt;
 
-            // 5. West Pier Approach Path
+            // 6. West Pier Approach Path
             var westPierPath = GameObject.CreatePrimitive(PrimitiveType.Quad);
             westPierPath.name = "Road_West_Pier_Approach";
             westPierPath.transform.parent = pathsRoot.transform;
@@ -417,7 +500,7 @@ namespace HoaDo.Editor
             westPierPath.transform.localScale = new Vector3(4.2f, 18.0f, 1f);
             westPierPath.GetComponent<MeshRenderer>().sharedMaterial = matRedDirt;
 
-            // 6. East Road passing between House 4 & House 7 towards East Harbor
+            // 7. East Road passing between House 4 & House 7 towards East Harbor
             var eastRoad = GameObject.CreatePrimitive(PrimitiveType.Quad);
             eastRoad.name = "Road_East_Village_Street";
             eastRoad.transform.parent = pathsRoot.transform;
@@ -426,7 +509,7 @@ namespace HoaDo.Editor
             eastRoad.transform.localScale = new Vector3(34.0f, 4.8f, 1f);
             eastRoad.GetComponent<MeshRenderer>().sharedMaterial = matRedDirt;
 
-            // 7. East Harbor Approach Path
+            // 8. East Harbor Approach Path
             var eastHarborPath = GameObject.CreatePrimitive(PrimitiveType.Quad);
             eastHarborPath.name = "Road_East_Harbor_Approach";
             eastHarborPath.transform.parent = pathsRoot.transform;
@@ -435,7 +518,7 @@ namespace HoaDo.Editor
             eastHarborPath.transform.localScale = new Vector3(4.5f, 20.0f, 1f);
             eastHarborPath.GetComponent<MeshRenderer>().sharedMaterial = matRedDirt;
 
-            // 8. Beach Promenade Path
+            // 9. Beach Promenade Path
             var beachPromenade = GameObject.CreatePrimitive(PrimitiveType.Quad);
             beachPromenade.name = "Road_Beach_Promenade";
             beachPromenade.transform.parent = pathsRoot.transform;
@@ -446,9 +529,7 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 6. Build the 10 Thatched Cottages
-        // Base grounded exactly on UNIFORM_GROUND_Y (Y = 0.50m)
-        // Colliders tightly restricted to model interior walls
+        // 7. Build the 10 Thatched Cottages
         // =========================================================================
         private static void Build10ThatchedCottages(Material matThatched)
         {
@@ -456,8 +537,6 @@ namespace HoaDo.Editor
             var fbxCottage = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Optimized/SM_NhaTranh_BlenderOptimized.fbx");
             if (fbxCottage == null) return;
 
-            // SM_NhaTranh_BlenderOptimized has bounds min.y = -0.413m
-            // Y_center = UNIFORM_GROUND_Y + (0.413f * scale)
             const float MESH_BOTTOM_OFFSET = 0.413f;
 
             var cottages = new (string name, Vector2 posXZ, float scale, float rotY)[]
@@ -482,32 +561,24 @@ namespace HoaDo.Editor
                 var house = (GameObject)PrefabUtility.InstantiatePrefab(fbxCottage, housesRoot.transform);
                 house.name = c.name;
 
-                // Ground the house perfectly so its base rests directly on UNIFORM_GROUND_Y
                 float yPos = UNIFORM_GROUND_Y + (MESH_BOTTOM_OFFSET * c.scale);
                 house.transform.position = new Vector3(c.posXZ.x, yPos, c.posXZ.y);
                 house.transform.rotation = Quaternion.Euler(0f, c.rotY, 0f);
                 house.transform.localScale = Vector3.one * c.scale;
 
-                // Ensure authentic double-sided thatched material on all child renderers
                 if (matThatched != null)
                 {
                     var renderers = house.GetComponentsInChildren<MeshRenderer>();
-                    foreach (var r in renderers)
-                    {
-                        r.sharedMaterial = matThatched;
-                    }
+                    foreach (var r in renderers) r.sharedMaterial = matThatched;
                 }
 
-                // TIGHT BOX COLLIDER: strictly restricted to inner model walls
-                // In local space: (0.85, 0.70, 0.70) => In world space with scale 4.0: 3.4m x 2.8m x 2.8m
-                // Leaves ample open clearance between houses for completely unobstructed player traversal
                 var col = house.GetComponent<BoxCollider>();
                 if (col == null) col = house.AddComponent<BoxCollider>();
                 col.center = new Vector3(0f, -0.05f, 0f);
                 col.size = new Vector3(0.85f, 0.70f, 0.70f);
             }
 
-            // House 7 attached small thatched cooking shed (visible in reference photo)
+            // House 7 kitchen shed
             {
                 var shed = (GameObject)PrefabUtility.InstantiatePrefab(fbxCottage, housesRoot.transform);
                 shed.name = "House_07_KitchenShed";
@@ -519,8 +590,7 @@ namespace HoaDo.Editor
 
                 if (matThatched != null)
                 {
-                    var renderers = shed.GetComponentsInChildren<MeshRenderer>();
-                    foreach (var r in renderers) r.sharedMaterial = matThatched;
+                    foreach (var r in shed.GetComponentsInChildren<MeshRenderer>()) r.sharedMaterial = matThatched;
                 }
 
                 var col = shed.GetComponent<BoxCollider>();
@@ -531,26 +601,22 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 7. Central Sacred Shade Tree & Circular Courtyard
-        // Upright, Volumetric 3D, Zero Animation
+        // 8. Central Sacred Shade Tree & Circular Courtyard
         // =========================================================================
         private static void BuildCentralSacredTreeAndPlaza(Material matRock)
         {
             var vegRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/Vegetation_3D");
             Vector3 centerTreePos = new Vector3(-6.0f, UNIFORM_GROUND_Y, 13.0f);
 
-            // Grand Sacred Banyan Tree
             var largeTreePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Trees/PF_LanaVN_Tree_01_LargeCanopy.prefab");
             if (largeTreePrefab == null) largeTreePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Trees/PF_Branch_Cluster_Tree.prefab");
             if (largeTreePrefab != null)
             {
-                // Create a 3D volumetric multi-angle cross-plane assembly so it looks 3D from all camera angles
                 var treeGroup = new GameObject("Tree_Hero_CentralSacredBanyan");
                 treeGroup.transform.parent = vegRoot.transform;
                 treeGroup.transform.position = centerTreePos;
                 treeGroup.transform.rotation = Quaternion.identity;
 
-                // Card 0 deg
                 var card1 = (GameObject)PrefabUtility.InstantiatePrefab(largeTreePrefab, treeGroup.transform);
                 card1.name = "Canopy_Card_0";
                 card1.transform.localPosition = Vector3.zero;
@@ -558,7 +624,6 @@ namespace HoaDo.Editor
                 card1.transform.localScale = Vector3.one * 1.6f;
                 StripAnimationComponents(card1);
 
-                // Card 90 deg (cross card for volumetric 3D)
                 var card2 = (GameObject)PrefabUtility.InstantiatePrefab(largeTreePrefab, treeGroup.transform);
                 card2.name = "Canopy_Card_90";
                 card2.transform.localPosition = Vector3.zero;
@@ -567,7 +632,6 @@ namespace HoaDo.Editor
                 StripAnimationComponents(card2);
             }
 
-            // Circular Stone Retaining Ring surrounding tree base
             var stoneRingRoot = new GameObject("Tree_Central_StoneRing");
             stoneRingRoot.transform.parent = vegRoot.transform;
             stoneRingRoot.transform.position = centerTreePos;
@@ -588,7 +652,6 @@ namespace HoaDo.Editor
                 if (matRock != null) stone.GetComponent<MeshRenderer>().sharedMaterial = matRock;
             }
 
-            // Earthen bench under the tree
             var matWood = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/GhibliModular/M_Ghibli_PierPlank.mat");
             var bench = GameObject.CreatePrimitive(PrimitiveType.Cube);
             bench.name = "Bench_Under_CentralTree";
@@ -599,15 +662,13 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 8. Coastal Piers, Harbor Complex & Traditional Boats
-        // Assign authentic wood material to all crates (eliminate white boxes)
+        // 9. Coastal Piers, Harbor Complex & Traditional Boats
         // =========================================================================
         private static void BuildCoastalPiersAndBoats(Material matPierWood, Material matThatched, Material matCrateWood)
         {
             var pierRoot = GetOrCreateRoot("CaMau_1954_Village/Village_Areas/08_Ben_Xuong");
             var waterRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/WaterSystem_3D");
 
-            // A. West Jetty Pier
             var westJetty = GameObject.CreatePrimitive(PrimitiveType.Cube);
             westJetty.name = "Pier_West_Jetty_Deck";
             westJetty.transform.parent = pierRoot.transform;
@@ -622,7 +683,6 @@ namespace HoaDo.Editor
                 BuildPiling(pierRoot.transform, $"WestPiling_R_{pz:F0}", new Vector3(-18.7f, -0.6f, pz), matPierWood);
             }
 
-            // Raised Wooden Drying Deck / Fish platform
             var westFishPlatform = GameObject.CreatePrimitive(PrimitiveType.Cube);
             westFishPlatform.name = "Pier_West_FishDrying_Platform";
             westFishPlatform.transform.parent = pierRoot.transform;
@@ -630,7 +690,6 @@ namespace HoaDo.Editor
             westFishPlatform.transform.localScale = new Vector3(10.0f, 0.22f, 4.2f);
             if (matPierWood != null) westFishPlatform.GetComponent<MeshRenderer>().sharedMaterial = matPierWood;
 
-            // Bamboo awning
             var awningFrame = new GameObject("Pier_West_AwningFrame");
             awningFrame.transform.parent = pierRoot.transform;
             awningFrame.transform.position = new Vector3(-30.0f, 1.8f, -11.5f);
@@ -641,7 +700,6 @@ namespace HoaDo.Editor
             awningRoof.transform.localScale = new Vector3(9.5f, 0.08f, 3.8f);
             if (matThatched != null) awningRoof.GetComponent<MeshRenderer>().sharedMaterial = matThatched;
 
-            // B. East Harbor Pier Complex
             var eastDeck = GameObject.CreatePrimitive(PrimitiveType.Cube);
             eastDeck.name = "Pier_East_Harbor_MainDeck";
             eastDeck.transform.parent = pierRoot.transform;
@@ -667,7 +725,6 @@ namespace HoaDo.Editor
                 BuildPiling(pierRoot.transform, $"EastPiling_{i + 1:D2}", new Vector3(eastPilings[i, 0], -0.6f, eastPilings[i, 1]), matPierWood);
             }
 
-            // Thatched shelter huts on East Harbor deck - MUST have matThatched assigned!
             var fbxCottage = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Optimized/SM_NhaTranh_BlenderOptimized.fbx");
             if (fbxCottage != null)
             {
@@ -692,7 +749,6 @@ namespace HoaDo.Editor
                 }
             }
 
-            // Traditional Wooden Fishing Boats & Sampans
             var boatsRoot = new GameObject("Harbor_Boats_And_Sampans");
             boatsRoot.transform.parent = waterRoot.transform;
 
@@ -709,7 +765,6 @@ namespace HoaDo.Editor
             InstantiateBoat(sampanOpen, boatsRoot.transform, "Boat_RightHarbor_Approach", new Vector3(32.0f, -0.55f, -26.5f), 1.30f, -35.0f);
             InstantiateBoat(sampanCovered, boatsRoot.transform, "Boat_RightHarbor_Docked", new Vector3(68.5f, -0.55f, -22.0f), 1.20f, 95.0f);
 
-            // Pier Props with textured materials (NO WHITE BOXES!)
             var cratePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Props/PF_Prop_CargoCrate_3D.prefab");
             var barrelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Props/PF_Prop_SaltFish_Barrel.prefab");
             var basketPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Props/PF_Prop_Bamboo_Basket.prefab");
@@ -752,13 +807,9 @@ namespace HoaDo.Editor
             p.transform.position = pos;
             p.transform.localScale = Vector3.one * scale;
 
-            // Force assign rustic wood material to all renderers to guarantee zero white
             if (matWood != null)
             {
-                foreach (var r in p.GetComponentsInChildren<MeshRenderer>())
-                {
-                    r.sharedMaterial = matWood;
-                }
+                foreach (var r in p.GetComponentsInChildren<MeshRenderer>()) r.sharedMaterial = matWood;
             }
         }
 
@@ -792,8 +843,8 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 9. Rice Paddies with Straight Parallel Rows & Old Sway Animation
-        // Resting cleanly on UNIFORM_GROUND_Y (0.50m)
+        // 10. Rice Paddies with Straight Parallel Rows & Old Sway Animation
+        // Separated by the Central Straight Road Corridor (X in [-9.4, -4.6])
         // =========================================================================
         private static void BuildRicePaddiesAndDuckPond(Material matRiceGreen, Material matRiceGolden, Material matWater, Material matGrass, Material matBamboo, Material matThatched)
         {
@@ -801,18 +852,21 @@ namespace HoaDo.Editor
             var riceRowPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Rice/PF_Rice_RowStrip_4m.prefab");
             var lilyPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Boats/PF_WaterLily_Cluster.prefab");
 
-            // 6 Terraced Rice Paddy Plots resting on UNIFORM_GROUND_Y:
-            // Plot Y = 0.508m (just 8mm above ground to prevent z-fighting)
             float yPlot = UNIFORM_GROUND_Y + 0.008f;
 
+            // 6 Plots cleanly divided by the central straight road (X = -7.0m, width 4.8m):
+            // Left plots end at X <= -11.0m; Right plots start at X >= -3.0m
             var paddyPlots = new (string name, Vector3 pos, Vector2 size, int matType)[]
             {
-                ("Paddy_Plot_01_Golden", new Vector3(-42.0f, yPlot, 62.0f), new Vector2(20.0f, 12.0f), 0),
-                ("Paddy_Plot_02_Golden", new Vector3(-20.0f, yPlot, 62.0f), new Vector2(20.0f, 12.0f), 0),
-                ("Paddy_Plot_03_Golden", new Vector3(  2.0f, yPlot, 62.0f), new Vector2(20.0f, 12.0f), 0),
-                ("Paddy_Plot_04_Green",  new Vector3( 24.0f, yPlot, 62.0f), new Vector2(20.0f, 12.0f), 1),
+                // Left Quadrants (North & South):
+                ("Paddy_Plot_01_Golden", new Vector3(-43.0f, yPlot, 62.0f), new Vector2(20.0f, 12.0f), 0),
+                ("Paddy_Plot_02_Golden", new Vector3(-21.0f, yPlot, 62.0f), new Vector2(19.0f, 12.0f), 0),
                 ("Paddy_Plot_05_Green",  new Vector3(-32.0f, yPlot, 48.0f), new Vector2(38.0f, 11.0f), 1),
-                ("Paddy_Plot_06_Green",  new Vector3( 12.0f, yPlot, 48.0f), new Vector2(40.0f, 11.0f), 1)
+
+                // Right Quadrants (North & South):
+                ("Paddy_Plot_03_Golden", new Vector3(  6.0f, yPlot, 62.0f), new Vector2(17.0f, 12.0f), 0),
+                ("Paddy_Plot_04_Green",  new Vector3( 25.0f, yPlot, 62.0f), new Vector2(19.0f, 12.0f), 1),
+                ("Paddy_Plot_06_Green",  new Vector3( 14.5f, yPlot, 48.0f), new Vector2(34.0f, 11.0f), 1)
             };
 
             foreach (var plot in paddyPlots)
@@ -825,16 +879,13 @@ namespace HoaDo.Editor
                 quad.transform.localScale = new Vector3(plot.size.x, plot.size.y, 1f);
                 quad.GetComponent<MeshRenderer>().sharedMaterial = (plot.matType == 0) ? matRiceGolden : matRiceGreen;
 
-                // Low earthen dikes enclosing plot (height = 0.08m, easy for player to step over)
                 BuildPaddyDikes(terrainRoot.transform, plot.name, plot.pos, plot.size, matGrass);
 
-                // STRAIGHT PARALLEL ROWS OF 3D RICE (THẲNG TẮP)
-                // Using 4m strips tiled seamlessly end-to-end along X, aligned in straight parallel rows along Z
                 if (riceRowPrefab != null)
                 {
                     float halfX = plot.size.x * 0.5f - 1.2f;
                     float halfZ = plot.size.y * 0.5f - 0.8f;
-                    float zSpacing = 1.35f; // Evenly spaced parallel rows
+                    float zSpacing = 1.35f;
 
                     int rowIdx = 0;
                     for (float zSub = plot.pos.z - halfZ; zSub <= plot.pos.z + halfZ + 0.1f; zSub += zSpacing)
@@ -844,10 +895,9 @@ namespace HoaDo.Editor
                             var row = (GameObject)PrefabUtility.InstantiatePrefab(riceRowPrefab, terrainRoot.transform);
                             row.name = $"{plot.name}_R{rowIdx:D2}_X{xSub:F0}";
                             row.transform.position = new Vector3(xSub, UNIFORM_GROUND_Y + 0.01f, zSub);
-                            row.transform.rotation = Quaternion.identity; // Straight parallel rows
-                            row.transform.localScale = Vector3.one;       // Natural unskewed scale
+                            row.transform.rotation = Quaternion.identity;
+                            row.transform.localScale = Vector3.one;
 
-                            // RESTORE OLD RICE ANIMATION (PlanetOfLanaFoliageSway)
                             var sway = row.GetComponent<PlanetOfLanaFoliageSway>();
                             if (sway == null) sway = row.AddComponent<PlanetOfLanaFoliageSway>();
                             sway.MaxRotationAngle = 2.6f;
@@ -860,11 +910,9 @@ namespace HoaDo.Editor
                 }
             }
 
-            // Scarecrows in rice paddies (proper materials assigned, ZERO white primitives)
             BuildScarecrow(terrainRoot.transform, "Scarecrow_01", new Vector3(-35.0f, UNIFORM_GROUND_Y, 62.0f), matBamboo, matThatched);
             BuildScarecrow(terrainRoot.transform, "Scarecrow_02", new Vector3( 15.0f, UNIFORM_GROUND_Y, 62.0f), matBamboo, matThatched);
 
-            // Top-Right Duck Pond / Water Lily Basin (X = +55m to +70m, Z = +52m to +68m)
             var pondRoot = new GameObject("Duck_Pond_TopRight");
             pondRoot.transform.parent = terrainRoot.transform;
             pondRoot.transform.position = new Vector3(60.0f, UNIFORM_GROUND_Y - 0.05f, 60.0f);
@@ -897,7 +945,6 @@ namespace HoaDo.Editor
             float halfZ = size.y * 0.5f;
             float dikeY = UNIFORM_GROUND_Y + 0.04f;
 
-            // North Dike
             var dN = GameObject.CreatePrimitive(PrimitiveType.Cube);
             dN.name = $"{baseName}_DikeN";
             dN.transform.parent = parent;
@@ -905,7 +952,6 @@ namespace HoaDo.Editor
             dN.transform.localScale = new Vector3(size.x + 0.6f, 0.08f, 0.6f);
             if (matGrass != null) dN.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
-            // South Dike
             var dS = GameObject.CreatePrimitive(PrimitiveType.Cube);
             dS.name = $"{baseName}_DikeS";
             dS.transform.parent = parent;
@@ -913,7 +959,6 @@ namespace HoaDo.Editor
             dS.transform.localScale = new Vector3(size.x + 0.6f, 0.08f, 0.6f);
             if (matGrass != null) dS.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
-            // East Dike
             var dE = GameObject.CreatePrimitive(PrimitiveType.Cube);
             dE.name = $"{baseName}_DikeE";
             dE.transform.parent = parent;
@@ -921,7 +966,6 @@ namespace HoaDo.Editor
             dE.transform.localScale = new Vector3(0.6f, 0.08f, size.y);
             if (matGrass != null) dE.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
-            // West Dike
             var dW = GameObject.CreatePrimitive(PrimitiveType.Cube);
             dW.name = $"{baseName}_DikeW";
             dW.transform.parent = parent;
@@ -960,9 +1004,61 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 10. Tropical Foliage, Living Gardens & Village Props
-        // STRICTLY UPRIGHT TREES, VOLUMETRIC 3D, ZERO ANIMATION ON TREES
-        // AUTHENTIC COLORED CLOTHESLINE
+        // 11. Village Gate (Cổng Làng) & Scene Transition Trigger at North Exit
+        // =========================================================================
+        private static void BuildVillageGateAndSceneTransition()
+        {
+            var envRoot = GetOrCreateRoot("CaMau_1954_Village/Environment");
+            var gateFbx = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Optimized/SM_Cong_lang_BlenderOptimized.fbx");
+            Vector3 gatePos = new Vector3(-7.0f, UNIFORM_GROUND_Y, 73.5f);
+
+            // A. Traditional Village Gate Structure
+            var gateGroup = new GameObject("Gate_Village_North");
+            gateGroup.transform.parent = envRoot.transform;
+            gateGroup.transform.position = gatePos;
+            gateGroup.transform.rotation = Quaternion.identity;
+
+            if (gateFbx != null)
+            {
+                var gateModel = (GameObject)PrefabUtility.InstantiatePrefab(gateFbx, gateGroup.transform);
+                gateModel.name = "Model_CongLang";
+                // Blender FBX Z-up needs -90X rotation to stand upright facing South
+                gateModel.transform.localPosition = new Vector3(0f, 4.85f, 0f);
+                gateModel.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+                gateModel.transform.localScale = Vector3.one * 5.0f;
+            }
+
+            // Left Post Collider
+            var colLeft = gateGroup.AddComponent<BoxCollider>();
+            colLeft.center = new Vector3(-1.85f, 2.0f, 0f);
+            colLeft.size = new Vector3(1.1f, 4.0f, 1.4f);
+
+            // Right Post Collider
+            var colRight = gateGroup.AddComponent<BoxCollider>();
+            colRight.center = new Vector3(1.85f, 2.0f, 0f);
+            colRight.size = new Vector3(1.1f, 4.0f, 1.4f);
+
+            // Center Archway is completely open for walking through!
+
+            // B. Scene Transition Trigger Point (Connecting to the next scene)
+            // Placed just past the Village Gate at Z = 77.5m
+            var triggerObj = new GameObject("VillageExit_NorthGate_Transition");
+            triggerObj.transform.parent = envRoot.transform;
+            triggerObj.transform.position = new Vector3(-7.0f, UNIFORM_GROUND_Y, 77.5f);
+            triggerObj.transform.rotation = Quaternion.identity;
+
+            var triggerCol = triggerObj.AddComponent<BoxCollider>();
+            triggerCol.isTrigger = true;
+            triggerCol.center = new Vector3(0f, 1.8f, 0f);
+            triggerCol.size = new Vector3(5.0f, 3.6f, 2.5f);
+
+            var transition = triggerObj.AddComponent<SceneTransitionPoint>();
+            transition.TargetSceneName = ""; // Configurable in Inspector for any destination scene
+            transition.TransitionPrompt = "Rời Làng Cà Mau (1954) - Tiến sang Cảnh tiếp theo...";
+        }
+
+        // =========================================================================
+        // 12. Tropical Foliage, Living Gardens & Village Props
         // =========================================================================
         private static void BuildTropicalFoliageAndProps(Material matBamboo, Material matRedDirt, Material matWood)
         {
@@ -980,16 +1076,14 @@ namespace HoaDo.Editor
             // A. Coastal Coconut Palms (100% Upright, Multi-angle 3D canopy)
             if (coconutPrefab != null)
             {
-                // Along Sandy Beach (Lower region)
                 InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_01", new Vector3(-65.0f, UNIFORM_GROUND_Y - 0.2f, -8.0f), 1.35f);
                 InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_02", new Vector3(-35.0f, UNIFORM_GROUND_Y - 0.2f, -6.5f), 1.25f);
                 InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_03", new Vector3( -8.0f, UNIFORM_GROUND_Y - 0.1f, -5.0f), 1.40f);
                 InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_04", new Vector3( 14.0f, UNIFORM_GROUND_Y - 0.2f, -6.0f), 1.30f);
                 InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_05", new Vector3( 38.0f, UNIFORM_GROUND_Y - 0.1f, -5.5f), 1.45f);
 
-                // Along Rice Paddies & North Boundary
                 InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Rice_01", new Vector3(-55.0f, UNIFORM_GROUND_Y, 52.0f), 1.20f);
-                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Rice_02", new Vector3(-15.0f, UNIFORM_GROUND_Y, 72.0f), 1.30f);
+                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Rice_02", new Vector3(-16.0f, UNIFORM_GROUND_Y, 74.0f), 1.30f);
                 InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Rice_03", new Vector3( 35.0f, UNIFORM_GROUND_Y, 52.0f), 1.25f);
                 InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_PondSide", new Vector3( 52.0f, UNIFORM_GROUND_Y, 66.0f), 1.35f);
             }
@@ -1049,10 +1143,9 @@ namespace HoaDo.Editor
                 tr.transform.localScale = Vector3.one * 1.0f;
             }
 
-            // Clothesline with authentic colored fabrics (NO UNTEXTURED WHITE BOXES)
             BuildClothesline(fencesRoot.transform, "Clothesline_House04", new Vector3(18.0f, UNIFORM_GROUND_Y, 31.0f), new Vector3(28.0f, UNIFORM_GROUND_Y, 31.0f), matBamboo);
 
-            // H. Ceramic Water Jars (Lu Nước Sành) beside Cottages
+            // H. Ceramic Water Jars
             BuildCeramicWaterJar(fencesRoot.transform, "LuNuoc_House02_1", new Vector3(-24.5f, UNIFORM_GROUND_Y, 26.5f));
             BuildCeramicWaterJar(fencesRoot.transform, "LuNuoc_House02_2", new Vector3(-23.8f, UNIFORM_GROUND_Y, 26.8f));
             BuildCeramicWaterJar(fencesRoot.transform, "LuNuoc_House04_1", new Vector3( 19.5f, UNIFORM_GROUND_Y, 24.5f));
@@ -1085,26 +1178,22 @@ namespace HoaDo.Editor
 
         private static void InstantiateVolumetricTree(GameObject prefab, Transform parent, string name, Vector3 pos, float scale)
         {
-            // Creates a 2-plane cross assembly (0 deg and 90 deg) anchored at ground
-            // Strictly upright (X=0, Z=0) and volumetric 3D from both top-down and 360 views
             var treeRoot = new GameObject(name);
             treeRoot.transform.parent = parent;
             treeRoot.transform.position = pos;
-            treeRoot.transform.rotation = Quaternion.identity; // 100% upright
+            treeRoot.transform.rotation = Quaternion.identity;
 
-            // Card 1
             var card1 = (GameObject)PrefabUtility.InstantiatePrefab(prefab, treeRoot.transform);
             card1.name = "Card_Front";
             card1.transform.localPosition = Vector3.zero;
-            card1.transform.localRotation = Quaternion.Euler(0f, Random.Range(-25f, 25f), 0f); // Upright (zero X/Z tilt)
+            card1.transform.localRotation = Quaternion.Euler(0f, Random.Range(-25f, 25f), 0f);
             card1.transform.localScale = Vector3.one * scale;
             StripAnimationComponents(card1);
 
-            // Card 2 (Cross card for volumetric 3D silhouette)
             var card2 = (GameObject)PrefabUtility.InstantiatePrefab(prefab, treeRoot.transform);
             card2.name = "Card_Cross";
             card2.transform.localPosition = Vector3.zero;
-            card2.transform.localRotation = Quaternion.Euler(0f, card1.transform.localEulerAngles.y + 90f, 0f); // Upright (zero X/Z tilt)
+            card2.transform.localRotation = Quaternion.Euler(0f, card1.transform.localEulerAngles.y + 90f, 0f);
             card2.transform.localScale = Vector3.one * (scale * 0.95f);
             StripAnimationComponents(card2);
         }
@@ -1176,7 +1265,6 @@ namespace HoaDo.Editor
             var cl = new GameObject(name);
             cl.transform.parent = parent;
 
-            // 2 bamboo posts
             var p1 = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             p1.name = "Post1";
             p1.transform.parent = cl.transform;
@@ -1191,7 +1279,6 @@ namespace HoaDo.Editor
             p2.transform.localScale = new Vector3(0.08f, 0.75f, 0.08f);
             if (matPost != null) p2.GetComponent<MeshRenderer>().sharedMaterial = matPost;
 
-            // Rope line
             float dist = Vector3.Distance(start, end);
             Vector3 dir = (end - start).normalized;
             var line = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -1202,7 +1289,6 @@ namespace HoaDo.Editor
             line.transform.localScale = new Vector3(0.02f, dist * 0.5f, 0.02f);
             if (matPost != null) line.GetComponent<MeshRenderer>().sharedMaterial = matPost;
 
-            // Hanging clothes with authentic Southern Vietnamese materials (NO WHITE UNLIT QUADS)
             var matBrown = GetOrCreateMaterial("Assets/Materials/M_CaMau_ClothBrown.mat", new Color(0.42f, 0.30f, 0.20f, 1.0f), "", Vector2.one);
             var matScarf = GetOrCreateMaterial("Assets/Materials/M_CaMau_KhanRan.mat", new Color(0.70f, 0.25f, 0.20f, 1.0f), "", Vector2.one);
             var matIndigo = GetOrCreateMaterial("Assets/Materials/M_CaMau_ClothIndigo.mat", new Color(0.24f, 0.35f, 0.48f, 1.0f), "", Vector2.one);
@@ -1222,7 +1308,7 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 11. Spawn Points & NPCs (Grounded cleanly on UNIFORM_GROUND_Y)
+        // 13. Spawn Points & NPCs (Grounded cleanly on UNIFORM_GROUND_Y)
         // =========================================================================
         private static void PositionSpawnPointsAndNPCs()
         {
@@ -1254,7 +1340,7 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 12. Lighting & Atmosphere
+        // 14. Lighting & Atmosphere
         // =========================================================================
         private static void SetupLightingAndAtmosphere()
         {
@@ -1274,13 +1360,8 @@ namespace HoaDo.Editor
             RenderSettings.ambientIntensity = 1.15f;
 
             var skyMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Backdrop_Sky/M_Skybox_CaMau_Panorama.mat");
-            var skyTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Textures/Backgrounds_Lana/T_Lana_UpperCobaltSky_Seamless.png");
             if (skyMat != null)
             {
-                if (skyTex != null) skyMat.mainTexture = skyTex;
-                skyMat.SetColor("_Tint", Color.white);
-                skyMat.SetFloat("_Exposure", 1.05f);
-                EditorUtility.SetDirty(skyMat);
                 RenderSettings.skybox = skyMat;
             }
 
@@ -1288,23 +1369,23 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 13. Camera Systems (Overview & Gameplay)
+        // 15. Camera Systems (Overview with Sky & Gameplay)
         // =========================================================================
-        [MenuItem("Tools/Hoa Do/Camera: Overview (Reference Match)")]
+        [MenuItem("Tools/Hoa Do/Camera: Overview (Reference Match with Sky)")]
         public static void SetOverviewCamera()
         {
             var cam = Camera.main;
             if (cam != null)
             {
-                // High-Angle Overhead Perspective framing matching Reference Artwork:
-                // Camera elevated at (0, 74, -36), pitched down 63 deg looking north
-                cam.transform.position = new Vector3(0.0f, 74.0f, -36.0f);
-                cam.transform.rotation = Quaternion.Euler(63.0f, 0.0f, 0.0f);
-                cam.fieldOfView = 52.0f;
+                // Elevated Overhead Perspective framing Village, Sea, Rice Fields, Village Gate, AND the Sky:
+                // Camera at (-4.5, 62, -46), pitched 48 deg down looking north
+                cam.transform.position = new Vector3(-4.5f, 62.0f, -46.0f);
+                cam.transform.rotation = Quaternion.Euler(48.0f, 0.0f, 0.0f);
+                cam.fieldOfView = 56.0f;
                 cam.nearClipPlane = 0.3f;
-                cam.farClipPlane = 450.0f;
+                cam.farClipPlane = 500.0f;
                 EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-                Debug.Log("[RebuildMap] Camera set to Overview (Reference Match)!");
+                Debug.Log("[RebuildMap] Camera set to Overview with Sky Framing!");
             }
         }
 
@@ -1314,12 +1395,11 @@ namespace HoaDo.Editor
             var cam = Camera.main;
             if (cam != null)
             {
-                // Third-person perspective centered on Player in Central Courtyard
                 cam.transform.position = new Vector3(-6.0f, 7.5f, 3.0f);
                 cam.transform.rotation = Quaternion.Euler(32.0f, 0.0f, 0.0f);
                 cam.fieldOfView = 60.0f;
                 cam.nearClipPlane = 0.3f;
-                cam.farClipPlane = 350.0f;
+                cam.farClipPlane = 450.0f;
                 EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
                 Debug.Log("[RebuildMap] Camera set to Gameplay (Player View)!");
             }
@@ -1333,7 +1413,11 @@ namespace HoaDo.Editor
         private static GameObject GetOrCreateRoot(string path)
         {
             var existing = GameObject.Find(path);
-            if (existing != null) return existing;
+            if (existing != null)
+            {
+                existing.SetActive(true);
+                return existing;
+            }
 
             string[] parts = path.Split('/');
             GameObject current = null;
@@ -1348,6 +1432,7 @@ namespace HoaDo.Editor
                     go = new GameObject(parts[i]);
                     if (current != null) go.transform.parent = current.transform;
                 }
+                go.SetActive(true);
                 current = go;
             }
             return current;
