@@ -203,6 +203,40 @@ namespace HoaDo.Editor
 
         private static void ClearOldSceneLayout()
         {
+            // 1. Move and preserve all NPCs under CaMau_1954_Village/NPCs
+            var npcRoot = GetOrCreateRoot("CaMau_1954_Village/NPCs");
+            var allSceneObjects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            foreach (var go in allSceneObjects)
+            {
+                if (go != null && go.name.StartsWith("NPC_"))
+                {
+                    go.transform.parent = npcRoot.transform;
+                }
+            }
+
+            // 2. Eradicate legacy Village_Areas groups (01_Nha_An to 07_Bo_Song) to eliminate old duplicate trees & props
+            var villageAreas = GameObject.Find("CaMau_1954_Village/Village_Areas");
+            if (villageAreas != null)
+            {
+                for (int i = villageAreas.transform.childCount - 1; i >= 0; i--)
+                {
+                    var child = villageAreas.transform.GetChild(i);
+                    if (child.name.StartsWith("08_Ben_Xuong"))
+                    {
+                        for (int j = child.childCount - 1; j >= 0; j--)
+                        {
+                            var sub = child.GetChild(j);
+                            if (!sub.name.StartsWith("NPC_")) Object.DestroyImmediate(sub.gameObject);
+                        }
+                    }
+                    else
+                    {
+                        Object.DestroyImmediate(child.gameObject);
+                    }
+                }
+            }
+
+            // 3. Clear managed Environment roots
             string[] roots = new string[]
             {
                 "CaMau_1954_Village/Environment/Terrain_3D",
@@ -213,7 +247,7 @@ namespace HoaDo.Editor
                 "CaMau_1954_Village/Environment/Vegetation_3D",
                 "CaMau_1954_Village/Environment/Background_Atmosphere",
                 "CaMau_1954_Village/Environment/09_Natural_Painterly_Background",
-                "CaMau_1954_Village/Village_Areas/08_Ben_Xuong"
+                "CaMau_1954_Village/Props"
             };
 
             foreach (var rPath in roots)
@@ -251,17 +285,23 @@ namespace HoaDo.Editor
                 if (obj != null) Object.DestroyImmediate(obj);
             }
 
-            // Aggressive purge: Completely eradicate ANY crate, barrel, or thùng from entire scene
-            var allSceneObjects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            // 4. Aggressive purge: Completely eradicate ANY stray crate, barrel, stray tree, or legacy clutter
+            allSceneObjects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
             var toPurge = new System.Collections.Generic.List<GameObject>();
             foreach (var go in allSceneObjects)
             {
                 if (go == null) continue;
                 string n = go.name.ToLower();
                 if (n.Contains("crate") || n.Contains("barrel") || n.Contains("thung") || n.Contains("cargo") ||
-                    n.Contains("cliff_west_rice") || n.Contains("cliff_east_rice") || n.Contains("terrain_north_backdrop"))
+                    n.Contains("cliff_west_rice") || n.Contains("cliff_east_rice") || n.Contains("terrain_north_backdrop") ||
+                    n.Contains("pflanavntree") || n.Contains("herotree") || n.Contains("bamboogrove") ||
+                    n.Contains("bananatree") || n.Contains("chickencoop") || n.Contains("clothesline_3d") ||
+                    n.Contains("house_an_stilted") || n.Contains("monument_camau") || n.Contains("farmcart"))
                 {
-                    toPurge.Add(go);
+                    if (!go.name.StartsWith("NPC_") && !go.name.Contains("Player"))
+                    {
+                        toPurge.Add(go);
+                    }
                 }
             }
             foreach (var go in toPurge)
@@ -443,19 +483,19 @@ namespace HoaDo.Editor
             // Crowning Vegetation on West Ridge
             if (heroBanyanPrefab != null)
             {
-                InstantiateVolumetricTree(heroBanyanPrefab, westRoot.transform, "West_Ridge_Banyan_01", new Vector3(-77.0f, 5.2f, 68.0f), 1.60f);
-                InstantiateVolumetricTree(heroBanyanPrefab, westRoot.transform, "West_Ridge_Banyan_02", new Vector3(-78.0f, 4.8f, 40.0f), 1.50f);
+                InstantiateSingleArtTree(heroBanyanPrefab, westRoot.transform, "West_Ridge_Banyan_01", new Vector3(-77.0f, 5.2f, 68.0f), 1.60f);
+                InstantiateSingleArtTree(heroBanyanPrefab, westRoot.transform, "West_Ridge_Banyan_02", new Vector3(-78.0f, 4.8f, 40.0f), 1.50f);
             }
             if (coconutPalmPrefab != null)
             {
-                InstantiateVolumetricTree(coconutPalmPrefab, westRoot.transform, "West_Cliff_Palm_01", new Vector3(-64.0f, 2.4f, 66.0f), 1.25f);
-                InstantiateVolumetricTree(coconutPalmPrefab, westRoot.transform, "West_Cliff_Palm_02", new Vector3(-63.0f, 2.0f, 46.0f), 1.20f);
-                InstantiateVolumetricTree(coconutPalmPrefab, westRoot.transform, "West_Cliff_Palm_03", new Vector3(-69.0f, 3.8f, 55.0f), 1.30f);
+                InstantiateSingleArtTree(coconutPalmPrefab, westRoot.transform, "West_Cliff_Palm_01", new Vector3(-64.0f, 2.4f, 66.0f), 1.25f);
+                InstantiateSingleArtTree(coconutPalmPrefab, westRoot.transform, "West_Cliff_Palm_02", new Vector3(-63.0f, 2.0f, 46.0f), 1.20f);
+                InstantiateSingleArtTree(coconutPalmPrefab, westRoot.transform, "West_Cliff_Palm_03", new Vector3(-69.0f, 3.8f, 55.0f), 1.30f);
             }
             if (bananaPalmPrefab != null)
             {
-                InstantiateVolumetricTree(bananaPalmPrefab, westRoot.transform, "West_Cliff_Banana_01", new Vector3(-59.0f, 0.7f, 58.0f), 1.35f);
-                InstantiateVolumetricTree(bananaPalmPrefab, westRoot.transform, "West_Cliff_Banana_02", new Vector3(-61.0f, 1.2f, 38.0f), 1.40f);
+                InstantiateSingleArtTree(bananaPalmPrefab, westRoot.transform, "West_Cliff_Banana_01", new Vector3(-59.0f, 0.7f, 58.0f), 1.35f);
+                InstantiateSingleArtTree(bananaPalmPrefab, westRoot.transform, "West_Cliff_Banana_02", new Vector3(-61.0f, 1.2f, 38.0f), 1.40f);
             }
 
             // -------------------------------------------------------------
@@ -502,20 +542,21 @@ namespace HoaDo.Editor
             // Crowning Vegetation on East Ridge
             if (heroBanyanPrefab != null)
             {
-                InstantiateVolumetricTree(heroBanyanPrefab, eastRoot.transform, "East_Ridge_Banyan_01", new Vector3(78.0f, 5.2f, 68.0f), 1.60f);
-                InstantiateVolumetricTree(heroBanyanPrefab, eastRoot.transform, "East_Ridge_Banyan_02", new Vector3(79.0f, 4.8f, 40.0f), 1.50f);
+                InstantiateSingleArtTree(heroBanyanPrefab, eastRoot.transform, "East_Ridge_Banyan_01", new Vector3(78.0f, 5.2f, 68.0f), 1.60f);
+                InstantiateSingleArtTree(heroBanyanPrefab, eastRoot.transform, "East_Ridge_Banyan_02", new Vector3(79.0f, 4.8f, 40.0f), 1.50f);
             }
             if (coconutPalmPrefab != null)
             {
-                InstantiateVolumetricTree(coconutPalmPrefab, eastRoot.transform, "East_Cliff_Palm_01", new Vector3(60.0f, 1.8f, 72.0f), 1.25f);
-                InstantiateVolumetricTree(coconutPalmPrefab, eastRoot.transform, "East_Cliff_Palm_02", new Vector3(64.0f, 2.4f, 52.0f), 1.20f);
-                InstantiateVolumetricTree(coconutPalmPrefab, eastRoot.transform, "East_Cliff_Palm_03", new Vector3(70.0f, 3.8f, 56.0f), 1.30f);
+                InstantiateSingleArtTree(coconutPalmPrefab, eastRoot.transform, "East_Cliff_Palm_01", new Vector3(60.0f, 1.8f, 72.0f), 1.25f);
+                InstantiateSingleArtTree(coconutPalmPrefab, eastRoot.transform, "East_Cliff_Palm_02", new Vector3(64.0f, 2.4f, 52.0f), 1.20f);
+                InstantiateSingleArtTree(coconutPalmPrefab, eastRoot.transform, "East_Cliff_Palm_03", new Vector3(70.0f, 3.8f, 56.0f), 1.30f);
             }
             if (bananaPalmPrefab != null)
             {
-                InstantiateVolumetricTree(bananaPalmPrefab, eastRoot.transform, "East_Cliff_Banana_01", new Vector3(55.0f, 0.7f, 60.0f), 1.35f);
-                InstantiateVolumetricTree(bananaPalmPrefab, eastRoot.transform, "East_Cliff_Banana_02", new Vector3(59.0f, 1.2f, 42.0f), 1.40f);
+                InstantiateSingleArtTree(bananaPalmPrefab, eastRoot.transform, "East_Cliff_Banana_01", new Vector3(55.0f, 0.7f, 60.0f), 1.35f);
+                InstantiateSingleArtTree(bananaPalmPrefab, eastRoot.transform, "East_Cliff_Banana_02", new Vector3(59.0f, 1.2f, 42.0f), 1.40f);
             }
+
 
             // -------------------------------------------------------------
             // C. NORTHERN BACKDROP MOUNTAIN PASS (Đèo Núi Phía Bắc Khung Cổng Làng)
@@ -858,24 +899,20 @@ namespace HoaDo.Editor
             if (largeTreePrefab == null) largeTreePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Trees/PF_Branch_Cluster_Tree.prefab");
             if (largeTreePrefab != null)
             {
-                var treeGroup = new GameObject("Tree_Hero_CentralSacredBanyan");
-                treeGroup.transform.parent = vegRoot.transform;
-                treeGroup.transform.position = centerTreePos;
-                treeGroup.transform.rotation = Quaternion.identity;
+                var sacredTree = (GameObject)PrefabUtility.InstantiatePrefab(largeTreePrefab, vegRoot.transform);
+                sacredTree.name = "Tree_Hero_CentralSacredBanyan";
+                sacredTree.transform.position = centerTreePos;
+                sacredTree.transform.rotation = Quaternion.identity;
+                sacredTree.transform.localScale = Vector3.one * 1.65f;
+                StripAnimationComponents(sacredTree);
 
-                var card1 = (GameObject)PrefabUtility.InstantiatePrefab(largeTreePrefab, treeGroup.transform);
-                card1.name = "Canopy_Card_0";
-                card1.transform.localPosition = Vector3.zero;
-                card1.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
-                card1.transform.localScale = Vector3.one * 1.6f;
-                StripAnimationComponents(card1);
-
-                var card2 = (GameObject)PrefabUtility.InstantiatePrefab(largeTreePrefab, treeGroup.transform);
-                card2.name = "Canopy_Card_90";
-                card2.transform.localPosition = Vector3.zero;
-                card2.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
-                card2.transform.localScale = Vector3.one * 1.55f;
-                StripAnimationComponents(card2);
+                var srs = sacredTree.GetComponentsInChildren<SpriteRenderer>(true);
+                int baseOrder = 3000 + Mathf.RoundToInt(-centerTreePos.z * 20f);
+                foreach (var sr in srs)
+                {
+                    sr.sortingLayerName = "Default";
+                    sr.sortingOrder = baseOrder;
+                }
             }
 
             var stoneRingRoot = new GameObject("Tree_Central_StoneRing");
@@ -1299,70 +1336,138 @@ namespace HoaDo.Editor
             var fruitTreePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Trees/PF_LanaVN_Tree_02_Medium.prefab");
             var canopyTreePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Trees/PF_LanaVN_Tree_01_LargeCanopy.prefab");
             var bambooGrovePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Trees/PF_LanaVN_Tree_07_BambooGrove.prefab");
+            var slenderTreePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Trees/PF_LanaVN_Tree_04_SlenderTall.prefab");
+            var bushTreePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/Trees/PF_LanaVN_Tree_03_SmallBushTree.prefab");
             var gourdPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_Concept_Assets/GourdTrellis/PF_LanaVN_GourdTrellis_Main.prefab");
             if (gourdPrefab == null) gourdPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/Lana_VN_Pack/GourdTrellis/PF_LanaVN_GourdTrellis_Main.prefab");
 
-            // A. Coastal Coconut Palms (100% Upright, Multi-angle 3D canopy)
+            // A. Coastal Coconut Palms (Spaced out naturally along outer dunes; central beach and piers left completely clear)
             if (coconutPrefab != null)
             {
-                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_01", new Vector3(-65.0f, UNIFORM_GROUND_Y - 0.2f, -8.0f), 1.35f);
-                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_02", new Vector3(-35.0f, UNIFORM_GROUND_Y - 0.2f, -6.5f), 1.25f);
-                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_03", new Vector3( -8.0f, UNIFORM_GROUND_Y - 0.1f, -5.0f), 1.40f);
-                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_04", new Vector3( 14.0f, UNIFORM_GROUND_Y - 0.2f, -6.0f), 1.30f);
-                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_05", new Vector3( 38.0f, UNIFORM_GROUND_Y - 0.1f, -5.5f), 1.45f);
+                // West shoreline dunes
+                InstantiateSingleArtTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_West_01", new Vector3(-62.0f, UNIFORM_GROUND_Y - 0.2f, -8.0f), 1.25f, 8f);
+                InstantiateSingleArtTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_West_02", new Vector3(-44.0f, UNIFORM_GROUND_Y - 0.15f, -6.5f), 1.30f, -6f);
+                InstantiateSingleArtTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_West_03", new Vector3(-28.0f, UNIFORM_GROUND_Y - 0.10f, -5.5f), 1.20f, 10f);
 
-                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Rice_01", new Vector3(-55.0f, UNIFORM_GROUND_Y, 52.0f), 1.20f);
-                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Rice_02", new Vector3(-16.0f, UNIFORM_GROUND_Y, 74.0f), 1.30f);
-                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_Rice_03", new Vector3( 35.0f, UNIFORM_GROUND_Y, 52.0f), 1.25f);
-                InstantiateVolumetricTree(coconutPrefab, vegRoot.transform, "Coconut_PondSide", new Vector3( 52.0f, UNIFORM_GROUND_Y, 66.0f), 1.35f);
+                // East shoreline dunes
+                InstantiateSingleArtTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_East_01", new Vector3( 28.0f, UNIFORM_GROUND_Y - 0.10f, -5.5f), 1.20f, -8f);
+                InstantiateSingleArtTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_East_02", new Vector3( 46.0f, UNIFORM_GROUND_Y - 0.15f, -6.5f), 1.30f, 6f);
+                InstantiateSingleArtTree(coconutPrefab, vegRoot.transform, "Coconut_Beach_East_03", new Vector3( 64.0f, UNIFORM_GROUND_Y - 0.2f, -8.0f), 1.25f, -10f);
             }
 
-            // B. Banana Groves around Thatched Cottages
+            // B. Cottage Gardens & House Framing Trees (Separated & well-spaced; rear & side corners only, doors/paths 100% clear)
             if (bananaPrefab != null)
             {
-                InstantiateVolumetricTree(bananaPrefab, vegRoot.transform, "Banana_House01", new Vector3(-58.0f, UNIFORM_GROUND_Y, 22.0f), 1.20f);
-                InstantiateVolumetricTree(bananaPrefab, vegRoot.transform, "Banana_House02", new Vector3(-22.0f, UNIFORM_GROUND_Y, 28.0f), 1.15f);
-                InstantiateVolumetricTree(bananaPrefab, vegRoot.transform, "Banana_House04", new Vector3( 32.0f, UNIFORM_GROUND_Y, 28.0f), 1.25f);
-                InstantiateVolumetricTree(bananaPrefab, vegRoot.transform, "Banana_House06", new Vector3(-48.0f, UNIFORM_GROUND_Y,  9.0f), 1.30f);
-                InstantiateVolumetricTree(bananaPrefab, vegRoot.transform, "Banana_House07", new Vector3( 26.0f, UNIFORM_GROUND_Y,  8.0f), 1.10f);
+                InstantiateSingleArtTree(bananaPrefab, vegRoot.transform, "Banana_House01_Back", new Vector3(-58.0f, UNIFORM_GROUND_Y, 30.0f), 1.15f, 4f);
+                InstantiateSingleArtTree(bananaPrefab, vegRoot.transform, "Banana_House02_Back", new Vector3(-22.0f, UNIFORM_GROUND_Y, 31.0f), 1.15f, -5f);
+                InstantiateSingleArtTree(bananaPrefab, vegRoot.transform, "Banana_House04_Back", new Vector3( 18.0f, UNIFORM_GROUND_Y, 30.0f), 1.15f, 6f);
+                InstantiateSingleArtTree(bananaPrefab, vegRoot.transform, "Banana_House06_Side", new Vector3(-48.0f, UNIFORM_GROUND_Y,  9.0f), 1.20f, -6f);
+                InstantiateSingleArtTree(bananaPrefab, vegRoot.transform, "Banana_House07_Side", new Vector3( 27.0f, UNIFORM_GROUND_Y,  7.0f), 1.10f, 5f);
+                InstantiateSingleArtTree(bananaPrefab, vegRoot.transform, "Banana_House08_Side", new Vector3( 61.0f, UNIFORM_GROUND_Y,  9.0f), 1.15f, -4f);
             }
 
-            // C. Fruit Trees (Mango & Orange)
             if (fruitTreePrefab != null)
             {
-                InstantiateVolumetricTree(fruitTreePrefab, vegRoot.transform, "FruitTree_House05_01", new Vector3(46.0f, UNIFORM_GROUND_Y, 26.0f), 1.25f);
-                InstantiateVolumetricTree(fruitTreePrefab, vegRoot.transform, "FruitTree_House05_02", new Vector3(58.0f, UNIFORM_GROUND_Y, 22.0f), 1.35f);
-                InstantiateVolumetricTree(fruitTreePrefab, vegRoot.transform, "FruitTree_House08_Side", new Vector3(48.0f, UNIFORM_GROUND_Y, 10.0f), 1.20f);
-                InstantiateVolumetricTree(fruitTreePrefab, vegRoot.transform, "FruitTree_Village_01", new Vector3(-18.0f, UNIFORM_GROUND_Y,  8.0f), 1.30f);
+                InstantiateSingleArtTree(fruitTreePrefab, vegRoot.transform, "FruitTree_House02_Side", new Vector3(-34.0f, UNIFORM_GROUND_Y, 28.0f), 1.15f, -5f);
+                InstantiateSingleArtTree(fruitTreePrefab, vegRoot.transform, "FruitTree_House04_Garden", new Vector3( 32.0f, UNIFORM_GROUND_Y, 26.0f), 1.15f, 8f);
+                InstantiateSingleArtTree(fruitTreePrefab, vegRoot.transform, "FruitTree_House05_North", new Vector3( 46.0f, UNIFORM_GROUND_Y, 28.0f), 1.20f, 6f);
+                InstantiateSingleArtTree(fruitTreePrefab, vegRoot.transform, "FruitTree_House07_Corner", new Vector3( 14.0f, UNIFORM_GROUND_Y,  6.0f), 1.10f, -4f);
             }
 
-            // D. Bamboo Groves behind Village
             if (bambooGrovePrefab != null)
             {
-                InstantiateVolumetricTree(bambooGrovePrefab, vegRoot.transform, "Bamboo_House02_Back", new Vector3(-35.0f, UNIFORM_GROUND_Y, 32.0f), 1.25f);
-                InstantiateVolumetricTree(bambooGrovePrefab, vegRoot.transform, "Bamboo_House04_Back", new Vector3( 15.0f, UNIFORM_GROUND_Y, 32.0f), 1.30f);
-                InstantiateVolumetricTree(bambooGrovePrefab, vegRoot.transform, "Bamboo_House05_Back", new Vector3( 60.0f, UNIFORM_GROUND_Y, 30.0f), 1.20f);
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "Bamboo_House03_Back", new Vector3(-14.0f, UNIFORM_GROUND_Y, 33.0f), 1.20f);
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "Bamboo_House05_East", new Vector3( 58.0f, UNIFORM_GROUND_Y, 28.0f), 1.25f);
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "Bamboo_House10_Back", new Vector3(-72.0f, UNIFORM_GROUND_Y, 35.0f), 1.20f);
             }
 
-            // E. Dense Canopy Trees on Left and Right Cliffs (Framing)
+            if (bushTreePrefab != null)
+            {
+                InstantiateSingleArtTree(bushTreePrefab, vegRoot.transform, "BushTree_House06_Side", new Vector3(-36.0f, UNIFORM_GROUND_Y, 3.0f), 1.05f);
+                InstantiateSingleArtTree(bushTreePrefab, vegRoot.transform, "BushTree_House08_Dock", new Vector3( 48.0f, UNIFORM_GROUND_Y, 3.0f), 1.05f);
+            }
+
+            // C. Populating Empty Ground on West Flank (Vườn Cây Ăn Trái Sườn Tây: X in [-72, -45], Z in [35, 78])
             if (canopyTreePrefab != null)
             {
-                InstantiateVolumetricTree(canopyTreePrefab, vegRoot.transform, "CliffTree_West_01", new Vector3(-72.0f, 3.5f, 55.0f), 1.50f);
-                InstantiateVolumetricTree(canopyTreePrefab, vegRoot.transform, "CliffTree_West_02", new Vector3(-68.0f, 2.5f, 10.0f), 1.40f);
-                InstantiateVolumetricTree(canopyTreePrefab, vegRoot.transform, "CliffTree_East_01", new Vector3( 72.0f, 3.5f, 55.0f), 1.45f);
-                InstantiateVolumetricTree(canopyTreePrefab, vegRoot.transform, "CliffTree_East_02", new Vector3( 75.0f, 3.0f, 12.0f), 1.50f);
-                InstantiateVolumetricTree(canopyTreePrefab, vegRoot.transform, "NorthTree_01", new Vector3(-45.0f, 2.2f, 80.0f), 1.60f);
-                InstantiateVolumetricTree(canopyTreePrefab, vegRoot.transform, "NorthTree_02", new Vector3( 25.0f, 2.2f, 80.0f), 1.55f);
+                InstantiateSingleArtTree(canopyTreePrefab, vegRoot.transform, "CanopyTree_West_Orchard_01", new Vector3(-62.0f, UNIFORM_GROUND_Y, 40.0f), 1.35f, 6f);
+                InstantiateSingleArtTree(canopyTreePrefab, vegRoot.transform, "CanopyTree_West_Orchard_02", new Vector3(-68.0f, UNIFORM_GROUND_Y, 74.0f), 1.45f, -5f);
+            }
+            if (bambooGrovePrefab != null)
+            {
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "BambooGrove_West_Orchard_01", new Vector3(-50.0f, UNIFORM_GROUND_Y, 46.0f), 1.25f, -4f);
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "BambooGrove_West_Orchard_02", new Vector3(-52.0f, UNIFORM_GROUND_Y, 70.0f), 1.35f, 8f);
+            }
+            if (slenderTreePrefab != null)
+            {
+                InstantiateSingleArtTree(slenderTreePrefab, vegRoot.transform, "SlenderTree_West_Orchard_01", new Vector3(-66.0f, UNIFORM_GROUND_Y, 52.0f), 1.25f, 5f);
+            }
+            if (fruitTreePrefab != null)
+            {
+                InstantiateSingleArtTree(fruitTreePrefab, vegRoot.transform, "FruitTree_West_Orchard_01", new Vector3(-54.0f, UNIFORM_GROUND_Y, 58.0f), 1.20f, 6f);
+                InstantiateSingleArtTree(fruitTreePrefab, vegRoot.transform, "FruitTree_West_Orchard_02", new Vector3(-60.0f, UNIFORM_GROUND_Y, 78.0f), 1.25f, -4f);
+            }
+            if (bananaPrefab != null)
+            {
+                InstantiateSingleArtTree(bananaPrefab, vegRoot.transform, "Banana_West_Orchard_01", new Vector3(-64.0f, UNIFORM_GROUND_Y, 64.0f), 1.20f, 4f);
             }
 
-            // F. Bamboo Fences for House Yards
+            // D. Populating Empty Ground on East Flank (Vườn Cây Ăn Trái Sườn Đông & Đầm Vịt: X in [45, 72], Z in [35, 78])
+            if (canopyTreePrefab != null)
+            {
+                InstantiateSingleArtTree(canopyTreePrefab, vegRoot.transform, "CanopyTree_East_Orchard_01", new Vector3(64.0f, UNIFORM_GROUND_Y, 40.0f), 1.35f, -6f);
+                InstantiateSingleArtTree(canopyTreePrefab, vegRoot.transform, "CanopyTree_East_Orchard_02", new Vector3(68.0f, UNIFORM_GROUND_Y, 74.0f), 1.45f, 5f);
+            }
+            if (bambooGrovePrefab != null)
+            {
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "BambooGrove_East_Orchard_01", new Vector3(50.0f, UNIFORM_GROUND_Y, 46.0f), 1.25f, 4f);
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "BambooGrove_East_Orchard_02", new Vector3(50.0f, UNIFORM_GROUND_Y, 68.0f), 1.35f, -6f);
+            }
+            if (slenderTreePrefab != null)
+            {
+                InstantiateSingleArtTree(slenderTreePrefab, vegRoot.transform, "SlenderTree_East_Orchard_01", new Vector3(66.0f, UNIFORM_GROUND_Y, 52.0f), 1.25f, -5f);
+            }
+            if (fruitTreePrefab != null)
+            {
+                InstantiateSingleArtTree(fruitTreePrefab, vegRoot.transform, "FruitTree_East_Orchard_01", new Vector3(46.0f, UNIFORM_GROUND_Y, 56.0f), 1.15f, 6f);
+                InstantiateSingleArtTree(fruitTreePrefab, vegRoot.transform, "FruitTree_East_Pond_Border", new Vector3(58.0f, UNIFORM_GROUND_Y, 78.0f), 1.25f, 4f);
+            }
+            if (bananaPrefab != null)
+            {
+                InstantiateSingleArtTree(bananaPrefab, vegRoot.transform, "Banana_East_Orchard_01", new Vector3(62.0f, UNIFORM_GROUND_Y, 62.0f), 1.20f, -4f);
+            }
+
+            // E. Rice Field Dikes (Bờ Ruộng & Cây Dừa Nước Nam Bộ)
+            if (coconutPrefab != null)
+            {
+                InstantiateSingleArtTree(coconutPrefab, vegRoot.transform, "Coconut_Paddy_West_01", new Vector3(-38.0f, UNIFORM_GROUND_Y, 52.0f), 1.30f, 5f);
+                InstantiateSingleArtTree(coconutPrefab, vegRoot.transform, "Coconut_Paddy_West_02", new Vector3(-20.0f, UNIFORM_GROUND_Y, 68.0f), 1.25f, -6f);
+                InstantiateSingleArtTree(coconutPrefab, vegRoot.transform, "Coconut_Paddy_East_01", new Vector3( 20.0f, UNIFORM_GROUND_Y, 68.0f), 1.25f, 6f);
+                InstantiateSingleArtTree(coconutPrefab, vegRoot.transform, "Coconut_Paddy_East_02", new Vector3( 38.0f, UNIFORM_GROUND_Y, 52.0f), 1.30f, -5f);
+            }
+
+            // F. Northern Canal Border Trees (Backdrop Phía Sau Cánh Đồng Lúa & Cổng Làng)
+            if (bambooGrovePrefab != null)
+            {
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "Bamboo_NorthCanal_FarWest", new Vector3(-58.0f, UNIFORM_GROUND_Y, 84.0f), 1.40f);
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "Bamboo_NorthCanal_GateWest", new Vector3(-16.0f, UNIFORM_GROUND_Y, 83.0f), 1.35f);
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "Bamboo_NorthCanal_GateEast", new Vector3(  2.0f, UNIFORM_GROUND_Y, 83.0f), 1.35f);
+                InstantiateSingleArtTree(bambooGrovePrefab, vegRoot.transform, "Bamboo_NorthCanal_FarEast", new Vector3( 58.0f, UNIFORM_GROUND_Y, 84.0f), 1.40f);
+            }
+            if (canopyTreePrefab != null)
+            {
+                InstantiateSingleArtTree(canopyTreePrefab, vegRoot.transform, "Canopy_NorthCanal_West", new Vector3(-40.0f, UNIFORM_GROUND_Y, 84.0f), 1.45f);
+                InstantiateSingleArtTree(canopyTreePrefab, vegRoot.transform, "Canopy_NorthCanal_East", new Vector3( 40.0f, UNIFORM_GROUND_Y, 84.0f), 1.45f);
+            }
+
+            // G. Bamboo Fences for House Yards
             BuildStraightFence(fencesRoot.transform, "Fence_House01_Front", new Vector3(-58.0f, UNIFORM_GROUND_Y, 20.0f), new Vector3(-46.0f, UNIFORM_GROUND_Y, 20.0f), matBamboo);
             BuildStraightFence(fencesRoot.transform, "Fence_House04_Yard", new Vector3(14.0f, UNIFORM_GROUND_Y, 20.0f), new Vector3(34.0f, UNIFORM_GROUND_Y, 20.0f), matBamboo);
             BuildStraightFence(fencesRoot.transform, "Fence_House06_Front", new Vector3(-48.0f, UNIFORM_GROUND_Y,  0.5f), new Vector3(-35.0f, UNIFORM_GROUND_Y,  0.5f), matBamboo);
             BuildStraightFence(fencesRoot.transform, "Fence_House07_Yard", new Vector3(14.0f, UNIFORM_GROUND_Y, -1.0f), new Vector3(26.0f, UNIFORM_GROUND_Y, -1.0f), matBamboo);
             BuildStraightFence(fencesRoot.transform, "Fence_House08_Yard", new Vector3(48.0f, UNIFORM_GROUND_Y,  0.5f), new Vector3(62.0f, UNIFORM_GROUND_Y,  0.5f), matBamboo);
 
-            // G. Gourd Trellis
+            // H. Gourd Trellis
             if (gourdPrefab != null)
             {
                 var tr = (GameObject)PrefabUtility.InstantiatePrefab(gourdPrefab, fencesRoot.transform);
@@ -1374,7 +1479,7 @@ namespace HoaDo.Editor
 
             BuildClothesline(fencesRoot.transform, "Clothesline_House04", new Vector3(18.0f, UNIFORM_GROUND_Y, 31.0f), new Vector3(28.0f, UNIFORM_GROUND_Y, 31.0f), matBamboo);
 
-            // H. Ceramic Water Jars
+            // I. Ceramic Water Jars
             BuildCeramicWaterJar(fencesRoot.transform, "LuNuoc_House02_1", new Vector3(-24.5f, UNIFORM_GROUND_Y, 26.5f));
             BuildCeramicWaterJar(fencesRoot.transform, "LuNuoc_House02_2", new Vector3(-23.8f, UNIFORM_GROUND_Y, 26.8f));
             BuildCeramicWaterJar(fencesRoot.transform, "LuNuoc_House04_1", new Vector3( 19.5f, UNIFORM_GROUND_Y, 24.5f));
@@ -1383,7 +1488,7 @@ namespace HoaDo.Editor
             BuildCeramicWaterJar(fencesRoot.transform, "LuNuoc_House06_2", new Vector3(-36.8f, UNIFORM_GROUND_Y,  4.8f));
             BuildCeramicWaterJar(fencesRoot.transform, "LuNuoc_House07_1", new Vector3( 15.5f, UNIFORM_GROUND_Y,  2.5f));
 
-            // I. Buffalo & Resting Dog
+            // J. Buffalo & Resting Dog
             var buffaloFBX = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Buffalo.fbx");
             if (buffaloFBX != null)
             {
@@ -1405,26 +1510,32 @@ namespace HoaDo.Editor
             }
         }
 
+        private static GameObject InstantiateSingleArtTree(GameObject prefab, Transform parent, string name, Vector3 pos, float scale, float rotY = 0f, float rotX = 0f)
+        {
+            if (prefab == null) return null;
+            var treeObj = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+            treeObj.name = name;
+            treeObj.transform.position = pos;
+            treeObj.transform.rotation = Quaternion.Euler(0f, rotY, 0f); // 100% thẳng đứng (upright, zero tilt)
+            treeObj.transform.localScale = Vector3.one * scale;
+
+            StripAnimationComponents(treeObj);
+
+            // Sorting order calibrated strictly to Z coordinate for positive, clean layering without depth conflicts
+            int baseOrder = 3000 + Mathf.RoundToInt(-pos.z * 20f);
+            var srs = treeObj.GetComponentsInChildren<SpriteRenderer>(true);
+            foreach (var sr in srs)
+            {
+                sr.sortingLayerName = "Default";
+                sr.sortingOrder = baseOrder;
+            }
+
+            return treeObj;
+        }
+
         private static void InstantiateVolumetricTree(GameObject prefab, Transform parent, string name, Vector3 pos, float scale)
         {
-            var treeRoot = new GameObject(name);
-            treeRoot.transform.parent = parent;
-            treeRoot.transform.position = pos;
-            treeRoot.transform.rotation = Quaternion.identity;
-
-            var card1 = (GameObject)PrefabUtility.InstantiatePrefab(prefab, treeRoot.transform);
-            card1.name = "Card_Front";
-            card1.transform.localPosition = Vector3.zero;
-            card1.transform.localRotation = Quaternion.Euler(0f, Random.Range(-25f, 25f), 0f);
-            card1.transform.localScale = Vector3.one * scale;
-            StripAnimationComponents(card1);
-
-            var card2 = (GameObject)PrefabUtility.InstantiatePrefab(prefab, treeRoot.transform);
-            card2.name = "Card_Cross";
-            card2.transform.localPosition = Vector3.zero;
-            card2.transform.localRotation = Quaternion.Euler(0f, card1.transform.localEulerAngles.y + 90f, 0f);
-            card2.transform.localScale = Vector3.one * (scale * 0.95f);
-            StripAnimationComponents(card2);
+            InstantiateSingleArtTree(prefab, parent, name, pos, scale, Random.Range(-10f, 10f), 0f);
         }
 
         private static void StripAnimationComponents(GameObject go)
