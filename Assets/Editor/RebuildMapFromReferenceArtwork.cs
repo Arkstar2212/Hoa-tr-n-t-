@@ -440,21 +440,21 @@ namespace HoaDo.Editor
         {
             var terrainRoot = GetOrCreateRoot("CaMau_1954_Village/Environment/Terrain_3D");
 
-            // A. Single Unified Continuous Ground Plain (Top surface exactly at Y = 0.50m, 320m wide continuous)
+            // A. Single Unified Continuous Ground Plain (Top surface exactly at Y = 0.50m, trimmed cleanly to 152m width matching village bounds)
             var unifiedPlain = GameObject.CreatePrimitive(PrimitiveType.Cube);
             unifiedPlain.name = "Terrain_Unified_Ground_Base";
             unifiedPlain.transform.parent = terrainRoot.transform;
             unifiedPlain.transform.position = new Vector3(0.0f, UNIFORM_GROUND_Y - 0.25f, 38.0f);
-            unifiedPlain.transform.localScale = new Vector3(320.0f, 0.50f, 96.0f);
+            unifiedPlain.transform.localScale = new Vector3(152.0f, 0.50f, 96.0f);
             unifiedPlain.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
-            // B. Single Unified Continuous Sandy Shoreline Slope (Smooth transition down to sea, 320m wide continuous)
+            // B. Single Unified Continuous Sandy Shoreline Slope (Trimmed cleanly to 152m width, zero excess land wings)
             var beachSlope = GameObject.CreatePrimitive(PrimitiveType.Cube);
             beachSlope.name = "Terrain_Beach_Slope";
             beachSlope.transform.parent = terrainRoot.transform;
             beachSlope.transform.position = new Vector3(0.0f, -0.04f, -14.0f);
             beachSlope.transform.rotation = Quaternion.Euler(7.7f, 0f, 0f);
-            beachSlope.transform.localScale = new Vector3(320.0f, 0.50f, 8.5f);
+            beachSlope.transform.localScale = new Vector3(152.0f, 0.50f, 8.5f);
             beachSlope.GetComponent<MeshRenderer>().sharedMaterial = matSand;
 
             // C. Sea Bed Floor (Extending deeply under the sea)
@@ -552,6 +552,13 @@ namespace HoaDo.Editor
             InstantiateRock(rockMediumBoulder, westRoot.transform, "West_Boulder_02", new Vector3(-57.8f, UNIFORM_GROUND_Y + 0.2f, 46.0f), new Vector3(2.0f, 1.6f, 2.0f), new Vector3(-15f, 80f, 5f));
             InstantiateRock(rockLargeBoulder, westRoot.transform, "West_Boulder_03", new Vector3(-64.0f, UNIFORM_GROUND_Y + 0.5f, 34.0f), new Vector3(2.6f, 2.0f, 2.4f), new Vector3(5f, -30f, 10f));
 
+            // Coastal headland rocks extending West mountain down to water (capping the West border naturally)
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_Platform_01", new Vector3(-70.0f, 0.8f, 12.0f), new Vector3(3.5f, 2.6f, 3.2f), new Vector3(0f, 30f, 0f));
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_Platform_02", new Vector3(-72.0f, 0.6f, -2.0f), new Vector3(3.8f, 2.8f, 3.4f), new Vector3(0f, -15f, 0f));
+            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_Headland_01", new Vector3(-74.0f, 0.5f, -9.0f), new Vector3(3.5f, 2.5f, 3.2f), new Vector3(0f, 25f, 0f));
+            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_Crag_01", new Vector3(-73.0f, 2.0f, 8.0f), new Vector3(7.0f, 10.0f, 6.5f), new Vector3(0f, 45f, 0f));
+            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_Crag_02", new Vector3(-74.0f, 1.8f, -4.0f), new Vector3(6.5f, 9.5f, 6.0f), new Vector3(0f, -20f, 0f));
+
             // Crowning Vegetation on West Ridge
             if (heroBanyanPrefab != null)
             {
@@ -603,6 +610,13 @@ namespace HoaDo.Editor
             InstantiateRock(rockLargeBoulder, eastRoot.transform, "East_Boulder_01", new Vector3(54.0f, UNIFORM_GROUND_Y + 0.3f, 68.0f), new Vector3(2.4f, 1.8f, 2.2f), new Vector3(5f, -40f, 10f));
             InstantiateRock(rockMediumBoulder, eastRoot.transform, "East_Boulder_02", new Vector3(56.5f, UNIFORM_GROUND_Y + 0.2f, 48.0f), new Vector3(2.0f, 1.6f, 2.0f), new Vector3(15f, 60f, -5f));
             InstantiateRock(rockLargeBoulder, eastRoot.transform, "East_Boulder_03", new Vector3(62.0f, UNIFORM_GROUND_Y + 0.4f, 35.0f), new Vector3(2.6f, 2.0f, 2.4f), new Vector3(-10f, 25f, 0f));
+
+            // Coastal headland rocks extending East mountain down behind the harbor (capping the East border naturally)
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_Platform_01", new Vector3(70.0f, 0.8f, 12.0f), new Vector3(3.5f, 2.6f, 3.2f), new Vector3(0f, -30f, 0f));
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_Platform_02", new Vector3(72.0f, 0.6f, -2.0f), new Vector3(3.8f, 2.8f, 3.4f), new Vector3(0f, 15f, 0f));
+            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_Headland_01", new Vector3(74.0f, 0.5f, -9.0f), new Vector3(3.5f, 2.5f, 3.2f), new Vector3(0f, -25f, 0f));
+            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_Crag_01", new Vector3(73.0f, 2.0f, 8.0f), new Vector3(7.0f, 10.0f, 6.5f), new Vector3(0f, -45f, 0f));
+            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_Crag_02", new Vector3(74.0f, 1.8f, -4.0f), new Vector3(6.5f, 9.5f, 6.0f), new Vector3(0f, 20f, 0f));
 
             // Crowning Vegetation on East Ridge
             if (heroBanyanPrefab != null)
@@ -1348,10 +1362,18 @@ namespace HoaDo.Editor
             {
                 var gateModel = (GameObject)PrefabUtility.InstantiatePrefab(gateFbx, gateGroup.transform);
                 gateModel.name = "Model_CongLang";
-                // Blender FBX Z-up needs -90X rotation to stand upright facing South
-                gateModel.transform.localPosition = new Vector3(0f, 4.85f, 0f);
-                gateModel.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
-                gateModel.transform.localScale = Vector3.one * 5.0f;
+                // Stand 100% upright facing South across the straight road
+                gateModel.transform.localPosition = Vector3.zero;
+                gateModel.transform.localRotation = Quaternion.Euler(89.98f, 0f, 0f);
+                gateModel.transform.localScale = Vector3.one * 5.5f;
+
+                // Calibrate grounding so gate pillars sit firmly on UNIFORM_GROUND_Y
+                var r = gateModel.GetComponentInChildren<Renderer>();
+                if (r != null)
+                {
+                    float diff = UNIFORM_GROUND_Y - r.bounds.min.y;
+                    gateModel.transform.position += new Vector3(0f, diff, 0f);
+                }
             }
 
             // Left Post Collider
