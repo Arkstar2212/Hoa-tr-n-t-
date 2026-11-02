@@ -28,8 +28,8 @@ namespace HoaTrenDatDo.Environment
         [Header("=== PHÍM TẮT & NÚT BẤM (INPUT & UI) ===")]
         [Tooltip("Bấm phím 'I' trên bàn phím để chuyển đổi qua lại giữa Nắng Trưa và Mưa Rào")]
         [SerializeField] private bool enableKeyToggle = true;
-        [Tooltip("Hiện nút bấm chuyển thời tiết trực tiếp trên màn hình Game View")]
-        [SerializeField] private bool showOnScreenGuiButton = true;
+        [Tooltip("Hiện nút bấm chuyển thời tiết trực tiếp trên màn hình Game View (để ẩn mặc định)")]
+        [SerializeField] private bool showOnScreenGuiButton = false;
         [SerializeField] private Vector2 buttonPosition = new Vector2(20f, 20f);
         [SerializeField] private Vector2 buttonSize = new Vector2(260f, 44f);
 

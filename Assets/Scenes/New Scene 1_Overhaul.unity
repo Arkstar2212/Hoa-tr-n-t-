@@ -141257,7 +141257,7 @@ MonoBehaviour:
   currentWeather: 0
   transitionDuration: 2.5
   enableKeyToggle: 1
-  showOnScreenGuiButton: 1
+  showOnScreenGuiButton: 0
   buttonPosition: {x: 20, y: 20}
   buttonSize: {x: 260, y: 44}
   mainDirectionalLight: {fileID: 152897281}
