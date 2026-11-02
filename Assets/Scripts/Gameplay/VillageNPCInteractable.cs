@@ -412,8 +412,8 @@ namespace HoaVaMau.Gameplay
             var dlgGO = new GameObject("NPC_DialogueSubtitleRoot", typeof(RectTransform), typeof(CanvasGroup));
             dlgGO.transform.SetParent(canvasGO.transform, false);
             var dlgRect = dlgGO.GetComponent<RectTransform>();
-            dlgRect.anchorMin = new Vector2(0.18f, 0.06f);
-            dlgRect.anchorMax = new Vector2(0.82f, 0.17f);
+            dlgRect.anchorMin = new Vector2(0.10f, 0.05f);
+            dlgRect.anchorMax = new Vector2(0.90f, 0.18f);
             dlgRect.offsetMin = Vector2.zero;
             dlgRect.offsetMax = Vector2.zero;
 

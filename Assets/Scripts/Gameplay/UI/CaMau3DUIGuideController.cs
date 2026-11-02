@@ -29,7 +29,7 @@ namespace HoaVaMau.Gameplay
         [Header("Arrival Title Card")]
         [SerializeField] private bool showOpeningArrivalBanner = true;
         [SerializeField] private string villageTitle = "XÓM RẠCH GỐC  •  CÀ MAU 1954";
-        [SerializeField] private string villageSubtitle = "Bến quê thanh bình  —  Những ngày chuẩn bị tập kết";
+        [SerializeField] private string villageSubtitle = "Bến quê thanh bình";
 
         private Canvas uiCanvas;
         private Font uiFont;
@@ -604,7 +604,7 @@ namespace HoaVaMau.Gameplay
             var toastRect = CreateRect("Narrative_Inspect_Banner", canvasGO.transform);
             toastRect.anchorMin = toastRect.anchorMax = new Vector2(0.5f, 0.11f);
             toastRect.pivot = new Vector2(0.5f, 0.5f);
-            toastRect.sizeDelta = new Vector2(820f, 94f);
+            toastRect.sizeDelta = new Vector2(1200f, 108f);
             narrativeToastGroup = toastRect.gameObject.AddComponent<CanvasGroup>();
             narrativeToastGroup.alpha = 0f;
             narrativeToastGroup.blocksRaycasts = false;
@@ -614,8 +614,8 @@ namespace HoaVaMau.Gameplay
             toastBg.raycastTarget = false;
 
             var tTopLine = CreateRect("AccentLine", toastRect);
-            tTopLine.anchorMin = new Vector2(0.15f, 1f);
-            tTopLine.anchorMax = new Vector2(0.85f, 1f);
+            tTopLine.anchorMin = new Vector2(0.08f, 1f);
+            tTopLine.anchorMax = new Vector2(0.92f, 1f);
             tTopLine.sizeDelta = new Vector2(0f, 1.5f);
             var tTopImg = tTopLine.gameObject.AddComponent<Image>();
             tTopImg.color = new Color(0.96f, 0.88f, 0.70f, 0.55f);
@@ -641,7 +641,7 @@ namespace HoaVaMau.Gameplay
             nBodyRect.offsetMax = new Vector2(-28f, 0f);
             narrativeBodyText = nBodyRect.gameObject.AddComponent<Text>();
             narrativeBodyText.font = uiFont;
-            narrativeBodyText.fontSize = 18;
+            narrativeBodyText.fontSize = 20;
             narrativeBodyText.alignment = TextAnchor.MiddleCenter;
             narrativeBodyText.color = new Color(0.98f, 0.97f, 0.94f, 0.96f);
             narrativeBodyText.raycastTarget = false;
@@ -804,3 +804,4 @@ namespace HoaVaMau.Gameplay
         }
     }
 }
+
