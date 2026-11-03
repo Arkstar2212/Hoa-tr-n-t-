@@ -27,8 +27,8 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private AudioClip footstepDirtSfx;
 
         [Header("Footstep Volume & Pitch")]
-        [SerializeField, Range(0.1f, 1f)] private float walkVolume = 0.50f;
-        [SerializeField, Range(0.1f, 1f)] private float runVolume = 0.85f;
+        [SerializeField, Range(0.1f, 1f)] private float walkVolume = 0.95f;
+        [SerializeField, Range(0.1f, 1f)] private float runVolume = 1.00f;
         [SerializeField] private float walkPitch = 0.82f;
         [SerializeField] private float runPitch = 1.08f;
 
@@ -56,7 +56,7 @@ namespace HoaVaMau.Gameplay
                 footstepAudioSource = fsGo.AddComponent<AudioSource>();
                 footstepAudioSource.playOnAwake = false;
                 footstepAudioSource.loop = true;
-                footstepAudioSource.spatialBlend = 0.15f;
+                footstepAudioSource.spatialBlend = 0.0f;
             }
 
             AutoLoadDefaultClips();
@@ -76,6 +76,8 @@ namespace HoaVaMau.Gameplay
             if (ropeGrabSfx == null)
                 ropeGrabSfx = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_An_RopeGrab.mp3");
 
+            if (footstepDirtSfx == null)
+                footstepDirtSfx = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_An_Footsteps_Dirt.wav");
             if (footstepDirtSfx == null)
                 footstepDirtSfx = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_An_Footsteps_Dirt.mp3");
 #endif

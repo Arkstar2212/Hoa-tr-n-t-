@@ -34,6 +34,11 @@ namespace HoaVaMau.Test3D
         [SerializeField] private Transform cameraTransform;
         [SerializeField] private AudioClip footstepDirtClip;
 
+        [Header("Footstep Audio Volume (To & Rõ)")]
+        [SerializeField, Range(0.1f, 1f)] private float walkFootstepVolume = 0.95f;
+        [SerializeField, Range(0.1f, 1f)] private float sprintFootstepVolume = 1.0f;
+        [SerializeField, Range(0.1f, 1f)] private float crouchFootstepVolume = 0.60f;
+
         private CharacterController controller;
         private AudioSource footstepAudioSource;
         private Transform hipsBone;
@@ -150,7 +155,15 @@ namespace HoaVaMau.Test3D
             footstepAudioSource.playOnAwake = false;
             footstepAudioSource.loop = true;
             if (footstepDirtClip != null) footstepAudioSource.clip = footstepDirtClip;
-            footstepAudioSource.spatialBlend = 0.35f;
+            footstepAudioSource.spatialBlend = 0.0f; // 2D direct stereo sound for player's own footsteps: loud, punchy, zero camera distance dropoff
+            if (footstepDirtClip == null)
+            {
+#if UNITY_EDITOR
+                footstepDirtClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_An_Footsteps_Dirt.wav");
+                if (footstepDirtClip == null) footstepDirtClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_An_Footsteps_Dirt.mp3");
+#endif
+            }
+            if (footstepDirtClip != null) footstepAudioSource.clip = footstepDirtClip;
         }
 
         private void Start()
@@ -453,8 +466,9 @@ namespace HoaVaMau.Test3D
             }
 
             // Đang di chuyển: loop âm thanh tiếng bước chân với âm lượng & cao độ phù hợp
-            float sfxSetting = PlayerPrefs.GetFloat("Settings_SFXVol", 0.70f);
-            float targetVol = (isCrouching ? 0.25f : (isSprinting ? 0.65f : 0.45f)) * Mathf.Max(0.35f, sfxSetting);
+            float sfxSetting = PlayerPrefs.GetFloat("Settings_SFXVol", 1.0f);
+            float baseVol = isCrouching ? crouchFootstepVolume : (isSprinting ? sprintFootstepVolume : walkFootstepVolume);
+            float targetVol = Mathf.Clamp01(baseVol * sfxSetting);
             float targetPitch = isCrouching ? 0.85f : (isSprinting ? 1.15f : 1.0f);
 
             footstepAudioSource.loop = true;

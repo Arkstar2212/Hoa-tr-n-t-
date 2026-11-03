@@ -30231,7 +30231,10 @@ MonoBehaviour:
   pushPower: 3.5
   animator: {fileID: 596441486}
   cameraTransform: {fileID: 1647015193}
-  footstepDirtClip: {fileID: 8300000, guid: 210731a15c1365446ab05cbb44390eaf, type: 3}
+  footstepDirtClip: {fileID: 8300000, guid: c7d7926ad3ba5f8469b75b88b68b89fc, type: 3}
+  walkFootstepVolume: 0.95
+  sprintFootstepVolume: 1
+  crouchFootstepVolume: 0.6
 --- !u!143 &596441488
 CharacterController:
   m_ObjectHideFlags: 0
@@ -30268,7 +30271,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 210731a15c1365446ab05cbb44390eaf, type: 3}
+  m_Resource: {fileID: 8300000, guid: c7d7926ad3ba5f8469b75b88b68b89fc, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -30314,7 +30317,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0.25
+      value: 0
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -70608,51 +70611,51 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1025192451338692500, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.76756364
+      value: 0.66237175
       objectReference: {fileID: 0}
     - target: {fileID: 1025192451338692500, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.00000001815714
+      value: -0.0000000074863715
       objectReference: {fileID: 0}
     - target: {fileID: 1025192451338692500, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.6409728
+      value: -0.7491753
       objectReference: {fileID: 0}
     - target: {fileID: 1025192451338692500, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.00000006953879
+      value: 0.00000007147922
       objectReference: {fileID: 0}
     - target: {fileID: 4875508460200196125, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.68989116
+      value: 0.68982697
       objectReference: {fileID: 0}
     - target: {fileID: 4875508460200196125, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.043004967
+      value: -0.04402247
       objectReference: {fileID: 0}
     - target: {fileID: 4875508460200196125, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.044958673
+      value: -0.0460224
       objectReference: {fileID: 0}
     - target: {fileID: 4875508460200196125, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.72123474
+      value: 0.7211676
       objectReference: {fileID: 0}
     - target: {fileID: 7717146335360875816, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.9518672
+      value: 0.95045114
       objectReference: {fileID: 0}
     - target: {fileID: 7717146335360875816, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.009197573
+      value: 0.018872578
       objectReference: {fileID: 0}
     - target: {fileID: 7717146335360875816, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.029396703
+      value: 0.059455995
       objectReference: {fileID: 0}
     - target: {fileID: 7717146335360875816, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.30495933
+      value: 0.30455127
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
