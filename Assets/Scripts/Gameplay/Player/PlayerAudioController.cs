@@ -81,6 +81,14 @@ namespace HoaVaMau.Gameplay
 #endif
         }
 
+        private void OnDisable()
+        {
+            if (footstepAudioSource != null && footstepAudioSource.isPlaying)
+            {
+                footstepAudioSource.Stop();
+            }
+        }
+
         private void Update()
         {
             if (player == null) return;
@@ -134,8 +142,8 @@ namespace HoaVaMau.Gameplay
 
             float speedX = Mathf.Abs(player.Velocity.x);
 
-            // Nếu đứng yên -> NGẮT NGAY
-            if (speedX < 0.35f)
+            // Nếu đứng yên hoặc không có input di chuyển -> NGẮT NGAY
+            if (speedX < 0.25f || Mathf.Abs(player.HorizontalInput) < 0.05f)
             {
                 if (footstepAudioSource.isPlaying)
                 {
