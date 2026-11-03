@@ -1488,6 +1488,12 @@ namespace HoaDo.Editor
                 dg.transform.position = new Vector3(-36.5f, UNIFORM_GROUND_Y, 8.5f);
                 dg.transform.rotation = Quaternion.Euler(0f, 45f, 0f);
                 dg.transform.localScale = Vector3.one * 1.1f;
+
+                // Add VillageDogIdle & 3D Spatial Bark Audio
+                var dogIdle = dg.GetComponent<HoaVaMau.Environment.VillageDogIdle>();
+                if (dogIdle == null) dogIdle = dg.AddComponent<HoaVaMau.Environment.VillageDogIdle>();
+                var barkClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_Dog_Bark.mp3");
+                if (barkClip != null) dogIdle.ConfigureBarkAudio(barkClip, 0.85f);
             }
         }
 
@@ -1975,6 +1981,29 @@ namespace HoaDo.Editor
                         col.radius = data.radius;
                         col.isTrigger = true;
                     }
+
+                    if (tName == "Trigger_02_DogVang")
+                    {
+                        var dogObj = GameObject.Find("Dog_House06_Porch");
+                        if (dogObj != null)
+                        {
+                            var dogIdle = dogObj.GetComponent<HoaVaMau.Environment.VillageDogIdle>();
+                            if (dogIdle != null)
+                            {
+                                for (int l = comp.onInteracted.GetPersistentEventCount() - 1; l >= 0; l--)
+                                {
+                                    UnityEditor.Events.UnityEventTools.RemovePersistentListener(comp.onInteracted, l);
+                                }
+                                var targetMethod = typeof(HoaVaMau.Environment.VillageDogIdle).GetMethod("PlayBark", System.Type.EmptyTypes);
+                                if (targetMethod != null)
+                                {
+                                    var action = (UnityEngine.Events.UnityAction)System.Delegate.CreateDelegate(typeof(UnityEngine.Events.UnityAction), dogIdle, targetMethod);
+                                    UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(comp.onInteracted, action);
+                                }
+                            }
+                        }
+                    }
+
                     EditorUtility.SetDirty(comp);
                 }
                 EditorUtility.SetDirty(tObj);
