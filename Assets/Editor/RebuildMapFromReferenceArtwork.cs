@@ -468,14 +468,6 @@ namespace HoaDo.Editor
             InstantiateRock(rockCragPrefab, westRoot.transform, "West_Crag_05", new Vector3(-71.0f, 3.4f, 34.0f), new Vector3(8.0f, 11.5f, 7.5f), new Vector3(0f, 110f, 0f), matRock);
             InstantiateRock(rockCragPrefab, westRoot.transform, "West_Crag_HighPeak", new Vector3(-84.0f, 5.5f, 58.0f), new Vector3(11.0f, 17.0f, 10.0f), new Vector3(0f, 15f, 0f), matRock);
 
-            // Towering Karst Mountains beside West Rice Fields (Cao hơn cả núi cũ, vươn cao 32m - 48m)
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_TowerPeak_01", new Vector3(-68.0f, 6.0f, 75.0f), new Vector3(16.0f, 32.0f, 15.0f), new Vector3(0f, 30f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_TowerPeak_02", new Vector3(-72.0f, 7.5f, 63.0f), new Vector3(17.0f, 36.0f, 15.5f), new Vector3(0f, -40f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_TowerPeak_03", new Vector3(-67.0f, 6.5f, 52.0f), new Vector3(16.0f, 34.0f, 15.0f), new Vector3(0f, 65f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_TowerPeak_04", new Vector3(-73.0f, 7.0f, 40.0f), new Vector3(17.0f, 35.0f, 15.5f), new Vector3(0f, -15f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_GrandPeak_Backdrop", new Vector3(-88.0f, 10.0f, 58.0f), new Vector3(22.0f, 48.0f, 20.0f), new Vector3(0f, 20f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_GrandPeak_North", new Vector3(-82.0f, 9.0f, 78.0f), new Vector3(19.0f, 42.0f, 18.0f), new Vector3(0f, -25f, 0f), matRock);
-
             // 3D Boulders along footing
             InstantiateRock(rockLargeBoulder, westRoot.transform, "West_Boulder_01", new Vector3(-58.5f, UNIFORM_GROUND_Y + 0.3f, 67.0f), new Vector3(2.4f, 1.8f, 2.2f), new Vector3(10f, 45f, 0f));
             InstantiateRock(rockMediumBoulder, westRoot.transform, "West_Boulder_02", new Vector3(-57.8f, UNIFORM_GROUND_Y + 0.2f, 46.0f), new Vector3(2.0f, 1.6f, 2.0f), new Vector3(-15f, 80f, 5f));
@@ -485,28 +477,8 @@ namespace HoaDo.Editor
             InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_Platform_01", new Vector3(-70.0f, 0.8f, 12.0f), new Vector3(3.5f, 2.6f, 3.2f), new Vector3(0f, 30f, 0f));
             InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_Platform_02", new Vector3(-72.0f, 0.6f, -2.0f), new Vector3(3.8f, 2.8f, 3.4f), new Vector3(0f, -15f, 0f));
             InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_Headland_01", new Vector3(-74.0f, 0.5f, -9.0f), new Vector3(3.5f, 2.5f, 3.2f), new Vector3(0f, 25f, 0f));
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_Crag_01", new Vector3(-73.0f, 2.0f, 8.0f), new Vector3(7.0f, 10.0f, 6.5f), new Vector3(0f, 45f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_Crag_02", new Vector3(-74.0f, 1.8f, -4.0f), new Vector3(6.5f, 9.5f, 6.0f), new Vector3(0f, -20f, 0f), matRock);
-
-            // High Coastal Rocky Mountains (Dãy Núi Đá Cao Bờ Tây) - Towering cliffs & karsts rising up to Y = 35m
-            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_CliffBase_01", new Vector3(-77.0f, 2.0f, -4.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, 20f, 0f), matRock);
-            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_CliffBase_02", new Vector3(-79.0f, 1.8f, -14.0f), new Vector3(6.5f, 4.8f, 5.8f), new Vector3(0f, -30f, 0f), matRock);
-            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_CliffBase_03", new Vector3(-75.0f, 2.2f, 6.0f), new Vector3(5.5f, 4.2f, 5.2f), new Vector3(0f, 45f, 0f), matRock);
-            InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_SeaHeadland", new Vector3(-82.0f, 1.2f, -22.0f), new Vector3(7.0f, 5.0f, 6.5f), new Vector3(0f, 15f, 0f), matRock);
-
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_HighPeak_Front", new Vector3(-81.0f, 4.0f, -3.0f), new Vector3(12.0f, 20.0f, 11.0f), new Vector3(0f, 35f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_HighPeak_South", new Vector3(-83.0f, 3.8f, -13.0f), new Vector3(13.0f, 22.0f, 12.0f), new Vector3(0f, -45f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_HighPeak_North", new Vector3(-80.0f, 4.5f, 12.0f), new Vector3(12.5f, 20.0f, 11.5f), new Vector3(0f, 70f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_SeaMonolith_01", new Vector3(-85.0f, 2.5f, -24.0f), new Vector3(10.0f, 17.0f, 9.5f), new Vector3(0f, -15f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_SeaMonolith_02", new Vector3(-80.0f, 2.0f, -27.0f), new Vector3(11.0f, 20.0f, 10.5f), new Vector3(0f, 35f, 0f), matRock);
-
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_GrandPeak_01", new Vector3(-95.0f, 6.5f, 0.0f), new Vector3(16.0f, 30.0f, 15.0f), new Vector3(0f, 10f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_GrandPeak_02", new Vector3(-98.0f, 6.0f, -14.0f), new Vector3(17.0f, 32.0f, 16.0f), new Vector3(0f, -35f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_GrandPeak_03", new Vector3(-92.0f, 7.0f, 18.0f), new Vector3(15.0f, 28.0f, 14.0f), new Vector3(0f, 40f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_TowerPeak_Sky", new Vector3(-105.0f, 9.5f, -8.0f), new Vector3(20.0f, 42.0f, 18.0f), new Vector3(0f, 15f, 0f), matRock);
-
-            InstantiateRock(rockLargeBoulder, westRoot.transform, "West_Coast_FootingBoulder_01", new Vector3(-75.5f, UNIFORM_GROUND_Y + 0.2f, -12.0f), new Vector3(2.8f, 2.2f, 2.6f), new Vector3(10f, 30f, 0f));
-            InstantiateRock(rockLargeBoulder, westRoot.transform, "West_Coast_FootingBoulder_02", new Vector3(-77.5f, UNIFORM_GROUND_Y + 0.3f, -19.0f), new Vector3(3.2f, 2.5f, 3.0f), new Vector3(-15f, -20f, 5f));
+            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_Crag_01", new Vector3(-73.0f, 2.0f, 8.0f), new Vector3(7.0f, 10.0f, 6.5f), new Vector3(0f, 45f, 0f));
+            InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_Crag_02", new Vector3(-74.0f, 1.8f, -4.0f), new Vector3(6.5f, 9.5f, 6.0f), new Vector3(0f, -20f, 0f));
 
             // Crowning Vegetation on West Ridge
             if (heroBanyanPrefab != null)
@@ -555,14 +527,6 @@ namespace HoaDo.Editor
             InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Crag_05", new Vector3(72.0f, 3.5f, 34.0f), new Vector3(8.2f, 11.8f, 7.8f), new Vector3(0f, -115f, 0f), matRock);
             InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Crag_HighPeak", new Vector3(85.0f, 5.6f, 58.0f), new Vector3(11.5f, 17.5f, 10.5f), new Vector3(0f, -25f, 0f), matRock);
 
-            // Towering Karst Mountains beside East Rice Fields (Cao hơn cả núi cũ, vươn cao 32m - 48m)
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_TowerPeak_01", new Vector3(68.0f, 6.0f, 75.0f), new Vector3(16.0f, 32.0f, 15.0f), new Vector3(0f, -30f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_TowerPeak_02", new Vector3(72.0f, 7.5f, 63.0f), new Vector3(17.0f, 36.0f, 15.5f), new Vector3(0f, 40f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_TowerPeak_03", new Vector3(67.0f, 6.5f, 52.0f), new Vector3(16.0f, 34.0f, 15.0f), new Vector3(0f, -65f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_TowerPeak_04", new Vector3(73.0f, 7.0f, 40.0f), new Vector3(17.0f, 35.0f, 15.5f), new Vector3(0f, 15f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_GrandPeak_Backdrop", new Vector3(88.0f, 10.0f, 58.0f), new Vector3(22.0f, 48.0f, 20.0f), new Vector3(0f, -20f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_GrandPeak_North", new Vector3(82.0f, 9.0f, 78.0f), new Vector3(19.0f, 42.0f, 18.0f), new Vector3(0f, 25f, 0f), matRock);
-
             // 3D Boulders along footing
             InstantiateRock(rockLargeBoulder, eastRoot.transform, "East_Boulder_01", new Vector3(54.0f, UNIFORM_GROUND_Y + 0.3f, 68.0f), new Vector3(2.4f, 1.8f, 2.2f), new Vector3(5f, -40f, 10f));
             InstantiateRock(rockMediumBoulder, eastRoot.transform, "East_Boulder_02", new Vector3(56.5f, UNIFORM_GROUND_Y + 0.2f, 48.0f), new Vector3(2.0f, 1.6f, 2.0f), new Vector3(15f, 60f, -5f));
@@ -572,28 +536,8 @@ namespace HoaDo.Editor
             InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_Platform_01", new Vector3(70.0f, 0.8f, 12.0f), new Vector3(3.5f, 2.6f, 3.2f), new Vector3(0f, -30f, 0f));
             InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_Platform_02", new Vector3(72.0f, 0.6f, -2.0f), new Vector3(3.8f, 2.8f, 3.4f), new Vector3(0f, 15f, 0f));
             InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_Headland_01", new Vector3(74.0f, 0.5f, -9.0f), new Vector3(3.5f, 2.5f, 3.2f), new Vector3(0f, -25f, 0f));
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_Crag_01", new Vector3(73.0f, 2.0f, 8.0f), new Vector3(7.0f, 10.0f, 6.5f), new Vector3(0f, -45f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_Crag_02", new Vector3(74.0f, 1.8f, -4.0f), new Vector3(6.5f, 9.5f, 6.0f), new Vector3(0f, 20f, 0f), matRock);
-
-            // High Coastal Rocky Mountains (Dãy Núi Đá Cao Bờ Đông) - Towering cliffs & karsts rising up to Y = 35m
-            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_CliffBase_01", new Vector3(77.0f, 2.0f, -4.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, -20f, 0f), matRock);
-            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_CliffBase_02", new Vector3(79.0f, 1.8f, -14.0f), new Vector3(6.5f, 4.8f, 5.8f), new Vector3(0f, 30f, 0f), matRock);
-            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_CliffBase_03", new Vector3(75.0f, 2.2f, 6.0f), new Vector3(5.5f, 4.2f, 5.2f), new Vector3(0f, -45f, 0f), matRock);
-            InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_SeaHeadland", new Vector3(82.0f, 1.2f, -22.0f), new Vector3(7.0f, 5.0f, 6.5f), new Vector3(0f, -15f, 0f), matRock);
-
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_HighPeak_Front", new Vector3(81.0f, 4.0f, -3.0f), new Vector3(12.0f, 20.0f, 11.0f), new Vector3(0f, -35f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_HighPeak_South", new Vector3(83.0f, 3.8f, -13.0f), new Vector3(13.0f, 22.0f, 12.0f), new Vector3(0f, 45f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_HighPeak_North", new Vector3(80.0f, 4.5f, 12.0f), new Vector3(12.5f, 20.0f, 11.5f), new Vector3(0f, -70f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_SeaMonolith_01", new Vector3(85.0f, 2.5f, -24.0f), new Vector3(10.0f, 17.0f, 9.5f), new Vector3(0f, 15f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_SeaMonolith_02", new Vector3(80.0f, 2.0f, -27.0f), new Vector3(11.0f, 20.0f, 10.5f), new Vector3(0f, -35f, 0f), matRock);
-
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_GrandPeak_01", new Vector3(95.0f, 6.5f, 0.0f), new Vector3(16.0f, 30.0f, 15.0f), new Vector3(0f, -10f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_GrandPeak_02", new Vector3(98.0f, 6.0f, -14.0f), new Vector3(17.0f, 32.0f, 16.0f), new Vector3(0f, 35f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_GrandPeak_03", new Vector3(92.0f, 7.0f, 18.0f), new Vector3(15.0f, 28.0f, 14.0f), new Vector3(0f, -40f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_TowerPeak_Sky", new Vector3(105.0f, 9.5f, -8.0f), new Vector3(20.0f, 42.0f, 18.0f), new Vector3(0f, -15f, 0f), matRock);
-
-            InstantiateRock(rockLargeBoulder, eastRoot.transform, "East_Coast_FootingBoulder_01", new Vector3(75.5f, UNIFORM_GROUND_Y + 0.2f, -12.0f), new Vector3(2.8f, 2.2f, 2.6f), new Vector3(10f, -30f, 0f));
-            InstantiateRock(rockLargeBoulder, eastRoot.transform, "East_Coast_FootingBoulder_02", new Vector3(77.5f, UNIFORM_GROUND_Y + 0.3f, -19.0f), new Vector3(3.2f, 2.5f, 3.0f), new Vector3(-15f, 20f, 5f));
+            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_Crag_01", new Vector3(73.0f, 2.0f, 8.0f), new Vector3(7.0f, 10.0f, 6.5f), new Vector3(0f, -45f, 0f));
+            InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_Crag_02", new Vector3(74.0f, 1.8f, -4.0f), new Vector3(6.5f, 9.5f, 6.0f), new Vector3(0f, 20f, 0f));
 
             // Crowning Vegetation on East Ridge
             if (heroBanyanPrefab != null)
@@ -629,25 +573,6 @@ namespace HoaDo.Editor
             InstantiateRock(rockPlatformPrefab, northRoot.transform, "North_Gate_Pass_East", new Vector3(3.0f, 1.2f, 80.0f), new Vector3(3.0f, 2.4f, 2.8f), new Vector3(0f, -35f, 0f), matRock);
             InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_Pass_Crag_West", new Vector3(-20.0f, 2.5f, 85.0f), new Vector3(6.5f, 9.5f, 6.0f), new Vector3(0f, 20f, 0f), matRock);
             InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_Pass_Crag_East", new Vector3(7.0f, 2.5f, 85.0f), new Vector3(6.5f, 9.5f, 6.0f), new Vector3(0f, -20f, 0f), matRock);
-
-            // Towering Karst Mountains Behind North Village Gate (Đỉnh Núi Cao Hùng Vĩ Phía Sau Cổng Làng)
-            InstantiateRock(rockPlatformPrefab, northRoot.transform, "North_Gate_CliffBase_West", new Vector3(-19.0f, 2.5f, 84.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, 30f, 0f), matRock);
-            InstantiateRock(rockPlatformPrefab, northRoot.transform, "North_Gate_CliffBase_East", new Vector3(8.0f, 2.5f, 84.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, -30f, 0f), matRock);
-
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_01", new Vector3(-24.0f, 7.0f, 88.0f), new Vector3(16.0f, 36.0f, 15.0f), new Vector3(0f, 45f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_02", new Vector3(-38.0f, 9.0f, 96.0f), new Vector3(18.0f, 42.0f, 17.0f), new Vector3(0f, -20f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_03", new Vector3(-54.0f, 10.5f, 104.0f), new Vector3(20.0f, 46.0f, 18.0f), new Vector3(0f, 35f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_04", new Vector3(-68.0f, 11.5f, 112.0f), new Vector3(22.0f, 48.0f, 20.0f), new Vector3(0f, -15f, 0f), matRock);
-
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_05", new Vector3(12.0f, 7.0f, 88.0f), new Vector3(16.0f, 36.0f, 15.0f), new Vector3(0f, -45f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_06", new Vector3(26.0f, 9.0f, 96.0f), new Vector3(18.0f, 42.0f, 17.0f), new Vector3(0f, 20f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_07", new Vector3(42.0f, 10.5f, 104.0f), new Vector3(20.0f, 46.0f, 18.0f), new Vector3(0f, -35f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_08", new Vector3(58.0f, 11.5f, 112.0f), new Vector3(22.0f, 48.0f, 20.0f), new Vector3(0f, 15f, 0f), matRock);
-
-            // Grand Backdrop Monoliths Behind Mountain Pass Road
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Pass_CenterPeak_Left", new Vector3(-15.0f, 12.0f, 118.0f), new Vector3(20.0f, 48.0f, 18.0f), new Vector3(0f, 25f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Pass_CenterPeak_Right", new Vector3(4.0f, 12.0f, 120.0f), new Vector3(20.0f, 48.0f, 18.0f), new Vector3(0f, -25f, 0f), matRock);
-            InstantiateRock(rockCragPrefab, northRoot.transform, "North_Pass_Summit_Monolith", new Vector3(-6.0f, 14.0f, 134.0f), new Vector3(26.0f, 54.0f, 24.0f), new Vector3(0f, 5f, 0f), matRock);
         }
 
         private static GameObject InstantiateRock(GameObject prefab, Transform parent, string name, Vector3 pos, Vector3 scale, Vector3 rot, Material overrideMat = null)
@@ -2162,209 +2087,6 @@ namespace HoaDo.Editor
         private static void SetupCameras()
         {
             SetOverviewCamera();
-        }
-
-        [MenuItem("Tools/Hoa Do/Add All High Rocky Mountains (Rice Flanks and North Gate)")]
-        public static void AddAllHighRockyMountains()
-        {
-            var matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Rocks/M_Rock_Platform_01.mat");
-            if (matRock == null) matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/TripoModels/rock_outcrop_3d_model/Materials/rock_outcrop_3d_model.mat");
-
-            var rockPlatformPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/PF_Rock_Platform_CliffLedge.prefab");
-            if (rockPlatformPrefab == null) rockPlatformPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Platform_01.fbx");
-
-            var rockCragPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/rock_outcrop_3d_model/rock_outcrop_3d_model.fbx");
-            if (rockCragPrefab == null) rockCragPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/PF_Rock_Outcrop.prefab");
-
-            // 1. West Rice Field Flank Mountains
-            var westRoot = GameObject.Find("MountainRange_West_Flank");
-            if (westRoot != null)
-            {
-                var namesToRemove = new string[] {
-                    "West_Rice_TowerPeak_01", "West_Rice_TowerPeak_02", "West_Rice_TowerPeak_03", "West_Rice_TowerPeak_04", "West_Rice_TowerPeak_05",
-                    "West_Rice_GrandPeak_Backdrop", "West_Rice_GrandPeak_North",
-                    "West_Rice_CliffBase_01", "West_Rice_CliffBase_02"
-                };
-                foreach (var n in namesToRemove)
-                {
-                    var old = westRoot.transform.Find(n);
-                    if (old != null) Object.DestroyImmediate(old.gameObject);
-                }
-
-                InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Rice_CliffBase_01", new Vector3(-64.0f, 2.0f, 70.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, 20f, 0f), matRock);
-                InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Rice_CliffBase_02", new Vector3(-65.0f, 2.0f, 50.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, -30f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_TowerPeak_01", new Vector3(-68.0f, 6.0f, 75.0f), new Vector3(16.0f, 34.0f, 15.0f), new Vector3(0f, 30f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_TowerPeak_02", new Vector3(-72.0f, 7.5f, 63.0f), new Vector3(18.0f, 38.0f, 16.0f), new Vector3(0f, -40f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_TowerPeak_03", new Vector3(-67.0f, 6.5f, 52.0f), new Vector3(17.0f, 36.0f, 15.0f), new Vector3(0f, 65f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_TowerPeak_04", new Vector3(-73.0f, 7.0f, 40.0f), new Vector3(17.0f, 35.0f, 15.5f), new Vector3(0f, -15f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_TowerPeak_05", new Vector3(-65.0f, 5.5f, 85.0f), new Vector3(18.0f, 40.0f, 16.0f), new Vector3(0f, 45f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_GrandPeak_Backdrop", new Vector3(-88.0f, 10.0f, 58.0f), new Vector3(24.0f, 50.0f, 22.0f), new Vector3(0f, 20f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Rice_GrandPeak_North", new Vector3(-82.0f, 9.0f, 78.0f), new Vector3(22.0f, 45.0f, 20.0f), new Vector3(0f, -25f, 0f), matRock);
-            }
-
-            // 2. East Rice Field Flank Mountains
-            var eastRoot = GameObject.Find("MountainRange_East_Flank");
-            if (eastRoot != null)
-            {
-                var namesToRemove = new string[] {
-                    "East_Rice_TowerPeak_01", "East_Rice_TowerPeak_02", "East_Rice_TowerPeak_03", "East_Rice_TowerPeak_04", "East_Rice_TowerPeak_05",
-                    "East_Rice_GrandPeak_Backdrop", "East_Rice_GrandPeak_North",
-                    "East_Rice_CliffBase_01", "East_Rice_CliffBase_02"
-                };
-                foreach (var n in namesToRemove)
-                {
-                    var old = eastRoot.transform.Find(n);
-                    if (old != null) Object.DestroyImmediate(old.gameObject);
-                }
-
-                InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Rice_CliffBase_01", new Vector3(64.0f, 2.0f, 70.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, -20f, 0f), matRock);
-                InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Rice_CliffBase_02", new Vector3(65.0f, 2.0f, 50.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, 30f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_TowerPeak_01", new Vector3(68.0f, 6.0f, 75.0f), new Vector3(16.0f, 34.0f, 15.0f), new Vector3(0f, -30f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_TowerPeak_02", new Vector3(72.0f, 7.5f, 63.0f), new Vector3(18.0f, 38.0f, 16.0f), new Vector3(0f, 40f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_TowerPeak_03", new Vector3(67.0f, 6.5f, 52.0f), new Vector3(17.0f, 36.0f, 15.0f), new Vector3(0f, -65f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_TowerPeak_04", new Vector3(73.0f, 7.0f, 40.0f), new Vector3(17.0f, 35.0f, 15.5f), new Vector3(0f, 15f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_TowerPeak_05", new Vector3(65.0f, 5.5f, 85.0f), new Vector3(18.0f, 40.0f, 16.0f), new Vector3(0f, -45f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_GrandPeak_Backdrop", new Vector3(88.0f, 10.0f, 58.0f), new Vector3(24.0f, 50.0f, 22.0f), new Vector3(0f, -20f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Rice_GrandPeak_North", new Vector3(82.0f, 9.0f, 78.0f), new Vector3(22.0f, 45.0f, 20.0f), new Vector3(0f, 25f, 0f), matRock);
-            }
-
-            // 3. North Gate High Backdrop Mountains
-            var northRoot = GameObject.Find("MountainRange_North_Backdrop");
-            if (northRoot != null)
-            {
-                var namesToRemove = new string[] {
-                    "North_Gate_CliffBase_West", "North_Gate_CliffBase_East",
-                    "North_Gate_TowerPeak_01", "North_Gate_TowerPeak_02", "North_Gate_TowerPeak_03", "North_Gate_TowerPeak_04",
-                    "North_Gate_TowerPeak_05", "North_Gate_TowerPeak_06", "North_Gate_TowerPeak_07", "North_Gate_TowerPeak_08",
-                    "North_Pass_CenterPeak_Left", "North_Pass_CenterPeak_Right", "North_Pass_Summit_Monolith"
-                };
-                foreach (var n in namesToRemove)
-                {
-                    var old = northRoot.transform.Find(n);
-                    if (old != null) Object.DestroyImmediate(old.gameObject);
-                }
-
-                InstantiateRock(rockPlatformPrefab, northRoot.transform, "North_Gate_CliffBase_West", new Vector3(-19.0f, 2.5f, 84.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, 30f, 0f), matRock);
-                InstantiateRock(rockPlatformPrefab, northRoot.transform, "North_Gate_CliffBase_East", new Vector3(8.0f, 2.5f, 84.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, -30f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_01", new Vector3(-24.0f, 7.0f, 88.0f), new Vector3(16.0f, 36.0f, 15.0f), new Vector3(0f, 45f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_02", new Vector3(-38.0f, 9.0f, 96.0f), new Vector3(18.0f, 42.0f, 17.0f), new Vector3(0f, -20f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_03", new Vector3(-54.0f, 10.5f, 104.0f), new Vector3(20.0f, 46.0f, 18.0f), new Vector3(0f, 35f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_04", new Vector3(-68.0f, 11.5f, 112.0f), new Vector3(22.0f, 48.0f, 20.0f), new Vector3(0f, -15f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_05", new Vector3(12.0f, 7.0f, 88.0f), new Vector3(16.0f, 36.0f, 15.0f), new Vector3(0f, -45f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_06", new Vector3(26.0f, 9.0f, 96.0f), new Vector3(18.0f, 42.0f, 17.0f), new Vector3(0f, 20f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_07", new Vector3(42.0f, 10.5f, 104.0f), new Vector3(20.0f, 46.0f, 18.0f), new Vector3(0f, -35f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Gate_TowerPeak_08", new Vector3(58.0f, 11.5f, 112.0f), new Vector3(22.0f, 48.0f, 20.0f), new Vector3(0f, 15f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Pass_CenterPeak_Left", new Vector3(-15.0f, 12.0f, 118.0f), new Vector3(20.0f, 48.0f, 18.0f), new Vector3(0f, 25f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Pass_CenterPeak_Right", new Vector3(4.0f, 12.0f, 120.0f), new Vector3(20.0f, 48.0f, 18.0f), new Vector3(0f, -25f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, northRoot.transform, "North_Pass_Summit_Monolith", new Vector3(-6.0f, 14.0f, 134.0f), new Vector3(26.0f, 54.0f, 24.0f), new Vector3(0f, 5f, 0f), matRock);
-            }
-
-            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
-            AssetDatabase.SaveAssets();
-            Debug.Log("[RebuildMap] All High Rocky Mountains (Rice Flanks and North Gate) added successfully!");
-        }
-
-        [MenuItem("Tools/Hoa Do/Add High Coastal Rocky Mountains (Both Flanks)")]
-        public static void AddHighCoastalRockyMountains()
-        {
-            var matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Rocks/M_Rock_Platform_01.mat");
-            if (matRock == null) matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/TripoModels/rock_outcrop_3d_model/Materials/rock_outcrop_3d_model.mat");
-
-            var rockPlatformPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/PF_Rock_Platform_CliffLedge.prefab");
-            if (rockPlatformPrefab == null) rockPlatformPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/SM_Rock_Platform_01.fbx");
-
-            var rockCragPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/rock_outcrop_3d_model/rock_outcrop_3d_model.fbx");
-            if (rockCragPrefab == null) rockCragPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/PF_Rock_Outcrop.prefab");
-
-            var rockLargeBoulder = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Optimized/SM_Rock_Large_BlenderOptimized.fbx");
-            if (rockLargeBoulder == null) rockLargeBoulder = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Environment/PF_Rock_Large_01.prefab");
-
-            var westRoot = GameObject.Find("MountainRange_West_Flank");
-            if (westRoot != null)
-            {
-                // Remove any previous versions to avoid duplication
-                var namesToRemove = new string[] {
-                    "West_Coast_CliffBase_01", "West_Coast_CliffBase_02", "West_Coast_CliffBase_03", "West_Coast_SeaHeadland",
-                    "West_Coast_HighPeak_Front", "West_Coast_HighPeak_South", "West_Coast_HighPeak_North", "West_Coast_SeaMonolith_01", "West_Coast_SeaMonolith_02",
-                    "West_Coast_GrandPeak_01", "West_Coast_GrandPeak_02", "West_Coast_GrandPeak_03", "West_Coast_TowerPeak_Sky",
-                    "West_Coast_FootingBoulder_01", "West_Coast_FootingBoulder_02"
-                };
-                foreach (var n in namesToRemove)
-                {
-                    var old = westRoot.transform.Find(n);
-                    if (old != null) Object.DestroyImmediate(old.gameObject);
-                }
-
-                // West High Mountains
-                InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_CliffBase_01", new Vector3(-77.0f, 2.0f, -4.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, 20f, 0f), matRock);
-                InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_CliffBase_02", new Vector3(-79.0f, 1.8f, -14.0f), new Vector3(6.5f, 4.8f, 5.8f), new Vector3(0f, -30f, 0f), matRock);
-                InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_CliffBase_03", new Vector3(-75.0f, 2.2f, 6.0f), new Vector3(5.5f, 4.2f, 5.2f), new Vector3(0f, 45f, 0f), matRock);
-                InstantiateRock(rockPlatformPrefab, westRoot.transform, "West_Coast_SeaHeadland", new Vector3(-82.0f, 1.2f, -22.0f), new Vector3(7.0f, 5.0f, 6.5f), new Vector3(0f, 15f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_HighPeak_Front", new Vector3(-81.0f, 4.0f, -3.0f), new Vector3(12.0f, 20.0f, 11.0f), new Vector3(0f, 35f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_HighPeak_South", new Vector3(-83.0f, 3.8f, -13.0f), new Vector3(13.0f, 22.0f, 12.0f), new Vector3(0f, -45f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_HighPeak_North", new Vector3(-80.0f, 4.5f, 12.0f), new Vector3(12.5f, 20.0f, 11.5f), new Vector3(0f, 70f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_SeaMonolith_01", new Vector3(-85.0f, 2.5f, -24.0f), new Vector3(10.0f, 17.0f, 9.5f), new Vector3(0f, -15f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_SeaMonolith_02", new Vector3(-80.0f, 2.0f, -27.0f), new Vector3(11.0f, 20.0f, 10.5f), new Vector3(0f, 35f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_GrandPeak_01", new Vector3(-95.0f, 6.5f, 0.0f), new Vector3(16.0f, 30.0f, 15.0f), new Vector3(0f, 10f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_GrandPeak_02", new Vector3(-98.0f, 6.0f, -14.0f), new Vector3(17.0f, 32.0f, 16.0f), new Vector3(0f, -35f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_GrandPeak_03", new Vector3(-92.0f, 7.0f, 18.0f), new Vector3(15.0f, 28.0f, 14.0f), new Vector3(0f, 40f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, westRoot.transform, "West_Coast_TowerPeak_Sky", new Vector3(-105.0f, 9.5f, -8.0f), new Vector3(20.0f, 42.0f, 18.0f), new Vector3(0f, 15f, 0f), matRock);
-
-                InstantiateRock(rockLargeBoulder, westRoot.transform, "West_Coast_FootingBoulder_01", new Vector3(-75.5f, UNIFORM_GROUND_Y + 0.2f, -12.0f), new Vector3(2.8f, 2.2f, 2.6f), new Vector3(10f, 30f, 0f));
-                InstantiateRock(rockLargeBoulder, westRoot.transform, "West_Coast_FootingBoulder_02", new Vector3(-77.5f, UNIFORM_GROUND_Y + 0.3f, -19.0f), new Vector3(3.2f, 2.5f, 3.0f), new Vector3(-15f, -20f, 5f));
-            }
-
-            var eastRoot = GameObject.Find("MountainRange_East_Flank");
-            if (eastRoot != null)
-            {
-                // Remove any previous versions to avoid duplication
-                var namesToRemove = new string[] {
-                    "East_Coast_CliffBase_01", "East_Coast_CliffBase_02", "East_Coast_CliffBase_03", "East_Coast_SeaHeadland",
-                    "East_Coast_HighPeak_Front", "East_Coast_HighPeak_South", "East_Coast_HighPeak_North", "East_Coast_SeaMonolith_01", "East_Coast_SeaMonolith_02",
-                    "East_Coast_GrandPeak_01", "East_Coast_GrandPeak_02", "East_Coast_GrandPeak_03", "East_Coast_TowerPeak_Sky",
-                    "East_Coast_FootingBoulder_01", "East_Coast_FootingBoulder_02"
-                };
-                foreach (var n in namesToRemove)
-                {
-                    var old = eastRoot.transform.Find(n);
-                    if (old != null) Object.DestroyImmediate(old.gameObject);
-                }
-
-                // East High Mountains
-                InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_CliffBase_01", new Vector3(77.0f, 2.0f, -4.0f), new Vector3(6.0f, 4.5f, 5.5f), new Vector3(0f, -20f, 0f), matRock);
-                InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_CliffBase_02", new Vector3(79.0f, 1.8f, -14.0f), new Vector3(6.5f, 4.8f, 5.8f), new Vector3(0f, 30f, 0f), matRock);
-                InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_CliffBase_03", new Vector3(75.0f, 2.2f, 6.0f), new Vector3(5.5f, 4.2f, 5.2f), new Vector3(0f, -45f, 0f), matRock);
-                InstantiateRock(rockPlatformPrefab, eastRoot.transform, "East_Coast_SeaHeadland", new Vector3(82.0f, 1.2f, -22.0f), new Vector3(7.0f, 5.0f, 6.5f), new Vector3(0f, -15f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_HighPeak_Front", new Vector3(81.0f, 4.0f, -3.0f), new Vector3(12.0f, 20.0f, 11.0f), new Vector3(0f, -35f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_HighPeak_South", new Vector3(83.0f, 3.8f, -13.0f), new Vector3(13.0f, 22.0f, 12.0f), new Vector3(0f, 45f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_HighPeak_North", new Vector3(80.0f, 4.5f, 12.0f), new Vector3(12.5f, 20.0f, 11.5f), new Vector3(0f, -70f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_SeaMonolith_01", new Vector3(85.0f, 2.5f, -24.0f), new Vector3(10.0f, 17.0f, 9.5f), new Vector3(0f, 15f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_SeaMonolith_02", new Vector3(80.0f, 2.0f, -27.0f), new Vector3(11.0f, 20.0f, 10.5f), new Vector3(0f, -35f, 0f), matRock);
-
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_GrandPeak_01", new Vector3(95.0f, 6.5f, 0.0f), new Vector3(16.0f, 30.0f, 15.0f), new Vector3(0f, -10f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_GrandPeak_02", new Vector3(98.0f, 6.0f, -14.0f), new Vector3(17.0f, 32.0f, 16.0f), new Vector3(0f, 35f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_GrandPeak_03", new Vector3(92.0f, 7.0f, 18.0f), new Vector3(15.0f, 28.0f, 14.0f), new Vector3(0f, -40f, 0f), matRock);
-                InstantiateRock(rockCragPrefab, eastRoot.transform, "East_Coast_TowerPeak_Sky", new Vector3(105.0f, 9.5f, -8.0f), new Vector3(20.0f, 42.0f, 18.0f), new Vector3(0f, -15f, 0f), matRock);
-
-                InstantiateRock(rockLargeBoulder, eastRoot.transform, "East_Coast_FootingBoulder_01", new Vector3(75.5f, UNIFORM_GROUND_Y + 0.2f, -12.0f), new Vector3(2.8f, 2.2f, 2.6f), new Vector3(10f, -30f, 0f));
-                InstantiateRock(rockLargeBoulder, eastRoot.transform, "East_Coast_FootingBoulder_02", new Vector3(77.5f, UNIFORM_GROUND_Y + 0.3f, -19.0f), new Vector3(3.2f, 2.5f, 3.0f), new Vector3(-15f, 20f, 5f));
-            }
-
-            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
-            AssetDatabase.SaveAssets();
-            Debug.Log("[RebuildMap] High Coastal Rocky Mountains added successfully to both flanks!");
         }
 
         private static GameObject GetOrCreateRoot(string path)
