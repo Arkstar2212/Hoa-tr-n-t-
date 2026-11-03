@@ -157,7 +157,7 @@ namespace HoaVaMau.Gameplay
 
             if (!Application.isPlaying) return;
 
-            if (throwPhase == ThrowAnimPhase.None && animator.speed != 1f)
+            if (throwPhase == ThrowAnimPhase.None && (playerController == null || playerController.CurrentState != PlayerState.PushPull) && animator.speed != 1f)
             {
                 animator.speed = 1f;
             }
@@ -245,6 +245,35 @@ namespace HoaVaMau.Gameplay
                 animator.SetLookAtWeight(0.70f, 0.1f, 0.80f, 0.0f, 0.4f);
                 animator.SetLookAtPosition(ropeLookTarget);
                 return;
+            }
+            else if (playerController != null && playerController.CurrentState == PlayerState.PushPull && playerController.InteractionHandler != null)
+            {
+                var crate = playerController.InteractionHandler.CurrentCrate;
+                if (crate != null)
+                {
+                    int side = crate.PlayerSide; // -1 = player is on the left, +1 = player is on the right
+                    float halfWidth = crate.BoxSize.x * 0.5f;
+                    float contactX = crate.transform.position.x + side * halfWidth;
+                    float handY = crate.transform.position.y + crate.BoxSize.y * 0.68f;
+
+                    float facing = (playerController != null) ? playerController.FacingDirection : -side;
+                    Vector3 lHandTarget = new Vector3(contactX, handY + 0.02f, facing * 0.14f);
+                    Vector3 rHandTarget = new Vector3(contactX, handY - 0.02f, -facing * 0.14f);
+
+                    animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.92f);
+                    animator.SetIKPosition(AvatarIKGoal.LeftHand, lHandTarget);
+
+                    animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0.92f);
+                    animator.SetIKPosition(AvatarIKGoal.RightHand, rHandTarget);
+                    return;
+                }
+                else
+                {
+                    animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0f);
+                    animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0f);
+                    animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0f);
+                    animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0f);
+                }
             }
             else
             {
@@ -695,7 +724,7 @@ namespace HoaVaMau.Gameplay
                 }
                 else
                 {
-                    if (throwPhase == ThrowAnimPhase.None && animator.speed != 1f) animator.speed = 1f;
+                    if (throwPhase == ThrowAnimPhase.None && (playerController == null || playerController.CurrentState != PlayerState.PushPull) && animator.speed != 1f) animator.speed = 1f;
                     isCrouching = playerController.IsCrouching;
                     isCrawling = playerController.IsCrawling;
 
@@ -777,6 +806,30 @@ namespace HoaVaMau.Gameplay
             else if (playerController != null && playerController.CurrentState == PlayerState.PushPull)
             {
                 CrossFadeToState("PushPull", 0.15f);
+
+                float moveInput = playerController.HorizontalInput;
+                float facing = playerController.FacingDirection;
+                bool isMoving = Mathf.Abs(moveInput) > 0.05f;
+
+                if (!isMoving)
+                {
+                    // Đứng yên gá tay chạm thùng: tạm dừng tại frame đẩy vững chãi
+                    animator.speed = 0f;
+                }
+                else
+                {
+                    bool isPushingForward = Mathf.Sign(moveInput) == facing;
+                    if (isPushingForward)
+                    {
+                        // Đẩy thùng tiến tới: chạy animation đẩy với tốc độ tự nhiên
+                        animator.speed = 1.0f;
+                    }
+                    else
+                    {
+                        // Kéo thùng lùi lại: đảo chiều animation để chân bước lùi tự nhiên
+                        animator.speed = -0.85f;
+                    }
+                }
             }
             else if (playerController != null && playerController.CurrentState == PlayerState.Carrying)
             {
@@ -897,6 +950,13 @@ namespace HoaVaMau.Gameplay
                 float facing = (playerController != null) ? playerController.FacingDirection : 1f;
                 activeCarrySocket.localPosition = new Vector3(facing * 0.44f, 1.05f, 0f);
             }
+        }
+
+        public Animator AnimatorComponent => animator;
+
+        public void ResetAnimatorSpeed()
+        {
+            if (animator != null) animator.speed = 1f;
         }
 
         public void OnLanded(float impactVelocity)

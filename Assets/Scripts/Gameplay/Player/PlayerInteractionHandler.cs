@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace HoaVaMau.Gameplay
 {
@@ -153,7 +153,19 @@ namespace HoaVaMau.Gameplay
             crate.StartGrab(player, side);
 
             Vector3 anchorPos = crate.GetPlayerAnchorPosition(side);
-            transform.position = new Vector3(anchorPos.x, transform.position.y, 0f);
+            float groundY = GetGroundElevationAt(anchorPos.x, crate.transform.position.y);
+
+            var cc = player.GetComponent<CharacterController>();
+            if (cc != null)
+            {
+                cc.enabled = false;
+                transform.position = new Vector3(anchorPos.x, groundY, 0f);
+                cc.enabled = true;
+            }
+            else
+            {
+                transform.position = new Vector3(anchorPos.x, groundY, 0f);
+            }
         }
 
         public void UpdatePushPull(PlayerController player, float horizontalInput, bool grabCrateHeld, bool jumpPressed, float dt)
@@ -165,10 +177,40 @@ namespace HoaVaMau.Gameplay
             }
 
             float clampedInput = Mathf.Clamp(horizontalInput, -1f, 1f);
+
+            // Kiểm tra vật cản phía sau lưng nhân vật khi đang kéo thùng lùi lại (ngăn chặn thụt lùi vào vách đá)
+            float moveDir = (Mathf.Abs(clampedInput) > 0.05f) ? Mathf.Sign(clampedInput) : 0f;
+            bool isPulling = (moveDir != 0f && moveDir == currentCrate.PlayerSide);
+            if (isPulling)
+            {
+                Vector3 playerCenter = transform.position + Vector3.up * 0.9f;
+                int mask = ~0;
+                if (currentCrate != null) mask &= ~(1 << currentCrate.gameObject.layer);
+                mask &= ~(1 << transform.gameObject.layer);
+
+                if (Physics.Raycast(playerCenter, Vector3.right * moveDir, out RaycastHit playerWallHit, 0.45f, mask, QueryTriggerInteraction.Ignore))
+                {
+                    clampedInput = 0f;
+                }
+            }
+
             currentCrate.MoveWithPlayer(clampedInput, dt);
 
             Vector3 anchorPos = currentCrate.GetPlayerAnchorPosition(currentCrate.PlayerSide);
-            transform.position = new Vector3(anchorPos.x, transform.position.y, 0f);
+            float groundY = GetGroundElevationAt(anchorPos.x, currentCrate.transform.position.y);
+
+            var cc = player.GetComponent<CharacterController>();
+            if (cc != null)
+            {
+                cc.enabled = false;
+                transform.position = new Vector3(anchorPos.x, groundY, 0f);
+                cc.enabled = true;
+            }
+            else
+            {
+                transform.position = new Vector3(anchorPos.x, groundY, 0f);
+            }
+
             player.SetFacingDirection(-currentCrate.PlayerSide);
         }
 
@@ -180,6 +222,36 @@ namespace HoaVaMau.Gameplay
                 currentCrate = null;
             }
             player.SetState(PlayerState.Grounded);
+
+            var anAnim = transform.GetComponent<AnAnimationController>();
+            if (anAnim != null)
+            {
+                anAnim.ResetAnimatorSpeed();
+            }
+        }
+
+        private float GetGroundElevationAt(float x, float fallbackY)
+        {
+            Vector3 origin = new Vector3(x, fallbackY + 1.5f, 0f);
+            RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, 3.5f, ~0, QueryTriggerInteraction.Ignore);
+            float highestGroundY = float.MinValue;
+            bool foundGround = false;
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                var col = hits[i].collider;
+                if (col == null || col.isTrigger) continue;
+                if (col.transform == transform || col.transform.IsChildOf(transform)) continue;
+                if (currentCrate != null && (col == currentCrate.GetComponent<Collider>() || col.transform.IsChildOf(currentCrate.transform))) continue;
+
+                if (hits[i].point.y > highestGroundY)
+                {
+                    highestGroundY = hits[i].point.y;
+                    foundGround = true;
+                }
+            }
+
+            return foundGround ? highestGroundY : fallbackY;
         }
 
         // ================= BƯNG BÊ & NHẶT ĐỒ =================

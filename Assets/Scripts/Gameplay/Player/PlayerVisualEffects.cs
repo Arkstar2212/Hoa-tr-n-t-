@@ -75,14 +75,25 @@ namespace HoaVaMau.Gameplay
 
             squashStretchY = Mathf.MoveTowards(squashStretchY, 1.0f, 3.2f * dt);
 
+            bool has3DAnimator = (transform.GetComponent<Animator>() != null || transform.GetComponentInChildren<Animator>() != null);
+
             if (currentState == PlayerState.PushPull)
             {
-                bool pushing = (horizontalInput != 0 && Mathf.Sign(horizontalInput) == facingDirection);
-                bool pulling = (horizontalInput != 0 && Mathf.Sign(horizontalInput) != facingDirection);
+                // Đối với nhân vật 3D có Animator, animation clip Hero_Interact_Push_Loop_IP đã tích hợp
+                // sẵn dáng người rướn và khụy chân đẩy lực. CẤM xoay thêm zRot khiến bàn chân bị nhấc khỏi mặt đất!
+                if (!has3DAnimator)
+                {
+                    bool pushing = (horizontalInput != 0 && Mathf.Sign(horizontalInput) == facingDirection);
+                    bool pulling = (horizontalInput != 0 && Mathf.Sign(horizontalInput) != facingDirection);
 
-                if (pushing) zRot = -facingDirection * PushLeanAngle;
-                else if (pulling) zRot = -facingDirection * PullLeanAngle;
-                else zRot = -facingDirection * (PushLeanAngle * 0.5f);
+                    if (pushing) zRot = -facingDirection * PushLeanAngle;
+                    else if (pulling) zRot = -facingDirection * PullLeanAngle;
+                    else zRot = -facingDirection * (PushLeanAngle * 0.5f);
+                }
+                else
+                {
+                    zRot = 0f;
+                }
 
                 targetHeight = standingHeight * 0.94f;
                 widthScale = 1.05f;
@@ -120,7 +131,6 @@ namespace HoaVaMau.Gameplay
 
             visualTransform.localEulerAngles = new Vector3(0f, yRot, zRot);
 
-            bool has3DAnimator = (transform.GetComponent<Animator>() != null || transform.GetComponentInChildren<Animator>() != null);
             if (!has3DAnimator)
             {
                 float heightRatio = (targetHeight / standingHeight) * squashStretchY;

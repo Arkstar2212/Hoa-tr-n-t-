@@ -20,7 +20,7 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float moveSpeed = 2.1f;
         [SerializeField] private LayerMask obstacleMask = ~0;
 
-                [Header("Interaction Radius")]
+        [Header("Interaction Radius")]
         [SerializeField] private float grabRange = 1.35f;
 
         [Header("Audio SFX")]
@@ -156,7 +156,7 @@ namespace HoaVaMau.Gameplay
         public Vector3 GetPlayerAnchorPosition(int side)
         {
             float halfWidth = boxSize.x * 0.5f;
-            float playerOffset = 0.44f; // Distance between player center and crate side (arms touching crate)
+            float playerOffset = 0.32f; // Calibrated for Bé An's arm reach (0.24m - 0.28m) so hands rest solidly on crate face
             float targetX = transform.position.x + side * (halfWidth + playerOffset);
             return new Vector3(targetX, transform.position.y, 0f);
         }
@@ -169,6 +169,17 @@ namespace HoaVaMau.Gameplay
             attachedPlayer = player;
             playerSide = side;
             isGrabbed = true;
+
+            // Tạm thời vô hiệu hóa va chạm giữa CharacterController của người chơi và BoxCollider thùng gỗ
+            // để triệt tiêu 100% hiện tượng PhysX depenetration đẩy capsule nhân vật bay lên không trung
+            var charCtrl = player.GetComponent<CharacterController>();
+            if (charCtrl != null)
+            {
+                foreach (var col in GetComponentsInChildren<Collider>())
+                {
+                    Physics.IgnoreCollision(charCtrl, col, true);
+                }
+            }
         }
 
         /// <summary>
@@ -176,6 +187,18 @@ namespace HoaVaMau.Gameplay
         /// </summary>
         public void ReleaseGrab()
         {
+            if (attachedPlayer != null)
+            {
+                var charCtrl = attachedPlayer.GetComponent<CharacterController>();
+                if (charCtrl != null)
+                {
+                    foreach (var col in GetComponentsInChildren<Collider>())
+                    {
+                        Physics.IgnoreCollision(charCtrl, col, false);
+                    }
+                }
+            }
+
             attachedPlayer = null;
             playerSide = 0;
             isGrabbed = false;

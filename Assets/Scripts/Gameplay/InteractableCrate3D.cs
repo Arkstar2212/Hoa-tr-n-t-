@@ -79,6 +79,15 @@ namespace HoaVaMau.Gameplay
             activeGrabber = player;
             player.SetGrabbedCrate(this);
 
+            var charCtrl = player.GetComponent<CharacterController>();
+            if (charCtrl != null)
+            {
+                foreach (var c in GetComponentsInChildren<Collider>())
+                {
+                    Physics.IgnoreCollision(charCtrl, c, true);
+                }
+            }
+
             Vector3 planarDelta = transform.position - player.transform.position;
             planarDelta.y = 0f;
             if (planarDelta.sqrMagnitude < 0.05f) planarDelta = player.transform.forward;
@@ -89,6 +98,14 @@ namespace HoaVaMau.Gameplay
         {
             if (activeGrabber != null)
             {
+                var charCtrl = activeGrabber.GetComponent<CharacterController>();
+                if (charCtrl != null)
+                {
+                    foreach (var c in GetComponentsInChildren<Collider>())
+                    {
+                        Physics.IgnoreCollision(charCtrl, c, false);
+                    }
+                }
                 var prev = activeGrabber;
                 activeGrabber = null;
                 prev.ClearGrabbedCrate(this);

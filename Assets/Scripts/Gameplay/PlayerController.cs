@@ -94,6 +94,7 @@ namespace HoaVaMau.Gameplay
         public PlayerMotor Motor { get { EnsureInitialized(); return motor; } }
         public PlayerPostureHandler Posture { get { EnsureInitialized(); return postureHandler; } }
         public PlayerInteractionHandler Interactions { get { EnsureInitialized(); return interactionHandler; } }
+        public PlayerInteractionHandler InteractionHandler => Interactions;
         public PlayerLedgeClimber LedgeClimber { get { EnsureInitialized(); return ledgeClimber; } }
         public PlayerRopeHandler RopeHandler { get { EnsureInitialized(); return ropeHandler; } }
         public PlayerVisualEffects VisualEffects { get { EnsureInitialized(); return visualEffects; } }
