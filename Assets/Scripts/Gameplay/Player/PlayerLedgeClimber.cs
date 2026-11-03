@@ -21,8 +21,11 @@ namespace HoaVaMau.Gameplay
         public Vector3 ClimbEndPos { get; private set; }
         public Vector3 LedgeCornerPos { get; private set; }
         public float ClimbProgress { get; private set; }
+        public float ExitHorizontalSpeed { get; private set; }
 
-        public float EffectiveClimbDuration => (ClimbDuration > 1.45f) ? 1.22f : Mathf.Max(0.75f, ClimbDuration);
+        private float forwardCarryBlend = 0f;
+
+        public float EffectiveClimbDuration => (ClimbDuration > 1.45f) ? 1.15f : Mathf.Max(0.75f, ClimbDuration);
 
         public PlayerLedgeClimber(
             Transform transform,
@@ -57,8 +60,9 @@ namespace HoaVaMau.Gameplay
             if (charController != null) charController.enabled = false;
 
             float laneZ = grabPos.z;
+            float skinLift = (charController != null) ? Mathf.Clamp(charController.skinWidth, 0f, 0.05f) : 0f;
             ClimbStartPos = new Vector3(grabPos.x, grabPos.y, laneZ);
-            ClimbEndPos = new Vector3(landPos.x, landPos.y, laneZ);
+            ClimbEndPos = new Vector3(landPos.x, landPos.y + skinLift, laneZ);
             if (ledgeDetector != null && ledgeDetector.HasValidLedgeCorner)
             {
                 Vector3 detCorner = ledgeDetector.LastLedgeCorner;
@@ -69,6 +73,8 @@ namespace HoaVaMau.Gameplay
                 LedgeCornerPos = new Vector3(grabPos.x + facingDirection * 0.24f, landPos.y, laneZ);
             }
             ClimbProgress = 0f;
+            ExitHorizontalSpeed = 0f;
+            forwardCarryBlend = 0f;
 
             // Đặt nhân vật bám gờ vách tại ClimbStartPos
             transform.position = ClimbStartPos;
@@ -77,6 +83,7 @@ namespace HoaVaMau.Gameplay
         public void StartClimbing()
         {
             ClimbProgress = 0f;
+            ExitHorizontalSpeed = 0f;
 
             var anAnim = transform.GetComponent<AnAnimationController>();
             if (anAnim != null) anAnim.OnClimbStarted();
@@ -92,13 +99,26 @@ namespace HoaVaMau.Gameplay
             }
         }
 
-        public bool UpdateClimb(float dt, float facingDirection, Transform visualTransform, float baseScaleX, float baseScaleY, float baseScaleZ)
+        public bool UpdateClimb(
+            float dt,
+            float facingDirection,
+            Transform visualTransform,
+            float baseScaleX,
+            float baseScaleY,
+            float baseScaleZ,
+            bool wantsMoveForward = false)
         {
-            ClimbProgress += dt / EffectiveClimbDuration;
+            float targetCarry = wantsMoveForward ? 1f : 0f;
+            forwardCarryBlend = Mathf.MoveTowards(forwardCarryBlend, targetCarry, 5.5f * dt);
+
+            // Khi người chơi giữ phím tiến ở nửa cuối pha đứng dậy -> tăng nhẹ nhịp bước lên để nối mượt vào chạy/đi bộ
+            float standUpSpeedBoost = (ClimbProgress > 0.50f) ? Mathf.Lerp(1.0f, 1.20f, forwardCarryBlend) : 1.0f;
+            float duration = EffectiveClimbDuration;
+            ClimbProgress += (dt / duration) * standUpSpeedBoost;
             float t = Mathf.Clamp01(ClimbProgress);
 
-            // Di chuyển nhân vật mượt mà theo đường cong cơ sinh học 3 pha vượt mép gờ
-            transform.position = EvaluateClimbTrajectory(t, facingDirection);
+            // Di chuyển nhân vật theo đường cong đơn liên tục đạo hàm bậc 1 (không phanh khựng giữa chừng)
+            transform.position = EvaluateClimbTrajectory(t, facingDirection, forwardCarryBlend);
 
             bool hasClimbAnimation = (transform.GetComponent<Animator>() != null);
             if (!hasClimbAnimation)
@@ -108,9 +128,22 @@ namespace HoaVaMau.Gameplay
 
             if (ClimbProgress >= 1.0f)
             {
-                transform.position = ClimbEndPos;
+                float horizSpan = Mathf.Abs(ClimbEndPos.x - ClimbStartPos.x);
+                float rawCarrySpeed = (horizSpan / Mathf.Max(0.4f, 0.86f * duration)) * 1.5f * standUpSpeedBoost;
+                ExitHorizontalSpeed = rawCarrySpeed * forwardCarryBlend;
+
+                // Đặt nhẹ cao hơn 1.5cm rồi cho CharacterController hạ chạm mặt sàn ngay trong frame này
+                // để charController.isGrounded = true tức thì (ngăn nháy sang trạng thái Airborne/Fall gây giật)
+                transform.position = new Vector3(ClimbEndPos.x, ClimbEndPos.y + 0.015f, ClimbEndPos.z);
                 Physics.SyncTransforms();
-                if (charController != null) charController.enabled = true;
+                if (charController != null)
+                {
+                    charController.enabled = true;
+                    charController.Move(new Vector3(0f, -0.04f, 0f));
+                    Vector3 settled = transform.position;
+                    settled.z = ClimbEndPos.z;
+                    transform.position = settled;
+                }
 
                 var anAnim = transform.GetComponent<AnAnimationController>();
                 if (anAnim != null) anAnim.OnClimbFinished();
@@ -123,51 +156,31 @@ namespace HoaVaMau.Gameplay
 
         public Vector3 EvaluateClimbTrajectory(float t, float facing)
         {
+            return EvaluateClimbTrajectory(t, facing, forwardCarryBlend);
+        }
+
+        public Vector3 EvaluateClimbTrajectory(float t, float facing, float carryBlend)
+        {
             Vector3 start = ClimbStartPos;
             Vector3 end = ClimbEndPos;
             float laneZ = start.z;
-            float wallX = LedgeCornerPos.x;
-            float topY = end.y;
-            float s = Mathf.Clamp(Mathf.Abs(topY - start.y) / 0.86f, 0.70f, 1.85f);
 
-            // P0: Bám treo chuẩn ngay mép ngoài tường, hai bàn tay bám đúng góc gờ (wallX, topY)
-            Vector3 p0 = start;
-            // P1 (t=0.34): Kéo thân người thẳng đứng lên dọc mặt ngoài vách, chống tay lên đỉnh gờ
-            Vector3 p1 = new Vector3(wallX - facing * (0.04f * s), topY - 0.44f * s, laneZ);
-            // P2 (t=0.66): Vượt hẳn qua góc gờ, đặt cả hai bàn chân lên mặt sàn trên của vách
-            Vector3 p2 = new Vector3(wallX + facing * (0.24f * s), topY, laneZ);
-            // P3 (t=1.00): Đứng thẳng dậy hoàn toàn ổn định trên mặt sàn
-            Vector3 p3 = end;
+            // 1. Trục Y: Một đường cong chữ S duy nhất từ vị trí bám lên đỉnh gờ trong [0..0.68],
+            // sau đó giữ phẳng tuyệt đối trên mặt sàn ở [0.68..1.0] khi nhân vật đứng dậy bước tới (không khựng 3 đoạn)
+            float uY = Mathf.Clamp01(t / 0.68f);
+            float easeY = uY * uY * (3f - 2f * uY);
+            float posY = Mathf.Lerp(start.y, end.y, easeY);
 
-            if (t <= 0.34f)
-            {
-                // Pha 1 (0% -> 34%): Kéo người thẳng đứng lên dọc theo mặt tường (tay ghim trên gờ)
-                float subT = t / 0.34f;
-                float easeY = Mathf.SmoothStep(0f, 1f, subT);
-                float easeX = subT * subT;
-                return new Vector3(
-                    Mathf.Lerp(p0.x, p1.x, easeX),
-                    Mathf.Lerp(p0.y, p1.y, easeY),
-                    laneZ);
-            }
-            else if (t <= 0.66f)
-            {
-                // Pha 2 (34% -> 66%): Nâng hông vượt qua góc gờ trước rồi mới tiến vào mặt sàn (không xuyên góc đá)
-                float subT = (t - 0.34f) / 0.32f;
-                float easeY = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(subT * 1.18f));
-                float easeX = Mathf.SmoothStep(0f, 1f, subT);
-                return new Vector3(
-                    Mathf.Lerp(p1.x, p2.x, easeX),
-                    Mathf.Lerp(p1.y, p2.y, easeY),
-                    laneZ);
-            }
-            else
-            {
-                // Pha 3 (66% -> 100%): Đứng thẳng dậy từ tư thế chùng gối và bước vào vị trí đứng vững
-                float subT = (t - 0.66f) / 0.34f;
-                float ease = Mathf.SmoothStep(0f, 1f, subT);
-                return Vector3.Lerp(p2, p3, ease);
-            }
+            // 2. Trục X: Giữ sát mặt ngoài tường ở [0..0.14] để vượt góc đá an toàn,
+            // sau đó lướt mượt một mạch tới điểm đáp. Nếu người chơi đang giữ phím tiến (carryBlend > 0),
+            // dùng đa thức không phanh cuối u^2*(1.5 - 0.5*u) để giữ trọn quán tính bước chạy lên!
+            float uX = Mathf.Clamp01((t - 0.14f) / 0.86f);
+            float easeStop = uX * uX * (3f - 2f * uX);          // Đạo hàm cuối = 0 (đứng lại êm ái)
+            float easeCarry = uX * uX * (1.5f - 0.5f * uX);     // Đạo hàm cuối = 1.5 (lướt thẳng vào bước chạy)
+            float easeX = Mathf.Lerp(easeStop, easeCarry, Mathf.Clamp01(carryBlend));
+            float posX = Mathf.Lerp(start.x, end.x, easeX);
+
+            return new Vector3(posX, posY, laneZ);
         }
 
         public void ApplyClimbVisualDynamics(float t, float facing, Transform visualTransform, float baseScaleX, float baseScaleY, float baseScaleZ)

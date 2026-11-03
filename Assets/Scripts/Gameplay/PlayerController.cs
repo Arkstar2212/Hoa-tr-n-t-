@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace HoaVaMau.Gameplay
 {
@@ -510,17 +510,38 @@ namespace HoaVaMau.Gameplay
 
         private void HandleLedgeClimb(float dt)
         {
+            bool movingForward = Mathf.Abs(inputReader.Horizontal) > 0.1f &&
+                                 Mathf.Sign(inputReader.Horizontal) == FacingDirection;
+            IsSprinting = movingForward && inputReader.SprintHeld && !interactionHandler.IsCarrying;
+
             bool finished = ledgeClimber.UpdateClimb(
                 dt,
                 FacingDirection,
                 visualTransform,
                 visualEffects.BaseVisualScaleX,
                 visualEffects.BaseVisualScaleY,
-                visualEffects.BaseVisualScaleZ);
+                visualEffects.BaseVisualScaleZ,
+                movingForward);
 
             if (finished)
             {
-                motor.Velocity = Vector3.zero;
+                postureHandler.UpdatePostures(true, inputReader.CrouchPressed, inputReader.Horizontal, FacingDirection);
+
+                float carrySpeed = 0f;
+                if (movingForward && !IsCrawling)
+                {
+                    float targetLocoSpeed = IsCrouching ? crouchSpeed : (IsSprinting ? sprintSpeed : walkSpeed);
+                    carrySpeed = Mathf.Clamp(
+                        Mathf.Max(ledgeClimber.ExitHorizontalSpeed, targetLocoSpeed * 0.72f),
+                        0f,
+                        targetLocoSpeed);
+                }
+
+                // Giữ lực ghì mặt sàn (-4.5f) và nối tiếp quán tính ngang mượt mà thay vì phanh khựng về 0
+                motor.Velocity = new Vector3(FacingDirection * carrySpeed, -4.5f, 0f);
+                motor.CoyoteTimer = coyoteTimeDuration;
+                airTime = 0f;
+                lastFallVelocityY = 0f;
                 CurrentState = PlayerState.Grounded;
                 visualEffects.ResetScale();
             }

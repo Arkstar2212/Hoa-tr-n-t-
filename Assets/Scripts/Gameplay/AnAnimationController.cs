@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -36,6 +36,7 @@ namespace HoaVaMau.Gameplay
 
         [Header("Hiển thị giao diện điều khiển trên màn hình (OnScreen GUI)")]
         [SerializeField] private bool showOnScreenGui = false;
+        public bool ShowOnScreenGui => showOnScreenGui;
 
         [Header("Xoay mặt mượt mà")]
         [SerializeField] private bool smoothFacing = true;
@@ -98,7 +99,10 @@ namespace HoaVaMau.Gameplay
         private Vector3 pickupGroundWorldPos;
         private ThrowAnimPhase throwPhase = ThrowAnimPhase.None;
         private float throwNormTime = 0f;
-        private float standingHipOffsetY = 0.63f;
+        private float standingHipOffsetY = 0.515f;
+        private float climbClipLength = 2.167f;
+        private float lastClimbExcessY = 0f;
+        private float lastClimbWallHugX = 0f;
         private float currentSmoothSpeed = 0f;
         private float speedVelocity = 0f;
         private float targetFacingAngle = 90f; // 90 = Right, -90 = Left
@@ -136,7 +140,7 @@ namespace HoaVaMau.Gameplay
             SetupComponents();
             if (animator != null) animator.speed = 1f;
             targetFacingAngle = transform.eulerAngles.y;
-            standingHipOffsetY = 0.63f * Mathf.Max(0.1f, transform.lossyScale.y);
+            standingHipOffsetY = 0.515f * Mathf.Max(0.1f, transform.lossyScale.y);
         }
 
         private void Update()
@@ -294,13 +298,21 @@ namespace HoaVaMau.Gameplay
             {
                 Vector3 rootPos = transform.position;
                 Vector3 hipPos = hipsBone.position;
+                float rawOffsetY = hipPos.y - rootPos.y;
 
-                if (currentPlayingState == "Idle" || currentPlayingState == "Walk")
+                AnimatorStateInfo currInfo = animator.GetCurrentAnimatorStateInfo(0);
+                bool inTrans = animator.IsInTransition(0);
+                AnimatorStateInfo nextInfo = inTrans ? animator.GetNextAnimatorStateInfo(0) : default;
+                AnimatorTransitionInfo transInfo = inTrans ? animator.GetAnimatorTransitionInfo(0) : default;
+
+                bool currIsClimb = currInfo.IsName("Climb");
+                bool nextIsClimb = inTrans && nextInfo.IsName("Climb");
+
+                if (!inTrans && !currIsClimb && (currInfo.IsName("Idle") || currInfo.IsName("Walk")))
                 {
-                    float currentOffsetY = hipPos.y - rootPos.y;
-                    if (currentOffsetY > 0.25f && currentOffsetY < 1.5f)
+                    if (rawOffsetY > 0.25f && rawOffsetY < 1.5f)
                     {
-                        standingHipOffsetY = Mathf.Lerp(standingHipOffsetY, currentOffsetY, Time.deltaTime * 10f);
+                        standingHipOffsetY = Mathf.Lerp(standingHipOffsetY, rawOffsetY, Time.deltaTime * 10f);
                     }
                 }
 
@@ -310,22 +322,54 @@ namespace HoaVaMau.Gameplay
                 {
                     hipPos.x = rootPos.x;
                     hipPos.z = rootPos.z;
-    
                 }
 
-
-                // Khi đang leo trèo (Climb), quỹ đạo độ cao Y đã được PlayerLedgeClimber.EvaluateClimbTrajectory điều khiển mượt mà
-                if (currentPlayingState == "Climb")
+                // Chuẩn hóa mượt mà độ cao Hips cho Climb ở cả 3 giai đoạn:
+                // 1) Bám gờ / Đang leo (currIsClimb && !inTrans)
+                // 2) CrossFade từ Climb sang Walk / Run / Idle ngay khúc chạy lên (currIsClimb && inTrans) -> triệt tiêu 100% lỗi vọt Hips +1.2m
+                // 3) CrossFade từ Jump / Fall vào Climb (nextIsClimb && !currIsClimb)
+                if (currIsClimb && !inTrans)
                 {
-                    float climbT = (playerController != null && playerController.LedgeClimber != null)
-                        ? Mathf.Clamp01(playerController.LedgeClimber.ClimbProgress)
-                        : 1f;
-                    float facing = (playerController != null) ? playerController.FacingDirection : 1f;
+                    float climbT;
+                    if (playerController != null)
+                    {
+                        if (playerController.CurrentState == PlayerState.LedgeGrab)
+                            climbT = 0f;
+                        else if (playerController.CurrentState == PlayerState.LedgeClimb && playerController.LedgeClimber != null)
+                            climbT = Mathf.Clamp01(playerController.LedgeClimber.ClimbProgress);
+                        else
+                            climbT = Mathf.Clamp01(currInfo.normalizedTime);
+                    }
+                    else
+                    {
+                        climbT = Mathf.Clamp01(currInfo.normalizedTime);
+                    }
 
-                    // Khi đang đu và vượt gờ (t = 0 -> 1), áp nhẹ thân người sát vào mép tường và trả về 0 tuyệt đối ở t = 1
-                    float wallHugArc = Mathf.Sin(climbT * Mathf.PI);
-                    hipPos.x = rootPos.x + facing * 0.08f * wallHugArc;
-                    hipPos.y = rootPos.y + standingHipOffsetY - 0.10f * wallHugArc;
+                    float facing = (playerController != null) ? playerController.FacingDirection : 1f;
+                    float scaleRatio = Mathf.Max(0.7f, transform.lossyScale.y / 1.15f);
+
+                    // Hàm chuông sin^2(pi * t): giá trị = 0 và đạo hàm vận tốc = 0 tại cả t=0 lẫn t=1 (không gãy giật đầu/cuối)
+                    float sinVal = Mathf.Sin(climbT * Mathf.PI);
+                    float smoothBell = sinVal * sinVal;
+
+                    float targetOffsetY = standingHipOffsetY - (0.15f * scaleRatio) * smoothBell;
+                    lastClimbExcessY = rawOffsetY - targetOffsetY;
+                    lastClimbWallHugX = facing * (0.06f * scaleRatio) * smoothBell;
+
+                    hipPos.x = rootPos.x + lastClimbWallHugX;
+                    hipPos.y = rootPos.y + targetOffsetY;
+                }
+                else if (currIsClimb && inTrans)
+                {
+                    float blendOut = 1f - Mathf.Clamp01(transInfo.normalizedTime);
+                    hipPos.x = rootPos.x + blendOut * lastClimbWallHugX;
+                    hipPos.y = rootPos.y + rawOffsetY - blendOut * lastClimbExcessY;
+                }
+                else if (nextIsClimb && !currIsClimb)
+                {
+                    float blendIn = Mathf.Clamp01(transInfo.normalizedTime);
+                    float startClimbExcess = (0.723f * transform.lossyScale.y) - standingHipOffsetY;
+                    hipPos.y = rootPos.y + rawOffsetY - blendIn * startClimbExcess;
                 }
 
                 hipsBone.position = hipPos;
@@ -376,6 +420,18 @@ namespace HoaVaMau.Gameplay
                 {
                     if (hipsBone == null) hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
                     if (rightHandBone == null) rightHandBone = animator.GetBoneTransform(HumanBodyBones.RightHand);
+                }
+
+                if (animator.runtimeAnimatorController != null)
+                {
+                    foreach (var clip in animator.runtimeAnimatorController.animationClips)
+                    {
+                        if (clip != null && string.Equals(clip.name, "climb", System.StringComparison.OrdinalIgnoreCase) && clip.length > 0.2f)
+                        {
+                            climbClipLength = clip.length;
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -561,8 +617,15 @@ namespace HoaVaMau.Gameplay
                 {
                     // Đang bám treo tay vào gờ vách đá (chờ bấm W/Up để trèo lên)
                     throwPhase = ThrowAnimPhase.None;
-                    currentPlayingState = "LedgeHang";
-                    animator.Play("Climb", 0, 0f);
+                    currentSmoothSpeed = Mathf.MoveTowards(currentSmoothSpeed, 0f, 15f * dt);
+                    speedVelocity = 0f;
+                    animator.SetFloat(SpeedHash, 0f);
+                    animator.SetBool(IsClimbingHash, true);
+                    if (currentPlayingState != "LedgeHang")
+                    {
+                        currentPlayingState = "LedgeHang";
+                        animator.Play("Climb", 0, 0f);
+                    }
                     animator.speed = 0f;
                     return;
                 }
@@ -570,12 +633,38 @@ namespace HoaVaMau.Gameplay
                 {
                     // Đang thực hiện động tác kéo người trèo lên đỉnh vách
                     throwPhase = ThrowAnimPhase.None;
-                    animator.speed = 1f;
+                    float effDur = (playerController.LedgeClimber != null) ? playerController.LedgeClimber.EffectiveClimbDuration : 1.15f;
+                    float climbProg = (playerController.LedgeClimber != null) ? playerController.LedgeClimber.ClimbProgress : 0f;
+
+                    float hInput = playerController.HorizontalInput;
+                    bool movingFwd = Mathf.Abs(hInput) > 0.08f && Mathf.Sign(hInput) == playerController.FacingDirection;
+                    bool sprintFwd = movingFwd && (playerController.IsSprinting || (playerController.InputReader != null && playerController.InputReader.SprintHeld));
+
+                    // Đồng bộ tốc độ phát clip 'climb' (2.167s) khớp 1:1 với thời gian vượt gờ thực tế
+                    // để nhân vật hoàn tất trọn vẹn pha đứng thẳng bước chân lên sàn (t = 0.96) trước khi nối vào Walk/Run
+                    float standUpBoost = (climbProg > 0.50f && movingFwd) ? 1.20f : 1.0f;
+                    animator.speed = ((climbClipLength * 0.96f) / Mathf.Max(0.5f, effDur)) * standUpBoost;
                     animator.SetBool(IsClimbingHash, true);
+
+                    float desiredSpeed = movingFwd ? (sprintFwd ? 5.5f : 2.2f) : 0f;
+                    if (climbProg > 0.45f)
+                    {
+                        currentSmoothSpeed = Mathf.SmoothDamp(currentSmoothSpeed, desiredSpeed, ref speedVelocity, 0.09f, Mathf.Infinity, dt);
+                    }
+                    else
+                    {
+                        currentSmoothSpeed = 0f;
+                        speedVelocity = 0f;
+                    }
+                    animator.SetFloat(SpeedHash, currentSmoothSpeed);
+
                     if (currentPlayingState != "Climb")
                     {
                         currentPlayingState = "Climb";
-                        animator.Play("Climb", 0, 0f);
+                        if (!animator.GetCurrentAnimatorStateInfo(0).IsName("Climb"))
+                        {
+                            animator.Play("Climb", 0, 0f);
+                        }
                     }
                     return;
                 }
@@ -739,8 +828,10 @@ namespace HoaVaMau.Gameplay
             {
                 if (currentPlayingState == "Climb" || currentPlayingState == "Jump" || currentPlayingState == "Fall" || currentPlayingState == "Throw" || currentPlayingState == "Land" || currentPlayingState == "LedgeHang" || currentPlayingState == "RopeClimb" || currentPlayingState == "RopeHang" || currentPlayingState == "RopeSwing" || currentPlayingState == "RopeClimbUp" || currentPlayingState == "RopeClimbDown")
                 {
-                    string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
-                    CrossFadeToState(next, 0.12f);
+                    string next = "Idle";
+                    if (currentSmoothSpeed > 3.0f) next = "Run";
+                    else if (currentSmoothSpeed > 0.15f) next = "Walk";
+                    CrossFadeToState(next, 0.15f);
                 }
                 else
                 {
@@ -822,9 +913,12 @@ namespace HoaVaMau.Gameplay
         {
             if (animator == null) return;
             throwPhase = ThrowAnimPhase.None;
-            animator.speed = 1f;
+            currentSmoothSpeed = 0f;
+            speedVelocity = 0f;
             currentPlayingState = "LedgeHang";
-            CrossFadeToState("LedgeHang", 0.08f);
+            animator.SetBool(IsClimbingHash, true);
+            animator.Play("Climb", 0, 0f);
+            animator.speed = 0f;
         }
 
         public void OnClimbCancelled()
@@ -840,19 +934,58 @@ namespace HoaVaMau.Gameplay
         {
             if (animator == null) return;
             throwPhase = ThrowAnimPhase.None;
-            animator.speed = 1f;
+            float effDur = (playerController != null && playerController.LedgeClimber != null)
+                ? playerController.LedgeClimber.EffectiveClimbDuration
+                : 1.15f;
+            animator.speed = (climbClipLength * 0.96f) / Mathf.Max(0.5f, effDur);
             currentPlayingState = "Climb";
             animator.SetBool(IsClimbingHash, true);
-            CrossFadeToState("Climb", 0.08f);
+            if (!animator.GetCurrentAnimatorStateInfo(0).IsName("Climb"))
+            {
+                animator.CrossFadeInFixedTime("Climb", 0.08f, 0, 0f);
+            }
         }
 
         public void OnClimbFinished()
         {
             if (animator == null) return;
-            string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
-            currentPlayingState = next;
+            animator.speed = 1f;
             animator.SetBool(IsClimbingHash, false);
-            animator.CrossFadeInFixedTime(next, 0.12f);
+
+            string next = "Idle";
+            if (playerController != null)
+            {
+                float h = playerController.HorizontalInput;
+                bool movingFwd = Mathf.Abs(h) > 0.08f && Mathf.Sign(h) == playerController.FacingDirection;
+                if (playerController.IsCrawling)
+                {
+                    next = "Crawl";
+                    currentSmoothSpeed = 1.2f;
+                }
+                else if (playerController.IsCrouching)
+                {
+                    next = movingFwd ? "Crouch" : "CrouchIdle";
+                    currentSmoothSpeed = movingFwd ? 1.8f : 0f;
+                }
+                else if (movingFwd)
+                {
+                    bool sprinting = playerController.IsSprinting || (playerController.InputReader != null && playerController.InputReader.SprintHeld);
+                    next = sprinting ? "Run" : "Walk";
+                    currentSmoothSpeed = Mathf.Max(currentSmoothSpeed, sprinting ? 4.2f : 2.0f);
+                }
+                else
+                {
+                    currentSmoothSpeed = 0f;
+                }
+            }
+            else if (currentSmoothSpeed > 0.15f)
+            {
+                next = (currentSmoothSpeed > 3.0f) ? "Run" : "Walk";
+            }
+
+            animator.SetFloat(SpeedHash, currentSmoothSpeed);
+            currentPlayingState = next;
+            animator.CrossFadeInFixedTime(next, 0.18f);
         }
 
         private void CrossFadeToState(string stateName, float duration)
@@ -934,9 +1067,10 @@ namespace HoaVaMau.Gameplay
             mode = AnAnimationMode.Auto;
         }
 
+#if AN_DEBUG_GUI
         private void OnGUI()
         {
-            if (true) return;
+            if (!showOnScreenGui) return;
 
             GUILayout.BeginArea(new Rect(20, 20, 360, 280), GUI.skin.box);
             GUILayout.Label("<color=#38bdf8><b>🎮 ĐIỀU KHIỂN NHÂN VẬT AN (HOA VÀ MÁU)</b></color>", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 14 });
@@ -976,6 +1110,7 @@ namespace HoaVaMau.Gameplay
 
             GUILayout.EndArea();
         }
+#endif
 
         [ContextMenu("Ép chạy: Walk (Đi bộ)")]
         public void ContextMenu_PlayWalk() => ForceWalk();

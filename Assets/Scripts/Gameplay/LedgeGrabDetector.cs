@@ -119,7 +119,22 @@ namespace HoaVaMau.Gameplay
             // Vị trí kết thúc trèo (platformLandPos): Đứng vững trên mặt phẳng đỉnh platform, không trượt xa quá mức
             float calibratedLandForward = Mathf.Clamp(platformLandForward, 0.38f, 0.48f) * scaleFactor;
             float landX = wallX + facingDir * calibratedLandForward;
-            platformLandPos = new Vector3(landX, topY, 0f);
+            float resolvedTopY = topY;
+
+            // Kiểm tra mặt sàn tại điểm đặt chân cuối (hỗ trợ cả các thùng gỗ / trụ đá hẹp không bị bước hụt qua mép bên kia)
+            Vector3 landCheckOrigin = new Vector3(landX, topY + 0.45f, 0f);
+            if (Physics.Raycast(landCheckOrigin, Vector3.down, out RaycastHit landFloorHit, 0.95f, obstacleMask, QueryTriggerInteraction.Ignore) &&
+                landFloorHit.normal.y >= 0.7f &&
+                Mathf.Abs(landFloorHit.point.y - topY) <= 0.22f)
+            {
+                resolvedTopY = landFloorHit.point.y;
+            }
+            else
+            {
+                landX = wallX + facingDir * (0.28f * scaleFactor);
+            }
+
+            platformLandPos = new Vector3(landX, resolvedTopY, 0f);
 
             return true;
         }
