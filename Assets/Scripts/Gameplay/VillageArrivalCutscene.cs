@@ -123,6 +123,9 @@ namespace HoaVaMau.Gameplay
             player.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
             player.enabled = false;
 
+            // Đồng bộ vận tốc motor ban đầu theo autoRunSpeed để PlayerAudioController khớp nhịp chạy
+            if (player.Motor != null) player.Motor.Velocity = new Vector3(autoRunSpeed, 0f, 0f);
+
             CharacterController cc = player.GetComponent<CharacterController>();
             if (cc != null) cc.enabled = false; // Disable CC during cinematic spline movement to eliminate physics jitter
 
@@ -238,6 +241,20 @@ namespace HoaVaMau.Gameplay
                 }
                 player.transform.position = pos;
 
+                // Cập nhật vận tốc motor theo đúng tốc độ cutscene để PlayerAudioController đồng bộ nhịp chân
+                if (player.Motor != null)
+                {
+                    player.Motor.Velocity = new Vector3(currentSpeed, 0f, 0f);
+                }
+
+                // Khi nhân vật đi chậm lại tới ngưỡng dừng (progress >= 0.88f hoặc currentSpeed < 0.25f), ngắt tiếng bước chân ngay
+                if (progress >= 0.88f || currentSpeed < 0.25f)
+                {
+                    if (player.Motor != null) player.Motor.Velocity = Vector3.zero;
+                    var audioCtrl = player.GetComponent<PlayerAudioController>();
+                    if (audioCtrl != null) audioCtrl.StopFootsteps(immediate: false);
+                }
+
                 // Responsive Villager Greeting Triggers (Based on village positions: Bác Ba ~149.2, Bé Tí ~151.5, Bé Tư ~161.0)
                 if (!bacBaWaved && (pos.x >= 147.5f || progress >= 0.35f))
                 {
@@ -270,6 +287,11 @@ namespace HoaVaMau.Gameplay
             }
             player.transform.position = finalPos;
 
+            // Ngắt hoàn toàn tiếng bước chân và triệt tiêu vận tốc ngay khi dừng lại ở quảng trường làng
+            if (player.Motor != null) player.Motor.Velocity = Vector3.zero;
+            var villageAudioCtrl = player.GetComponent<PlayerAudioController>();
+            if (villageAudioCtrl != null) villageAudioCtrl.StopFootsteps(immediate: true);
+
             // 5. Village Square Wonder & Greeting Phase (~5.5s)
             // Settle in Idle first (0.6s)
             if (anAnimCtrl != null)
@@ -282,6 +304,7 @@ namespace HoaVaMau.Gameplay
                 anAnim.SetFloat("Speed", 0f);
                 anAnim.CrossFadeInFixedTime("Idle", 0.20f);
             }
+            if (villageAudioCtrl != null) villageAudioCtrl.StopFootsteps(immediate: true);
 
             yield return new WaitForSeconds(0.6f);
 

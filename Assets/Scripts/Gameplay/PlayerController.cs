@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace HoaVaMau.Gameplay
 {
@@ -195,6 +195,19 @@ namespace HoaVaMau.Gameplay
                 charController.enabled = true;
             }
             if (hipBone == null) hipBone = transform.Find("Armature/BoneRoot/Hip");
+        }
+
+        private void OnDisable()
+        {
+            if (motor != null)
+            {
+                motor.Velocity = Vector3.zero;
+            }
+            var audioCtrl = GetComponent<PlayerAudioController>();
+            if (audioCtrl != null)
+            {
+                audioCtrl.StopFootsteps(immediate: true);
+            }
         }
 
         private void SetupCarrySocket()

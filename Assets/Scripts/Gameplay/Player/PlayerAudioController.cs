@@ -136,6 +136,43 @@ namespace HoaVaMau.Gameplay
             }
         }
 
+        private void OnDisable()
+        {
+            StopFootsteps(immediate: true);
+        }
+
+        /// <summary>
+        /// Dừng âm thanh bước chân lập tức (immediate = true) hoặc giảm dần êm dịu (immediate = false).
+        /// Hỗ trợ cả trong gameplay thông thường lẫn khi cutscene làm chậm / dừng nhân vật.
+        /// </summary>
+        public void StopFootsteps(bool immediate = true)
+        {
+            if (immediate)
+            {
+                if (footstepAudioSource != null && footstepAudioSource.isPlaying) footstepAudioSource.Stop();
+                if (footstepBoosterSource != null && footstepBoosterSource.isPlaying) footstepBoosterSource.Stop();
+            }
+            else
+            {
+                if (footstepAudioSource != null && footstepAudioSource.isPlaying)
+                {
+                    footstepAudioSource.volume = Mathf.MoveTowards(footstepAudioSource.volume, 0f, Time.deltaTime * 6.0f);
+                    if (footstepAudioSource.volume <= 0.01f)
+                    {
+                        footstepAudioSource.Stop();
+                    }
+                }
+                if (footstepBoosterSource != null && footstepBoosterSource.isPlaying)
+                {
+                    footstepBoosterSource.volume = Mathf.MoveTowards(footstepBoosterSource.volume, 0f, Time.deltaTime * 6.0f);
+                    if (footstepBoosterSource.volume <= 0.01f)
+                    {
+                        footstepBoosterSource.Stop();
+                    }
+                }
+            }
+        }
+
         private void HandleFootstepLoop()
         {
             if (footstepAudioSource == null || footstepDirtSfx == null) return;
@@ -143,18 +180,28 @@ namespace HoaVaMau.Gameplay
             // Nếu không đứng trên đất hoặc đang đu dây/bám vách -> NGẮT NGAY
             if (player.CurrentState != PlayerState.Grounded)
             {
-                if (footstepAudioSource.isPlaying) footstepAudioSource.Stop();
-                if (footstepBoosterSource != null && footstepBoosterSource.isPlaying) footstepBoosterSource.Stop();
+                StopFootsteps(immediate: true);
                 return;
             }
 
             float speedX = Mathf.Abs(player.Velocity.x);
 
-            // Nếu đứng yên -> NGẮT NGAY
-            if (speedX < 0.35f)
+            // Kiểm tra trạng thái cutscene nếu AnAnimationController đang kích hoạt
+            var anAnim = player.GetComponent<AnAnimationController>();
+            if (anAnim != null && anAnim.IsCutsceneActive)
             {
-                if (footstepAudioSource.isPlaying) footstepAudioSource.Stop();
-                if (footstepBoosterSource != null && footstepBoosterSource.isPlaying) footstepBoosterSource.Stop();
+                // Khi trong cutscene và tốc độ giảm dưới 0.25f -> dừng mượt mà và ngắt tiếng bước chân
+                if (speedX < 0.25f)
+                {
+                    StopFootsteps(immediate: false);
+                    return;
+                }
+            }
+
+            // Nếu đứng yên -> NGẮT MƯỢT MÀ
+            if (speedX < 0.25f)
+            {
+                StopFootsteps(immediate: false);
                 return;
             }
 
@@ -162,6 +209,14 @@ namespace HoaVaMau.Gameplay
             bool isRunning = speedX > 3.0f;
             float baseVol = isRunning ? runVolume : walkVolume;
             float targetPitch = isRunning ? runPitch : walkPitch;
+
+            // Nếu vận tốc giảm dần dưới 2.0m/s (như khi nhân vật đi chậm lại trong cutscene), hạ âm lượng và pitch tương ứng
+            if (speedX < 2.0f)
+            {
+                float t = Mathf.Clamp01((speedX - 0.25f) / 1.75f);
+                baseVol = Mathf.Lerp(walkVolume * 0.35f, walkVolume, t);
+                targetPitch = Mathf.Lerp(walkPitch * 0.85f, walkPitch, t);
+            }
 
             float totalTargetVol = baseVol * volumeBoost;
             float mainTargetVol = Mathf.Clamp01(totalTargetVol);
