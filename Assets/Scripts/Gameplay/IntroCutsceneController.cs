@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Video;
 using Unity.Cinemachine;
 using TMPro;
 #if ENABLE_INPUT_SYSTEM
@@ -14,12 +15,12 @@ namespace HoaVaMau.Gameplay
 {
     /// <summary>
     /// Production-grade Seamless Intro Cutscene Controller for "Hoa trên Đất Đỏ".
-    /// Orchestrates the 3-phase cinematic pipeline into Scene 1 (New Scene 1_Overhaul):
-    /// - Phase 1: Vintage Film Projector Reel presenting 4 authentic historical documentations with Ken Burns zoom,
-    ///            Perlin frame jitter, Vignette, film grain/scratches, shutter flash, and contextual subtitles.
-    /// - Phase 2: Narrative Monologue on deep quiet black screen with audio crossfade from projector to ambient river nature.
-    /// - Phase 3: Seamless Camera Transition panning smoothly from sky/treetops down to An, followed by gameplay unlock.
-    /// Features Hold to Skip (Space / Escape for 1.5s) and full Inspector customization.
+    /// Orchestrates the cinematic pipeline into Scene 1 (New Scene 1_Overhaul):
+    /// - Phase 1: Historical Archival Documentary Video ("Tài liệu lịch sử") rendered cleanly at native aspect ratio
+    ///            with synchronized stereo audio (or legacy 4-slide Vintage Film Projector fallback if video is disabled).
+    /// - Phase 2: Optional Narrative Monologue on deep quiet black screen with audio crossfade to ambient river/forest nature.
+    /// - Phase 3: Seamless Camera Transition panning smoothly from cosmic sky/clouds down to Minh in the forest, followed by gameplay unlock.
+    /// Features Hold to Skip (Space / Escape) and full Inspector customization.
     /// </summary>
     public class IntroCutsceneController : MonoBehaviour
     {
@@ -40,12 +41,22 @@ namespace HoaVaMau.Gameplay
 
         [Header("Pipeline Control")]
 
-        [Tooltip("If true, starts immediately with sky descent from current camera position without showing archival projector reel")]
+        [Tooltip("If true, starts immediately with sky descent from current camera position without showing archival video/reel")]
         [SerializeField] private bool startWithSkyDescent = false;
         [SerializeField] private bool forcePlayIntro = true;
         [SerializeField] private bool autoFindReferencesOnStart = true;
 
-        [Header("Giai Đoạn 1: Máy Chiếu Phim Cổ (Vintage Film Projector)")]
+        [Header("Video Tư Liệu Lịch Sử (Archival Video Intro)")]
+        [Tooltip("Sử dụng video tư liệu lịch sử (Assets/Audio/Tài liệu lịch sử (1).mp4) làm phần mở đầu trước khi hạ camera từ bầu trời")]
+        [SerializeField] private bool useHistoricalVideo = true;
+        [SerializeField] private VideoClip historicalVideoClip;
+        [SerializeField, Range(0f, 1f)] private float videoVolume = 1.0f;
+        [SerializeField] private float videoFadeInDuration = 0.65f;
+        [SerializeField] private float videoFadeOutDuration = 0.85f;
+        [Tooltip("Nếu bật, sau khi phát hết video tư liệu sẽ chạy thêm chữ Lời Tựa (Giai Đoạn 2) trước khi hạ camera xuống rừng")]
+        [SerializeField] private bool playMonologueAfterVideo = false;
+
+        [Header("Giai Đoạn 1 (Dự Phòng): Máy Chiếu Phim Cổ (Vintage Film Projector)")]
         [SerializeField] private HistorySlideData[] historySlides;
         [SerializeField] private float slideKenBurnsEndScale = 1.05f;
         [SerializeField] private float slideCrossfadeDuration = 0.6f;
@@ -108,6 +119,8 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private AudioSource projectorAudioSource;
         [SerializeField] private AudioSource ambientAudioSource;
         [SerializeField] private AudioSource voiceoverAudioSource;
+        [SerializeField] private AudioSource videoAudioSource;
+        [SerializeField] private VideoPlayer historicalVideoPlayer;
         [SerializeField, Range(0f, 1f)] private float maxProjectorVolume = 0.55f;
         [SerializeField, Range(0f, 1f)] private float targetAmbientVolume = 0.70f;
         [SerializeField, Range(0f, 1f)] private float voiceoverVolume = 0.95f;
@@ -125,6 +138,10 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private Canvas cutsceneCanvas;
         [SerializeField] private CanvasGroup cutsceneCanvasGroup;
         [SerializeField] private Image blackCurtainImage;
+        [SerializeField] private RectTransform videoScreenRoot;
+        [SerializeField] private RawImage videoRawImage;
+        [SerializeField] private CanvasGroup videoCanvasGroup;
+        [SerializeField] private AspectRatioFitter videoAspectFitter;
         [SerializeField] private RectTransform projectorApertureRect;
         [SerializeField] private Image slideImage;
         [SerializeField] private CanvasGroup slideImageGroup;
@@ -146,6 +163,7 @@ namespace HoaVaMau.Gameplay
 
         // Runtime State
         private Coroutine activeCutsceneRoutine;
+        private RenderTexture activeVideoRenderTexture;
         private bool isCutsceneRunning = false;
         private bool isSkipTriggered = false;
         private bool isSkyDescending = false;
@@ -154,6 +172,7 @@ namespace HoaVaMau.Gameplay
         private CinemachineBlendDefinition originalDefaultBlend;
 
         public bool IsCutsceneRunning => isCutsceneRunning;
+        public VideoClip HistoricalVideoClip => historicalVideoClip;
 
         private void Awake()
         {
@@ -171,8 +190,6 @@ namespace HoaVaMau.Gameplay
             {
                 vcamIntroSky.gameObject.SetActive(true);
                 vcamIntroSky.enabled = true;
-                vcamIntroSky.enabled = true;
-                vcamIntroSky.enabled = true;
                 vcamIntroSky.transform.position = skyZenithPosition;
                 vcamIntroSky.Priority = 35;
             }
@@ -182,11 +199,30 @@ namespace HoaVaMau.Gameplay
             }
             if (cinemachineBrain != null && cinemachineBrain.UpdateMethod == CinemachineBrain.UpdateMethods.ManualUpdate)
             {
-                if (cinemachineBrain.UpdateMethod == Unity.Cinemachine.CinemachineBrain.UpdateMethods.ManualUpdate) cinemachineBrain.ManualUpdate();
+                cinemachineBrain.ManualUpdate();
             }
 
-            // Keep cutscene canvas hidden initially until StartIntroCutscene explicitly shows it
-            if (!isCutsceneRunning && cutsceneCanvas != null)
+#if UNITY_EDITOR
+            IntroCutsceneState.HasViewedInSession = false;
+#endif
+            bool willPlayPrologue = (forcePlayIntro || IntroCutsceneState.ShouldPlayIntroCutscene) && !startWithSkyDescent;
+            if (willPlayPrologue)
+            {
+                // Mute wind ambience immediately on frame 0 so it never bleeds into the opening frame
+                if (ambientAudioSource != null)
+                {
+                    ambientAudioSource.volume = 0f;
+                }
+                if (cutsceneCanvas != null)
+                {
+                    cutsceneCanvas.gameObject.SetActive(true);
+                    if (cutsceneCanvasGroup != null) cutsceneCanvasGroup.alpha = 1f;
+                    if (blackCurtainImage != null) blackCurtainImage.color = new Color(0.02f, 0.018f, 0.016f, 1f);
+                    if (projectorApertureRect != null) projectorApertureRect.gameObject.SetActive(false);
+                    if (videoCanvasGroup != null) videoCanvasGroup.alpha = 0f;
+                }
+            }
+            else if (!isCutsceneRunning && cutsceneCanvas != null)
             {
                 cutsceneCanvas.gameObject.SetActive(false);
             }
@@ -195,9 +231,9 @@ namespace HoaVaMau.Gameplay
         private void Start()
         {
             // Evaluate whether cutscene should play
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             IntroCutsceneState.HasViewedInSession = false;
-            #endif
+#endif
             bool shouldPlay = forcePlayIntro || IntroCutsceneState.ShouldPlayIntroCutscene;
 
             if (shouldPlay)
@@ -216,6 +252,16 @@ namespace HoaVaMau.Gameplay
 
             UpdateFilmJitterAndGrain();
             UpdateHoldToSkip();
+        }
+
+        private void OnDisable()
+        {
+            CleanupVideoPlayback();
+        }
+
+        private void OnDestroy()
+        {
+            CleanupVideoPlayback();
         }
 
         // =====================================================================================
@@ -258,9 +304,11 @@ namespace HoaVaMau.Gameplay
             // Create AudioSources if unassigned
             if (projectorAudioSource == null)
             {
-                var pGo = new GameObject("Audio_VintageProjectorHum");
-                pGo.transform.SetParent(transform);
-                projectorAudioSource = pGo.AddComponent<AudioSource>();
+                Transform existingProj = transform.Find("Audio_VintageProjectorHum");
+                GameObject pGo = existingProj != null ? existingProj.gameObject : new GameObject("Audio_VintageProjectorHum");
+                pGo.transform.SetParent(transform, false);
+                projectorAudioSource = pGo.GetComponent<AudioSource>();
+                if (projectorAudioSource == null) projectorAudioSource = pGo.AddComponent<AudioSource>();
                 projectorAudioSource.playOnAwake = false;
                 projectorAudioSource.loop = true;
                 projectorAudioSource.volume = 0f;
@@ -268,28 +316,34 @@ namespace HoaVaMau.Gameplay
 
             if (ambientAudioSource == null)
             {
-                // Try finding ambient source in scene
-                var audioSources = UnityEngine.Object.FindObjectsByType<AudioSource>();
+                var audioSources = UnityEngine.Object.FindObjectsByType<AudioSource>(FindObjectsInactive.Exclude);
                 foreach (var src in audioSources)
                 {
-                    if (src.clip != null && src.clip.name.ToLower().Contains("wind"))
+                    if (src != null && src.transform != transform && !src.transform.IsChildOf(transform))
                     {
-                        ambientAudioSource = src;
-                        break;
+                        if (src.gameObject.name.Contains("Wind") || (src.clip != null && src.clip.name.ToLowerInvariant().Contains("wind")))
+                        {
+                            ambientAudioSource = src;
+                            break;
+                        }
                     }
                 }
             }
 
             if (voiceoverAudioSource == null)
             {
-                var vGo = new GameObject("Audio_VoiceoverNarration");
-                vGo.transform.SetParent(transform);
-                voiceoverAudioSource = vGo.AddComponent<AudioSource>();
+                Transform existingVo = transform.Find("Audio_VoiceoverNarration");
+                GameObject vGo = existingVo != null ? existingVo.gameObject : new GameObject("Audio_VoiceoverNarration");
+                vGo.transform.SetParent(transform, false);
+                voiceoverAudioSource = vGo.GetComponent<AudioSource>();
+                if (voiceoverAudioSource == null) voiceoverAudioSource = vGo.AddComponent<AudioSource>();
                 voiceoverAudioSource.playOnAwake = false;
                 voiceoverAudioSource.loop = false;
                 voiceoverAudioSource.volume = voiceoverVolume;
             }
 
+            EnsureVideoComponentsExist();
+            AutoLoadHistoricalVideoIfEmpty();
             AutoLoadVoiceoverClipsIfEmpty();
 
             // Default Slides if empty
@@ -298,7 +352,78 @@ namespace HoaVaMau.Gameplay
                 SetupDefaultSlideData();
             }
 
-            EnsureCutsceneCanvasExists();
+            if (cutsceneCanvas == null || videoScreenRoot == null || videoRawImage == null)
+            {
+                EnsureCutsceneCanvasExists();
+            }
+        }
+
+        private void EnsureVideoComponentsExist()
+        {
+            Transform existingVidTr = transform.Find("Audio_HistoricalVideo");
+            GameObject vidGo = existingVidTr != null ? existingVidTr.gameObject : new GameObject("Audio_HistoricalVideo");
+            vidGo.transform.SetParent(transform, false);
+
+            if (videoAudioSource == null)
+            {
+                videoAudioSource = vidGo.GetComponent<AudioSource>();
+                if (videoAudioSource == null) videoAudioSource = vidGo.AddComponent<AudioSource>();
+            }
+            videoAudioSource.playOnAwake = false;
+            videoAudioSource.loop = false;
+            videoAudioSource.spatialBlend = 0f;
+            videoAudioSource.volume = videoVolume;
+
+            if (historicalVideoPlayer == null)
+            {
+                historicalVideoPlayer = vidGo.GetComponent<VideoPlayer>();
+                if (historicalVideoPlayer == null) historicalVideoPlayer = vidGo.AddComponent<VideoPlayer>();
+            }
+            historicalVideoPlayer.playOnAwake = false;
+            historicalVideoPlayer.isLooping = false;
+            historicalVideoPlayer.waitForFirstFrame = true;
+            historicalVideoPlayer.skipOnDrop = true;
+            historicalVideoPlayer.renderMode = VideoRenderMode.RenderTexture;
+            historicalVideoPlayer.audioOutputMode = VideoAudioOutputMode.AudioSource;
+        }
+
+        public void AutoLoadHistoricalVideoIfEmpty()
+        {
+#if UNITY_EDITOR
+            if (historicalVideoClip == null)
+            {
+                historicalVideoClip = UnityEditor.AssetDatabase.LoadAssetAtPath<VideoClip>("Assets/Audio/Tài liệu lịch sử (1).mp4");
+                if (historicalVideoClip == null)
+                {
+                    string[] guids = UnityEditor.AssetDatabase.FindAssets("t:VideoClip", new[] { "Assets/Audio", "Assets" });
+                    foreach (string g in guids)
+                    {
+                        string p = UnityEditor.AssetDatabase.GUIDToAssetPath(g);
+                        var candidate = UnityEditor.AssetDatabase.LoadAssetAtPath<VideoClip>(p);
+                        if (candidate != null)
+                        {
+                            historicalVideoClip = candidate;
+                            if (p.IndexOf("lịch sử", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                p.IndexOf("lich su", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+#endif
+        }
+
+        public void AssignHistoricalVideo(VideoClip clip, bool enableVideoMode = true)
+        {
+            historicalVideoClip = clip;
+            useHistoricalVideo = enableVideoMode;
+            EnsureVideoComponentsExist();
+            if (historicalVideoPlayer != null)
+            {
+                historicalVideoPlayer.clip = clip;
+            }
         }
 
         private void SetupDefaultSlideData()
@@ -368,7 +493,6 @@ namespace HoaVaMau.Gameplay
             {
                 vcamIntroSky.gameObject.SetActive(true);
                 vcamIntroSky.enabled = true;
-                vcamIntroSky.enabled = true;
                 vcamIntroSky.transform.position = skyZenithPosition;
                 vcamIntroSky.Priority = 35; // Elevated priority to guarantee live camera
             }
@@ -379,6 +503,7 @@ namespace HoaVaMau.Gameplay
 
             if (startWithSkyDescent)
             {
+                CleanupVideoPlayback();
                 if (cutsceneCanvas != null)
                 {
                     cutsceneCanvas.gameObject.SetActive(false);
@@ -388,6 +513,7 @@ namespace HoaVaMau.Gameplay
             }
 
             // 3. Prepare Canvas
+            bool willPlayVideo = useHistoricalVideo && historicalVideoClip != null;
             if (cutsceneCanvas != null)
             {
                 cutsceneCanvas.gameObject.SetActive(true);
@@ -400,19 +526,37 @@ namespace HoaVaMau.Gameplay
             }
             if (blackCurtainImage != null)
             {
-                blackCurtainImage.color = new Color(0.03f, 0.025f, 0.02f, 1f);
+                blackCurtainImage.color = willPlayVideo
+                    ? new Color(0.02f, 0.018f, 0.016f, 1f)
+                    : new Color(0.03f, 0.025f, 0.02f, 1f);
+            }
+            if (videoScreenRoot != null)
+            {
+                videoScreenRoot.gameObject.SetActive(willPlayVideo);
+            }
+            if (videoCanvasGroup != null)
+            {
+                videoCanvasGroup.alpha = 0f;
             }
             if (projectorApertureRect != null)
             {
-                projectorApertureRect.gameObject.SetActive(true);
+                projectorApertureRect.gameObject.SetActive(!willPlayVideo);
+            }
+            if (subtitleGroup != null)
+            {
+                subtitleGroup.alpha = 0f;
+            }
+            if (monologueGroup != null)
+            {
+                monologueGroup.alpha = 0f;
             }
             if (vignetteOverlayImage != null)
             {
-                vignetteOverlayImage.gameObject.SetActive(true);
+                vignetteOverlayImage.gameObject.SetActive(!willPlayVideo);
             }
             if (filmScratchesOverlayImage != null)
             {
-                filmScratchesOverlayImage.gameObject.SetActive(true);
+                filmScratchesOverlayImage.gameObject.SetActive(!willPlayVideo);
             }
             if (skipPromptGroup != null)
             {
@@ -449,185 +593,430 @@ namespace HoaVaMau.Gameplay
 
         private IEnumerator CutscenePipelineRoutine()
         {
-            // Start vintage projector hum
-            if (projectorAudioSource != null)
-            {
-                if (projectorHumClip != null) projectorAudioSource.clip = projectorHumClip;
-                projectorAudioSource.volume = maxProjectorVolume;
-                projectorAudioSource.Play();
-            }
-
-            // Silence ambient initially
+            // Silence ambient wind initially during prologue
             if (ambientAudioSource != null)
             {
                 ambientAudioSource.volume = 0f;
                 if (!ambientAudioSource.isPlaying) ambientAudioSource.Play();
             }
 
-            yield return new WaitForSeconds(0.6f);
+            bool willPlayVideo = useHistoricalVideo && historicalVideoClip != null;
 
-            // =================================================================================
-            // GIAI ĐOẠN 1: MÁY CHIẾU PHIM CỔ (VINTAGE REEL SLIDESHOW)
-            // =================================================================================
-            if (historySlides != null && historySlides.Length > 0)
+            if (willPlayVideo)
             {
-                for (int i = 0; i < historySlides.Length; i++)
+                // =================================================================================
+                // GIAI ĐOẠN 1 (MỚI): PHÁT VIDEO TƯ LIỆU LỊCH SỬ ("Tài liệu lịch sử (1).mp4")
+                // =================================================================================
+                if (projectorAudioSource != null && projectorAudioSource.isPlaying)
                 {
-                    if (isSkipTriggered) break;
+                    projectorAudioSource.Stop();
+                }
 
-                    var slide = historySlides[i];
+                yield return StartCoroutine(PlayHistoricalVideoRoutine());
 
-                    // Setup slide sprite
-                    if (slideImage != null && slide.image != null)
-                    {
-                        slideImage.sprite = slide.image;
-                        slideImage.preserveAspect = true;
-                    }
-
-                    // Setup subtitle text
-                    if (subtitleText != null)
-                    {
-                        subtitleText.text = slide.subtitle;
-                    }
-
-                    // Shutter flash & advance sound
-                    yield return StartCoroutine(PlayShutterFlashRoutine());
-
-                    // Play Voiceover Narration for Slide
-                    AudioClip slideVo = (slideVoiceoverClips != null && i < slideVoiceoverClips.Length) ? slideVoiceoverClips[i] : null;
-                    if (slideVo != null && voiceoverAudioSource != null)
-                    {
-                        voiceoverAudioSource.Stop();
-                        voiceoverAudioSource.clip = slideVo;
-                        voiceoverAudioSource.volume = voiceoverVolume;
-                        voiceoverAudioSource.Play();
-                    }
-
-                    // Ken Burns Zoom + Subtitle display
-                    float elapsed = 0f;
-                    float duration = (slideVo != null) ? (slideVo.length + 0.6f) : Mathf.Max(2.5f, slide.displayDuration);
-
-                    // Fade in slide & subtitle smoothly
-                    if (slideImageGroup != null) slideImageGroup.alpha = 1f;
-                    if (subtitleGroup != null) StartCoroutine(FadeCanvasGroupRoutine(subtitleGroup, 0f, 1f, slideCrossfadeDuration));
-
-                    while (elapsed < duration)
-                    {
-                        if (isSkipTriggered) break;
-
-                        elapsed += Time.deltaTime;
-                        float progress = Mathf.Clamp01(elapsed / duration);
-
-                        // Ken Burns Zoom (1.0 -> slideKenBurnsEndScale)
-                        if (projectorApertureRect != null)
-                        {
-                            float scale = Mathf.Lerp(1.0f, slideKenBurnsEndScale, progress);
-                            projectorApertureRect.localScale = new Vector3(scale, scale, 1f);
-                        }
-
-                        // Fade subtitle out during last 0.5s of the slide
-                        if (duration - elapsed <= slideCrossfadeDuration && subtitleGroup != null && subtitleGroup.alpha > 0.95f)
-                        {
-                            StartCoroutine(FadeCanvasGroupRoutine(subtitleGroup, 1f, 0f, slideCrossfadeDuration));
-                        }
-
-                        yield return null;
-                    }
-
-                    if (isSkipTriggered) break;
-
-                    // Quick shutter blackout between slides
-                    if (i < historySlides.Length - 1)
-                    {
-                        if (slideImageGroup != null) slideImageGroup.alpha = 0f;
-                        yield return new WaitForSeconds(0.12f);
-                    }
+                if (!isSkipTriggered && playMonologueAfterVideo)
+                {
+                    yield return new WaitForSeconds(0.35f);
+                    yield return StartCoroutine(PlayMonologueSequenceRoutine());
                 }
             }
-
-            // Turn off slide reel display and vintage film overlays before Phase 2 & 3
-            if (slideImageGroup != null) slideImageGroup.alpha = 0f;
-            if (subtitleGroup != null) subtitleGroup.alpha = 0f;
-            if (projectorApertureRect != null)
+            else
             {
-                projectorApertureRect.localScale = Vector3.one;
-                projectorApertureRect.gameObject.SetActive(false);
-            }
-            if (vignetteOverlayImage != null) vignetteOverlayImage.gameObject.SetActive(false);
-            if (filmScratchesOverlayImage != null) filmScratchesOverlayImage.gameObject.SetActive(false);
-
-            yield return new WaitForSeconds(0.4f);
-
-            // =================================================================================
-            // GIAI ĐOẠN 2: LỜI TỰA HÀNH TRÌNH, SỨ MỆNH & HY VỌNG (NARRATIVE MONOLOGUE)
-            // =================================================================================
-            if (!isSkipTriggered && narrativeLines != null && narrativeLines.Length > 0)
-            {
-                for (int lineIdx = 0; lineIdx < narrativeLines.Length; lineIdx++)
+                // =================================================================================
+                // GIAI ĐOẠN 1 (DỰ PHÒNG): MÁY CHIẾU PHIM CỔ (VINTAGE REEL SLIDESHOW)
+                // =================================================================================
+                if (projectorAudioSource != null)
                 {
-                    if (isSkipTriggered) break;
+                    if (projectorHumClip != null) projectorAudioSource.clip = projectorHumClip;
+                    projectorAudioSource.volume = maxProjectorVolume;
+                    projectorAudioSource.Play();
+                }
 
-                    string line = narrativeLines[lineIdx];
-                    if (monologueText != null)
-                    {
-                        monologueText.text = line;
-                    }
+                yield return new WaitForSeconds(0.6f);
 
-                    // Play Monologue Voiceover Clip
-                    AudioClip monoVo = (monologueVoiceoverClips != null && lineIdx < monologueVoiceoverClips.Length) ? monologueVoiceoverClips[lineIdx] : null;
-                    if (monoVo != null && voiceoverAudioSource != null)
-                    {
-                        voiceoverAudioSource.Stop();
-                        voiceoverAudioSource.clip = monoVo;
-                        voiceoverAudioSource.volume = voiceoverVolume;
-                        voiceoverAudioSource.Play();
-                    }
-
-                    // If this is the last line, trigger audio crossfade simultaneously
-                    if (lineIdx == narrativeLines.Length - 1)
-                    {
-                        StartCoroutine(CrossfadeAudioRoutine(monologueAudioCrossfadeDuration));
-                    }
-
-                    // Fade In Monologue line
-                    if (monologueGroup != null)
-                    {
-                        yield return StartCoroutine(FadeCanvasGroupRoutine(monologueGroup, 0f, 1f, monologueFadeInDuration));
-                    }
-
-                    // Hold for voiceover duration or default duration
-                    float holdTimer = 0f;
-                    float targetHold = (monoVo != null) ? Mathf.Max(0.5f, monoVo.length - monologueFadeInDuration + 0.5f) : monologueHoldDuration;
-                    while (holdTimer < targetHold)
+                if (historySlides != null && historySlides.Length > 0)
+                {
+                    for (int i = 0; i < historySlides.Length; i++)
                     {
                         if (isSkipTriggered) break;
-                        holdTimer += Time.deltaTime;
-                        yield return null;
+
+                        var slide = historySlides[i];
+
+                        if (slideImage != null && slide.image != null)
+                        {
+                            slideImage.sprite = slide.image;
+                            slideImage.preserveAspect = true;
+                        }
+
+                        if (subtitleText != null)
+                        {
+                            subtitleText.text = slide.subtitle;
+                        }
+
+                        yield return StartCoroutine(PlayShutterFlashRoutine());
+
+                        AudioClip slideVo = (slideVoiceoverClips != null && i < slideVoiceoverClips.Length) ? slideVoiceoverClips[i] : null;
+                        if (slideVo != null && voiceoverAudioSource != null)
+                        {
+                            voiceoverAudioSource.Stop();
+                            voiceoverAudioSource.clip = slideVo;
+                            voiceoverAudioSource.volume = voiceoverVolume;
+                            voiceoverAudioSource.Play();
+                        }
+
+                        float elapsed = 0f;
+                        float duration = (slideVo != null) ? (slideVo.length + 0.6f) : Mathf.Max(2.5f, slide.displayDuration);
+
+                        if (slideImageGroup != null) slideImageGroup.alpha = 1f;
+                        if (subtitleGroup != null) StartCoroutine(FadeCanvasGroupRoutine(subtitleGroup, 0f, 1f, slideCrossfadeDuration));
+
+                        while (elapsed < duration)
+                        {
+                            if (isSkipTriggered) break;
+
+                            elapsed += Time.deltaTime;
+                            float progress = Mathf.Clamp01(elapsed / duration);
+
+                            if (projectorApertureRect != null)
+                            {
+                                float scale = Mathf.Lerp(1.0f, slideKenBurnsEndScale, progress);
+                                projectorApertureRect.localScale = new Vector3(scale, scale, 1f);
+                            }
+
+                            if (duration - elapsed <= slideCrossfadeDuration && subtitleGroup != null && subtitleGroup.alpha > 0.95f)
+                            {
+                                StartCoroutine(FadeCanvasGroupRoutine(subtitleGroup, 1f, 0f, slideCrossfadeDuration));
+                            }
+
+                            yield return null;
+                        }
+
+                        if (isSkipTriggered) break;
+
+                        if (i < historySlides.Length - 1)
+                        {
+                            if (slideImageGroup != null) slideImageGroup.alpha = 0f;
+                            yield return new WaitForSeconds(0.12f);
+                        }
                     }
+                }
 
-                    if (isSkipTriggered) break;
+                if (slideImageGroup != null) slideImageGroup.alpha = 0f;
+                if (subtitleGroup != null) subtitleGroup.alpha = 0f;
+                if (projectorApertureRect != null)
+                {
+                    projectorApertureRect.localScale = Vector3.one;
+                    projectorApertureRect.gameObject.SetActive(false);
+                }
+                if (vignetteOverlayImage != null) vignetteOverlayImage.gameObject.SetActive(false);
+                if (filmScratchesOverlayImage != null) filmScratchesOverlayImage.gameObject.SetActive(false);
 
-                    // Fade Out Monologue line
-                    if (monologueGroup != null)
-                    {
-                        yield return StartCoroutine(FadeCanvasGroupRoutine(monologueGroup, 1f, 0f, monologueFadeOutDuration));
-                    }
+                yield return new WaitForSeconds(0.4f);
 
-                    yield return new WaitForSeconds(0.35f);
+                // GIAI ĐOẠN 2: LỜI TỰA HÀNH TRÌNH
+                if (!isSkipTriggered)
+                {
+                    yield return StartCoroutine(PlayMonologueSequenceRoutine());
                 }
             }
 
             if (monologueGroup != null) monologueGroup.alpha = 0f;
 
             // =================================================================================
-            // GIAI ĐOẠN 3: CAMERA PAN TỪ TRỜI XANH ĐẬM QUA MÂY XUỐNG RỪNG & AN (PLANET OF LANA ENTRY)
+            // GIAI ĐOẠN 3: CAMERA PAN TỪ TRỜI XANH ĐẬM QUA MÂY XUỐNG RỪNG & MINH
             // =================================================================================
-            yield return StartCoroutine(ExecuteCameraPanAndGameplayHandoff());
+            if (!isSkipTriggered)
+            {
+                yield return StartCoroutine(ExecuteCameraPanAndGameplayHandoff());
+            }
+        }
+
+        private IEnumerator PlayHistoricalVideoRoutine()
+        {
+            if (historicalVideoClip == null) yield break;
+
+            EnsureVideoComponentsExist();
+            if (historicalVideoPlayer == null || videoRawImage == null) yield break;
+
+            int vidW = Mathf.Max(64, (int)historicalVideoClip.width);
+            int vidH = Mathf.Max(64, (int)historicalVideoClip.height);
+
+            // Allocate clean RenderTexture matching exact native video resolution (e.g. 1440x1080)
+            ReleaseVideoRenderTexture();
+            activeVideoRenderTexture = new RenderTexture(vidW, vidH, 0, RenderTextureFormat.ARGB32)
+            {
+                name = "RT_IntroCutscene_HistoricalVideo",
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+                antiAliasing = 1
+            };
+            activeVideoRenderTexture.Create();
+
+            // Clear RenderTexture to pure black so frame 0 never flashes stale GPU memory
+            RenderTexture prevActive = RenderTexture.active;
+            RenderTexture.active = activeVideoRenderTexture;
+            GL.Clear(true, true, Color.black);
+            RenderTexture.active = prevActive;
+
+            if (videoAspectFitter != null)
+            {
+                videoAspectFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+                videoAspectFitter.aspectRatio = (float)vidW / vidH;
+            }
+
+            videoRawImage.texture = activeVideoRenderTexture;
+            videoRawImage.color = Color.white;
+
+            if (videoScreenRoot != null) videoScreenRoot.gameObject.SetActive(true);
+            if (videoCanvasGroup != null) videoCanvasGroup.alpha = 0f;
+
+            // Configure VideoPlayer + AudioSource BEFORE calling Prepare()
+            historicalVideoPlayer.Stop();
+            historicalVideoPlayer.source = VideoSource.VideoClip;
+            historicalVideoPlayer.clip = historicalVideoClip;
+            historicalVideoPlayer.isLooping = false;
+            historicalVideoPlayer.waitForFirstFrame = true;
+            historicalVideoPlayer.skipOnDrop = true;
+            historicalVideoPlayer.renderMode = VideoRenderMode.RenderTexture;
+            historicalVideoPlayer.targetTexture = activeVideoRenderTexture;
+
+            if (videoAudioSource != null && historicalVideoClip.audioTrackCount > 0)
+            {
+                videoAudioSource.Stop();
+                videoAudioSource.clip = null;
+                videoAudioSource.volume = videoVolume;
+                historicalVideoPlayer.audioOutputMode = VideoAudioOutputMode.AudioSource;
+                historicalVideoPlayer.EnableAudioTrack(0, true);
+                historicalVideoPlayer.SetTargetAudioSource(0, videoAudioSource);
+            }
+            else
+            {
+                historicalVideoPlayer.audioOutputMode = VideoAudioOutputMode.Direct;
+            }
+
+            bool isFinished = false;
+            bool hasError = false;
+            VideoPlayer.EventHandler onLoopPoint = _ => isFinished = true;
+            VideoPlayer.ErrorEventHandler onError = (_, msg) =>
+            {
+                Debug.LogWarning($"[IntroCutsceneController] VideoPlayer warning/error: {msg}");
+                hasError = true;
+            };
+
+            historicalVideoPlayer.loopPointReached += onLoopPoint;
+            historicalVideoPlayer.errorReceived += onError;
+
+            try
+            {
+                historicalVideoPlayer.Prepare();
+
+                float prepareTimeout = 6.0f;
+                float prepTimer = 0f;
+                while (!historicalVideoPlayer.isPrepared && !hasError && !isSkipTriggered && prepTimer < prepareTimeout)
+                {
+                    prepTimer += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+
+                if (hasError || isSkipTriggered || !historicalVideoPlayer.isPrepared)
+                {
+                    yield break;
+                }
+
+                historicalVideoPlayer.Play();
+
+                // Wait until the very first frame is decoded onto the RenderTexture
+                float firstFrameWait = 0f;
+                while (!isSkipTriggered && !hasError && historicalVideoPlayer.frame < 0 && firstFrameWait < 1.0f)
+                {
+                    firstFrameWait += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+
+                double clipDuration = historicalVideoClip.length;
+                float playbackElapsed = 0f;
+                float fadeInDur = Mathf.Max(0.05f, videoFadeInDuration);
+                float fadeOutDur = Mathf.Max(0.15f, videoFadeOutDuration);
+
+                while (!isFinished && !hasError && !isSkipTriggered)
+                {
+                    if (Application.isFocused)
+                    {
+                        playbackElapsed += Time.deltaTime;
+                    }
+
+                    double currentVidTime = historicalVideoPlayer.time;
+                    double remaining = clipDuration - currentVidTime;
+
+                    // Compute smooth envelope alpha (fade-in at start, fade-out near end)
+                    float inAlpha = Mathf.Clamp01((float)(currentVidTime / fadeInDur));
+                    if (playbackElapsed > fadeInDur && inAlpha < 1f) inAlpha = 1f;
+
+                    float outAlpha = remaining <= fadeOutDur
+                        ? Mathf.Clamp01((float)(remaining / fadeOutDur))
+                        : 1f;
+
+                    float combinedAlpha = Mathf.SmoothStep(0f, 1f, Mathf.Min(inAlpha, outAlpha));
+                    if (videoCanvasGroup != null)
+                    {
+                        videoCanvasGroup.alpha = combinedAlpha;
+                    }
+
+                    // Smooth audio fade-out & subtle wind cross-in during final second of the archival film
+                    if (remaining <= fadeOutDur)
+                    {
+                        float endFactor = 1f - outAlpha;
+                        if (videoAudioSource != null)
+                        {
+                            videoAudioSource.volume = Mathf.Lerp(videoVolume, 0f, endFactor);
+                        }
+                        if (ambientAudioSource != null && !playMonologueAfterVideo)
+                        {
+                            ambientAudioSource.volume = Mathf.Lerp(0f, targetAmbientVolume * 0.45f, endFactor);
+                        }
+                    }
+                    else if (videoAudioSource != null)
+                    {
+                        videoAudioSource.volume = videoVolume;
+                    }
+
+                    // Safety fallback if clipDuration has clearly elapsed
+                    if (clipDuration > 0.5 && playbackElapsed > (float)clipDuration + 1.5f)
+                    {
+                        break;
+                    }
+
+                    yield return null;
+                }
+            }
+            finally
+            {
+                if (historicalVideoPlayer != null)
+                {
+                    historicalVideoPlayer.loopPointReached -= onLoopPoint;
+                    historicalVideoPlayer.errorReceived -= onError;
+                }
+                CleanupVideoPlayback();
+            }
+
+            if (!isSkipTriggered)
+            {
+                yield return new WaitForSeconds(0.20f);
+            }
+        }
+
+        private IEnumerator PlayMonologueSequenceRoutine()
+        {
+            if (narrativeLines == null || narrativeLines.Length == 0) yield break;
+
+            for (int lineIdx = 0; lineIdx < narrativeLines.Length; lineIdx++)
+            {
+                if (isSkipTriggered) break;
+
+                string line = narrativeLines[lineIdx];
+                if (monologueText != null)
+                {
+                    monologueText.text = line;
+                }
+
+                AudioClip monoVo = (monologueVoiceoverClips != null && lineIdx < monologueVoiceoverClips.Length) ? monologueVoiceoverClips[lineIdx] : null;
+                if (monoVo != null && voiceoverAudioSource != null)
+                {
+                    voiceoverAudioSource.Stop();
+                    voiceoverAudioSource.clip = monoVo;
+                    voiceoverAudioSource.volume = voiceoverVolume;
+                    voiceoverAudioSource.Play();
+                }
+
+                if (lineIdx == narrativeLines.Length - 1)
+                {
+                    StartCoroutine(CrossfadeAudioRoutine(monologueAudioCrossfadeDuration));
+                }
+
+                if (monologueGroup != null)
+                {
+                    yield return StartCoroutine(FadeCanvasGroupRoutine(monologueGroup, 0f, 1f, monologueFadeInDuration));
+                }
+
+                float holdTimer = 0f;
+                float targetHold = (monoVo != null) ? Mathf.Max(0.5f, monoVo.length - monologueFadeInDuration + 0.5f) : monologueHoldDuration;
+                while (holdTimer < targetHold)
+                {
+                    if (isSkipTriggered) break;
+                    holdTimer += Time.deltaTime;
+                    yield return null;
+                }
+
+                if (isSkipTriggered) break;
+
+                if (monologueGroup != null)
+                {
+                    yield return StartCoroutine(FadeCanvasGroupRoutine(monologueGroup, 1f, 0f, monologueFadeOutDuration));
+                }
+
+                yield return new WaitForSeconds(0.35f);
+            }
+        }
+
+        public void CleanupVideoPlayback()
+        {
+            if (historicalVideoPlayer != null)
+            {
+                if (historicalVideoPlayer.isPlaying || historicalVideoPlayer.isPrepared)
+                {
+                    historicalVideoPlayer.Stop();
+                }
+                historicalVideoPlayer.targetTexture = null;
+            }
+
+            if (videoAudioSource != null && videoAudioSource.isPlaying)
+            {
+                videoAudioSource.Stop();
+            }
+
+            if (videoRawImage != null)
+            {
+                videoRawImage.texture = null;
+            }
+
+            if (videoCanvasGroup != null)
+            {
+                videoCanvasGroup.alpha = 0f;
+            }
+
+            if (videoScreenRoot != null)
+            {
+                videoScreenRoot.gameObject.SetActive(false);
+            }
+
+            ReleaseVideoRenderTexture();
+        }
+
+        private void ReleaseVideoRenderTexture()
+        {
+            if (activeVideoRenderTexture != null)
+            {
+                if (RenderTexture.active == activeVideoRenderTexture)
+                {
+                    RenderTexture.active = null;
+                }
+                activeVideoRenderTexture.Release();
+                if (Application.isPlaying)
+                {
+                    Destroy(activeVideoRenderTexture);
+                }
+                else
+                {
+                    DestroyImmediate(activeVideoRenderTexture);
+                }
+                activeVideoRenderTexture = null;
+            }
         }
 
         private IEnumerator ExecuteCameraPanAndGameplayHandoff()
         {
-            // Ensure vintage film overlays are hidden so the sky-to-forest reveal is crystal clear
+            // Ensure video screen and vintage film overlays are hidden so the sky-to-forest reveal is crystal clear
+            CleanupVideoPlayback();
             if (projectorApertureRect != null) projectorApertureRect.gameObject.SetActive(false);
             if (vignetteOverlayImage != null) vignetteOverlayImage.gameObject.SetActive(false);
             if (filmScratchesOverlayImage != null) filmScratchesOverlayImage.gameObject.SetActive(false);
@@ -642,10 +1031,11 @@ namespace HoaVaMau.Gameplay
             }
             if (ambientAudioSource != null)
             {
+                if (!ambientAudioSource.isPlaying) ambientAudioSource.Play();
                 StartCoroutine(FadeAudioSourceVolumeRoutine(ambientAudioSource, ambientAudioSource.volume, targetAmbientVolume, 2.0f, false));
             }
 
-            // Place An in forest sitting/playing posture while camera is up in the sky
+            // Place Minh/An in forest sitting/playing posture while camera is up in the sky
             Animator anAnim = playerController != null ? playerController.GetComponentInChildren<Animator>() : null;
             if (anAnim != null)
             {
@@ -699,7 +1089,7 @@ namespace HoaVaMau.Gameplay
             }
 
             // 2. Smoothly fade out the black curtain to reveal the deep blue cosmic sky
-            float curtainDur = Mathf.Min(blackCurtainFadeOutDuration, 0.45f);
+            float curtainDur = Mathf.Max(0.25f, blackCurtainFadeOutDuration);
             float elapsedCurtain = 0f;
             while (elapsedCurtain < curtainDur)
             {
@@ -716,7 +1106,7 @@ namespace HoaVaMau.Gameplay
             // Brief pause at the cosmic zenith sky to admire the deep galaxy blue & high wisps
             yield return new WaitForSeconds(0.40f);
 
-            // 3. Physical Camera Descent: Directly translate vcamIntroSky from Y=36.5m down to Y=0.10m
+            // 3. Physical Camera Descent: Directly translate vcamIntroSky from Y=75m down to Y=0.10m
             isSkyDescending = true;
             isSkipTriggered = false; // Reset so player can hold Space during descent if they want to fast-forward
             currentSkipHoldTimer = 0f;
@@ -763,7 +1153,7 @@ namespace HoaVaMau.Gameplay
                     }
                 }
 
-                // When camera is ~78% down into the forest clearing, An stands up from playing in the grass
+                // When camera is ~78% down into the forest clearing, Minh/An stands up from playing in the grass
                 if (!stoodUp && t >= 0.78f)
                 {
                     stoodUp = true;
@@ -797,12 +1187,14 @@ namespace HoaVaMau.Gameplay
             isSkyDescending = false;
             yield return new WaitForSeconds(0.15f);
 
-            // 5. Complete transition and unlock An
+            // 5. Complete transition and unlock Minh/An
             FinalizeGameplayUnlock();
         }
 
         private void FinalizeGameplayUnlock()
         {
+            CleanupVideoPlayback();
+
             if (cutsceneCanvas != null)
             {
                 cutsceneCanvas.gameObject.SetActive(false);
@@ -823,7 +1215,7 @@ namespace HoaVaMau.Gameplay
                 cinemachineBrain.DefaultBlend = originalDefaultBlend;
             }
 
-            // Unlock An
+            // Unlock Minh/An
             if (playerController != null)
             {
                 playerController.enabled = true;
@@ -832,7 +1224,7 @@ namespace HoaVaMau.Gameplay
             isCutsceneRunning = false;
             IntroCutsceneState.CompleteIntro();
 
-            Debug.Log("<color=#10b981>[IntroCutsceneController]</color> Seamless intro completed. Control handed off to An.");
+            Debug.Log("<color=#10b981>[IntroCutsceneController]</color> Seamless intro completed. Control handed off to player.");
         }
 
         // =====================================================================================
@@ -915,9 +1307,12 @@ namespace HoaVaMau.Gameplay
                 voiceoverAudioSource.Stop();
             }
 
+            CleanupVideoPlayback();
+
             if (activeCutsceneRoutine != null)
             {
                 StopCoroutine(activeCutsceneRoutine);
+                activeCutsceneRoutine = null;
             }
 
             if (isSkyDescending)
@@ -926,7 +1321,7 @@ namespace HoaVaMau.Gameplay
             }
             else
             {
-                StartCoroutine(SkipTransitionRoutine());
+                activeCutsceneRoutine = StartCoroutine(SkipTransitionRoutine());
             }
         }
 
@@ -937,7 +1332,7 @@ namespace HoaVaMau.Gameplay
             if (subtitleGroup != null) subtitleGroup.alpha = 0f;
             if (monologueGroup != null) monologueGroup.alpha = 0f;
 
-            // Flash white shutter briefly (0.08s)
+            // Flash warm shutter briefly (0.08s)
             yield return StartCoroutine(PlayShutterFlashRoutine());
 
             // Immediately start Phase 3 camera pan through the clouds to gameplay
@@ -952,6 +1347,7 @@ namespace HoaVaMau.Gameplay
         public void BypassCutsceneAndPrepareGameplay()
         {
             isCutsceneRunning = false;
+            CleanupVideoPlayback();
 
             if (cutsceneCanvas != null)
             {
@@ -969,7 +1365,7 @@ namespace HoaVaMau.Gameplay
                 vcamGameplay.Priority = 20;
             }
 
-            // Restore An position if save slot checkpoint is active
+            // Restore player position if save slot checkpoint is active
             int activeSlot = HoaVaMauSaveSystem.ActiveSlotIndex;
             var slotData = HoaVaMauSaveSystem.GetSlotData(activeSlot);
             if (slotData != null && slotData.isOccupied && slotData.checkpointIndex > 0)
@@ -1109,7 +1505,8 @@ namespace HoaVaMau.Gameplay
         // =====================================================================================
         public void EnsureCutsceneCanvasExists()
         {
-            var existingCanvas = GameObject.Find("00_UI_CutsceneCanvas");
+            Transform existingChildCanvas = transform.Find("00_UI_CutsceneCanvas");
+            GameObject existingCanvas = existingChildCanvas != null ? existingChildCanvas.gameObject : GameObject.Find("00_UI_CutsceneCanvas");
             if (existingCanvas != null)
             {
                 if (Application.isPlaying) Destroy(existingCanvas);
@@ -1118,7 +1515,7 @@ namespace HoaVaMau.Gameplay
             }
 
             var canvasGO = new GameObject("00_UI_CutsceneCanvas");
-            canvasGO.transform.SetParent(transform);
+            canvasGO.transform.SetParent(transform, false);
             cutsceneCanvas = canvasGO.AddComponent<Canvas>();
             cutsceneCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
             cutsceneCanvas.sortingOrder = 999; // Topmost sorting order
@@ -1126,6 +1523,7 @@ namespace HoaVaMau.Gameplay
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
 
             canvasGO.AddComponent<GraphicRaycaster>();
@@ -1143,13 +1541,32 @@ namespace HoaVaMau.Gameplay
                 cutsceneFontAsset = TMP_Settings.defaultFontAsset;
             }
 
-            // 1. Deep Warm Celluloid Black Curtain
+            // 1. Deep Warm Cinema Black Curtain
             var curtainGO = CreateUIElement("BlackCurtain", canvasGO.transform);
             StretchFull(curtainGO.GetComponent<RectTransform>());
             blackCurtainImage = curtainGO.AddComponent<Image>();
-            blackCurtainImage.color = new Color(0.03f, 0.025f, 0.02f, 1.0f);
+            blackCurtainImage.color = new Color(0.02f, 0.018f, 0.016f, 1.0f);
 
-            // 2. Projector Aperture Root (35mm Archival Gate)
+            // 1b. Historical Documentary Video Screen (Native 1440x1080 4:3 FitInParent, Zero Crop)
+            var vidContainerGO = CreateUIElement("VideoScreenContainer", canvasGO.transform);
+            videoScreenRoot = vidContainerGO.GetComponent<RectTransform>();
+            StretchFull(videoScreenRoot);
+            videoCanvasGroup = vidContainerGO.AddComponent<CanvasGroup>();
+            videoCanvasGroup.alpha = 0f;
+            videoCanvasGroup.interactable = false;
+            videoCanvasGroup.blocksRaycasts = false;
+
+            var vidRawGO = CreateUIElement("HistoricalVideoRawImage", vidContainerGO.transform);
+            var vidRawRect = vidRawGO.GetComponent<RectTransform>();
+            StretchFull(vidRawRect);
+            videoRawImage = vidRawGO.AddComponent<RawImage>();
+            videoRawImage.color = Color.white;
+            videoRawImage.raycastTarget = false;
+            videoAspectFitter = vidRawGO.AddComponent<AspectRatioFitter>();
+            videoAspectFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            videoAspectFitter.aspectRatio = 1440f / 1080f;
+
+            // 2. Projector Aperture Root (35mm Archival Gate - Legacy Fallback)
             var apertureGO = CreateUIElement("ProjectorAperture", canvasGO.transform);
             projectorApertureRect = apertureGO.GetComponent<RectTransform>();
             projectorApertureRect.anchorMin = new Vector2(0.14f, 0.23f);
@@ -1257,6 +1674,7 @@ namespace HoaVaMau.Gameplay
             subRect.offsetMin = Vector2.zero;
             subRect.offsetMax = Vector2.zero;
             subtitleGroup = subGO.AddComponent<CanvasGroup>();
+            subtitleGroup.alpha = 0f;
 
             var subBgImg = subGO.AddComponent<Image>();
             subBgImg.color = new Color(0.04f, 0.035f, 0.03f, 0.85f);
@@ -1321,7 +1739,6 @@ namespace HoaVaMau.Gameplay
 
             // Distinct Keycap Container [ SPACE ] with Dual-Layer Inversion Mask
             float keycapW = 108f;
-            float keycapH = 34f;
             var keycapGO = CreateUIElement("Keycap_SPACE_Box", skipGO.transform);
             var keycapRect = keycapGO.GetComponent<RectTransform>();
             StretchFull(keycapRect); // Exactly matches skipPromptRoot (108 x 34)
