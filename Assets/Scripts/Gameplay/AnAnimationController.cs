@@ -254,7 +254,7 @@ namespace HoaVaMau.Gameplay
                     int side = crate.PlayerSide; // -1 = player is on the left, +1 = player is on the right
                     float halfWidth = crate.BoxSize.x * 0.5f;
                     float contactX = crate.transform.position.x + side * halfWidth;
-                    float handY = crate.transform.position.y + crate.BoxSize.y * 0.68f;
+                    float handY = crate.transform.position.y + 0.66f;
 
                     float facing = (playerController != null) ? playerController.FacingDirection : -side;
                     // Khi nhìn sang phải (+90° around Y): tay trái ở -Z, tay phải ở +Z. Khi nhìn sang trái (-90°): ngược lại.
@@ -820,24 +820,33 @@ namespace HoaVaMau.Gameplay
                 {
                     if (currentPlayingState != "PushPull" && currentPlayingState != "Pull")
                     {
-                        CrossFadeToState("PushPull", 0.15f);
+                        CrossFadeToState("PushPull", 0.10f);
                     }
-                    // Đứng yên gá tay chạm thùng: tạm dừng tại frame tiếp xúc vững chãi
-                    animator.speed = 0f;
+
+                    // Nếu animator đang trong quá trình crossfade, duy trì speed = 1f để transition hoàn tất vào đúng tư thế clip!
+                    if (animator.IsInTransition(0))
+                    {
+                        animator.speed = 1.0f;
+                    }
+                    else
+                    {
+                        // Khi đã hoàn tất vào clip và đứng yên: tạm dừng tại frame tiếp xúc
+                        animator.speed = 0f;
+                    }
                 }
                 else
                 {
                     bool isPushingForward = Mathf.Sign(moveInput) == facing;
                     if (isPushingForward)
                     {
-                        // Đẩy thùng tiến tới: chạy animation đẩy với tốc độ tự nhiên
-                        CrossFadeToState("PushPull", 0.15f);
+                        // Đẩy thùng tiến tới: chạy clip đẩy tiến với tốc độ tự nhiên
+                        CrossFadeToState("PushPull", 0.12f);
                         animator.speed = 1.0f;
                     }
                     else
                     {
-                        // Kéo thùng lùi lại: chạy animation kéo lùi chuyên dụng
-                        CrossFadeToState("Pull", 0.15f);
+                        // Kéo thùng lùi lại: chạy clip kéo lùi chuyên dụng
+                        CrossFadeToState("Pull", 0.12f);
                         animator.speed = 1.0f;
                     }
                 }

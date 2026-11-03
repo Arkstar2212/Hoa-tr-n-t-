@@ -152,6 +152,12 @@ namespace HoaVaMau.Gameplay
 
             crate.StartGrab(player, side);
 
+            var anAnim = player.GetComponent<AnAnimationController>();
+            if (anAnim != null)
+            {
+                anAnim.PlayCutsceneAnimation("PushPull", 0.08f);
+            }
+
             Vector3 anchorPos = crate.GetPlayerAnchorPosition(side);
             float groundY = GetGroundElevationAt(anchorPos.x, crate.transform.position.y);
 
