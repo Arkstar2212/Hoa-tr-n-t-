@@ -34,7 +34,7 @@ namespace HoaVaMau.Gameplay
         [Header("Rope Dimensions")]
         [SerializeField] private int nodeCount = 16;
         [SerializeField] private float totalLength = 4.6f;
-        [SerializeField] private float ropeVisualWidth = 0.10f;
+        [SerializeField] private float ropeVisualWidth = 0.055f;
 
         [Header("Physics & Motion Smoothing")]
         [SerializeField] private float gravity = 22.0f;
@@ -42,8 +42,8 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float airDamping = 0.988f;
         [Range(4, 20)]
         [SerializeField] private int constraintIterations = 14;
-        [SerializeField] private float maxSwingSpeed = 2.0f;
-        [SerializeField] private float maxSwingAngle = 6.0f; // Max deflection angle (degrees) - Planet of Lana neat rope
+        [SerializeField] private float maxSwingSpeed = 5.0f;
+        [SerializeField] private float maxSwingAngle = 32.0f; // Max deflection angle (degrees)
 
         [Header("Ambient Breeze (Gentle Wiggle)")]
         [SerializeField] private bool enableAmbientWiggle = true;
@@ -51,9 +51,9 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float windFrequency = 1.25f;
 
         [Header("Player Interaction (Planet of Lana Standard)")]
-        [SerializeField] private float playerSwingForce = 0.0f; // No violent resonant momentum swing
+        [SerializeField] private float playerSwingForce = 15.0f; // Responsive swing pumping
         [SerializeField] private float climbWiggleForce = 0.25f;
-        [SerializeField] private float momentumTransferRatio = 0.0f; // Stable grab without launch velocity
+        [SerializeField] private float momentumTransferRatio = 0.70f; // Transfer jump momentum into swing
 
         [Header("Visuals")]
         [SerializeField] private Color ropeColor = new Color(0.60f, 0.45f, 0.28f);
@@ -124,22 +124,49 @@ namespace HoaVaMau.Gameplay
 
             if (ropeMaterial == null)
             {
-                ropeMaterial = new Material(ropeShader) { name = "Mat_RopeHemp" };
-                if (ropeMaterial.HasProperty("_BaseColor")) ropeMaterial.SetColor("_BaseColor", ropeColor);
-                if (ropeMaterial.HasProperty("_Color")) ropeMaterial.SetColor("_Color", ropeColor);
+#if UNITY_EDITOR
+                ropeMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/CaMau/M_Coir_Rope_Braided.mat");
+#endif
+                if (ropeMaterial == null)
+                {
+                    ropeMaterial = new Material(ropeShader) { name = "Mat_CoirRope" };
+                    if (ropeMaterial.HasProperty("_BaseColor")) ropeMaterial.SetColor("_BaseColor", ropeColor);
+                    if (ropeMaterial.HasProperty("_Color")) ropeMaterial.SetColor("_Color", ropeColor);
+                }
             }
 
             lineRenderer.material = ropeMaterial;
             lineRenderer.sharedMaterial = ropeMaterial;
+            lineRenderer.textureMode = LineTextureMode.Tile;
             lineRenderer.startWidth = ropeVisualWidth;
             lineRenderer.endWidth = ropeVisualWidth * 0.88f;
-            lineRenderer.startColor = ropeColor;
-            lineRenderer.endColor = ropeColor;
+            lineRenderer.startColor = Color.white;
+            lineRenderer.endColor = Color.white;
             lineRenderer.useWorldSpace = true;
             lineRenderer.sortingOrder = 25;
             lineRenderer.numCapVertices = 6;
             lineRenderer.numCornerVertices = 4;
             lineRenderer.positionCount = nodeCount;
+
+            // Setup Branch Knot Sprite at top anchor
+            Transform knotTr = transform.Find("BranchKnot");
+            if (knotTr == null)
+            {
+                GameObject knotGO = new GameObject("BranchKnot");
+                knotGO.transform.SetParent(transform);
+                knotTr = knotGO.transform;
+            }
+            knotTr.localPosition = new Vector3(0f, 0.03f, -0.03f);
+            knotTr.localScale = new Vector3(0.55f, 0.55f, 1f);
+            var sr = knotTr.GetComponent<SpriteRenderer>();
+            if (sr == null) sr = knotTr.gameObject.AddComponent<SpriteRenderer>();
+#if UNITY_EDITOR
+            if (sr.sprite == null)
+            {
+                sr.sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Textures/Environment/Rope/T_Rope_Branch_Knot_Coil.png");
+            }
+#endif
+            sr.sortingOrder = lineRenderer.sortingOrder + 1;
 
             // Trigger colliders starting from 20% down to 90% of length (playable zone)
             int triggerCount = 8;
@@ -159,7 +186,7 @@ namespace HoaVaMau.Gameplay
                 rb.useGravity = false;
 
                 SphereCollider sc = trigGO.AddComponent<SphereCollider>();
-                sc.radius = 0.90f;
+                sc.radius = 0.45f;
                 sc.isTrigger = true;
 
                 RopeSegmentTrigger rst = trigGO.AddComponent<RopeSegmentTrigger>();
@@ -206,7 +233,7 @@ namespace HoaVaMau.Gameplay
             float gravityTorque = -(gravity / effLength) * Mathf.Sin(currentAngle);
 
             // Fast natural settling damping on the rope (Planet of Lana standard)
-            float bodyDamping = 4.5f;
+            float bodyDamping = Mathf.Abs(smoothedSwingInput) > 0.05f ? 0.65f : 1.4f;
 
             // Smooth user swing input
             smoothedSwingInput = Mathf.MoveTowards(smoothedSwingInput, currentSwingInput, dt * 5.5f);
@@ -500,7 +527,7 @@ namespace HoaVaMau.Gameplay
         {
             float oldLength = Mathf.Max(0.8f, totalLength * playerClimbFraction);
             float deltaFraction = -deltaMeters / totalLength;
-            playerClimbFraction = Mathf.Clamp(playerClimbFraction + deltaFraction, 0.14f, 0.88f);
+            playerClimbFraction = Mathf.Clamp(playerClimbFraction + deltaFraction, 0.08f, 0.94f);
             float newLength = Mathf.Max(0.8f, totalLength * playerClimbFraction);
 
             // Conservation of angular momentum during climb (L1 * w1 = L2 * w2)
@@ -553,7 +580,7 @@ namespace HoaVaMau.Gameplay
             float vx = angularVelocity * effLength * Mathf.Cos(currentAngle);
             float vy = angularVelocity * effLength * Mathf.Sin(currentAngle);
             Vector3 vel = new Vector3(vx, vy, 0f);
-            return Vector3.zero; // Planet of Lana: no chaotic slingshot launch velocity
+            return vel; // Transfer physical pendulum release velocity
         }
 
         public void ReleasePlayer(PlayerController player)

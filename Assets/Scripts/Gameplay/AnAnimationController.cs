@@ -179,7 +179,7 @@ namespace HoaVaMau.Gameplay
                 Vector3 ropeTangent = new Vector3(Mathf.Sin(radAngle), -Mathf.Cos(radAngle), 0f);
                 Quaternion ropeHandRot = Quaternion.LookRotation(Vector3.forward, -ropeTangent);
 
-                if (currentPlayingState == "RopeHang")
+                if (currentPlayingState == "RopeHang" || currentPlayingState == "RopeSwing")
                 {
                     // Staggered grip: Tay phải nắm trên (+10cm), tay trái nắm dưới (-10cm)
                     Vector3 rHandTarget = ropeGrabPos + ropeTangent * 0.10f;
@@ -286,7 +286,7 @@ namespace HoaVaMau.Gameplay
 
                 // Khóa hoàn toàn trục X và Z của xương Hips theo vị trí thực của nhân vật (100% In-Place)
                 // Ngăn chặn triệt để hiện tượng mesh chạy tiến ra trước Collider rồi bị giật lùi lại khi lặp vòng
-                if (currentPlayingState != "RopeHang" && currentPlayingState != "RopeClimbUp" && currentPlayingState != "RopeClimbDown" && currentPlayingState != "RopeClimb")
+                if (currentPlayingState != "RopeHang" && currentPlayingState != "RopeSwing" && currentPlayingState != "RopeClimbUp" && currentPlayingState != "RopeClimbDown" && currentPlayingState != "RopeClimb")
                 {
                     hipPos.x = rootPos.x;
                     hipPos.z = rootPos.z;
@@ -565,19 +565,20 @@ namespace HoaVaMau.Gameplay
                     throwPhase = ThrowAnimPhase.None;
                     float vertInput = (playerController.InputReader != null) ? playerController.InputReader.Vertical : 0f;
 
-                    if (vertInput > 0.1f)
+                    if (vertInput > 0.12f)
                     {
-                        CrossFadeToState("RopeClimbUp", 0.12f);
+                        CrossFadeToState("RopeClimbUp", 0.10f);
                         animator.speed = 1.15f;
                     }
-                    else if (vertInput < -0.1f)
+                    else if (vertInput < -0.12f)
                     {
-                        CrossFadeToState("RopeClimbDown", 0.12f);
+                        CrossFadeToState("RopeClimbDown", 0.10f);
                         animator.speed = 1.15f;
                     }
                     else
                     {
-                        // Bám lơ lửng / đung đưa trên dây thừng: chạy RopeHang tự nhiên, không bao giờ đóng băng speed = 0
+                        // Bám dây tự nhiên (RopeHang): hai tay nắm dây, thân người buông theo phương thẳng đứng
+                        // Chuyển động đung đưa con lắc được điều khiển vật lý 1:1 qua PlayerRopeHandler (không dùng animation quẫy chân)
                         CrossFadeToState("RopeHang", 0.15f);
                         animator.speed = 1.0f;
                     }
@@ -716,7 +717,7 @@ namespace HoaVaMau.Gameplay
             }
             else
             {
-                if (currentPlayingState == "Climb" || currentPlayingState == "Jump" || currentPlayingState == "Fall" || currentPlayingState == "Throw" || currentPlayingState == "Land" || currentPlayingState == "LedgeHang" || currentPlayingState == "RopeClimb" || currentPlayingState == "RopeHang" || currentPlayingState == "RopeClimbUp" || currentPlayingState == "RopeClimbDown")
+                if (currentPlayingState == "Climb" || currentPlayingState == "Jump" || currentPlayingState == "Fall" || currentPlayingState == "Throw" || currentPlayingState == "Land" || currentPlayingState == "LedgeHang" || currentPlayingState == "RopeClimb" || currentPlayingState == "RopeHang" || currentPlayingState == "RopeSwing" || currentPlayingState == "RopeClimbUp" || currentPlayingState == "RopeClimbDown")
                 {
                     string next = (currentSmoothSpeed > 0.15f) ? "Walk" : "Idle";
                     CrossFadeToState(next, 0.12f);

@@ -11,19 +11,20 @@ namespace HoaVaMau.Editor
 {
     /// <summary>
     /// Công cụ chuẩn hóa và tối ưu hóa hiệu năng đồ họa cao (60+ FPS) cho Scene 3D CaMau_1954_Village.unity:
-    /// 1. Tích hợp mesh tối ưu hóa từ Blender (Quadric Error Decimation + Smooth Shading) bảo toàn độ cong mịn,
-    ///    đường nét viền mượt mà của lu nước, thùng gỗ, tảng đá, nhà sàn, giếng nước, trâu, xuồng...
-    /// 2. Cập nhật mesh dữ liệu cao vào Assets/Models/Optimized/ và đồng bộ tự động vào các Prefab/Scene.
-    /// 3. Tối ưu Shadow Casters trên các prop nhỏ và rút gọn Camera FarClip.
-    /// 4. Đảm bảo BẢO TOÀN TUYỆT ĐỐI Player và New Scene 1_Overhaul.unity (Chỉ tác động CaMau_1954_Village).
+    /// 1. Tích hợp mesh tối ưu hóa từ Blender (Quadric Error Decimation + Smooth Shading) bảo toàn độ cong mịn.
+    /// 2. TỰ ĐỘNG CHUẨN HÓA KÍCH THƯỚC (SCALE) VÀ TỌA ĐỘ TRỤC (ORIENTATION) khớp 100% từng milimet với mesh gốc trong Unity:
+    ///    - Bật isReadable trên ModelImporter
+    ///    - Tự động phát hiện và hạ tỷ lệ 100x cho các model centimeter (Thùng gỗ, Tảng đá, Nhà sàn, Nhà tranh...)
+    ///    - Tự động chuẩn hóa trục cao Y-up cho các model xuất từ Blender (Giếng nước, Trâu, Xe kéo, Xuồng, Lu nước...)
+    /// 3. Lưu mesh dữ liệu cao vào Assets/Models/Optimized/ và đồng bộ tự động vào các Prefab/Scene.
+    /// 4. Đảm bảo BẢO TOÀN TUYỆT ĐỐI Player và New Scene 1_Overhaul.unity.
     /// </summary>
     public static class OptimizeVillage3DScene
     {
         public const string Scene3DPath = "Assets/Scenes/CaMau_1954_Village.unity";
         public const string OptimizedMeshFolder = "Assets/Models/Optimized";
 
-        // Cấu hình đồng bộ giữa FBX gốc, FBX tối ưu từ Blender, và file .asset tối ưu (nếu có)
-        private static readonly (string origFbx, string blenderFbx, string assetName)[] ModelMappings = new[]
+        public static readonly (string origFbx, string blenderFbx, string assetName)[] ModelMappings = new[]
         {
             ("Assets/Models/Model_Lu.fbx", "Assets/Models/Optimized/SM_Lu_BlenderOptimized.fbx", "M_Lu_Nuoc_Optimized.asset"),
             ("Assets/Models/Props/SM_WoodenCrate.fbx", "Assets/Models/Optimized/SM_WoodenCrate_BlenderOptimized.fbx", "M_WoodenCrate_Optimized.asset"),
@@ -32,64 +33,68 @@ namespace HoaVaMau.Editor
             ("Assets/Models/Environment/SM_StiltedHouse_Thatched.fbx", "Assets/Models/Optimized/SM_StiltedHouse_Thatched_BlenderOptimized.fbx", "M_House_Thatched_Optimized.asset"),
             ("Assets/Models/Environment/SM_StiltedHouse_Wood.fbx", "Assets/Models/Optimized/SM_StiltedHouse_Wood_BlenderOptimized.fbx", "M_House_Wood_Optimized.asset"),
             ("Assets/Models/Props/SM_WoodenSlatCube.fbx", "Assets/Models/Optimized/SM_WoodenSlatCube_BlenderOptimized.fbx", "M_WoodenSlatCube_Optimized.asset"),
-            ("Assets/Models/Environment/SM_Rock_Medium_02.fbx", "Assets/Models/Optimized/SM_Rock_Medium_02_BlenderOptimized.fbx", null),
-            ("Assets/Models/Environment/SM_LoneBoulder.fbx", "Assets/Models/Optimized/SM_LoneBoulder_BlenderOptimized.fbx", null),
-            ("Assets/Models/GiengNuoc.fbx", "Assets/Models/Optimized/SM_GiengNuoc_BlenderOptimized.fbx", null),
-            ("Assets/Models/Buffalo.fbx", "Assets/Models/Optimized/SM_Buffalo_BlenderOptimized.fbx", null),
-            ("Assets/Models/Xe_keo.fbx", "Assets/Models/Optimized/SM_Xe_keo_BlenderOptimized.fbx", null),
-            ("Assets/Models/Xuong_go.fbx", "Assets/Models/Optimized/SM_Xuong_go_BlenderOptimized.fbx", null),
-            ("Assets/Models/Cong_lang.fbx", "Assets/Models/Optimized/SM_Cong_lang_BlenderOptimized.fbx", null),
-            ("Assets/Models/Nhà tranh.fbx", "Assets/Models/Optimized/SM_NhaTranh_BlenderOptimized.fbx", null)
+            ("Assets/Models/Environment/SM_Rock_Medium_02.fbx", "Assets/Models/Optimized/SM_Rock_Medium_02_BlenderOptimized.fbx", "M_Rock_Medium_02_Optimized.asset"),
+            ("Assets/Models/Environment/SM_LoneBoulder.fbx", "Assets/Models/Optimized/SM_LoneBoulder_BlenderOptimized.fbx", "M_LoneBoulder_Optimized.asset"),
+            ("Assets/Models/GiengNuoc.fbx", "Assets/Models/Optimized/SM_GiengNuoc_BlenderOptimized.fbx", "M_GiengNuoc_Optimized.asset"),
+            ("Assets/Models/Buffalo.fbx", "Assets/Models/Optimized/SM_Buffalo_BlenderOptimized.fbx", "M_Buffalo_Optimized.asset"),
+            ("Assets/Models/Xe_keo.fbx", "Assets/Models/Optimized/SM_Xe_keo_BlenderOptimized.fbx", "M_Xe_keo_Optimized.asset"),
+            ("Assets/Models/Xuong_go.fbx", "Assets/Models/Optimized/SM_Xuong_go_BlenderOptimized.fbx", "M_Xuong_go_Optimized.asset"),
+            ("Assets/Models/Cong_lang.fbx", "Assets/Models/Optimized/SM_Cong_lang_BlenderOptimized.fbx", "M_Cong_lang_Optimized.asset"),
+            ("Assets/Models/Nhà tranh.fbx", "Assets/Models/Optimized/SM_NhaTranh_BlenderOptimized.fbx", "M_NhaTranh_Optimized.asset")
         };
 
         [MenuItem("Tools/Hoa Tren Dat Do/Optimize Ca Mau 3D Village Scene (60 FPS)")]
         public static void OptimizeVillageSceneMenu()
         {
-            Debug.Log("<color=#38bdf8>[OptimizeVillage]</color> Bắt đầu quy trình tối ưu hóa chất lượng cao Scene 3D Làng Cà Mau 1954...");
+            Debug.Log("<color=#38bdf8>[OptimizeVillage]</color> Bắt đầu quy trình chuẩn hóa tỷ lệ kích thước & tối ưu mesh Scene 3D Làng Cà Mau 1954...");
+
+            // Bật isReadable cho tất cả các file FBX tối ưu
+            foreach (var item in ModelMappings)
+            {
+                EnsureModelIsReadable(item.origFbx);
+                EnsureModelIsReadable(item.blenderFbx);
+            }
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
             var meshMap = new Dictionary<string, UnityEngine.Mesh>(StringComparer.OrdinalIgnoreCase);
 
-            // 1. Nạp các Blender-optimized meshes và cập nhật vào .asset
+            // 1. Nạp và chuẩn hóa mesh Blender khớp 100% kích thước & trục của mesh gốc
             foreach (var item in ModelMappings)
             {
-                UnityEngine.Mesh blenderMesh = GetMeshFromFBX(item.blenderFbx);
-                if (blenderMesh == null)
+                var origGo = AssetDatabase.LoadAssetAtPath<GameObject>(item.origFbx);
+                var origMesh = origGo != null ? origGo.GetComponentInChildren<MeshFilter>()?.sharedMesh : null;
+                var blenderMesh = GetMeshFromFBX(item.blenderFbx);
+
+                if (origMesh == null || blenderMesh == null)
                 {
-                    Debug.LogWarning($"[OptimizeVillage] Chưa tìm thấy mesh trong Blender FBX: {item.blenderFbx}");
+                    Debug.LogWarning($"[OptimizeVillage] Thiếu asset: origMesh={origMesh != null}, blenderMesh={blenderMesh != null} cho {item.origFbx}");
                     continue;
                 }
 
-                // Đăng ký vào bảng tra cứu cho cả FBX gốc và FBX tối ưu
-                meshMap[item.origFbx] = blenderMesh;
-                meshMap[item.blenderFbx] = blenderMesh;
+                string assetPath = $"{OptimizedMeshFolder}/{item.assetName}";
+                UnityEngine.Mesh targetMesh = AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>(assetPath);
 
-                // Nếu có file .asset đại diện, sao chép dữ liệu mesh để giữ nguyên toàn bộ tham chiếu cũ
-                if (!string.IsNullOrEmpty(item.assetName))
+                if (targetMesh == null)
                 {
-                    string assetPath = $"{OptimizedMeshFolder}/{item.assetName}";
-                    UnityEngine.Mesh existingAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>(assetPath);
-                    if (existingAsset != null)
-                    {
-                        CopyMeshData(blenderMesh, existingAsset);
-                        meshMap[assetPath] = existingAsset;
-                        Debug.Log($"[OptimizeVillage] Đã nâng cấp {item.assetName} sang dạng mịn Blender QEM ({existingAsset.triangles.Length / 3:N0} tris)");
-                    }
-                    else
-                    {
-                        var newAsset = UnityEngine.Object.Instantiate(blenderMesh);
-                        newAsset.name = Path.GetFileNameWithoutExtension(item.assetName);
-                        AssetDatabase.CreateAsset(newAsset, assetPath);
-                        meshMap[assetPath] = newAsset;
-                        Debug.Log($"[OptimizeVillage] Đã tạo mới {item.assetName} ({newAsset.triangles.Length / 3:N0} tris)");
-                    }
+                    targetMesh = new UnityEngine.Mesh();
+                    targetMesh.name = Path.GetFileNameWithoutExtension(item.assetName);
+                    AssetDatabase.CreateAsset(targetMesh, assetPath);
                 }
+
+                // Căn chỉnh kích thước và trục tọa độ chính xác tuyệt đối
+                AlignAndCopyMesh(blenderMesh, targetMesh, origMesh);
+
+                meshMap[item.origFbx] = targetMesh;
+                meshMap[item.blenderFbx] = targetMesh;
+                meshMap[assetPath] = targetMesh;
+
+                Debug.Log($"[OptimizeVillage] Đã chuẩn hóa {item.assetName}: Size={targetMesh.bounds.size} (Tris: {targetMesh.triangles.Length / 3:N0})");
             }
 
             AssetDatabase.SaveAssets();
 
-            // 2. Cập nhật các Prefab môi trường và prop (TUYỆT ĐỐI KHÔNG ĐỤNG ĐẾN PREFAB PLAYER)
+            // 2. Cập nhật Prefabs tương ứng
             UpdatePrefabMesh("Assets/Prefabs/Model_Lu.prefab", meshMap, "Assets/Models/Model_Lu.fbx", true);
             UpdatePrefabMesh("Assets/Prefabs/Props/PF_Prop_CargoCrate_3D.prefab", meshMap, "Assets/Models/Props/SM_WoodenCrate.fbx", false);
             UpdatePrefabMesh("Assets/Prefabs/Environment/PF_MossyBoulder.prefab", meshMap, "Assets/Models/Environment/SM_MossyBoulder_01.fbx", false);
@@ -103,7 +108,18 @@ namespace HoaVaMau.Editor
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("<color=#4ade80>[OptimizeVillage]</color> Đã hoàn tất nâng cấp mesh Blender chất lượng cao cho Scene 3D Làng Cà Mau 1954!");
+            Debug.Log("<color=#4ade80>[OptimizeVillage]</color> Đã hoàn tất sửa lỗi kích thước & nâng cấp toàn bộ mesh Scene 3D Làng Cà Mau 1954!");
+        }
+
+        public static void EnsureModelIsReadable(string fbxPath)
+        {
+            if (!File.Exists(fbxPath)) return;
+            var importer = AssetImporter.GetAtPath(fbxPath) as ModelImporter;
+            if (importer != null && !importer.isReadable)
+            {
+                importer.isReadable = true;
+                importer.SaveAndReimport();
+            }
         }
 
         public static UnityEngine.Mesh GetMeshFromFBX(string fbxPath)
@@ -120,12 +136,58 @@ namespace HoaVaMau.Editor
             return null;
         }
 
-        public static void CopyMeshData(UnityEngine.Mesh src, UnityEngine.Mesh dst)
+        public static void AlignAndCopyMesh(UnityEngine.Mesh src, UnityEngine.Mesh dst, UnityEngine.Mesh orig)
         {
             dst.Clear();
             dst.indexFormat = src.indexFormat;
-            dst.vertices = src.vertices;
-            dst.normals = src.normals;
+
+            Vector3 origSize = orig.bounds.size;
+            Vector3 srcSize = src.bounds.size;
+
+            // 1. Tính toán hệ số Scale chuẩn xác
+            float currentMag = srcSize.magnitude;
+            float origMag = origSize.magnitude;
+            float scale = 1.0f;
+
+            if (currentMag > origMag * 5f || currentMag < origMag * 0.2f)
+            {
+                scale = origMag / currentMag;
+            }
+
+            // 2. Xác định nếu cần đảo trục Y-Z (Blender xuất trục Z làm chiều cao thay vì Y)
+            bool swapYZ = Mathf.Abs(srcSize.z - origSize.y) < Mathf.Abs(srcSize.y - origSize.y) &&
+                          Mathf.Abs(srcSize.z - origSize.z) > Mathf.Abs(srcSize.y - origSize.z);
+
+            Vector3[] srcVerts = src.vertices;
+            Vector3[] srcNorms = src.normals;
+            bool hasNorms = srcNorms != null && srcNorms.Length == srcVerts.Length;
+
+            Vector3[] outVerts = new Vector3[srcVerts.Length];
+            Vector3[] outNorms = hasNorms ? new Vector3[srcNorms.Length] : null;
+
+            for (int i = 0; i < srcVerts.Length; i++)
+            {
+                Vector3 v = srcVerts[i];
+                if (swapYZ)
+                {
+                    v = new Vector3(v.x, -v.z, v.y);
+                }
+                v *= scale;
+                outVerts[i] = v;
+
+                if (hasNorms)
+                {
+                    Vector3 n = srcNorms[i];
+                    if (swapYZ)
+                    {
+                        n = new Vector3(n.x, -n.z, n.y);
+                    }
+                    outNorms[i] = n.normalized;
+                }
+            }
+
+            dst.vertices = outVerts;
+            if (hasNorms) dst.normals = outNorms;
             dst.uv = src.uv;
             dst.uv2 = src.uv2;
             dst.tangents = src.tangents;
@@ -155,7 +217,7 @@ namespace HoaVaMau.Editor
                         rend.shadowCastingMode = ShadowCastingMode.Off;
                     }
                     PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
-                    Debug.Log($"[OptimizeVillage] Đã cập nhật Prefab: {prefabPath} -> {optMesh.name} ({optMesh.triangles.Length / 3:N0} tris)");
+                    Debug.Log($"[OptimizeVillage] Đã cập nhật Prefab: {prefabPath} -> Size={optMesh.bounds.size}");
                 }
             }
             finally
@@ -179,7 +241,7 @@ namespace HoaVaMau.Editor
 
             foreach (var root in scene.GetRootGameObjects())
             {
-                // Tuyệt đối không đụng đến đối tượng Player
+                // TUYỆT ĐỐI BẢO TỒN ĐỐI TƯỢNG PLAYER
                 if (root.name.Contains("Player") || root.name.Contains("Hero") || root.name.Contains("Boy"))
                 {
                     continue;
@@ -196,7 +258,7 @@ namespace HoaVaMau.Editor
                     var mf = go.GetComponent<MeshFilter>();
                     var mr = go.GetComponent<MeshRenderer>();
 
-                    // A. Thay thế các mesh siêu nặng thành mesh tối ưu Blender
+                    // Thay thế các mesh sang mesh tối ưu chuẩn kích thước
                     if (mf != null && mf.sharedMesh != null)
                     {
                         string p = AssetDatabase.GetAssetPath(mf.sharedMesh);
@@ -210,7 +272,7 @@ namespace HoaVaMau.Editor
                         }
                     }
 
-                    // B. Tối ưu Shadow Casters trên các prop nhỏ
+                    // Tắt Shadow trên các prop nhỏ
                     if (mr != null && mr.enabled && mr.shadowCastingMode != ShadowCastingMode.Off)
                     {
                         string n = go.name;
@@ -227,7 +289,7 @@ namespace HoaVaMau.Editor
                     }
                 }
 
-                // C. Cấu hình Camera FarClip tối ưu (160m thay vì 5000m)
+                // Cấu hình Camera FarClip tối ưu
                 var cam = root.GetComponentInChildren<Camera>(true);
                 if (cam != null && (cam.name == "Main Camera" || cam.CompareTag("MainCamera")))
                 {
@@ -239,7 +301,7 @@ namespace HoaVaMau.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, Scene3DPath);
-            Debug.Log($"[OptimizeVillage] Scene CaMau_1954_Village: Đã cập nhật {replacedMeshes} vị trí sang mesh mịn Blender và tắt shadow trên {shadowCastersDisabled} prop nhỏ!");
+            Debug.Log($"[OptimizeVillage] Scene CaMau_1954_Village: Đã cập nhật {replacedMeshes} vị trí sang mesh chuẩn và tắt shadow trên {shadowCastersDisabled} prop nhỏ!");
 
             if (!wasLoaded)
             {

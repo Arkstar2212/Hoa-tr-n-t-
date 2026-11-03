@@ -71,11 +71,12 @@ namespace HoaVaMau.Gameplay
             // 1. Leo trèo lên / xuống dọc theo chiều dài dây thừng với tốc độ mượt mà tự nhiên
             if (Mathf.Abs(verticalInput) > 0.12f)
             {
-                float climbSpeed = (verticalInput > 0f) ? 1.85f : 2.40f;
+                float climbSpeed = (verticalInput > 0f) ? 0.50f : 0.55f;
                 currentRope.Climb(player, verticalInput * climbSpeed * dt);
             }
 
             // 2. Chuyển hướng mặt theo phím A / D (Chuẩn Planet of Lana: gọn lẹ, không momentum swing tích lũy phóng người)
+            if (currentRope != null) currentRope.ApplySwingInput(horizontalInput, dt);
             if (Mathf.Abs(horizontalInput) > 0.05f)
             {
                 // No momentum swing pumping
@@ -104,7 +105,7 @@ namespace HoaVaMau.Gameplay
             // 4. Bật nhảy phóng khỏi dây thừng (Planet of Lana Athletic Leap Arc)
             if (jumpPressed)
             {
-                Vector3 ropeTanVel = Vector3.zero;
+                Vector3 ropeTanVel = (currentRope != null) ? currentRope.GetReleaseVelocity() : Vector3.zero;
 
                 // Thả tay rơi tự do nếu đang nhấn giữ phím xuống [S]
                 if (verticalInput < -0.4f)
@@ -118,8 +119,8 @@ namespace HoaVaMau.Gameplay
                         ? Mathf.Sign(horizontalInput)
                         : (Mathf.Abs(ropeTanVel.x) > 0.4f ? Mathf.Sign(ropeTanVel.x) : player.FacingDirection);
 
-                    float launchSpeedX = 3.2f;
-                    float launchSpeedY = (player != null && player.Motor != null) ? player.Motor.JumpForce : 6.2f;
+                    float launchSpeedX = Mathf.Clamp(4.0f + Mathf.Abs(ropeTanVel.x) * 1.15f, 4.5f, 8.5f);
+                    float launchSpeedY = (player != null && player.Motor != null) ? Mathf.Max(player.Motor.JumpForce, 6.2f) : 6.2f;
 
                     releaseVelocity = new Vector3(launchDir * launchSpeedX, launchSpeedY, 0f);
                     player.SetFacingDirection(launchDir);
