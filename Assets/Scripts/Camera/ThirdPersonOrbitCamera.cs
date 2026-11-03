@@ -76,6 +76,36 @@ namespace HoaVaMau
         public float Yaw => yaw;
         public float Pitch => pitch;
 
+        private bool inDialogueFocus = false;
+        private Vector3 dialogueCamTargetPos;
+        private Quaternion dialogueCamTargetRot;
+        private float dialogueFOV = 46f;
+        private float normalFOV = 56f;
+
+        public bool InDialogueFocus => inDialogueFocus;
+
+        public void StartDialogueFocus(Vector3 cameraPos, Quaternion cameraRot, float fov = 46f)
+        {
+            inDialogueFocus = true;
+            dialogueCamTargetPos = cameraPos;
+            dialogueCamTargetRot = cameraRot;
+            dialogueFOV = fov;
+            SetCursorLock(false);
+        }
+
+        public void UpdateDialogueFocus(Vector3 cameraPos, Quaternion cameraRot)
+        {
+            dialogueCamTargetPos = cameraPos;
+            dialogueCamTargetRot = cameraRot;
+        }
+
+        public void EndDialogueFocus()
+        {
+            inDialogueFocus = false;
+            SnapToTarget();
+            SetCursorLock(true);
+        }
+
         private void Awake()
         {
             cam = GetComponent<Camera>();
@@ -193,6 +223,15 @@ namespace HoaVaMau
                 return;
             }
 
+            if (inDialogueFocus)
+            {
+                if (Cursor.lockState != CursorLockMode.None || !Cursor.visible)
+                {
+                    SetCursorLock(false);
+                }
+                return;
+            }
+
             // Optional free-cursor toggle key (Tab / Alt; Escape is handled by PauseMenuController if present)
             bool togglePressed = false;
             bool leftClickPressed = false;
@@ -273,6 +312,18 @@ namespace HoaVaMau
             }
 
             if (Time.deltaTime <= 0.0001f) return;
+
+            if (inDialogueFocus)
+            {
+                transform.position = Vector3.Lerp(transform.position, dialogueCamTargetPos, Time.deltaTime * 6.0f);
+                transform.rotation = Quaternion.Slerp(transform.rotation, dialogueCamTargetRot, Time.deltaTime * 6.0f);
+                if (cam != null) cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, dialogueFOV, Time.deltaTime * 4.0f);
+                return;
+            }
+            else if (cam != null && Mathf.Abs(cam.fieldOfView - normalFOV) > 0.1f)
+            {
+                cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, normalFOV, Time.deltaTime * 4.0f);
+            }
 
             Vector3 desiredPivot = target.position + pivotOffset;
             if (Vector3.Distance(currentPivotPosition, desiredPivot) > 6.0f)
