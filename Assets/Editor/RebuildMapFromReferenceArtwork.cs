@@ -1926,7 +1926,7 @@ namespace HoaDo.Editor
                 { "Trigger_08_VillageChief", ("Bác Trưởng Xóm", "[E] Hỏi thăm", "Bác Hai: 'Năm nay xóm mình trúng lúa!'", new Vector3(-4.0f, UNIFORM_GROUND_Y + 0.5f, 10.0f), 2.4f) },
 
                 // 9. Lũ Bạn chơi bắn bi dưới bóng cây đa
-                { "Trigger_09_VillageKids", ("Lũ Bạn", "[E] Bắn bi", "Tụi nhỏ: 'An ơi, vô bắn bi nè!'", new Vector3(-9.0f, UNIFORM_GROUND_Y + 0.4f, 10.5f), 2.5f) },
+                { "Trigger_09_VillageKids", ("Lũ Bạn", "[E] Chạy đua", "Tụi nhỏ: 'An ơi, chạy đua không! Coi ai nhanh hơn nè!'", new Vector3(-9.0f, UNIFORM_GROUND_Y + 0.4f, 10.5f), 2.5f) },
 
                 // 10. Giàn Bầu cạnh House 04 garden
                 { "Trigger_10_GourdTrellis", ("Giàn Bầu", "[E] Ngắm", "Trái bầu non xanh mướt đu đưa.", new Vector3(34.0f, UNIFORM_GROUND_Y + 0.5f, 24.0f), 2.4f) },

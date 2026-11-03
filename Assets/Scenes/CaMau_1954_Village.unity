@@ -70611,51 +70611,51 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1025192451338692500, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.66237175
+      value: 0.62847596
       objectReference: {fileID: 0}
     - target: {fileID: 1025192451338692500, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.0000000074863715
+      value: -0.000000004307232
       objectReference: {fileID: 0}
     - target: {fileID: 1025192451338692500, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.7491753
+      value: -0.777829
       objectReference: {fileID: 0}
     - target: {fileID: 1025192451338692500, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.00000007147922
+      value: 0.000000071741006
       objectReference: {fileID: 0}
     - target: {fileID: 4875508460200196125, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.68982697
+      value: 0.6903009
       objectReference: {fileID: 0}
     - target: {fileID: 4875508460200196125, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.04402247
+      value: -0.035832
       objectReference: {fileID: 0}
     - target: {fileID: 4875508460200196125, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.0460224
+      value: -0.037459813
       objectReference: {fileID: 0}
     - target: {fileID: 4875508460200196125, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.7211676
+      value: 0.72166306
       objectReference: {fileID: 0}
     - target: {fileID: 7717146335360875816, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.95045114
+      value: 0.95263934
       objectReference: {fileID: 0}
     - target: {fileID: 7717146335360875816, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.018872578
+      value: 0.013411691
       objectReference: {fileID: 0}
     - target: {fileID: 7717146335360875816, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.059455995
+      value: -0.015464482
       objectReference: {fileID: 0}
     - target: {fileID: 7717146335360875816, guid: 957c629a40f88584d8972ea2991ba959, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.30455127
+      value: 0.30341265
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -76187,8 +76187,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Test3D.InteractableObject3D
   interactionType: 0
   objectTitle: "L\u0169 B\u1EA1n"
-  promptMessage: "[E] B\u1EAFn bi"
-  actionMessage: "T\u1EE5i nh\u1ECF: 'An \u01A1i, v\xF4 b\u1EAFn bi n\xE8!'"
+  promptMessage: "[E] Ch\u1EA1y \u0111ua"
+  actionMessage: "T\u1EE5i nh\u1ECF: 'An \u01A1i, ch\u1EA1y \u0111ua kh\xF4ng! Coi ai nhanh h\u01A1n n\xE8!'"
   interactionRadius: 2.5
   isTriggerZone: 0
   targetLight: {fileID: 0}
