@@ -156,7 +156,7 @@ namespace HoaVaMau.Gameplay
         public Vector3 GetPlayerAnchorPosition(int side)
         {
             float halfWidth = boxSize.x * 0.5f;
-            float playerOffset = 0.32f; // Calibrated for Bé An's arm reach (0.24m - 0.28m) so hands rest solidly on crate face
+            float playerOffset = 0.17f; // Calibrated for Bé An's 0.29m arm reach so hands solidly rest on the crate face // Calibrated for Bé An's arm reach (0.24m - 0.28m) so hands rest solidly on crate face
             float targetX = transform.position.x + side * (halfWidth + playerOffset);
             return new Vector3(targetX, transform.position.y, 0f);
         }

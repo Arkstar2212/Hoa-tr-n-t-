@@ -129,10 +129,9 @@ namespace HoaVaMau.Gameplay
                 zRot = 0f;
             }
 
-            visualTransform.localEulerAngles = new Vector3(0f, yRot, zRot);
-
             if (!has3DAnimator)
             {
+                visualTransform.localEulerAngles = new Vector3(0f, yRot, zRot);
                 float heightRatio = (targetHeight / standingHeight) * squashStretchY;
                 visualTransform.localScale = new Vector3(baseVisualScaleX * widthScale, baseVisualScaleY * heightRatio, baseVisualScaleZ * widthScale);
             }

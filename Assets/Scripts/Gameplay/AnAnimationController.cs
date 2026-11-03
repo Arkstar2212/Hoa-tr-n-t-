@@ -257,8 +257,9 @@ namespace HoaVaMau.Gameplay
                     float handY = crate.transform.position.y + crate.BoxSize.y * 0.68f;
 
                     float facing = (playerController != null) ? playerController.FacingDirection : -side;
-                    Vector3 lHandTarget = new Vector3(contactX, handY + 0.02f, facing * 0.14f);
-                    Vector3 rHandTarget = new Vector3(contactX, handY - 0.02f, -facing * 0.14f);
+                    // Khi nhìn sang phải (+90° around Y): tay trái ở -Z, tay phải ở +Z. Khi nhìn sang trái (-90°): ngược lại.
+                    Vector3 lHandTarget = new Vector3(contactX, handY + 0.02f, -facing * 0.11f);
+                    Vector3 rHandTarget = new Vector3(contactX, handY - 0.02f, facing * 0.11f);
 
                     animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.92f);
                     animator.SetIKPosition(AvatarIKGoal.LeftHand, lHandTarget);
@@ -544,7 +545,13 @@ namespace HoaVaMau.Gameplay
             }
             if (playerController != null)
             {
-                if (playerController.CurrentState == PlayerState.LedgeClimb || playerController.CurrentState == PlayerState.LedgeGrab)
+                if (playerController.CurrentState == PlayerState.PushPull)
+                {
+                    // CỰC KỲ QUAN TRỌNG: Khi đẩy hoặc kéo thùng, nhân vật BẮT BUỘC luôn quay mặt hướng vào thùng gỗ!
+                    // Tuyệt đối không xoay theo phím bấm h (khi bấm A kéo lùi thì nhân vật vẫn nhìn thùng gỗ và bước lùi)!
+                    targetFacingAngle = (playerController.FacingDirection > 0) ? 90f : -90f;
+                }
+                else if (playerController.CurrentState == PlayerState.LedgeClimb || playerController.CurrentState == PlayerState.LedgeGrab)
                 {
                     targetFacingAngle = (playerController.FacingDirection > 0) ? 90f : -90f;
                 }
