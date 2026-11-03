@@ -724,7 +724,7 @@ namespace HoaVaMau.Editor
 
             BindNPC("NPC_Child_Playing_Boy", "Cu Tí", new[]
             {
-                "Anh An ơi! Ra sân làng chơi bắn bi với tụi em đi!",
+                "Anh An ơi! Ra sân làng chạy đua với tụi em đi!",
                 "Chiều nay tụi em rủ nhau chạy ra cầu tàu xem đoàn xuồng ba lá chở gạo lớn lắm!"
             }, "Wave", villagerCtrl);
 
@@ -787,7 +787,7 @@ namespace HoaVaMau.Editor
             ConfigureInteractable3D("INT_FetchWater", "Giếng Nước Quê",
                 "An múc một gáo nước giếng trong vắt, mát lạnh giữa trưa nắng miền Tây.");
             ConfigureInteractable3D("INT_PlayWithKids", "Trò Chơi Tuổi Thơ",
-                "Tiếng cười giòn tan của đám trẻ bắn bi vang vọng dưới bóng cây đại thụ sân làng.");
+                "Tiếng cười giòn tan của đám trẻ chạy đua vang vọng dưới bóng cây đại thụ sân làng.");
             ConfigureInteractable3D("INT_PickFruit", "Giàn Bầu Xanh Mát",
                 "Những trái bầu non mơn mởn đung đưa dưới nắng — hương vị ngọt lành của mảnh vườn Cà Mau.");
             ConfigureInteractable3D("INT_DeliverMeal", "Cặp Lồng Cơm Quê",

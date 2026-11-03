@@ -538,7 +538,7 @@ namespace HoaVaMau.Editor
             // Đàn gà con nhặt thóc giữa sân
             CreateChickenFlock3D(area04.transform, new Vector3(0.5f, 0.0f, 1.5f));
 
-            // NPCs: Trẻ con chơi bắn bi & rượt bắt
+            // NPCs: Trẻ con chơi chạy đua & rượt bắt
             var boySingleBunPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabsPath}/Characters/PF_3D_Boy_SingleBun.prefab");
             if (boySingleBunPrefab != null)
             {
@@ -572,7 +572,7 @@ namespace HoaVaMau.Editor
 
             // Triggers Sân Làng
             Create3DInteractionTrigger(triggersGroup.transform, "INT_TalkToVillager_01", new Vector3(-3.5f, 0.0f, 1.8f), "Ngồi trò chuyện cùng Bác Hai Trưởng Xóm", 2.2f);
-            Create3DInteractionTrigger(triggersGroup.transform, "INT_PlayWithKids", new Vector3(2.0f, 0.0f, 1.0f), "Chơi đuổi bắt và bắn bi cùng đám bạn nhỏ", 2.5f);
+            Create3DInteractionTrigger(triggersGroup.transform, "INT_PlayWithKids", new Vector3(2.0f, 0.0f, 1.0f), "Chơi đuổi bắt và chạy đua cùng đám bạn nhỏ", 2.5f);
 
             // ==========================================
             // 13. KHU VỰC 5: VƯỜN CÂY ĂN TRÁI (05_Vuon_Cay)

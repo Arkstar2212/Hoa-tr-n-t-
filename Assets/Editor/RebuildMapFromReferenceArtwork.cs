@@ -369,14 +369,19 @@ namespace HoaDo.Editor
             unifiedPlain.transform.localScale = new Vector3(152.0f, 0.50f, 96.0f);
             unifiedPlain.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
-            // B. Single Unified Continuous Sandy Shoreline Slope (Trimmed cleanly to 152m width, zero excess land wings)
-            var beachSlope = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            beachSlope.name = "Terrain_Beach_Slope";
+            // B. Procedural Undulating Natural Beach (Seamless with village soil at Y=0.50m, flush with sea at Y=-0.58m)
+            var beachSlope = new GameObject("Terrain_Beach_Slope");
             beachSlope.transform.parent = terrainRoot.transform;
-            beachSlope.transform.position = new Vector3(0.0f, -0.04f, -14.0f);
-            beachSlope.transform.rotation = Quaternion.Euler(7.7f, 0f, 0f);
-            beachSlope.transform.localScale = new Vector3(152.0f, 0.50f, 8.5f);
-            beachSlope.GetComponent<MeshRenderer>().sharedMaterial = matSand;
+            beachSlope.transform.position = Vector3.zero;
+            beachSlope.transform.rotation = Quaternion.identity;
+            beachSlope.transform.localScale = Vector3.one;
+            var mfBeach = beachSlope.AddComponent<MeshFilter>();
+            var mrBeach = beachSlope.AddComponent<MeshRenderer>();
+            var mcBeach = beachSlope.AddComponent<MeshCollider>();
+            var beachMesh = OverhaulBeachAndHarborWharf.GenerateUndulatingBeachMesh(164.0f, -9.8f, -28.5f, 82, 38);
+            mfBeach.sharedMesh = beachMesh;
+            mcBeach.sharedMesh = beachMesh;
+            mrBeach.sharedMaterial = matSand;
 
             // C. Sea Bed Floor (Extending deeply under the sea)
             var seaBed = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -839,7 +844,7 @@ namespace HoaDo.Editor
                 ("House_06_West_Beachside",    new Vector2(-42.0f,  6.0f), 4.5f,  12.0f),
                 ("House_07_Center_Right",      new Vector2( 20.0f,  4.0f), 4.0f, -12.0f),
                 ("House_08_SE_Coastal",        new Vector2( 54.0f,  6.0f), 4.4f, -40.0f),
-                ("House_09_Harbor_StiltHut",   new Vector2( 60.0f,-14.0f), 3.2f,  85.0f),
+                // ("House_09_Harbor_StiltHut",   new Vector2( 60.0f,-14.0f), 3.2f,  85.0f),
                 ("House_10_Far_NW_Storage",    new Vector2(-68.0f, 32.0f), 3.0f,  25.0f)
             };
 
@@ -1488,6 +1493,12 @@ namespace HoaDo.Editor
                 dg.transform.position = new Vector3(-36.5f, UNIFORM_GROUND_Y, 8.5f);
                 dg.transform.rotation = Quaternion.Euler(0f, 45f, 0f);
                 dg.transform.localScale = Vector3.one * 1.1f;
+
+                // Add VillageDogIdle & 3D Spatial Bark Audio
+                var dogIdle = dg.GetComponent<HoaVaMau.Environment.VillageDogIdle>();
+                if (dogIdle == null) dogIdle = dg.AddComponent<HoaVaMau.Environment.VillageDogIdle>();
+                var barkClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_Dog_Bark.mp3");
+                if (barkClip != null) dogIdle.ConfigureBarkAudio(barkClip, 0.85f);
             }
         }
 
@@ -1920,7 +1931,7 @@ namespace HoaDo.Editor
                 { "Trigger_08_VillageChief", ("Bác Trưởng Xóm", "[E] Hỏi thăm", "Bác Hai: 'Năm nay xóm mình trúng lúa!'", new Vector3(-4.0f, UNIFORM_GROUND_Y + 0.5f, 10.0f), 2.4f) },
 
                 // 9. Lũ Bạn chơi bắn bi dưới bóng cây đa
-                { "Trigger_09_VillageKids", ("Lũ Bạn", "[E] Bắn bi", "Tụi nhỏ: 'An ơi, vô bắn bi nè!'", new Vector3(-9.0f, UNIFORM_GROUND_Y + 0.4f, 10.5f), 2.5f) },
+                { "Trigger_09_VillageKids", ("Lũ Bạn", "[E] Chạy đua", "Tụi nhỏ: 'An ơi, chạy đua không! Coi ai nhanh hơn nè!'", new Vector3(-9.0f, UNIFORM_GROUND_Y + 0.4f, 10.5f), 2.5f) },
 
                 // 10. Giàn Bầu cạnh House 04 garden
                 { "Trigger_10_GourdTrellis", ("Giàn Bầu", "[E] Ngắm", "Trái bầu non xanh mướt đu đưa.", new Vector3(34.0f, UNIFORM_GROUND_Y + 0.5f, 24.0f), 2.4f) },
@@ -1975,6 +1986,29 @@ namespace HoaDo.Editor
                         col.radius = data.radius;
                         col.isTrigger = true;
                     }
+
+                    if (tName == "Trigger_02_DogVang")
+                    {
+                        var dogObj = GameObject.Find("Dog_House06_Porch");
+                        if (dogObj != null)
+                        {
+                            var dogIdle = dogObj.GetComponent<HoaVaMau.Environment.VillageDogIdle>();
+                            if (dogIdle != null)
+                            {
+                                for (int l = comp.onInteracted.GetPersistentEventCount() - 1; l >= 0; l--)
+                                {
+                                    UnityEditor.Events.UnityEventTools.RemovePersistentListener(comp.onInteracted, l);
+                                }
+                                var targetMethod = typeof(HoaVaMau.Environment.VillageDogIdle).GetMethod("PlayBark", System.Type.EmptyTypes);
+                                if (targetMethod != null)
+                                {
+                                    var action = (UnityEngine.Events.UnityAction)System.Delegate.CreateDelegate(typeof(UnityEngine.Events.UnityAction), dogIdle, targetMethod);
+                                    UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(comp.onInteracted, action);
+                                }
+                            }
+                        }
+                    }
+
                     EditorUtility.SetDirty(comp);
                 }
                 EditorUtility.SetDirty(tObj);

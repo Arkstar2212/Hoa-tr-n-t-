@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace HoaVaMau.Gameplay
 {
@@ -27,8 +27,8 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private AudioClip footstepDirtSfx;
 
         [Header("Footstep Volume & Pitch")]
-        [SerializeField, Range(0.1f, 1f)] private float walkVolume = 0.65f;
-        [SerializeField, Range(0.1f, 1f)] private float runVolume = 1.0f;
+        [SerializeField, Range(0.1f, 1f)] private float walkVolume = 0.95f;
+        [SerializeField, Range(0.1f, 1f)] private float runVolume = 1.00f;
         [SerializeField] private float walkPitch = 0.82f;
         [SerializeField] private float runPitch = 1.08f;
         [Tooltip("Hệ số tăng cường âm lượng tiếng bước chân chạy chân trần")]
@@ -95,8 +95,15 @@ namespace HoaVaMau.Gameplay
                 ropeGrabSfx = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_An_RopeGrab.mp3");
 
             if (footstepDirtSfx == null)
+                footstepDirtSfx = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_An_Footsteps_Dirt.wav");
+            if (footstepDirtSfx == null)
                 footstepDirtSfx = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_An_Footsteps_Dirt.mp3");
 #endif
+        }
+
+        private void OnDisable()
+        {
+            StopFootsteps(immediate: true);
         }
 
         private void Update()
@@ -134,11 +141,6 @@ namespace HoaVaMau.Gameplay
                     PlaySFX(ropeGrabSfx, 0.85f, 0.95f, 1.05f);
                 }
             }
-        }
-
-        private void OnDisable()
-        {
-            StopFootsteps(immediate: true);
         }
 
         /// <summary>
@@ -188,14 +190,20 @@ namespace HoaVaMau.Gameplay
 
             // Kiểm tra trạng thái cutscene nếu AnAnimationController đang kích hoạt
             var anAnim = player.GetComponent<AnAnimationController>();
-            if (anAnim != null && anAnim.IsCutsceneActive)
+            bool isCutscene = anAnim != null && anAnim.IsCutsceneActive;
+
+            // Nếu không trong cutscene và không có input di chuyển hoặc vận tốc quá nhỏ -> NGẮT NGAY
+            if (!isCutscene && (speedX < 0.25f || Mathf.Abs(player.HorizontalInput) < 0.05f))
             {
-                // Khi trong cutscene và tốc độ giảm dưới 0.25f -> dừng mượt mà và ngắt tiếng bước chân
-                if (speedX < 0.25f)
-                {
-                    StopFootsteps(immediate: false);
-                    return;
-                }
+                StopFootsteps(immediate: false);
+                return;
+            }
+
+            // Nếu trong cutscene mà đứng yên -> NGẮT MƯỢT MÀ
+            if (isCutscene && speedX < 0.25f)
+            {
+                StopFootsteps(immediate: false);
+                return;
             }
 
             // Nếu đứng yên -> NGẮT MƯỢT MÀ

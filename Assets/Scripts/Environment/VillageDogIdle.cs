@@ -3,10 +3,11 @@ using UnityEngine;
 namespace HoaVaMau.Environment
 {
     /// <summary>
-    /// Tạo hoạt ảnh cử động sống động cho chú chó làng quê Nam Bộ:
-    /// - Vẫy đuôi nhẹ nhàng (Tail wagging)
+    /// Tạo hoạt ảnh cử động sống động và âm thanh chân thực cho chú chó làng quê Nam Bộ:
+    /// - Vẫy đuôi nhẹ nhàng (Tail wagging) / vẫy nhanh khi có người lại gần
     /// - Nhịp thở phập phồng (Breathing idle)
     /// - Xoay đầu ngước nhìn (Head look around / looking towards player)
+    /// - Phát âm thanh sủa 3D (3D spatial bark) định kỳ hoặc khi tương tác xoa đầu
     /// </summary>
     [ExecuteAlways]
     public class VillageDogIdle : MonoBehaviour
@@ -14,6 +15,7 @@ namespace HoaVaMau.Environment
         [Header("--- Tail Wagging ---")]
         [SerializeField] private float tailWagSpeed = 4.5f;
         [SerializeField] private float tailWagAngle = 20.0f;
+        [SerializeField] private float excitedTailWagSpeed = 8.5f;
 
         [Header("--- Breathing Idle ---")]
         [SerializeField] private float breathSpeed = 1.8f;
@@ -22,6 +24,15 @@ namespace HoaVaMau.Environment
         [Header("--- Head Subtle Motion ---")]
         [SerializeField] private float headMotionSpeed = 0.8f;
         [SerializeField] private float headTurnAngle = 8.0f;
+
+        [Header("--- Barking Sound (3D Spatial SFX) ---")]
+        [SerializeField] private AudioClip barkClip;
+        [SerializeField] private AudioSource audioSource;
+        [SerializeField] private bool autoBark = true;
+        [SerializeField] private float minBarkInterval = 14.0f;
+        [SerializeField] private float maxBarkInterval = 28.0f;
+        [SerializeField] private float barkVolume = 0.85f;
+        [SerializeField] private float proximityBarkDistance = 4.5f;
 
         private Transform tailBone;
         private Transform spineBone;
@@ -32,15 +43,75 @@ namespace HoaVaMau.Environment
         private Quaternion initialHeadRot;
 
         private bool isInitialized = false;
+        private float nextBarkTime = 0f;
+        private bool hasBarkOnProximity = false;
+        private Transform playerTransform;
+
+        public void ConfigureBarkAudio(AudioClip clip, float volume = 0.85f)
+        {
+            barkClip = clip;
+            barkVolume = volume;
+            SetupAudioSource();
+        }
 
         private void OnEnable()
         {
             InitializeBones();
+            SetupAudioSource();
+            ScheduleNextBark();
         }
 
         private void Start()
         {
             InitializeBones();
+            SetupAudioSource();
+            ScheduleNextBark();
+        }
+
+        public void SetupAudioSource()
+        {
+            if (audioSource == null)
+            {
+                if (!TryGetComponent<AudioSource>(out audioSource))
+                {
+                    audioSource = gameObject.AddComponent<AudioSource>();
+                }
+            }
+
+            if (audioSource != null)
+            {
+                audioSource.playOnAwake = false;
+                audioSource.loop = false;
+                audioSource.spatialBlend = 1.0f; // 3D Spatial Audio
+                audioSource.minDistance = 3.0f;
+                audioSource.maxDistance = 28.0f;
+                audioSource.rolloffMode = AudioRolloffMode.Logarithmic;
+                audioSource.volume = barkVolume;
+                if (barkClip != null)
+                {
+                    audioSource.clip = barkClip;
+                }
+            }
+        }
+
+        private void ScheduleNextBark()
+        {
+            nextBarkTime = Time.time + Random.Range(minBarkInterval, maxBarkInterval);
+        }
+
+        public void PlayBark()
+        {
+            PlayBark(-1f);
+        }
+
+        public void PlayBark(float customVolume)
+        {
+            if (audioSource == null) SetupAudioSource();
+            if (audioSource == null || barkClip == null) return;
+
+            float vol = customVolume >= 0f ? customVolume : barkVolume;
+            audioSource.pitch = Random.Range(0.95f, 1.05f); // Biến thiên tự nhiên
+            audioSource.PlayOneShot(barkClip, vol);
         }
 
         private void InitializeBones()
@@ -95,10 +166,59 @@ namespace HoaVaMau.Environment
             t = Time.time;
 #endif
 
-            // Vẫy đuôi nhịp nhàng
+            // Check player proximity during play mode
+            bool isPlayerClose = false;
+            if (Application.isPlaying)
+            {
+                if (playerTransform == null)
+                {
+                    var playerObj = GameObject.FindWithTag("Player");
+                    if (playerObj != null) playerTransform = playerObj.transform;
+                }
+
+                if (playerTransform != null)
+                {
+                    float distSqr = (playerTransform.position - transform.position).sqrMagnitude;
+                    if (distSqr <= proximityBarkDistance * proximityBarkDistance)
+                    {
+                        isPlayerClose = true;
+                        if (!hasBarkOnProximity && autoBark)
+                        {
+                            hasBarkOnProximity = true;
+                            PlayBark();
+                        }
+                    }
+                    else if (distSqr > (proximityBarkDistance + 3.0f) * (proximityBarkDistance + 3.0f))
+                    {
+                        hasBarkOnProximity = false;
+                    }
+                }
+
+                // Periodic ambient bark
+                if (autoBark && Time.time >= nextBarkTime)
+                {
+                    ScheduleNextBark();
+                    if (playerTransform != null)
+                    {
+                        float distSqr = (playerTransform.position - transform.position).sqrMagnitude;
+                        if (distSqr <= 30.0f * 30.0f) // Trong tầm nghe
+                        {
+                            PlayBark(barkVolume * 0.75f);
+                        }
+                    }
+                    else
+                    {
+                        PlayBark(barkVolume * 0.75f);
+                    }
+                }
+            }
+
+            // Vẫy đuôi nhịp nhàng (vẫy nhanh hơn khi người chơi lại gần)
             if (tailBone != null)
             {
-                float wag = Mathf.Sin(t * tailWagSpeed) * tailWagAngle;
+                float currentTailSpeed = isPlayerClose ? excitedTailWagSpeed : tailWagSpeed;
+                float currentTailAngle = isPlayerClose ? tailWagAngle * 1.35f : tailWagAngle;
+                float wag = Mathf.Sin(t * currentTailSpeed) * currentTailAngle;
                 tailBone.localRotation = initialTailRot * Quaternion.Euler(0f, wag, 0f);
             }
 

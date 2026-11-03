@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using HoaVaMau.Gameplay;
 #if ENABLE_INPUT_SYSTEM
@@ -34,10 +34,10 @@ namespace HoaVaMau.Test3D
         [SerializeField] private Transform cameraTransform;
         [SerializeField] private AudioClip footstepDirtClip;
 
-        [Header("Footstep Audio Tuning")]
-        [SerializeField, Range(0.1f, 1f)] private float walkFootstepVol = 0.75f;
-        [SerializeField, Range(0.1f, 1f)] private float sprintFootstepVol = 1.0f;
-        [SerializeField, Range(0.1f, 1f)] private float crouchFootstepVol = 0.40f;
+        [Header("Footstep Audio Volume (To & Rõ)")]
+        [SerializeField, Range(0.1f, 1f)] private float walkFootstepVolume = 0.95f;
+        [SerializeField, Range(0.1f, 1f)] private float sprintFootstepVolume = 1.0f;
+        [SerializeField, Range(0.1f, 1f)] private float crouchFootstepVolume = 0.60f;
         [Tooltip("Hệ số tăng cường âm lượng tiếng bước chân")]
         [SerializeField, Range(1.0f, 1.8f)] private float footstepVolumeBoost = 1.30f;
 
@@ -157,7 +157,16 @@ namespace HoaVaMau.Test3D
             if (footstepAudioSource == null) footstepAudioSource = gameObject.AddComponent<AudioSource>();
             footstepAudioSource.playOnAwake = false;
             footstepAudioSource.loop = true;
-            footstepAudioSource.spatialBlend = 0.0f;
+            footstepAudioSource.spatialBlend = 0.0f; // 2D direct stereo sound for player's own footsteps: loud, punchy, zero camera distance dropoff
+
+            if (footstepDirtClip == null)
+            {
+#if UNITY_EDITOR
+                footstepDirtClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_An_Footsteps_Dirt.wav");
+                if (footstepDirtClip == null) footstepDirtClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_An_Footsteps_Dirt.mp3");
+#endif
+            }
+            if (footstepDirtClip != null) footstepAudioSource.clip = footstepDirtClip;
 
             if (footstepBoosterSource == null)
             {
@@ -167,6 +176,7 @@ namespace HoaVaMau.Test3D
                 footstepBoosterSource.playOnAwake = false;
                 footstepBoosterSource.loop = true;
                 footstepBoosterSource.spatialBlend = 0.0f;
+                if (footstepDirtClip != null) footstepBoosterSource.clip = footstepDirtClip;
             }
         }
 
@@ -246,6 +256,10 @@ namespace HoaVaMau.Test3D
         private void OnDisable()
         {
             velocity = Vector3.zero;
+            if (footstepAudioSource != null && footstepAudioSource.isPlaying)
+            {
+                footstepAudioSource.Stop();
+            }
             if (animator != null)
             {
                 if (hasSpeedParam) animator.SetFloat(SpeedParam, 0f);
@@ -369,10 +383,6 @@ namespace HoaVaMau.Test3D
             bool grounded = controller.isGrounded;
             if (grounded)
             {
-                if (!wasGroundedLastFrame && verticalVelocity < -4.0f)
-                {
-                    // Ground impact: footsteps smoothly resume in UpdateFootstepAudio
-                }
                 coyoteTimer = CoyoteDuration;
                 if (verticalVelocity < 0f) verticalVelocity = -1.5f;
             }
@@ -442,66 +452,57 @@ namespace HoaVaMau.Test3D
                 }
             }
 
-            UpdateFootstepAudio(planarSpd, grounded, dt);
+            UpdateFootstepAudio(planarSpd, grounded, inputMag, dt);
         }
 
-        private void UpdateFootstepAudio(float planarSpd, bool grounded, float dt)
+        private void UpdateFootstepAudio(float planarSpd, bool grounded, float inputMag, float dt)
         {
-            if (footstepAudioSource == null || footstepDirtClip == null) return;
+            if (footstepAudioSource == null) return;
 
-            // Stop footsteps when in the air or stationary (prevent voice piling up)
-            if (!grounded || planarSpd < 0.25f)
-            {
-                if (footstepAudioSource.isPlaying)
-                {
-                    footstepAudioSource.volume = Mathf.MoveTowards(footstepAudioSource.volume, 0f, dt * 6.0f);
-                    if (footstepAudioSource.volume <= 0.01f)
-                    {
-                        footstepAudioSource.Stop();
-                    }
-                }
-                if (footstepBoosterSource != null && footstepBoosterSource.isPlaying)
-                {
-                    footstepBoosterSource.volume = Mathf.MoveTowards(footstepBoosterSource.volume, 0f, dt * 6.0f);
-                    if (footstepBoosterSource.volume <= 0.01f)
-                    {
-                        footstepBoosterSource.Stop();
-                    }
-                }
-                return;
-            }
-
-            // Moving on ground: play smooth continuous loop matching Overhaul standards
-            if (footstepAudioSource.clip != footstepDirtClip)
+            if (footstepAudioSource.clip != footstepDirtClip && footstepDirtClip != null)
             {
                 footstepAudioSource.clip = footstepDirtClip;
             }
-            footstepAudioSource.loop = true;
-
-            if (footstepBoosterSource != null)
+            if (footstepBoosterSource != null && footstepBoosterSource.clip != footstepDirtClip && footstepDirtClip != null)
             {
-                if (footstepBoosterSource.clip != footstepDirtClip)
-                {
-                    footstepBoosterSource.clip = footstepDirtClip;
-                }
-                footstepBoosterSource.loop = true;
+                footstepBoosterSource.clip = footstepDirtClip;
             }
 
-            float baseVol = isCrouching ? crouchFootstepVol : (isSprinting ? sprintFootstepVol : walkFootstepVol);
-            float targetPitch = isCrouching ? 0.82f : (isSprinting ? 1.15f : 0.98f);
+            // Chỉ phát tiếng bước chân khi: Đang chạm đất VÀ đang di chuyển (có vận tốc >= 0.20m/s và có input điều khiển >= 0.05)
+            bool isMovingOnGround = grounded && planarSpd >= 0.20f && inputMag >= 0.05f &&
+                                    (PauseMenuController.Instance == null || !PauseMenuController.Instance.IsPaused);
+
+            // Khi dừng lại, đứng im hoặc ở trên không -> NGẮT NGAY LẬP TỨC
+            if (!isMovingOnGround)
+            {
+                if (footstepAudioSource.isPlaying) footstepAudioSource.Stop();
+                if (footstepBoosterSource != null && footstepBoosterSource.isPlaying) footstepBoosterSource.Stop();
+                stepDistanceAccumulator = 0f;
+                return;
+            }
+
+            // Đang di chuyển: loop âm thanh tiếng bước chân với âm lượng & cao độ phù hợp
             float sfxSetting = PlayerPrefs.GetFloat("Settings_SFXVol", 1.0f);
+            float baseVol = isCrouching ? crouchFootstepVolume : (isSprinting ? sprintFootstepVolume : walkFootstepVolume);
+            float targetPitch = isCrouching ? 0.85f : (isSprinting ? 1.15f : 1.0f);
 
             float totalTargetVol = baseVol * footstepVolumeBoost * Mathf.Max(0.5f, sfxSetting);
             float mainTargetVol = Mathf.Clamp01(totalTargetVol);
             float boostTargetVol = Mathf.Clamp01(totalTargetVol - 1.0f);
 
+            footstepAudioSource.loop = true;
+            if (footstepBoosterSource != null) footstepBoosterSource.loop = true;
+
             if (!footstepAudioSource.isPlaying)
             {
                 footstepAudioSource.volume = mainTargetVol;
                 footstepAudioSource.pitch = targetPitch;
-                footstepAudioSource.Play();
+                if (footstepAudioSource.clip != null)
+                {
+                    footstepAudioSource.Play();
+                }
 
-                if (footstepBoosterSource != null && boostTargetVol > 0.01f)
+                if (footstepBoosterSource != null && boostTargetVol > 0.01f && footstepBoosterSource.clip != null)
                 {
                     footstepBoosterSource.volume = boostTargetVol;
                     footstepBoosterSource.pitch = targetPitch;
@@ -512,7 +513,7 @@ namespace HoaVaMau.Test3D
             else
             {
                 footstepAudioSource.volume = Mathf.MoveTowards(footstepAudioSource.volume, mainTargetVol, dt * 4.0f);
-                footstepAudioSource.pitch = Mathf.MoveTowards(footstepAudioSource.pitch, targetPitch, dt * 3.5f);
+                footstepAudioSource.pitch = Mathf.MoveTowards(footstepAudioSource.pitch, targetPitch, dt * 3.0f);
 
                 if (footstepBoosterSource != null)
                 {
@@ -524,7 +525,7 @@ namespace HoaVaMau.Test3D
                             footstepBoosterSource.Play();
                         }
                         footstepBoosterSource.volume = Mathf.MoveTowards(footstepBoosterSource.volume, boostTargetVol, dt * 4.0f);
-                        footstepBoosterSource.pitch = Mathf.MoveTowards(footstepBoosterSource.pitch, targetPitch, dt * 3.5f);
+                        footstepBoosterSource.pitch = Mathf.MoveTowards(footstepBoosterSource.pitch, targetPitch, dt * 3.0f);
                     }
                     else if (footstepBoosterSource.isPlaying)
                     {
@@ -532,14 +533,6 @@ namespace HoaVaMau.Test3D
                     }
                 }
             }
-        }
-
-        private void PlayFootstepOneShot(float baseScale, float pitch)
-        {
-            if (footstepAudioSource == null || footstepDirtClip == null) return;
-            float sfxSetting = PlayerPrefs.GetFloat("Settings_SFXVol", 0.70f);
-            footstepAudioSource.pitch = pitch;
-            footstepAudioSource.PlayOneShot(footstepDirtClip, baseScale * Mathf.Max(0.35f, sfxSetting));
         }
 
         private static void ReadPlayerInputs(out float horizontal, out float vertical, out bool isSprint, out bool jumpPressed, out bool crouchPressed)
