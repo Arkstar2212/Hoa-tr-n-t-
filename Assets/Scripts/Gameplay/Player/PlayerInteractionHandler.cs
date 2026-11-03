@@ -17,6 +17,7 @@ namespace HoaVaMau.Gameplay
 
         private InteractableCrate currentCrate;
         private PortableItem carriedItem;
+        private float currentCrateOffset = 0.44f;
 
         // Aim & Throw state
         private bool isAiming = false;
@@ -187,6 +188,7 @@ namespace HoaVaMau.Gameplay
             // Kiểm tra vật cản phía sau lưng nhân vật khi đang kéo thùng lùi lại (ngăn chặn thụt lùi vào vách đá)
             float moveDir = (Mathf.Abs(clampedInput) > 0.05f) ? Mathf.Sign(clampedInput) : 0f;
             bool isPulling = (moveDir != 0f && moveDir == currentCrate.PlayerSide);
+            bool isPushing = (moveDir != 0f && moveDir != currentCrate.PlayerSide);
             if (isPulling)
             {
                 Vector3 playerCenter = transform.position + Vector3.up * 0.9f;
@@ -202,7 +204,9 @@ namespace HoaVaMau.Gameplay
 
             currentCrate.MoveWithPlayer(clampedInput, dt);
 
-            Vector3 anchorPos = currentCrate.GetPlayerAnchorPosition(currentCrate.PlayerSide);
+            float targetOffset = isPushing ? 0.48f : (isPulling ? 0.35f : 0.44f);
+            currentCrateOffset = Mathf.MoveTowards(currentCrateOffset, targetOffset, 2.5f * dt);
+            Vector3 anchorPos = currentCrate.GetPlayerAnchorPosition(currentCrate.PlayerSide, currentCrateOffset);
             float groundY = GetGroundElevationAt(anchorPos.x, currentCrate.transform.position.y);
 
             var cc = player.GetComponent<CharacterController>();

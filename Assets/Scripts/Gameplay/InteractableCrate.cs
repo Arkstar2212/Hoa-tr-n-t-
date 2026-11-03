@@ -153,11 +153,11 @@ namespace HoaVaMau.Gameplay
         /// <summary>
         /// Calculates the ideal player attachment position along the X axis.
         /// </summary>
-        public Vector3 GetPlayerAnchorPosition(int side)
+        public Vector3 GetPlayerAnchorPosition(int side, float customOffset = -1f)
         {
             float halfWidth = boxSize.x * 0.5f;
-            float playerOffset = 0.17f; // Calibrated for Bé An's 0.29m arm reach so hands solidly rest on the crate face // Calibrated for Bé An's arm reach (0.24m - 0.28m) so hands rest solidly on crate face
-            float targetX = transform.position.x + side * (halfWidth + playerOffset);
+            float offset = (customOffset > 0f) ? customOffset : 0.44f;
+            float targetX = transform.position.x + side * (halfWidth + offset);
             return new Vector3(targetX, transform.position.y, 0f);
         }
 

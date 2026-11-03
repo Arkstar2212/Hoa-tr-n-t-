@@ -254,17 +254,18 @@ namespace HoaVaMau.Gameplay
                     int side = crate.PlayerSide; // -1 = player is on the left, +1 = player is on the right
                     float halfWidth = crate.BoxSize.x * 0.5f;
                     float contactX = crate.transform.position.x + side * halfWidth;
-                    float handY = crate.transform.position.y + 0.66f;
+                    float wristX = contactX + side * 0.06f;
+                    float handY = crate.transform.position.y + 0.60f;
 
                     float facing = (playerController != null) ? playerController.FacingDirection : -side;
                     // Khi nhìn sang phải (+90° around Y): tay trái ở -Z, tay phải ở +Z. Khi nhìn sang trái (-90°): ngược lại.
-                    Vector3 lHandTarget = new Vector3(contactX, handY + 0.02f, -facing * 0.11f);
-                    Vector3 rHandTarget = new Vector3(contactX, handY - 0.02f, facing * 0.11f);
+                    Vector3 lHandTarget = new Vector3(wristX, handY + 0.02f, -facing * 0.11f);
+                    Vector3 rHandTarget = new Vector3(wristX, handY - 0.02f, facing * 0.11f);
 
-                    animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.92f);
+                    animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.85f);
                     animator.SetIKPosition(AvatarIKGoal.LeftHand, lHandTarget);
 
-                    animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0.92f);
+                    animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0.85f);
                     animator.SetIKPosition(AvatarIKGoal.RightHand, rHandTarget);
                     return;
                 }
