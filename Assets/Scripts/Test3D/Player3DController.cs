@@ -66,6 +66,7 @@ namespace HoaVaMau.Test3D
         private float concealment = 0f;
         private InteractableCrate3D grabbedCrate;
         private PortableItem3D carriedItem;
+        public bool IsInputLocked { get; set; } = false;
 
         private static readonly int SpeedParam = Animator.StringToHash("Speed");
         private static readonly int IsMovingParam = Animator.StringToHash("IsMoving");
@@ -317,6 +318,15 @@ namespace HoaVaMau.Test3D
 
             float dt = Time.deltaTime;
             ReadPlayerInputs(out float horizontal, out float vertical, out bool sprintHeld, out bool jumpPressed, out bool crouchPressed);
+
+            if (IsInputLocked)
+            {
+                horizontal = 0f;
+                vertical = 0f;
+                sprintHeld = false;
+                jumpPressed = false;
+                crouchPressed = false;
+            }
 
             // Toggle Stealth Crouch on [C] / [LeftCtrl]
             if (crouchPressed && grabbedCrate == null)
