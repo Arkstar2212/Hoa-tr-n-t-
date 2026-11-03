@@ -20,7 +20,7 @@ namespace HoaDo.Editor
                 activeScene = EditorSceneManager.GetActiveScene();
             }
 
-            Debug.Log("[OverhaulBeach] Starting overhaul of wider beach and enlarged boat waiting area...");
+            Debug.Log("[OverhaulBeach] Starting overhaul of undulating natural beach and enlarged boat waiting area...");
 
             // 1. Materials setup (High quality authentic textures)
             var matSand = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/M_Seabed_Sand.mat");
@@ -39,19 +39,40 @@ namespace HoaDo.Editor
                 EditorUtility.SetDirty(matPierWood);
             }
 
-            // 2. Overhaul Beach Slope (Wider, natural 20m depth beach)
+            // 2. Overhaul Beach Slope with Procedural Undulating Natural Dunes:
+            // - Inland edge (Z = -9.8m) connects seamlessly to village soil at Y = 0.50m (zero step).
+            // - Seaward edge (Z = -26.5m) meets the turquoise sea surface flush at Y = -0.58m.
+            // - Gentle slope with organic gentle height variations (+/- 0.10m dunes/ripples).
+            var terrainRoot = GameObject.Find("CaMau_1954_Village/Environment/Terrain_3D");
             var beachSlopeObj = GameObject.Find("CaMau_1954_Village/Environment/Terrain_3D/Terrain_Beach_Slope");
             if (beachSlopeObj == null)
             {
-                var terrainRoot = GameObject.Find("CaMau_1954_Village/Environment/Terrain_3D");
-                beachSlopeObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                beachSlopeObj.name = "Terrain_Beach_Slope";
+                beachSlopeObj = new GameObject("Terrain_Beach_Slope");
                 if (terrainRoot != null) beachSlopeObj.transform.parent = terrainRoot.transform;
             }
-            beachSlopeObj.transform.position = new Vector3(0.0f, -0.15f, -18.0f);
-            beachSlopeObj.transform.rotation = Quaternion.Euler(3.2f, 0f, 0f);
-            beachSlopeObj.transform.localScale = new Vector3(160.0f, 0.50f, 20.0f);
-            if (matSand != null) beachSlopeObj.GetComponent<MeshRenderer>().sharedMaterial = matSand;
+
+            // Ensure proper components on Terrain_Beach_Slope
+            var mf = beachSlopeObj.GetComponent<MeshFilter>();
+            if (mf == null) mf = beachSlopeObj.AddComponent<MeshFilter>();
+
+            var mr = beachSlopeObj.GetComponent<MeshRenderer>();
+            if (mr == null) mr = beachSlopeObj.AddComponent<MeshRenderer>();
+
+            var mc = beachSlopeObj.GetComponent<MeshCollider>();
+            if (mc == null) mc = beachSlopeObj.AddComponent<MeshCollider>();
+
+            // Remove any primitive BoxCollider
+            var boxCol = beachSlopeObj.GetComponent<BoxCollider>();
+            if (boxCol != null) Object.DestroyImmediate(boxCol);
+
+            beachSlopeObj.transform.position = Vector3.zero;
+            beachSlopeObj.transform.rotation = Quaternion.identity;
+            beachSlopeObj.transform.localScale = Vector3.one;
+
+            var beachMesh = GenerateUndulatingBeachMesh(164.0f, -9.8f, -28.5f, 82, 38);
+            mf.sharedMesh = beachMesh;
+            mc.sharedMesh = beachMesh;
+            if (matSand != null) mr.sharedMaterial = matSand;
 
             // Remove duplicate House_09 from Village_Houses_Network to prevent overlap with the waiting pavilion
             var h9 = GameObject.Find("CaMau_1954_Village/Environment/Village_Houses_Network/House_09_Harbor_StiltHut");
@@ -78,7 +99,7 @@ namespace HoaDo.Editor
             var boatsObj = GameObject.Find("CaMau_1954_Village/Environment/WaterSystem_3D/Harbor_Boats_And_Sampans");
             if (boatsObj != null) Object.DestroyImmediate(boatsObj);
 
-            // 4. Build Coastal Piers & Waiting Wharf
+            // 4. Build Coastal Piers & Waiting Wharf (To, Cao, Chi Tiết)
             BuildCoastalPiersAndWaitingWharf(pierArea.transform, matPierWood, matPierStilt, matThatched);
 
             // 5. Reposition Ferryman & Trigger onto elevated deck
@@ -98,7 +119,210 @@ namespace HoaDo.Editor
 
             Physics.SyncTransforms();
             EditorSceneManager.MarkSceneDirty(activeScene);
-            Debug.Log("[OverhaulBeach] Beach expanded and Boat Waiting Pier overhauled successfully!");
+            Debug.Log("[OverhaulBeach] Undulating Beach & Boat Waiting Pier overhauled successfully!");
+        }
+
+        public static Mesh GenerateUndulatingBeachMesh(float width, float startZ, float endZ, int resX, int resZ)
+        {
+            var mesh = new Mesh();
+            mesh.name = "Mesh_Procedural_Undulating_Beach";
+
+            int numVertsX = resX + 1;
+            int numVertsZ = resZ + 1;
+            int totalTopVerts = numVertsX * numVertsZ;
+
+            // Skirt vertices: 4 sides (South, North, West, East) to make it a solid volume down to Y = -3.5f
+            int skirtVertsCount = (numVertsX * 2) + (numVertsZ * 2);
+            int totalVerts = totalTopVerts + skirtVertsCount;
+
+            Vector3[] vertices = new Vector3[totalVerts];
+            Vector2[] uvs = new Vector2[totalVerts];
+
+            float halfWidth = width * 0.5f;
+
+            // -------------------------------------------------------------
+            // Top Undulating Surface Generation
+            // -------------------------------------------------------------
+            for (int zIdx = 0; zIdx <= resZ; zIdx++)
+            {
+                float v = (float)zIdx / resZ;
+                float currentZ = Mathf.Lerp(startZ, endZ, v);
+
+                // Base gentle slope profile:
+                // - Inland (currentZ = startZ = -9.8m): Y = 0.50m (seamless with village soil)
+                // - Shoreline (currentZ = -26.5m): Y = -0.58m (flush with ocean surface)
+                // - Shallow surf (currentZ = -28.5m): Y = -0.72m
+                float baseY;
+                if (currentZ >= -26.5f)
+                {
+                    float t = Mathf.InverseLerp(startZ, -26.5f, currentZ);
+                    baseY = Mathf.Lerp(0.50f, -0.58f, t);
+                }
+                else
+                {
+                    float t = Mathf.InverseLerp(-26.5f, endZ, currentZ);
+                    baseY = Mathf.Lerp(-0.58f, -0.72f, t);
+                }
+
+                // Envelope for height variations:
+                // Tapers to 0 at inland edge (-9.8m) so it joins flush with the village soil.
+                // Tapers to 0 at shoreline (-26.5m) so it meets the sea surface at -0.58m.
+                float inlandBlend = Mathf.Clamp01(Mathf.InverseLerp(startZ, -12.5f, currentZ));
+                float seaBlend = Mathf.Clamp01(Mathf.InverseLerp(-26.5f, -23.0f, currentZ));
+                float envelope = inlandBlend * seaBlend;
+
+                for (int xIdx = 0; xIdx <= resX; xIdx++)
+                {
+                    float u = (float)xIdx / resX;
+                    float currentX = Mathf.Lerp(-halfWidth, halfWidth, u);
+
+                    // Organic, gentle dunes & sand ripple variations ("độ cao thấp nhẹ"):
+                    float wave1 = Mathf.Sin(currentX * 0.14f + 0.6f) * Mathf.Cos((currentZ + 10f) * 0.20f) * 0.09f;
+                    float wave2 = Mathf.Sin(currentX * 0.28f + 2.2f) * 0.05f;
+                    float wave3 = (Mathf.PerlinNoise((currentX + 200f) * 0.08f, (currentZ + 200f) * 0.10f) - 0.5f) * 0.15f;
+
+                    float heightVariation = (wave1 + wave2 + wave3) * envelope;
+                    float finalY = baseY + heightVariation;
+
+                    int vertIdx = zIdx * numVertsX + xIdx;
+                    vertices[vertIdx] = new Vector3(currentX, finalY, currentZ);
+                    uvs[vertIdx] = new Vector2(u * 16f, v * 6f);
+                }
+            }
+
+            // Top surface triangles with CORRECT UPWARD NORMALS (+Y)
+            int topTrisCount = resX * resZ * 6;
+            int skirtTrisCount = (resX * 6 * 2) + (resZ * 6 * 2);
+            int[] triangles = new int[topTrisCount + skirtTrisCount];
+
+            int triIdx = 0;
+            for (int zIdx = 0; zIdx < resZ; zIdx++)
+            {
+                for (int xIdx = 0; xIdx < resX; xIdx++)
+                {
+                    int row1 = zIdx * numVertsX;
+                    int row2 = (zIdx + 1) * numVertsX;
+
+                    // Clockwise from above (+Y looking down)
+                    triangles[triIdx++] = row1 + xIdx;
+                    triangles[triIdx++] = row1 + xIdx + 1;
+                    triangles[triIdx++] = row2 + xIdx;
+
+                    triangles[triIdx++] = row1 + xIdx + 1;
+                    triangles[triIdx++] = row2 + xIdx + 1;
+                    triangles[triIdx++] = row2 + xIdx;
+                }
+            }
+
+            // -------------------------------------------------------------
+            // Skirt Sides Generation (Watertight volume to depth Y = -3.5f)
+            // -------------------------------------------------------------
+            const float SKIRT_BOTTOM_Y = -3.5f;
+            int skirtVertStart = totalTopVerts;
+
+            // A. South Skirt (Outer sea edge: z = endZ, normal facing -Z)
+            int southTopRow = resZ * numVertsX;
+            for (int x = 0; x <= resX; x++)
+            {
+                vertices[skirtVertStart + x] = new Vector3(vertices[southTopRow + x].x, SKIRT_BOTTOM_Y, endZ);
+                uvs[skirtVertStart + x] = new Vector2((float)x / resX * 16f, 0f);
+            }
+            for (int x = 0; x < resX; x++)
+            {
+                int t1 = southTopRow + x;
+                int t2 = southTopRow + x + 1;
+                int b1 = skirtVertStart + x;
+                int b2 = skirtVertStart + x + 1;
+
+                triangles[triIdx++] = t1;
+                triangles[triIdx++] = t2;
+                triangles[triIdx++] = b1;
+
+                triangles[triIdx++] = t2;
+                triangles[triIdx++] = b2;
+                triangles[triIdx++] = b1;
+            }
+            skirtVertStart += numVertsX;
+
+            // B. North Skirt (Inland village edge: z = startZ, normal facing +Z)
+            int northTopRow = 0;
+            for (int x = 0; x <= resX; x++)
+            {
+                vertices[skirtVertStart + x] = new Vector3(vertices[northTopRow + x].x, SKIRT_BOTTOM_Y, startZ);
+                uvs[skirtVertStart + x] = new Vector2((float)x / resX * 16f, 0f);
+            }
+            for (int x = 0; x < resX; x++)
+            {
+                int t1 = northTopRow + x;
+                int t2 = northTopRow + x + 1;
+                int b1 = skirtVertStart + x;
+                int b2 = skirtVertStart + x + 1;
+
+                triangles[triIdx++] = t1;
+                triangles[triIdx++] = b1;
+                triangles[triIdx++] = t2;
+
+                triangles[triIdx++] = t2;
+                triangles[triIdx++] = b1;
+                triangles[triIdx++] = b2;
+            }
+            skirtVertStart += numVertsX;
+
+            // C. West Skirt (x = -halfWidth, normal facing -X)
+            for (int z = 0; z <= resZ; z++)
+            {
+                int topIdx = z * numVertsX;
+                vertices[skirtVertStart + z] = new Vector3(-halfWidth, SKIRT_BOTTOM_Y, vertices[topIdx].z);
+                uvs[skirtVertStart + z] = new Vector2((float)z / resZ * 6f, 0f);
+            }
+            for (int z = 0; z < resZ; z++)
+            {
+                int t1 = z * numVertsX;
+                int t2 = (z + 1) * numVertsX;
+                int b1 = skirtVertStart + z;
+                int b2 = skirtVertStart + z + 1;
+
+                triangles[triIdx++] = t1;
+                triangles[triIdx++] = t2;
+                triangles[triIdx++] = b1;
+
+                triangles[triIdx++] = t2;
+                triangles[triIdx++] = b2;
+                triangles[triIdx++] = b1;
+            }
+            skirtVertStart += numVertsZ;
+
+            // D. East Skirt (x = +halfWidth, normal facing +X)
+            for (int z = 0; z <= resZ; z++)
+            {
+                int topIdx = z * numVertsX + resX;
+                vertices[skirtVertStart + z] = new Vector3(halfWidth, SKIRT_BOTTOM_Y, vertices[topIdx].z);
+                uvs[skirtVertStart + z] = new Vector2((float)z / resZ * 6f, 0f);
+            }
+            for (int z = 0; z < resZ; z++)
+            {
+                int t1 = z * numVertsX + resX;
+                int t2 = (z + 1) * numVertsX + resX;
+                int b1 = skirtVertStart + z;
+                int b2 = skirtVertStart + z + 1;
+
+                triangles[triIdx++] = t1;
+                triangles[triIdx++] = b1;
+                triangles[triIdx++] = t2;
+
+                triangles[triIdx++] = t2;
+                triangles[triIdx++] = b1;
+                triangles[triIdx++] = b2;
+            }
+
+            mesh.vertices = vertices;
+            mesh.uv = uvs;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            mesh.RecalculateTangents();
+
+            return mesh;
         }
 
         private static void BuildCoastalPiersAndWaitingWharf(Transform pierRoot, Material matPierWood, Material matPierStilt, Material matThatched)
@@ -111,7 +335,7 @@ namespace HoaDo.Editor
             var westJetty = GameObject.CreatePrimitive(PrimitiveType.Cube);
             westJetty.name = "Pier_West_Jetty_Deck";
             westJetty.transform.parent = pierRoot;
-            westJetty.transform.position = new Vector3(-20.0f, 0.18f, -18.5f);
+            westJetty.transform.position = new Vector3(-20.0f, 0.22f, -18.5f);
             westJetty.transform.localScale = new Vector3(3.6f, 0.24f, 22.0f);
             if (matPierWood != null) westJetty.GetComponent<MeshRenderer>().sharedMaterial = matPierWood;
 
@@ -381,7 +605,6 @@ namespace HoaDo.Editor
             benchRoot.transform.position = pos;
             benchRoot.transform.rotation = Quaternion.Euler(0f, rotY, 0f);
 
-            // Seat plank
             var seat = GameObject.CreatePrimitive(PrimitiveType.Cube);
             seat.name = "Seat";
             seat.transform.parent = benchRoot.transform;
@@ -389,7 +612,6 @@ namespace HoaDo.Editor
             seat.transform.localScale = new Vector3(length, 0.10f, 0.70f);
             if (mat != null) seat.GetComponent<MeshRenderer>().sharedMaterial = mat;
 
-            // Backrest
             var back = GameObject.CreatePrimitive(PrimitiveType.Cube);
             back.name = "Backrest";
             back.transform.parent = benchRoot.transform;
@@ -397,7 +619,6 @@ namespace HoaDo.Editor
             back.transform.localScale = new Vector3(length, 0.45f, 0.10f);
             if (mat != null) back.GetComponent<MeshRenderer>().sharedMaterial = mat;
 
-            // 2 sturdy support legs
             float halfLen = length * 0.40f;
             foreach (var legX in new float[] { -halfLen, halfLen })
             {

@@ -369,14 +369,19 @@ namespace HoaDo.Editor
             unifiedPlain.transform.localScale = new Vector3(152.0f, 0.50f, 96.0f);
             unifiedPlain.GetComponent<MeshRenderer>().sharedMaterial = matGrass;
 
-            // B. Single Unified Continuous Sandy Shoreline Slope (Trimmed cleanly to 152m width, zero excess land wings)
-            var beachSlope = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            beachSlope.name = "Terrain_Beach_Slope";
+            // B. Procedural Undulating Natural Beach (Seamless with village soil at Y=0.50m, flush with sea at Y=-0.58m)
+            var beachSlope = new GameObject("Terrain_Beach_Slope");
             beachSlope.transform.parent = terrainRoot.transform;
-            beachSlope.transform.position = new Vector3(0.0f, -0.15f, -18.0f);
-            beachSlope.transform.rotation = Quaternion.Euler(3.2f, 0f, 0f);
-            beachSlope.transform.localScale = new Vector3(160.0f, 0.50f, 20.0f);
-            beachSlope.GetComponent<MeshRenderer>().sharedMaterial = matSand;
+            beachSlope.transform.position = Vector3.zero;
+            beachSlope.transform.rotation = Quaternion.identity;
+            beachSlope.transform.localScale = Vector3.one;
+            var mfBeach = beachSlope.AddComponent<MeshFilter>();
+            var mrBeach = beachSlope.AddComponent<MeshRenderer>();
+            var mcBeach = beachSlope.AddComponent<MeshCollider>();
+            var beachMesh = OverhaulBeachAndHarborWharf.GenerateUndulatingBeachMesh(164.0f, -9.8f, -28.5f, 82, 38);
+            mfBeach.sharedMesh = beachMesh;
+            mcBeach.sharedMesh = beachMesh;
+            mrBeach.sharedMaterial = matSand;
 
             // C. Sea Bed Floor (Extending deeply under the sea)
             var seaBed = GameObject.CreatePrimitive(PrimitiveType.Cube);
