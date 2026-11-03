@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace HoaVaMau.Gameplay
 {
@@ -27,13 +27,16 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private AudioClip footstepDirtSfx;
 
         [Header("Footstep Volume & Pitch")]
-        [SerializeField, Range(0.1f, 1f)] private float walkVolume = 0.50f;
-        [SerializeField, Range(0.1f, 1f)] private float runVolume = 0.85f;
+        [SerializeField, Range(0.1f, 1f)] private float walkVolume = 0.65f;
+        [SerializeField, Range(0.1f, 1f)] private float runVolume = 1.0f;
         [SerializeField] private float walkPitch = 0.82f;
         [SerializeField] private float runPitch = 1.08f;
+        [Tooltip("Hệ số tăng cường âm lượng tiếng bước chân chạy chân trần")]
+        [SerializeField, Range(1.0f, 1.8f)] private float volumeBoost = 1.25f;
 
         private PlayerController player;
         private PlayerState previousState = PlayerState.Grounded;
+        private AudioSource footstepBoosterSource;
 
         private void Awake()
         {
@@ -48,7 +51,7 @@ namespace HoaVaMau.Gameplay
                 sfxAudioSource.spatialBlend = 0.15f;
             }
 
-            // Setup separate Footstep AudioSource as a looping player
+            // Setup separate Footstep AudioSource as a looping player (2D direct audio for crisp presence)
             if (footstepAudioSource == null)
             {
                 var fsGo = new GameObject("Audio_Footsteps");
@@ -56,7 +59,22 @@ namespace HoaVaMau.Gameplay
                 footstepAudioSource = fsGo.AddComponent<AudioSource>();
                 footstepAudioSource.playOnAwake = false;
                 footstepAudioSource.loop = true;
-                footstepAudioSource.spatialBlend = 0.15f;
+                footstepAudioSource.spatialBlend = 0.0f;
+            }
+            else
+            {
+                footstepAudioSource.spatialBlend = 0.0f;
+            }
+
+            // Setup secondary booster source to deliver clean extra volume beyond Unity's single-source 1.0 clamp
+            if (footstepBoosterSource == null)
+            {
+                var boostGo = new GameObject("Audio_Footsteps_Booster");
+                boostGo.transform.SetParent(transform, false);
+                footstepBoosterSource = boostGo.AddComponent<AudioSource>();
+                footstepBoosterSource.playOnAwake = false;
+                footstepBoosterSource.loop = true;
+                footstepBoosterSource.spatialBlend = 0.0f;
             }
 
             AutoLoadDefaultClips();
@@ -125,10 +143,8 @@ namespace HoaVaMau.Gameplay
             // Nếu không đứng trên đất hoặc đang đu dây/bám vách -> NGẮT NGAY
             if (player.CurrentState != PlayerState.Grounded)
             {
-                if (footstepAudioSource.isPlaying)
-                {
-                    footstepAudioSource.Stop();
-                }
+                if (footstepAudioSource.isPlaying) footstepAudioSource.Stop();
+                if (footstepBoosterSource != null && footstepBoosterSource.isPlaying) footstepBoosterSource.Stop();
                 return;
             }
 
@@ -137,17 +153,19 @@ namespace HoaVaMau.Gameplay
             // Nếu đứng yên -> NGẮT NGAY
             if (speedX < 0.35f)
             {
-                if (footstepAudioSource.isPlaying)
-                {
-                    footstepAudioSource.Stop();
-                }
+                if (footstepAudioSource.isPlaying) footstepAudioSource.Stop();
+                if (footstepBoosterSource != null && footstepBoosterSource.isPlaying) footstepBoosterSource.Stop();
                 return;
             }
 
             // Đang di chuyển trên mặt đất:
             bool isRunning = speedX > 3.0f;
-            float targetVol = isRunning ? runVolume : walkVolume;
+            float baseVol = isRunning ? runVolume : walkVolume;
             float targetPitch = isRunning ? runPitch : walkPitch;
+
+            float totalTargetVol = baseVol * volumeBoost;
+            float mainTargetVol = Mathf.Clamp01(totalTargetVol);
+            float boostTargetVol = Mathf.Clamp01(totalTargetVol - 1.0f);
 
             // Đảm bảo clip được gán và loop
             if (footstepAudioSource.clip != footstepDirtSfx)
@@ -156,18 +174,53 @@ namespace HoaVaMau.Gameplay
             }
             footstepAudioSource.loop = true;
 
-            // Nếu chưa phát -> phát
+            if (footstepBoosterSource != null)
+            {
+                if (footstepBoosterSource.clip != footstepDirtSfx)
+                {
+                    footstepBoosterSource.clip = footstepDirtSfx;
+                }
+                footstepBoosterSource.loop = true;
+            }
+
+            // Nếu chưa phát -> phát đồng bộ
             if (!footstepAudioSource.isPlaying)
             {
-                footstepAudioSource.volume = targetVol;
+                footstepAudioSource.volume = mainTargetVol;
                 footstepAudioSource.pitch = targetPitch;
                 footstepAudioSource.Play();
+
+                if (footstepBoosterSource != null && boostTargetVol > 0.01f)
+                {
+                    footstepBoosterSource.volume = boostTargetVol;
+                    footstepBoosterSource.pitch = targetPitch;
+                    footstepBoosterSource.timeSamples = footstepAudioSource.timeSamples;
+                    footstepBoosterSource.Play();
+                }
             }
             else
             {
                 // Điều chỉnh mượt mà theo vận tốc
-                footstepAudioSource.volume = Mathf.MoveTowards(footstepAudioSource.volume, targetVol, Time.deltaTime * 3.5f);
+                footstepAudioSource.volume = Mathf.MoveTowards(footstepAudioSource.volume, mainTargetVol, Time.deltaTime * 3.5f);
                 footstepAudioSource.pitch = Mathf.MoveTowards(footstepAudioSource.pitch, targetPitch, Time.deltaTime * 3.0f);
+
+                if (footstepBoosterSource != null)
+                {
+                    if (boostTargetVol > 0.01f)
+                    {
+                        if (!footstepBoosterSource.isPlaying)
+                        {
+                            footstepBoosterSource.timeSamples = footstepAudioSource.timeSamples;
+                            footstepBoosterSource.Play();
+                        }
+                        footstepBoosterSource.volume = Mathf.MoveTowards(footstepBoosterSource.volume, boostTargetVol, Time.deltaTime * 3.5f);
+                        footstepBoosterSource.pitch = Mathf.MoveTowards(footstepBoosterSource.pitch, targetPitch, Time.deltaTime * 3.0f);
+                    }
+                    else if (footstepBoosterSource.isPlaying)
+                    {
+                        footstepBoosterSource.Stop();
+                    }
+                }
             }
         }
 

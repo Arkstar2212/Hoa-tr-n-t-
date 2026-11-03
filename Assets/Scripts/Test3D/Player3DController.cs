@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using HoaVaMau.Gameplay;
 #if ENABLE_INPUT_SYSTEM
@@ -148,8 +148,8 @@ namespace HoaVaMau.Test3D
             footstepAudioSource = GetComponent<AudioSource>();
             if (footstepAudioSource == null) footstepAudioSource = gameObject.AddComponent<AudioSource>();
             footstepAudioSource.playOnAwake = false;
-            footstepAudioSource.loop = false;
-            footstepAudioSource.spatialBlend = 0.35f;
+            footstepAudioSource.loop = true;
+            footstepAudioSource.spatialBlend = 0.20f;
         }
 
         private void Start()
@@ -353,7 +353,7 @@ namespace HoaVaMau.Test3D
             {
                 if (!wasGroundedLastFrame && verticalVelocity < -4.0f)
                 {
-                    PlayFootstepOneShot(0.72f, 0.86f);
+                    // Ground impact: footsteps smoothly resume in UpdateFootstepAudio
                 }
                 coyoteTimer = CoyoteDuration;
                 if (verticalVelocity < 0f) verticalVelocity = -1.5f;
@@ -373,7 +373,10 @@ namespace HoaVaMau.Test3D
                 verticalVelocity = Mathf.Sqrt(2f * gravity * Mathf.Max(0.4f, jumpHeight));
                 jumpBufferTimer = 0f;
                 coyoteTimer = 0f;
-                PlayFootstepOneShot(0.65f, 1.12f);
+                if (footstepAudioSource != null && footstepAudioSource.isPlaying)
+                {
+                    footstepAudioSource.Stop();
+                }
             }
 
             wasGroundedLastFrame = grounded;
@@ -428,20 +431,44 @@ namespace HoaVaMau.Test3D
 
         private void UpdateFootstepAudio(float planarSpd, bool grounded, float dt)
         {
-            if (!grounded || planarSpd < 0.25f || footstepDirtClip == null || footstepAudioSource == null)
+            if (footstepAudioSource == null || footstepDirtClip == null) return;
+
+            // Stop footsteps when in the air or stationary (prevent voice piling up)
+            if (!grounded || planarSpd < 0.25f)
             {
-                stepDistanceAccumulator = 0f;
+                if (footstepAudioSource.isPlaying)
+                {
+                    footstepAudioSource.volume = Mathf.MoveTowards(footstepAudioSource.volume, 0f, dt * 6.0f);
+                    if (footstepAudioSource.volume <= 0.01f)
+                    {
+                        footstepAudioSource.Stop();
+                    }
+                }
                 return;
             }
 
-            stepDistanceAccumulator += planarSpd * dt;
-            float strideLength = isSprinting ? 1.85f : (isCrouching ? 1.25f : 1.48f);
-            if (stepDistanceAccumulator >= strideLength)
+            // Moving on ground: play smooth continuous loop matching Overhaul standards
+            if (footstepAudioSource.clip != footstepDirtClip)
             {
-                stepDistanceAccumulator -= strideLength;
-                float volScale = isCrouching ? 0.26f : (isSprinting ? 0.65f : 0.46f);
-                float pitch = Random.Range(0.92f, 1.08f) * (isSprinting ? 1.08f : 1.0f);
-                PlayFootstepOneShot(volScale, pitch);
+                footstepAudioSource.clip = footstepDirtClip;
+            }
+            footstepAudioSource.loop = true;
+
+            float targetVol = isCrouching ? 0.35f : (isSprinting ? 0.90f : 0.65f);
+            float targetPitch = isCrouching ? 0.82f : (isSprinting ? 1.15f : 0.98f);
+            float sfxSetting = PlayerPrefs.GetFloat("Settings_SFXVol", 0.70f);
+            float finalTargetVol = targetVol * Mathf.Max(0.35f, sfxSetting);
+
+            if (!footstepAudioSource.isPlaying)
+            {
+                footstepAudioSource.volume = finalTargetVol;
+                footstepAudioSource.pitch = targetPitch;
+                footstepAudioSource.Play();
+            }
+            else
+            {
+                footstepAudioSource.volume = Mathf.MoveTowards(footstepAudioSource.volume, finalTargetVol, dt * 4.0f);
+                footstepAudioSource.pitch = Mathf.MoveTowards(footstepAudioSource.pitch, targetPitch, dt * 3.5f);
             }
         }
 

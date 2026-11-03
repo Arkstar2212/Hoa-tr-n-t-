@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -49,10 +49,29 @@ namespace HoaVaMau.Gameplay
             set
             {
                 isCutsceneActive = value;
+                currentSmoothSpeed = 0f;
+                speedVelocity = 0f;
                 if (!isCutsceneActive && animator != null)
                 {
                     animator.speed = 1f;
                 }
+            }
+        }
+
+        public void PlayCutsceneAnimation(string stateName, float duration = 0.25f)
+        {
+            if (animator == null) return;
+            currentSmoothSpeed = 0f;
+            speedVelocity = 0f;
+            CrossFadeToState(stateName, duration);
+        }
+
+        public void SetCutsceneSpeed(float speed)
+        {
+            currentSmoothSpeed = speed;
+            if (animator != null)
+            {
+                animator.SetFloat(SpeedHash, speed);
             }
         }
 
@@ -166,6 +185,7 @@ namespace HoaVaMau.Gameplay
         
         private void OnAnimatorIK(int layerIndex)
         {
+            if (isCutsceneActive) return;
             if (animator == null || !animator.isHuman) return;
 
             // Rope IK: Khóa bàn tay bám chắc chắn vào dây thừng theo chuẩn Planet of Lana

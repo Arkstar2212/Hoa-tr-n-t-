@@ -1,4 +1,4 @@
-#pragma warning disable 0414
+﻿#pragma warning disable 0414
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -120,10 +120,17 @@ namespace HoaVaMau.Gameplay
 
             // 1. Lock player input cleanly and align facing right
             player.SetFacingDirection(1f);
+            player.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
             player.enabled = false;
 
             CharacterController cc = player.GetComponent<CharacterController>();
             if (cc != null) cc.enabled = false; // Disable CC during cinematic spline movement to eliminate physics jitter
+
+            AnAnimationController anAnimCtrl = player.GetComponent<AnAnimationController>();
+            if (anAnimCtrl != null)
+            {
+                anAnimCtrl.IsCutsceneActive = true;
+            }
 
             Animator anAnim = player.GetComponentInChildren<Animator>();
 
@@ -147,20 +154,27 @@ namespace HoaVaMau.Gameplay
             bool betuWaved = false;
 
             // 4. Multi-Stage Movement (Planet of Lana Standard)
-            // Phase A: Entry Jog (X: 94.0m -> 101.0m) - decelerating from initial run into jog
-            // Phase B: Wonderstruck Scenic Walk (X: 101.0m -> 109.5m) - easing down to a gentle stop
+            // Phase A: Entry Jog -> Phase B: Wonderstruck Scenic Walk -> Phase C: Ease to Stop
             float startX = player.transform.position.x;
             float totalDist = Mathf.Max(1.0f, targetRunToX - startX);
             float elapsedMove = 0f;
-            float maxDuration = 10.0f;
+            float maxDuration = 12.0f;
 
-            if (anAnim != null)
+            if (anAnimCtrl != null)
+            {
+                anAnimCtrl.PlayCutsceneAnimation("Run", 0.20f);
+                anAnimCtrl.SetCutsceneSpeed(autoRunSpeed);
+            }
+            else if (anAnim != null)
             {
                 anAnim.SetBool("IsGrounded", true);
                 anAnim.SetBool("IsCrouching", false);
-                anAnim.SetFloat("Speed", 3.2f);
-                anAnim.CrossFadeInFixedTime("Run", 0.25f);
+                anAnim.SetFloat("Speed", autoRunSpeed);
+                anAnim.CrossFadeInFixedTime("Run", 0.20f);
             }
+
+            bool switchedToWalk = false;
+            bool switchedToIdle = false;
 
             while (player.transform.position.x < targetRunToX && elapsedMove < maxDuration)
             {
@@ -168,32 +182,48 @@ namespace HoaVaMau.Gameplay
                 float currentX = player.transform.position.x;
                 float progress = Mathf.Clamp01((currentX - startX) / totalDist);
 
-                // Speed curve: Starts at 3.2m/s, eases to 2.2m/s at 40%, eases to 1.3m/s at 75%, smoothly comes to rest at 100%
+                // Speed curve:
+                // progress 0.00 -> 0.35: Entry Jog (autoRunSpeed -> 2.2m/s)
+                // progress 0.35 -> 0.75: Wonderstruck Scenic Walk (2.2m/s -> 1.1m/s)
+                // progress 0.75 -> 1.00: Smooth deceleration to full stop (1.1m/s -> 0.0m/s)
                 float currentSpeed;
-                if (progress < 0.40f)
+                if (progress < 0.35f)
                 {
-                    float k = progress / 0.40f;
-                    currentSpeed = Mathf.Lerp(3.2f, 2.2f, k);
-                    if (anAnim != null) anAnim.SetFloat("Speed", currentSpeed);
+                    float k = progress / 0.35f;
+                    currentSpeed = Mathf.Lerp(autoRunSpeed, 2.2f, k);
+                    if (anAnimCtrl != null) anAnimCtrl.SetCutsceneSpeed(currentSpeed);
+                    else if (anAnim != null) anAnim.SetFloat("Speed", currentSpeed);
                 }
-                else if (progress < 0.85f)
+                else if (progress < 0.75f)
                 {
-                    float k = (progress - 0.40f) / 0.45f;
-                    currentSpeed = Mathf.Lerp(2.2f, 1.3f, k);
-                    if (anAnim != null)
+                    float k = (progress - 0.35f) / 0.40f;
+                    currentSpeed = Mathf.Lerp(2.2f, 1.1f, k);
+
+                    if (!switchedToWalk)
                     {
-                        anAnim.SetFloat("Speed", currentSpeed);
-                        if (k > 0.1f && !anAnim.GetCurrentAnimatorStateInfo(0).IsName("Walk"))
-                        {
-                            anAnim.CrossFadeInFixedTime("Walk", 0.35f);
-                        }
+                        switchedToWalk = true;
+                        if (anAnimCtrl != null) anAnimCtrl.PlayCutsceneAnimation("Walk", 0.35f);
+                        else if (anAnim != null) anAnim.CrossFadeInFixedTime("Walk", 0.35f);
                     }
+
+                    if (anAnimCtrl != null) anAnimCtrl.SetCutsceneSpeed(currentSpeed);
+                    else if (anAnim != null) anAnim.SetFloat("Speed", currentSpeed);
                 }
                 else
                 {
-                    float k = (progress - 0.85f) / 0.15f;
-                    currentSpeed = Mathf.Lerp(1.3f, 0.4f, Mathf.SmoothStep(0f, 1f, k));
-                    if (anAnim != null) anAnim.SetFloat("Speed", currentSpeed);
+                    float k = (progress - 0.75f) / 0.25f;
+                    // Ease smoothly to 0.0m/s
+                    currentSpeed = Mathf.Lerp(1.1f, 0.0f, Mathf.SmoothStep(0f, 1f, k));
+
+                    if (progress >= 0.90f && !switchedToIdle)
+                    {
+                        switchedToIdle = true;
+                        if (anAnimCtrl != null) anAnimCtrl.PlayCutsceneAnimation("Idle", 0.35f);
+                        else if (anAnim != null) anAnim.CrossFadeInFixedTime("Idle", 0.35f);
+                    }
+
+                    if (anAnimCtrl != null) anAnimCtrl.SetCutsceneSpeed(currentSpeed);
+                    else if (anAnim != null) anAnim.SetFloat("Speed", currentSpeed);
                 }
 
                 // Move smoothly along X with ground snap
@@ -208,20 +238,20 @@ namespace HoaVaMau.Gameplay
                 }
                 player.transform.position = pos;
 
-                // Responsive Villager Greeting Triggers
-                if (!bacBaWaved && pos.x >= 98.5f)
+                // Responsive Villager Greeting Triggers (Based on village positions: Bác Ba ~149.2, Bé Tí ~151.5, Bé Tư ~161.0)
+                if (!bacBaWaved && (pos.x >= 147.5f || progress >= 0.35f))
                 {
                     bacBaWaved = true;
                     if (welcomingVillagerAnimator != null) welcomingVillagerAnimator.CrossFadeInFixedTime("Wave", 0.35f);
                 }
 
-                if (!tiWaved && pos.x >= 101.0f)
+                if (!tiWaved && (pos.x >= 150.0f || progress >= 0.65f))
                 {
                     tiWaved = true;
                     if (tiAnim != null) tiAnim.CrossFadeInFixedTime("Wave", 0.35f);
                 }
 
-                if (!betuWaved && pos.x >= 107.5f)
+                if (!betuWaved && (pos.x >= 152.0f || progress >= 0.85f))
                 {
                     betuWaved = true;
                     if (betuAnim != null) betuAnim.CrossFadeInFixedTime("Wave", 0.35f);
@@ -240,40 +270,59 @@ namespace HoaVaMau.Gameplay
             }
             player.transform.position = finalPos;
 
-            // 5. Village Square Wonder & Greeting Phase (~4.0s)
-            // An waves back to Bác Ba and the children, taking in the peaceful home village
-            if (anAnim != null)
+            // 5. Village Square Wonder & Greeting Phase (~5.5s)
+            // Settle in Idle first (0.6s)
+            if (anAnimCtrl != null)
+            {
+                anAnimCtrl.PlayCutsceneAnimation("Idle", 0.20f);
+                anAnimCtrl.SetCutsceneSpeed(0f);
+            }
+            else if (anAnim != null)
             {
                 anAnim.SetFloat("Speed", 0f);
-                if (anAnim.HasState(0, Animator.StringToHash("Wave")))
-                {
-                    anAnim.CrossFadeInFixedTime("Wave", 0.35f);
-                }
-                else
-                {
-                    anAnim.CrossFadeInFixedTime("Idle", 0.35f);
-                }
+                anAnim.CrossFadeInFixedTime("Idle", 0.20f);
+            }
+
+            yield return new WaitForSeconds(0.6f);
+
+            // An waves back warmly to Bác Ba and the children (2.4s)
+            if (anAnimCtrl != null)
+            {
+                anAnimCtrl.PlayCutsceneAnimation("Wave", 0.30f);
+            }
+            else if (anAnim != null && anAnim.HasState(0, Animator.StringToHash("Wave")))
+            {
+                anAnim.CrossFadeInFixedTime("Wave", 0.30f);
             }
 
             yield return new WaitForSeconds(2.4f);
 
-            // An looks around in wonder at the harvest paddies and stilted houses
-            if (anAnim != null)
+            // An looks around in wonder at the harvest paddies and stilted houses (2.2s)
+            if (anAnimCtrl != null)
             {
-                if (anAnim.HasState(0, Animator.StringToHash("LookAround")))
-                {
-                    anAnim.CrossFadeInFixedTime("LookAround", 0.40f);
-                }
-                else
-                {
-                    anAnim.CrossFadeInFixedTime("Idle", 0.40f);
-                }
+                anAnimCtrl.PlayCutsceneAnimation("LookAround", 0.35f);
+            }
+            else if (anAnim != null && anAnim.HasState(0, Animator.StringToHash("LookAround")))
+            {
+                anAnim.CrossFadeInFixedTime("LookAround", 0.35f);
             }
 
             // Fade out caption text gently
             StartCoroutine(FadeCanvasGroupRoutine(captionGroup, 1f, 0f, 1.0f));
 
-            yield return new WaitForSeconds(1.8f);
+            yield return new WaitForSeconds(2.2f);
+
+            // Crossfade An back to natural Idle before handover (0.6s)
+            if (anAnimCtrl != null)
+            {
+                anAnimCtrl.PlayCutsceneAnimation("Idle", 0.35f);
+            }
+            else if (anAnim != null)
+            {
+                anAnim.CrossFadeInFixedTime("Idle", 0.35f);
+            }
+
+            yield return new WaitForSeconds(0.6f);
 
             // 6. Seamless Control Handover (Planet of Lana Standard: ZERO POP / ZERO GLITCH)
             // Retract letterbox bars smoothly
@@ -285,18 +334,14 @@ namespace HoaVaMau.Gameplay
                 vcamVillageWide.Priority = 0;
             }
 
-            // Crossfade An back to natural Idle
-            if (anAnim != null)
-            {
-                anAnim.CrossFadeInFixedTime("Idle", 0.45f);
-            }
-
             // Wait 1.0s for the letterbox bars and camera blend to ease into comfortable gameplay view
             yield return new WaitForSeconds(1.0f);
 
             if (cutsceneCanvas != null) cutsceneCanvas.gameObject.SetActive(false);
 
-            // Restore CharacterController and player control
+            // Reset motor velocity, cutscene flag, and restore player control
+            if (player.Motor != null) player.Motor.Velocity = Vector3.zero;
+            if (anAnimCtrl != null) anAnimCtrl.IsCutsceneActive = false;
             if (cc != null) cc.enabled = true;
             player.enabled = true;
             isRunningCutscene = false;
