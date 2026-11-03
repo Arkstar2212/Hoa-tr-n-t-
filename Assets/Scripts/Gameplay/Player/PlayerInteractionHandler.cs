@@ -244,7 +244,7 @@ namespace HoaVaMau.Gameplay
                 if (col.transform == transform || col.transform.IsChildOf(transform)) continue;
                 if (currentCrate != null && (col == currentCrate.GetComponent<Collider>() || col.transform.IsChildOf(currentCrate.transform))) continue;
 
-                if (hits[i].point.y > highestGroundY)
+                if (hits[i].point.y <= fallbackY + 0.40f && hits[i].point.y > highestGroundY)
                 {
                     highestGroundY = hits[i].point.y;
                     foundGround = true;

@@ -252,7 +252,9 @@ namespace HoaVaMau.Gameplay
                 return;
             }
 
-            rb.linearVelocity = new Vector3(targetVelX, rb.linearVelocity.y, 0f);
+            // Chặn hoàn toàn hiện tượng va chạm vi mô làm nảy thùng gỗ bay lên không
+            float clampedVelY = Mathf.Min(rb.linearVelocity.y, 0f);
+            rb.linearVelocity = new Vector3(targetVelX, clampedVelY, 0f);
 
             if (cratePushSfx != null && audioSource != null)
             {

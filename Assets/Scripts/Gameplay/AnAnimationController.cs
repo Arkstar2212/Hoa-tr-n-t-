@@ -805,15 +805,17 @@ namespace HoaVaMau.Gameplay
             }
             else if (playerController != null && playerController.CurrentState == PlayerState.PushPull)
             {
-                CrossFadeToState("PushPull", 0.15f);
-
                 float moveInput = playerController.HorizontalInput;
                 float facing = playerController.FacingDirection;
                 bool isMoving = Mathf.Abs(moveInput) > 0.05f;
 
                 if (!isMoving)
                 {
-                    // Đứng yên gá tay chạm thùng: tạm dừng tại frame đẩy vững chãi
+                    if (currentPlayingState != "PushPull" && currentPlayingState != "Pull")
+                    {
+                        CrossFadeToState("PushPull", 0.15f);
+                    }
+                    // Đứng yên gá tay chạm thùng: tạm dừng tại frame tiếp xúc vững chãi
                     animator.speed = 0f;
                 }
                 else
@@ -822,12 +824,14 @@ namespace HoaVaMau.Gameplay
                     if (isPushingForward)
                     {
                         // Đẩy thùng tiến tới: chạy animation đẩy với tốc độ tự nhiên
+                        CrossFadeToState("PushPull", 0.15f);
                         animator.speed = 1.0f;
                     }
                     else
                     {
-                        // Kéo thùng lùi lại: đảo chiều animation để chân bước lùi tự nhiên
-                        animator.speed = -0.85f;
+                        // Kéo thùng lùi lại: chạy animation kéo lùi chuyên dụng
+                        CrossFadeToState("Pull", 0.15f);
+                        animator.speed = 1.0f;
                     }
                 }
             }
