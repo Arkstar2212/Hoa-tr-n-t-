@@ -373,9 +373,9 @@ namespace HoaDo.Editor
             var beachSlope = GameObject.CreatePrimitive(PrimitiveType.Cube);
             beachSlope.name = "Terrain_Beach_Slope";
             beachSlope.transform.parent = terrainRoot.transform;
-            beachSlope.transform.position = new Vector3(0.0f, -0.04f, -14.0f);
-            beachSlope.transform.rotation = Quaternion.Euler(7.7f, 0f, 0f);
-            beachSlope.transform.localScale = new Vector3(152.0f, 0.50f, 8.5f);
+            beachSlope.transform.position = new Vector3(0.0f, -0.15f, -18.0f);
+            beachSlope.transform.rotation = Quaternion.Euler(3.2f, 0f, 0f);
+            beachSlope.transform.localScale = new Vector3(160.0f, 0.50f, 20.0f);
             beachSlope.GetComponent<MeshRenderer>().sharedMaterial = matSand;
 
             // C. Sea Bed Floor (Extending deeply under the sea)
@@ -839,7 +839,7 @@ namespace HoaDo.Editor
                 ("House_06_West_Beachside",    new Vector2(-42.0f,  6.0f), 4.5f,  12.0f),
                 ("House_07_Center_Right",      new Vector2( 20.0f,  4.0f), 4.0f, -12.0f),
                 ("House_08_SE_Coastal",        new Vector2( 54.0f,  6.0f), 4.4f, -40.0f),
-                ("House_09_Harbor_StiltHut",   new Vector2( 60.0f,-14.0f), 3.2f,  85.0f),
+                // ("House_09_Harbor_StiltHut",   new Vector2( 60.0f,-14.0f), 3.2f,  85.0f),
                 ("House_10_Far_NW_Storage",    new Vector2(-68.0f, 32.0f), 3.0f,  25.0f)
             };
 
