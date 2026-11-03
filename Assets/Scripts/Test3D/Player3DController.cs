@@ -34,8 +34,16 @@ namespace HoaVaMau.Test3D
         [SerializeField] private Transform cameraTransform;
         [SerializeField] private AudioClip footstepDirtClip;
 
+        [Header("Footstep Audio Tuning")]
+        [SerializeField, Range(0.1f, 1f)] private float walkFootstepVol = 0.75f;
+        [SerializeField, Range(0.1f, 1f)] private float sprintFootstepVol = 1.0f;
+        [SerializeField, Range(0.1f, 1f)] private float crouchFootstepVol = 0.40f;
+        [Tooltip("Hệ số tăng cường âm lượng tiếng bước chân")]
+        [SerializeField, Range(1.0f, 1.8f)] private float footstepVolumeBoost = 1.30f;
+
         private CharacterController controller;
         private AudioSource footstepAudioSource;
+        private AudioSource footstepBoosterSource;
         private Transform hipsBone;
         private Vector3 velocity;
         private float verticalVelocity = 0f;
@@ -149,7 +157,17 @@ namespace HoaVaMau.Test3D
             if (footstepAudioSource == null) footstepAudioSource = gameObject.AddComponent<AudioSource>();
             footstepAudioSource.playOnAwake = false;
             footstepAudioSource.loop = true;
-            footstepAudioSource.spatialBlend = 0.20f;
+            footstepAudioSource.spatialBlend = 0.0f;
+
+            if (footstepBoosterSource == null)
+            {
+                var boostGo = new GameObject("Audio_Footsteps_Booster");
+                boostGo.transform.SetParent(transform, false);
+                footstepBoosterSource = boostGo.AddComponent<AudioSource>();
+                footstepBoosterSource.playOnAwake = false;
+                footstepBoosterSource.loop = true;
+                footstepBoosterSource.spatialBlend = 0.0f;
+            }
         }
 
         private void Start()
@@ -373,10 +391,8 @@ namespace HoaVaMau.Test3D
                 verticalVelocity = Mathf.Sqrt(2f * gravity * Mathf.Max(0.4f, jumpHeight));
                 jumpBufferTimer = 0f;
                 coyoteTimer = 0f;
-                if (footstepAudioSource != null && footstepAudioSource.isPlaying)
-                {
-                    footstepAudioSource.Stop();
-                }
+                if (footstepAudioSource != null && footstepAudioSource.isPlaying) footstepAudioSource.Stop();
+                if (footstepBoosterSource != null && footstepBoosterSource.isPlaying) footstepBoosterSource.Stop();
             }
 
             wasGroundedLastFrame = grounded;
@@ -444,6 +460,14 @@ namespace HoaVaMau.Test3D
                         footstepAudioSource.Stop();
                     }
                 }
+                if (footstepBoosterSource != null && footstepBoosterSource.isPlaying)
+                {
+                    footstepBoosterSource.volume = Mathf.MoveTowards(footstepBoosterSource.volume, 0f, dt * 6.0f);
+                    if (footstepBoosterSource.volume <= 0.01f)
+                    {
+                        footstepBoosterSource.Stop();
+                    }
+                }
                 return;
             }
 
@@ -454,21 +478,59 @@ namespace HoaVaMau.Test3D
             }
             footstepAudioSource.loop = true;
 
-            float targetVol = isCrouching ? 0.35f : (isSprinting ? 0.90f : 0.65f);
+            if (footstepBoosterSource != null)
+            {
+                if (footstepBoosterSource.clip != footstepDirtClip)
+                {
+                    footstepBoosterSource.clip = footstepDirtClip;
+                }
+                footstepBoosterSource.loop = true;
+            }
+
+            float baseVol = isCrouching ? crouchFootstepVol : (isSprinting ? sprintFootstepVol : walkFootstepVol);
             float targetPitch = isCrouching ? 0.82f : (isSprinting ? 1.15f : 0.98f);
-            float sfxSetting = PlayerPrefs.GetFloat("Settings_SFXVol", 0.70f);
-            float finalTargetVol = targetVol * Mathf.Max(0.35f, sfxSetting);
+            float sfxSetting = PlayerPrefs.GetFloat("Settings_SFXVol", 1.0f);
+
+            float totalTargetVol = baseVol * footstepVolumeBoost * Mathf.Max(0.5f, sfxSetting);
+            float mainTargetVol = Mathf.Clamp01(totalTargetVol);
+            float boostTargetVol = Mathf.Clamp01(totalTargetVol - 1.0f);
 
             if (!footstepAudioSource.isPlaying)
             {
-                footstepAudioSource.volume = finalTargetVol;
+                footstepAudioSource.volume = mainTargetVol;
                 footstepAudioSource.pitch = targetPitch;
                 footstepAudioSource.Play();
+
+                if (footstepBoosterSource != null && boostTargetVol > 0.01f)
+                {
+                    footstepBoosterSource.volume = boostTargetVol;
+                    footstepBoosterSource.pitch = targetPitch;
+                    footstepBoosterSource.timeSamples = footstepAudioSource.timeSamples;
+                    footstepBoosterSource.Play();
+                }
             }
             else
             {
-                footstepAudioSource.volume = Mathf.MoveTowards(footstepAudioSource.volume, finalTargetVol, dt * 4.0f);
+                footstepAudioSource.volume = Mathf.MoveTowards(footstepAudioSource.volume, mainTargetVol, dt * 4.0f);
                 footstepAudioSource.pitch = Mathf.MoveTowards(footstepAudioSource.pitch, targetPitch, dt * 3.5f);
+
+                if (footstepBoosterSource != null)
+                {
+                    if (boostTargetVol > 0.01f)
+                    {
+                        if (!footstepBoosterSource.isPlaying)
+                        {
+                            footstepBoosterSource.timeSamples = footstepAudioSource.timeSamples;
+                            footstepBoosterSource.Play();
+                        }
+                        footstepBoosterSource.volume = Mathf.MoveTowards(footstepBoosterSource.volume, boostTargetVol, dt * 4.0f);
+                        footstepBoosterSource.pitch = Mathf.MoveTowards(footstepBoosterSource.pitch, targetPitch, dt * 3.5f);
+                    }
+                    else if (footstepBoosterSource.isPlaying)
+                    {
+                        footstepBoosterSource.Stop();
+                    }
+                }
             }
         }
 
