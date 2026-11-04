@@ -8,16 +8,16 @@ namespace HoaVaMau.EditorTools
 {
     /// <summary>
     /// Utility dựng vách núi đá bao bọc làng (Mountain Amphitheater) theo ảnh tham chiếu của người dùng.
-    /// - Chỉ dựng THÊM núi đá (Additive Only), tuyệt đối không đụng chạm đến bất kỳ vật thể có sẵn nào.
-    /// - Phủ từ mép nước biển (coastal sea rocks), dọc sườn Tây và sườn Đông thành vách núi đá sừng sững, 
-    ///   và hội tụ về hẻm núi Cổng Bắc tạo thành lòng chảo núi đá tự nhiên hùng vĩ.
+    /// - Chỉ dựng THÊM núi đá ở 3 góc mé ngoài (Tây, Đông, Bắc), KHÔNG tràn vào làng hay cánh đồng.
+    /// - Giữ khoảng đệm rộng rãi (buffer zone > 25m) giữa chân núi và khu dân cư/ruộng lúa.
+    /// - Mép bờ biển chỉ đặt đá ở 2 góc xa (X <= -52, X >= 52), để thoáng toàn bộ bãi cát và bến tàu.
     /// </summary>
     public static class BuildMountainAmphitheaterRocks
     {
         [MenuItem("Hoa va Mau/Environment/Build Mountain Amphitheater Rocks", false, 20)]
         public static void BuildAll()
         {
-            Debug.Log("<color=#3b82f6>[MountainRocks]</color> Bắt đầu dựng dãy núi đá lòng chảo theo ảnh tham chiếu...");
+            Debug.Log("<color=#3b82f6>[MountainRocks]</color> Bắt đầu dựng núi đá ở 3 góc mé ngoài (không tràn vào làng)...");
 
             // 1. Tải Material và Meshes
             Material matRock = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Environment/Rocks/M_Mountain_Crag_Rock.mat");
@@ -54,19 +54,18 @@ namespace HoaVaMau.EditorTools
             GameObject rootObj = new GameObject("Mountain_Rocks_Amphitheater");
             rootObj.transform.SetParent(env3D.transform, false);
 
-            Transform westParent   = new GameObject("West_Flank_Mountains").transform;
-            Transform eastParent   = new GameObject("East_Flank_Mountains").transform;
-            Transform coastalParent = new GameObject("Coastal_Sea_Rocks").transform;
-            Transform northParent  = new GameObject("North_Pass_Backdrop_Crags").transform;
+            Transform westParent    = new GameObject("West_Outer_Mountains").transform;
+            Transform eastParent    = new GameObject("East_Outer_Mountains").transform;
+            Transform northParent   = new GameObject("North_Backdrop_Mountains").transform;
+            Transform coastalParent = new GameObject("Coastal_Corner_Rocks").transform;
 
             westParent.SetParent(rootObj.transform, false);
             eastParent.SetParent(rootObj.transform, false);
-            coastalParent.SetParent(rootObj.transform, false);
             northParent.SetParent(rootObj.transform, false);
+            coastalParent.SetParent(rootObj.transform, false);
 
             int totalCreated = 0;
 
-            // Helper đặt 1 khối núi đá
             System.Action<Transform, string, int, Vector3, Vector3, Vector3> spawnRock = (parent, name, meshIdx, pos, scale, rot) =>
             {
                 GameObject rock = new GameObject(name);
@@ -85,135 +84,117 @@ namespace HoaVaMau.EditorTools
             };
 
             // -------------------------------------------------------------------------------------------------
-            // A. ĐÁ BỜ BIỂN & MẶT NƯỚC (Coastal Sea Rocks & Beach Outcrops)
-            // Tương tự ảnh mẫu: các mỏm đá nhô lên từ nước biển xanh và mép cát hai bên bến tàu
+            // 1. HAI GÓC MÉ BIỂN XA (Extreme Outer Coastal Beach Corners: X <= -52 & X >= 52)
+            // Không xâm lấn bãi cát trung tâm (X: -45 -> 45) hay bến tàu
             // -------------------------------------------------------------------------------------------------
-            // Sườn bờ biển Tây (Bên trái bến tàu)
-            spawnRock(coastalParent, "SeaRock_West_Water_01", 0, new Vector3(-26f, -0.6f, -22f), new Vector3(6f, 3.5f, 5.5f), new Vector3(8f, 35f, -6f));
-            spawnRock(coastalParent, "SeaRock_West_Water_02", 1, new Vector3(-34f, -0.4f, -25f), new Vector3(7.5f, 4.5f, 7f), new Vector3(-5f, 110f, 8f));
-            spawnRock(coastalParent, "SeaRock_West_Water_03", 2, new Vector3(-42f, -0.2f, -28f), new Vector3(9f, 6.0f, 8.5f), new Vector3(12f, 70f, -4f));
-            spawnRock(coastalParent, "SeaRock_West_Shore_01", 3, new Vector3(-24f, 0.2f, -14f), new Vector3(6.5f, 3.0f, 5.5f), new Vector3(0f, 45f, 0f));
-            spawnRock(coastalParent, "SeaRock_West_Shore_02", 0, new Vector3(-32f, 0.5f, -12f), new Vector3(8.5f, 5.5f, 7.5f), new Vector3(10f, 135f, -5f));
-            spawnRock(coastalParent, "SeaRock_West_Shore_03", 1, new Vector3(-40f, 1.0f, -8f),  new Vector3(11f, 7.5f, 10f), new Vector3(-8f, 205f, 6f));
-            spawnRock(coastalParent, "SeaRock_West_Shore_04", 2, new Vector3(-48f, 1.5f, -15f), new Vector3(13f, 9.0f, 11f), new Vector3(15f, 80f, 10f));
+            // Góc biển Tây xa
+            spawnRock(coastalParent, "CoastRock_West_Corner_01", 0, new Vector3(-54f, 1.0f, -12f), new Vector3(12f, 8.5f, 10f), new Vector3(10f, 40f, -5f));
+            spawnRock(coastalParent, "CoastRock_West_Corner_02", 1, new Vector3(-62f, 2.5f, -18f), new Vector3(15f, 11f, 12f),  new Vector3(-8f, 115f, 8f));
+            spawnRock(coastalParent, "CoastRock_West_Water_01",  2, new Vector3(-58f, -0.4f, -28f), new Vector3(11f, 6.0f, 9.5f), new Vector3(12f, 75f, -6f));
+            spawnRock(coastalParent, "CoastRock_West_Water_02",  0, new Vector3(-70f, -0.2f, -32f), new Vector3(16f, 9.0f, 13f),  new Vector3(5f, 150f, 10f));
 
-            // Sườn bờ biển Đông (Bên phải bến tàu)
-            spawnRock(coastalParent, "SeaRock_East_Water_01", 0, new Vector3(26f, -0.6f, -22f),  new Vector3(6f, 3.5f, 5.5f), new Vector3(6f, -35f, 8f));
-            spawnRock(coastalParent, "SeaRock_East_Water_02", 1, new Vector3(34f, -0.4f, -25f),  new Vector3(8f, 5.0f, 7.5f), new Vector3(-10f, -115f, -6f));
-            spawnRock(coastalParent, "SeaRock_East_Water_03", 2, new Vector3(44f, -0.2f, -27f),  new Vector3(10f, 6.5f, 9f), new Vector3(14f, -65f, 5f));
-            spawnRock(coastalParent, "SeaRock_East_Shore_01", 3, new Vector3(24f, 0.2f, -14f),  new Vector3(6f, 3.2f, 5.5f), new Vector3(0f, -40f, 0f));
-            spawnRock(coastalParent, "SeaRock_East_Shore_02", 0, new Vector3(33f, 0.5f, -11f),  new Vector3(9f, 6.0f, 8f),   new Vector3(8f, -145f, 7f));
-            spawnRock(coastalParent, "SeaRock_East_Shore_03", 1, new Vector3(42f, 1.0f, -6f),   new Vector3(12f, 8.0f, 10f), new Vector3(-5f, -220f, -8f));
-            spawnRock(coastalParent, "SeaRock_East_Shore_04", 2, new Vector3(50f, 1.5f, -16f),  new Vector3(14f, 9.5f, 12f), new Vector3(12f, -85f, -10f));
+            // Góc biển Đông xa
+            spawnRock(coastalParent, "CoastRock_East_Corner_01", 0, new Vector3(54f, 1.0f, -12f),  new Vector3(12f, 8.5f, 10f), new Vector3(10f, -40f, 5f));
+            spawnRock(coastalParent, "CoastRock_East_Corner_02", 1, new Vector3(62f, 2.5f, -18f),  new Vector3(15f, 11f, 12f),  new Vector3(-8f, -115f, -8f));
+            spawnRock(coastalParent, "CoastRock_East_Water_01",  2, new Vector3(58f, -0.4f, -28f),  new Vector3(11f, 6.0f, 9.5f), new Vector3(12f, -75f, 6f));
+            spawnRock(coastalParent, "CoastRock_East_Water_02",  0, new Vector3(70f, -0.2f, -32f),  new Vector3(16f, 9.0f, 13f),  new Vector3(5f, -150f, -10f));
 
             // -------------------------------------------------------------------------------------------------
-            // B. SƯỜN NÚI ĐÁ PHÍA TÂY (West Flank Mountain Wall - Z: 0 -> 190)
-            // 2 tầng núi: tầng thấp giáp làng (scale 12-18), tầng đỉnh cao phía sau (scale 18-28, cao 15-32m)
+            // 2. GÓC MÉ NGOÀI PHÍA TÂY (West Outer Flank Mountain Wall: X <= -70m, Z: 0 -> 195m)
+            // Đặt hoàn toàn ở rìa mé ngoài, cách xa ranh giới làng và ruộng lúa > 25m
             // -------------------------------------------------------------------------------------------------
-            // Đoạn giáp Làng (Z: 0 -> 60)
-            spawnRock(westParent, "WestMtn_Village_Inner_01", 0, new Vector3(-50f, 2.0f, 5f),   new Vector3(13f, 9.5f, 12f), new Vector3(10f, 25f, -5f));
-            spawnRock(westParent, "WestMtn_Village_Outer_01", 1, new Vector3(-68f, 5.0f, 2f),   new Vector3(18f, 16f, 17f),  new Vector3(-8f, 85f, 12f));
-            spawnRock(westParent, "WestMtn_Village_Peak_01",  0, new Vector3(-82f, 10f, 10f),   new Vector3(24f, 24f, 22f),  new Vector3(14f, 140f, -8f));
+            // Đoạn mé ngoài giáp Làng (Z: 0 -> 60)
+            spawnRock(westParent, "WestOuter_Ridge_01", 0, new Vector3(-72f, 7.0f, 6f),   new Vector3(20f, 18f, 18f), new Vector3(12f, 35f, -6f));
+            spawnRock(westParent, "WestOuter_Peak_01",  1, new Vector3(-88f, 13f, 12f),  new Vector3(26f, 26f, 24f), new Vector3(-10f, 105f, 10f));
+            spawnRock(westParent, "WestOuter_Deep_01",  0, new Vector3(-102f, 18f, 18f), new Vector3(30f, 32f, 28f), new Vector3(15f, 155f, -12f));
 
-            spawnRock(westParent, "WestMtn_Village_Inner_02", 2, new Vector3(-52f, 2.5f, 24f),  new Vector3(14f, 11f, 13f),  new Vector3(-5f, 65f, 8f));
-            spawnRock(westParent, "WestMtn_Village_Outer_02", 0, new Vector3(-70f, 6.0f, 20f),  new Vector3(20f, 18f, 18f),  new Vector3(12f, 120f, -6f));
-            spawnRock(westParent, "WestMtn_Village_Peak_02",  1, new Vector3(-86f, 12f, 28f),   new Vector3(26f, 26f, 24f),  new Vector3(-10f, 195f, 10f));
+            spawnRock(westParent, "WestOuter_Ridge_02", 2, new Vector3(-74f, 8.5f, 32f),  new Vector3(21f, 20f, 19f), new Vector3(-8f, 65f, 12f));
+            spawnRock(westParent, "WestOuter_Peak_02",  0, new Vector3(-90f, 15f, 38f),  new Vector3(28f, 28f, 25f), new Vector3(14f, 135f, -8f));
+            spawnRock(westParent, "WestOuter_Deep_02",  1, new Vector3(-104f, 20f, 44f), new Vector3(32f, 34f, 28f), new Vector3(-12f, 195f, 10f));
 
-            spawnRock(westParent, "WestMtn_Village_Inner_03", 3, new Vector3(-54f, 2.5f, 44f),  new Vector3(15f, 12f, 14f),  new Vector3(8f, 40f, -10f));
-            spawnRock(westParent, "WestMtn_Village_Outer_03", 2, new Vector3(-72f, 7.0f, 42f),  new Vector3(21f, 19f, 19f),  new Vector3(-12f, 160f, 5f));
-            spawnRock(westParent, "WestMtn_Village_Peak_03",  0, new Vector3(-88f, 13f, 48f),   new Vector3(27f, 28f, 25f),  new Vector3(15f, 75f, -12f));
+            spawnRock(westParent, "WestOuter_Ridge_03", 1, new Vector3(-75f, 9.0f, 58f),  new Vector3(22f, 22f, 20f), new Vector3(10f, 45f, -10f));
+            spawnRock(westParent, "WestOuter_Peak_03",  2, new Vector3(-92f, 16f, 64f),  new Vector3(29f, 30f, 26f), new Vector3(-15f, 120f, 8f));
+            spawnRock(westParent, "WestOuter_Deep_03",  0, new Vector3(-106f, 22f, 70f), new Vector3(34f, 36f, 30f), new Vector3(8f, 175f, -14f));
 
-            // Đoạn giáp Cánh đồng lúa mở rộng (Z: 60 -> 185)
-            spawnRock(westParent, "WestMtn_Rice_Inner_01", 0, new Vector3(-55f, 2.8f, 66f),   new Vector3(15f, 13f, 14f),  new Vector3(6f, 95f, -8f));
-            spawnRock(westParent, "WestMtn_Rice_Outer_01", 1, new Vector3(-73f, 7.5f, 65f),   new Vector3(22f, 21f, 20f),  new Vector3(-14f, 130f, 10f));
-            spawnRock(westParent, "WestMtn_Rice_Peak_01",  2, new Vector3(-90f, 14f, 72f),   new Vector3(28f, 30f, 26f),  new Vector3(10f, 210f, -5f));
+            // Đoạn mé ngoài giáp Ruộng lúa (Z: 60 -> 185)
+            spawnRock(westParent, "WestOuter_Ridge_04", 0, new Vector3(-76f, 10f, 84f),   new Vector3(23f, 23f, 21f), new Vector3(-6f, 85f, 12f));
+            spawnRock(westParent, "WestOuter_Peak_04",  1, new Vector3(-93f, 17f, 90f),   new Vector3(30f, 32f, 27f), new Vector3(16f, 145f, -6f));
+            spawnRock(westParent, "WestOuter_Deep_04",  2, new Vector3(-108f, 24f, 96f),  new Vector3(34f, 38f, 30f), new Vector3(-10f, 215f, 8f));
 
-            spawnRock(westParent, "WestMtn_Rice_Inner_02", 1, new Vector3(-56f, 3.0f, 88f),   new Vector3(16f, 14f, 15f),  new Vector3(-10f, 55f, 12f));
-            spawnRock(westParent, "WestMtn_Rice_Outer_02", 0, new Vector3(-75f, 8.5f, 86f),   new Vector3(23f, 23f, 21f),  new Vector3(15f, 165f, -14f));
-            spawnRock(westParent, "WestMtn_Rice_Peak_02",  1, new Vector3(-92f, 15f, 94f),   new Vector3(29f, 32f, 27f),  new Vector3(-8f, 85f, 8f));
+            spawnRock(westParent, "WestOuter_Ridge_05", 2, new Vector3(-77f, 11f, 110f),  new Vector3(24f, 25f, 22f), new Vector3(12f, 55f, -8f));
+            spawnRock(westParent, "WestOuter_Peak_05",  0, new Vector3(-95f, 18f, 116f),  new Vector3(31f, 34f, 28f), new Vector3(-14f, 130f, 12f));
+            spawnRock(westParent, "WestOuter_Deep_05",  1, new Vector3(-110f, 25f, 122f), new Vector3(35f, 40f, 32f), new Vector3(10f, 190f, -10f));
 
-            spawnRock(westParent, "WestMtn_Rice_Inner_03", 2, new Vector3(-57f, 3.0f, 110f),  new Vector3(16f, 15f, 15f),  new Vector3(8f, 115f, -6f));
-            spawnRock(westParent, "WestMtn_Rice_Outer_03", 3, new Vector3(-76f, 9.0f, 112f),  new Vector3(24f, 24f, 22f),  new Vector3(-12f, 185f, 12f));
-            spawnRock(westParent, "WestMtn_Rice_Peak_03",  0, new Vector3(-94f, 16f, 118f),  new Vector3(30f, 34f, 28f),  new Vector3(14f, 45f, -10f));
+            spawnRock(westParent, "WestOuter_Ridge_06", 1, new Vector3(-78f, 12f, 136f),  new Vector3(25f, 26f, 23f), new Vector3(-8f, 95f, 10f));
+            spawnRock(westParent, "WestOuter_Peak_06",  2, new Vector3(-96f, 19f, 142f),  new Vector3(32f, 35f, 29f), new Vector3(15f, 165f, -12f));
+            spawnRock(westParent, "WestOuter_Deep_06",  0, new Vector3(-112f, 26f, 148f), new Vector3(36f, 42f, 32f), new Vector3(-12f, 75f, 8f));
 
-            spawnRock(westParent, "WestMtn_Rice_Inner_04", 0, new Vector3(-58f, 3.2f, 134f),  new Vector3(17f, 15f, 16f),  new Vector3(-6f, 75f, 14f));
-            spawnRock(westParent, "WestMtn_Rice_Outer_04", 1, new Vector3(-78f, 9.5f, 136f),  new Vector3(24f, 25f, 22f),  new Vector3(16f, 145f, -8f));
-            spawnRock(westParent, "WestMtn_Rice_Peak_04",  2, new Vector3(-95f, 17f, 142f),  new Vector3(31f, 35f, 29f),  new Vector3(-10f, 225f, 6f));
+            spawnRock(westParent, "WestOuter_Ridge_07", 0, new Vector3(-79f, 13f, 162f),  new Vector3(26f, 27f, 24f), new Vector3(14f, 40f, -15f));
+            spawnRock(westParent, "WestOuter_Peak_07",  1, new Vector3(-97f, 20f, 168f),  new Vector3(33f, 36f, 30f), new Vector3(-10f, 125f, 10f));
+            spawnRock(westParent, "WestOuter_Deep_07",  2, new Vector3(-114f, 28f, 174f), new Vector3(38f, 44f, 34f), new Vector3(8f, 195f, -8f));
 
-            spawnRock(westParent, "WestMtn_Rice_Inner_05", 1, new Vector3(-58f, 3.2f, 158f),  new Vector3(17f, 16f, 16f),  new Vector3(12f, 105f, -12f));
-            spawnRock(westParent, "WestMtn_Rice_Outer_05", 2, new Vector3(-79f, 10f, 160f),   new Vector3(25f, 26f, 23f),  new Vector3(-15f, 175f, 10f));
-            spawnRock(westParent, "WestMtn_Rice_Peak_05",  0, new Vector3(-96f, 18f, 166f),  new Vector3(32f, 36f, 30f),  new Vector3(8f, 65f, -6f));
-
-            spawnRock(westParent, "WestMtn_Rice_Inner_06", 2, new Vector3(-56f, 3.5f, 180f),  new Vector3(18f, 17f, 17f),  new Vector3(-8f, 45f, 8f));
-            spawnRock(westParent, "WestMtn_Rice_Outer_06", 0, new Vector3(-78f, 11f, 182f),   new Vector3(26f, 27f, 24f),  new Vector3(14f, 135f, -15f));
-            spawnRock(westParent, "WestMtn_Rice_Peak_06",  1, new Vector3(-94f, 19f, 188f),  new Vector3(32f, 36f, 30f),  new Vector3(-12f, 205f, 10f));
+            spawnRock(westParent, "WestOuter_Ridge_08", 2, new Vector3(-80f, 14f, 188f),  new Vector3(27f, 28f, 25f), new Vector3(-6f, 80f, 14f));
+            spawnRock(westParent, "WestOuter_Peak_08",  0, new Vector3(-98f, 22f, 194f),  new Vector3(34f, 38f, 30f), new Vector3(16f, 150f, -10f));
 
             // -------------------------------------------------------------------------------------------------
-            // C. SƯỜN NÚI ĐÁ PHÍA ĐÔNG (East Flank Mountain Wall - Z: 0 -> 190)
-            // Đối xứng sừng sững bên phải khép lại lòng chảo núi đá
+            // 3. GÓC MÉ NGOÀI PHÍA ĐÔNG (East Outer Flank Mountain Wall: X >= 70m, Z: 0 -> 195m)
+            // Đặt hoàn toàn ở rìa mé ngoài, cách xa ranh giới làng và ruộng lúa > 25m
             // -------------------------------------------------------------------------------------------------
-            // Đoạn giáp Làng (Z: 0 -> 60)
-            spawnRock(eastParent, "EastMtn_Village_Inner_01", 0, new Vector3(50f, 2.0f, 5f),   new Vector3(13f, 9.5f, 12f), new Vector3(10f, -25f, 5f));
-            spawnRock(eastParent, "EastMtn_Village_Outer_01", 1, new Vector3(68f, 5.0f, 2f),   new Vector3(18f, 16f, 17f),  new Vector3(-8f, -85f, -12f));
-            spawnRock(eastParent, "EastMtn_Village_Peak_01",  0, new Vector3(82f, 10f, 10f),   new Vector3(24f, 24f, 22f),  new Vector3(14f, -140f, 8f));
+            // Đoạn mé ngoài giáp Làng (Z: 0 -> 60)
+            spawnRock(eastParent, "EastOuter_Ridge_01", 0, new Vector3(72f, 7.0f, 6f),   new Vector3(20f, 18f, 18f), new Vector3(12f, -35f, 6f));
+            spawnRock(eastParent, "EastOuter_Peak_01",  1, new Vector3(88f, 13f, 12f),  new Vector3(26f, 26f, 24f), new Vector3(-10f, -105f, -10f));
+            spawnRock(eastParent, "EastOuter_Deep_01",  0, new Vector3(102f, 18f, 18f), new Vector3(30f, 32f, 28f), new Vector3(15f, -155f, 12f));
 
-            spawnRock(eastParent, "EastMtn_Village_Inner_02", 2, new Vector3(52f, 2.5f, 24f),  new Vector3(14f, 11f, 13f),  new Vector3(-5f, -65f, -8f));
-            spawnRock(eastParent, "EastMtn_Village_Outer_02", 0, new Vector3(70f, 6.0f, 20f),  new Vector3(20f, 18f, 18f),  new Vector3(12f, -120f, 6f));
-            spawnRock(eastParent, "EastMtn_Village_Peak_02",  1, new Vector3(86f, 12f, 28f),   new Vector3(26f, 26f, 24f),  new Vector3(-10f, -195f, -10f));
+            spawnRock(eastParent, "EastOuter_Ridge_02", 2, new Vector3(74f, 8.5f, 32f),  new Vector3(21f, 20f, 19f), new Vector3(-8f, -65f, -12f));
+            spawnRock(eastParent, "EastOuter_Peak_02",  0, new Vector3(90f, 15f, 38f),  new Vector3(28f, 28f, 25f), new Vector3(14f, -135f, 8f));
+            spawnRock(eastParent, "EastOuter_Deep_02",  1, new Vector3(104f, 20f, 44f), new Vector3(32f, 34f, 28f), new Vector3(-12f, -195f, -10f));
 
-            spawnRock(eastParent, "EastMtn_Village_Inner_03", 3, new Vector3(54f, 2.5f, 44f),  new Vector3(15f, 12f, 14f),  new Vector3(8f, -40f, 10f));
-            spawnRock(eastParent, "EastMtn_Village_Outer_03", 2, new Vector3(72f, 7.0f, 42f),  new Vector3(21f, 19f, 19f),  new Vector3(-12f, -160f, -5f));
-            spawnRock(eastParent, "EastMtn_Village_Peak_03",  0, new Vector3(88f, 13f, 48f),   new Vector3(27f, 28f, 25f),  new Vector3(15f, -75f, 12f));
+            spawnRock(eastParent, "EastOuter_Ridge_03", 1, new Vector3(75f, 9.0f, 58f),  new Vector3(22f, 22f, 20f), new Vector3(10f, -45f, 10f));
+            spawnRock(eastParent, "EastOuter_Peak_03",  2, new Vector3(92f, 16f, 64f),  new Vector3(29f, 30f, 26f), new Vector3(-15f, -120f, -8f));
+            spawnRock(eastParent, "EastOuter_Deep_03",  0, new Vector3(106f, 22f, 70f), new Vector3(34f, 36f, 30f), new Vector3(8f, -175f, 14f));
 
-            // Đoạn giáp Cánh đồng lúa mở rộng (Z: 60 -> 185)
-            spawnRock(eastParent, "EastMtn_Rice_Inner_01", 0, new Vector3(55f, 2.8f, 66f),   new Vector3(15f, 13f, 14f),  new Vector3(6f, -95f, 8f));
-            spawnRock(eastParent, "EastMtn_Rice_Outer_01", 1, new Vector3(73f, 7.5f, 65f),   new Vector3(22f, 21f, 20f),  new Vector3(-14f, -130f, -10f));
-            spawnRock(eastParent, "EastMtn_Rice_Peak_01",  2, new Vector3(90f, 14f, 72f),   new Vector3(28f, 30f, 26f),  new Vector3(10f, -210f, 5f));
+            // Đoạn mé ngoài giáp Ruộng lúa (Z: 60 -> 185)
+            spawnRock(eastParent, "EastOuter_Ridge_04", 0, new Vector3(76f, 10f, 84f),   new Vector3(23f, 23f, 21f), new Vector3(-6f, -85f, -12f));
+            spawnRock(eastParent, "EastOuter_Peak_04",  1, new Vector3(93f, 17f, 90f),   new Vector3(30f, 32f, 27f), new Vector3(16f, -145f, 6f));
+            spawnRock(eastParent, "EastOuter_Deep_04",  2, new Vector3(108f, 24f, 96f),  new Vector3(34f, 38f, 30f), new Vector3(-10f, -215f, -8f));
 
-            spawnRock(eastParent, "EastMtn_Rice_Inner_02", 1, new Vector3(56f, 3.0f, 88f),   new Vector3(16f, 14f, 15f),  new Vector3(-10f, -55f, -12f));
-            spawnRock(eastParent, "EastMtn_Rice_Outer_02", 0, new Vector3(75f, 8.5f, 86f),   new Vector3(23f, 23f, 21f),  new Vector3(15f, -165f, 14f));
-            spawnRock(eastParent, "EastMtn_Rice_Peak_02",  1, new Vector3(92f, 15f, 94f),   new Vector3(29f, 32f, 27f),  new Vector3(-8f, -85f, -8f));
+            spawnRock(eastParent, "EastOuter_Ridge_05", 2, new Vector3(77f, 11f, 110f),  new Vector3(24f, 25f, 22f), new Vector3(12f, -55f, 8f));
+            spawnRock(eastParent, "EastOuter_Peak_05",  0, new Vector3(95f, 18f, 116f),  new Vector3(31f, 34f, 28f), new Vector3(-14f, -130f, -12f));
+            spawnRock(eastParent, "EastOuter_Deep_05",  1, new Vector3(110f, 25f, 122f), new Vector3(35f, 40f, 32f), new Vector3(10f, -190f, 10f));
 
-            spawnRock(eastParent, "EastMtn_Rice_Inner_03", 2, new Vector3(57f, 3.0f, 110f),  new Vector3(16f, 15f, 15f),  new Vector3(8f, -115f, 6f));
-            spawnRock(eastParent, "EastMtn_Rice_Outer_03", 3, new Vector3(76f, 9.0f, 112f),  new Vector3(24f, 24f, 22f),  new Vector3(-12f, -185f, -12f));
-            spawnRock(eastParent, "EastMtn_Rice_Peak_03",  0, new Vector3(94f, 16f, 118f),  new Vector3(30f, 34f, 28f),  new Vector3(14f, -45f, 10f));
+            spawnRock(eastParent, "EastOuter_Ridge_06", 1, new Vector3(78f, 12f, 136f),  new Vector3(25f, 26f, 23f), new Vector3(-8f, -95f, -10f));
+            spawnRock(eastParent, "EastOuter_Peak_06",  2, new Vector3(96f, 19f, 142f),  new Vector3(32f, 35f, 29f), new Vector3(15f, -165f, 12f));
+            spawnRock(eastParent, "EastOuter_Deep_06",  0, new Vector3(112f, 26f, 148f), new Vector3(36f, 42f, 32f), new Vector3(-12f, -75f, -8f));
 
-            spawnRock(eastParent, "EastMtn_Rice_Inner_04", 0, new Vector3(58f, 3.2f, 134f),  new Vector3(17f, 15f, 16f),  new Vector3(-6f, -75f, -14f));
-            spawnRock(eastParent, "EastMtn_Rice_Outer_04", 1, new Vector3(78f, 9.5f, 136f),  new Vector3(24f, 25f, 22f),  new Vector3(16f, -145f, 8f));
-            spawnRock(eastParent, "EastMtn_Rice_Peak_04",  2, new Vector3(95f, 17f, 142f),  new Vector3(31f, 35f, 29f),  new Vector3(-10f, -225f, -6f));
+            spawnRock(eastParent, "EastOuter_Ridge_07", 0, new Vector3(79f, 13f, 162f),  new Vector3(26f, 27f, 24f), new Vector3(14f, -40f, 15f));
+            spawnRock(eastParent, "EastOuter_Peak_07",  1, new Vector3(97f, 20f, 168f),  new Vector3(33f, 36f, 30f), new Vector3(-10f, -125f, -10f));
+            spawnRock(eastParent, "EastOuter_Deep_07",  2, new Vector3(114f, 28f, 174f), new Vector3(38f, 44f, 34f), new Vector3(8f, -195f, 8f));
 
-            spawnRock(eastParent, "EastMtn_Rice_Inner_05", 1, new Vector3(58f, 3.2f, 158f),  new Vector3(17f, 16f, 16f),  new Vector3(12f, -105f, 12f));
-            spawnRock(eastParent, "EastMtn_Rice_Outer_05", 2, new Vector3(79f, 10f, 160f),   new Vector3(25f, 26f, 23f),  new Vector3(-15f, -175f, -10f));
-            spawnRock(eastParent, "EastMtn_Rice_Peak_05",  0, new Vector3(96f, 18f, 166f),  new Vector3(32f, 36f, 30f),  new Vector3(8f, -65f, 6f));
-
-            spawnRock(eastParent, "EastMtn_Rice_Inner_06", 2, new Vector3(56f, 3.5f, 180f),  new Vector3(18f, 17f, 17f),  new Vector3(-8f, -45f, -8f));
-            spawnRock(eastParent, "EastMtn_Rice_Outer_06", 0, new Vector3(78f, 11f, 182f),   new Vector3(26f, 27f, 24f),  new Vector3(14f, -135f, 15f));
-            spawnRock(eastParent, "EastMtn_Rice_Peak_06",  1, new Vector3(94f, 19f, 188f),  new Vector3(32f, 36f, 30f),  new Vector3(-12f, -205f, -10f));
+            spawnRock(eastParent, "EastOuter_Ridge_08", 2, new Vector3(80f, 14f, 188f),  new Vector3(27f, 28f, 25f), new Vector3(-6f, -80f, -14f));
+            spawnRock(eastParent, "EastOuter_Peak_08",  0, new Vector3(98f, 22f, 194f),  new Vector3(34f, 38f, 30f), new Vector3(16f, -150f, 10f));
 
             // -------------------------------------------------------------------------------------------------
-            // D. VÁCH NÚI HẺM CỔNG BẮC (North Pass Backdrop Crags - Z: 188 -> 225)
-            // Khung cảnh núi đá hùng vĩ bao bọc phía sau cổng làng
+            // 4. GÓC MÉ NGOÀI PHÍA BẮC (North Backdrop Mountain Peaks: Z >= 202m)
+            // Đặt xa phía sau Cổng Bắc (Z = 184m), hở lối đi giữa (X: [-10, 10])
             // -------------------------------------------------------------------------------------------------
-            // Cánh gà Tây Cổng Bắc
-            spawnRock(northParent, "NorthPass_West_Bastion_01", 0, new Vector3(-18f, 3.5f, 192f), new Vector3(16f, 14f, 15f), new Vector3(8f, 30f, -5f));
-            spawnRock(northParent, "NorthPass_West_Bastion_02", 1, new Vector3(-32f, 7.0f, 196f), new Vector3(22f, 20f, 19f), new Vector3(-10f, 95f, 12f));
-            spawnRock(northParent, "NorthPass_West_Peak_01",    2, new Vector3(-50f, 12f, 204f),  new Vector3(28f, 28f, 25f), new Vector3(14f, 160f, -8f));
+            // Đỉnh góc Tây-Bắc xa
+            spawnRock(northParent, "NorthBackdrop_West_Corner_01", 0, new Vector3(-35f, 12f, 205f), new Vector3(26f, 26f, 24f), new Vector3(8f, 35f, -6f));
+            spawnRock(northParent, "NorthBackdrop_West_Corner_02", 1, new Vector3(-58f, 18f, 212f), new Vector3(32f, 34f, 28f), new Vector3(-12f, 105f, 10f));
+            spawnRock(northParent, "NorthBackdrop_West_Peak_Deep", 2, new Vector3(-85f, 25f, 224f), new Vector3(38f, 42f, 34f), new Vector3(14f, 165f, -8f));
 
-            // Cánh gà Đông Cổng Bắc
-            spawnRock(northParent, "NorthPass_East_Bastion_01", 0, new Vector3(18f, 3.5f, 192f),  new Vector3(16f, 14f, 15f), new Vector3(8f, -30f, 5f));
-            spawnRock(northParent, "NorthPass_East_Bastion_02", 1, new Vector3(32f, 7.0f, 196f),  new Vector3(22f, 20f, 19f), new Vector3(-10f, -95f, -12f));
-            spawnRock(northParent, "NorthPass_East_Peak_01",    2, new Vector3(50f, 12f, 204f),   new Vector3(28f, 28f, 25f), new Vector3(14f, -160f, 8f));
+            // Đỉnh góc Đông-Bắc xa
+            spawnRock(northParent, "NorthBackdrop_East_Corner_01", 0, new Vector3(35f, 12f, 205f),  new Vector3(26f, 26f, 24f), new Vector3(8f, -35f, 6f));
+            spawnRock(northParent, "NorthBackdrop_East_Corner_02", 1, new Vector3(58f, 18f, 212f),  new Vector3(32f, 34f, 28f), new Vector3(-12f, -105f, -10f));
+            spawnRock(northParent, "NorthBackdrop_East_Peak_Deep", 2, new Vector3(85f, 25f, 224f),  new Vector3(38f, 42f, 34f), new Vector3(14f, -165f, 8f));
 
-            // Dãy núi phông nền xa phía sau Cổng Bắc (Z: 210 -> 228, hở lối đi giữa X: [-7, 7])
-            spawnRock(northParent, "NorthPass_Backdrop_West_Deep", 0, new Vector3(-24f, 14f, 215f), new Vector3(28f, 30f, 26f), new Vector3(6f, 65f, -10f));
-            spawnRock(northParent, "NorthPass_Backdrop_East_Deep", 1, new Vector3(24f, 14f, 215f),  new Vector3(28f, 30f, 26f), new Vector3(6f, -65f, 10f));
-            spawnRock(northParent, "NorthPass_Backdrop_FarWest",   2, new Vector3(-65f, 18f, 222f), new Vector3(34f, 36f, 30f), new Vector3(-12f, 125f, 14f));
-            spawnRock(northParent, "NorthPass_Backdrop_FarEast",   0, new Vector3(65f, 18f, 222f),  new Vector3(34f, 36f, 30f), new Vector3(-12f, -125f, -14f));
+            // Dãy phông nền xa nhất phía sau
+            spawnRock(northParent, "NorthBackdrop_Center_West_Far", 0, new Vector3(-20f, 16f, 222f), new Vector3(28f, 32f, 26f), new Vector3(6f, 50f, -8f));
+            spawnRock(northParent, "NorthBackdrop_Center_East_Far", 1, new Vector3(20f, 16f, 222f),  new Vector3(28f, 32f, 26f), new Vector3(6f, -50f, 8f));
 
             AssetDatabase.SaveAssets();
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
 
-            Debug.Log($"<color=#10b981>[MountainRocks]</color> HOÀN TẤT! Đã dựng thành công {totalCreated} khối núi đá lòng chảo bao quanh làng và bờ biển!");
+            Debug.Log($"<color=#10b981>[MountainRocks]</color> HOÀN TẤT! Đã dựng {totalCreated} khối núi đá ở 3 góc mé ngoài, ranh giới làng và ruộng lúa hoàn toàn thoáng đãng!");
         }
     }
 }
