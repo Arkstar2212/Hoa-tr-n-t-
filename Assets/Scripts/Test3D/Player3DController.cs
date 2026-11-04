@@ -171,30 +171,59 @@ namespace HoaVaMau.Test3D
         {
             ResolveMainCameraTransform();
 
-            // Restore saved 3D coordinates if player selected Continue from a slot saved inside CaMau_1954_Village
+            Transform spawnPoint = null;
+            var spawnObj = GameObject.Find("PlayerSpawn");
+            if (spawnObj != null) spawnPoint = spawnObj.transform;
+
+#if UNITY_EDITOR
+            // Trong Unity Editor: luôn ưu tiên vị trí authored trong Scene hoặc GameObject PlayerSpawn
+            if (spawnPoint != null)
+            {
+                RespawnAt(spawnPoint.position, spawnPoint.rotation);
+                return;
+            }
+            else
+            {
+                if (transform.position.z > 100f) transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+                var orbitCam = Object.FindAnyObjectByType<ThirdPersonOrbitCamera>();
+                if (orbitCam != null)
+                {
+                    orbitCam.Target = transform;
+                    orbitCam.SnapToTarget(transform.eulerAngles.y);
+                }
+                return;
+            }
+#else
+            // Khi xuất bản build độc lập: nạp toạ độ lưu nếu người chơi ấn TIẾP TỤC từ Menu
             var slot = HoaVaMauSaveSystem.GetSlotData(HoaVaMauSaveSystem.ActiveSlotIndex);
             if (slot != null && slot.isOccupied &&
                 slot.savedSceneName == SceneManager.GetActiveScene().name &&
                 slot.checkpointIndex > 0 &&
                 (Mathf.Abs(slot.playerPosX) > 0.01f || Mathf.Abs(slot.playerPosZ) > 0.01f))
             {
-                // Validate saved coordinates are within the walkable 3D village bounds
-                if (slot.playerPosX >= -30f && slot.playerPosX <= 42f &&
-                    slot.playerPosZ >= -24f && slot.playerPosZ <= 28f)
+                if (slot.playerPosX >= -80f && slot.playerPosX <= 70f &&
+                    slot.playerPosZ >= -30f && slot.playerPosZ <= 195f)
                 {
                     Vector3 savedPos = new Vector3(slot.playerPosX, Mathf.Clamp(slot.playerPosY, 0.08f, 3.5f), slot.playerPosZ);
-                    RespawnAt(savedPos);
+                    Quaternion? savedRot = (savedPos.z > 100f) ? Quaternion.Euler(0f, 180f, 0f) : (Quaternion?)null;
+                    RespawnAt(savedPos, savedRot);
                     return;
                 }
             }
 
-            // Ensure camera snaps cleanly behind An at scene start
-            var orbitCam = Object.FindAnyObjectByType<ThirdPersonOrbitCamera>();
-            if (orbitCam != null)
+            if (spawnPoint != null)
             {
-                orbitCam.Target = transform;
-                orbitCam.SnapToTarget(transform.eulerAngles.y);
+                RespawnAt(spawnPoint.position, spawnPoint.rotation);
+                return;
             }
+
+            var orbitCamBuild = Object.FindAnyObjectByType<ThirdPersonOrbitCamera>();
+            if (orbitCamBuild != null)
+            {
+                orbitCamBuild.Target = transform;
+                orbitCamBuild.SnapToTarget(transform.eulerAngles.y);
+            }
+#endif
         }
 
         private void ResolveMainCameraTransform()
@@ -275,12 +304,13 @@ namespace HoaVaMau.Test3D
             }
         }
 
-        public void RespawnAt(Vector3 worldPos)
+        public void RespawnAt(Vector3 worldPos, Quaternion? rot = null)
         {
             if (grabbedCrate != null) grabbedCrate.ReleaseGrab();
             isCrouching = false;
             verticalVelocity = 0f;
             velocity = Vector3.zero;
+            if (rot.HasValue) transform.rotation = rot.Value;
 
             if (controller != null)
             {

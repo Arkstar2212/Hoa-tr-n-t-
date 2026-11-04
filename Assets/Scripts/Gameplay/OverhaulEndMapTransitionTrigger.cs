@@ -26,7 +26,7 @@ namespace HoaVaMau.Gameplay
         [Header("Save Metadata on Transition")]
         [SerializeField] private string savedChapterTitle = "Chương 2: Xóm Rạch Gốc 1954";
         [SerializeField] private string savedLocationName = "Làng Ven Sông Cà Mau 1954";
-        [SerializeField] private Vector3 destinationSpawnPos = new Vector3(0.5f, 0.45f, 13.0f);
+        [SerializeField] private Vector3 destinationSpawnPos = new Vector3(-7.0f, 0.55f, 182.0f);
 
         private PlayerController cachedPlayer;
         private bool hasTriggered = false;
