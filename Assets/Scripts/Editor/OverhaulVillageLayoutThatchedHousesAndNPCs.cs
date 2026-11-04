@@ -778,20 +778,34 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 4. ADD TRUNK COLLIDERS TO ALL TREES (EXCEPT RICE & GRASS)
+        // 4. ADD TRUNK COLLIDERS TO ALL TREES (EXCEPT RICE & GRASS) & HIDE ALL STAKES
         // =========================================================================
         public static void AddCollidersToAllTrees()
         {
             var veg = GameObject.Find("CaMau_1954_Village/Environment/Vegetation_3D");
             if (veg == null) return;
 
+            // 1. Remove ALL visible cylinder/stake meshes inside trees (Trunk_3D_SolidCore) so only the tree is visible
+            var allChildren = veg.GetComponentsInChildren<Transform>(true);
+            int removedCylinders = 0;
+            foreach (var tr in allChildren)
+            {
+                if (tr != null && (tr.name == "Trunk_3D_SolidCore" || tr.name.Contains("SolidCore")))
+                {
+                    Object.DestroyImmediate(tr.gameObject);
+                    removedCylinders++;
+                }
+            }
+            Debug.Log($"[TreeColliders] Đã xóa hoàn toàn {removedCylinders} cọc hình trụ (Trunk_3D_SolidCore) bên trong cây cối. Cây chỉ hiển thị tán lá và thân cây vẽ tay authentic!");
+
+            // 2. Ensure each tree has an invisible physics CapsuleCollider (no renderer, 100% invisible)
             int count = 0;
             foreach (Transform t in veg.transform)
             {
                 // Stone ring already has its own stone colliders
                 if (t.name == "Tree_Central_StoneRing") continue;
 
-                // Add or adjust CapsuleCollider on the tree trunk
+                // Add or adjust invisible CapsuleCollider on the tree trunk
                 var col = t.GetComponent<CapsuleCollider>();
                 if (col == null) col = t.gameObject.AddComponent<CapsuleCollider>();
 
@@ -851,7 +865,7 @@ namespace HoaDo.Editor
                 count++;
             }
 
-            Debug.Log($"[TreeColliders] Đã thêm Trunk CapsuleCollider cho {count} cây cối! Lúa và cỏ không có collider, người chơi đi qua hoàn toàn tự do!");
+            Debug.Log($"[TreeColliders] Đã cấu hình CapsuleCollider vô hình cho {count} cây cối! Lúa và cỏ không có collider, người chơi đi qua tự do; thân cây chặn đi xuyên mà KHÔNG hề hiện cọc!");
         }
 
         // =========================================================================
@@ -896,7 +910,15 @@ namespace HoaDo.Editor
                 Path.Combine(ArtifactDir, "CaMau_BarrelYard_NoGhostPrompt_QA.jpg")
             );
 
-            Debug.Log("[QA] Đã chụp và lưu 4 ảnh QA vào artifact directory!");
+            // Shot 5: Exact view matching user screenshot verifying tree has NO visible stake/cọc, only authentic foliage
+            RenderShot(
+                new Vector3(13.8f, 1.7f, 2.5f),
+                Quaternion.Euler(6.0f, 2.0f, 0.0f),
+                width, height, 56.0f,
+                Path.Combine(ArtifactDir, "CaMau_Tree_NoVisibleStake_QA.jpg")
+            );
+
+            Debug.Log("[QA] Đã chụp và lưu 5 ảnh QA vào artifact directory!");
         }
 
         private static void RenderShot(Vector3 pos, Quaternion rot, int w, int h, float fov, string outPath)
