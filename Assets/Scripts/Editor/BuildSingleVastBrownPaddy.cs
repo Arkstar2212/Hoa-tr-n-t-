@@ -164,8 +164,8 @@ public static class BuildSingleVastBrownPaddy
         int zSubdivs = 66;
 
         float minX = -48.0f;
-        float maxX = 40.0f;
-        float minZ = 48.0f;
+        float maxX = 34.0f; // Exactly symmetric around -7.0f (41.0m to both sides)
+        float minZ = 44.0f;
         float maxZ = 182.0f;
         float groundY = 0.504f;
 
@@ -274,87 +274,59 @@ public static class BuildSingleVastBrownPaddy
         Transform pES = new GameObject("East_South").transform; pES.SetParent(container.transform, false);
 
         var rng = new System.Random(1954);
-        int rows = 115; // 115 rows across the 130m length (~1.12m row spacing)
+        int rows = 120;
         float startZ = 180.0f;
-        float endZ = 52.0f;
+        float endZ = 46.0f;
         float groundY = 0.505f;
+        float roadHalfWidth = 3.50f;
+        float riceClearance = 0.40f;
+        float roadCenterX = -7.0f;
 
+        float westInnerX = roadCenterX - roadHalfWidth - riceClearance; // -10.90f
+        float westOuterX = westInnerX - 36.0f;                          // -46.90f
+
+        float eastInnerX = roadCenterX + roadHalfWidth + riceClearance; // -3.10f
+        float eastOuterX = eastInnerX + 36.0f;                          // +32.90f
+
+        int clustersPerRow = 34;
         int totalTufts = 0;
 
         for (int r = 0; r < rows; r++)
         {
-            float t = (float)r / (rows - 1);
-            float z = Mathf.Lerp(startZ, endZ, t);
+            float tz = (float)r / (rows - 1);
+            float z = Mathf.Lerp(startZ, endZ, tz);
 
-            float curveOffset = Mathf.Sin(t * Mathf.PI * 2.0f) * 0.95f;
-            float roadCenterX = -7.0f + curveOffset;
+            float hexOffset = (r % 2 == 1) ? 0.50f : 0.0f;
 
-            float roadHalfWidth = 3.6f;
-            if (t < 0.10f) roadHalfWidth = Mathf.Lerp(4.0f, 3.6f, t / 0.10f);
-            else if (t > 0.82f)
-            {
-                float plazaBlend = (t - 0.82f) / 0.18f;
-                roadHalfWidth = Mathf.Lerp(3.6f, 7.0f, plazaBlend * plazaBlend);
-            }
-
-            // Hexagonal stagger on odd rows for dense interweaving
-            float stepX = 1.05f;
-            float hexOffset = (r % 2 == 1) ? stepX * 0.5f : 0f;
-
-            // West flank
-            float westMinX = -46.0f;
-            float westMaxX = roadCenterX - roadHalfWidth - 0.35f;
-
-            // East flank
-            float eastMinX = roadCenterX + roadHalfWidth + 0.35f;
-            float eastMaxX = 38.0f;
-
-            // Select zone parent
             Transform westParent = (z > 138f) ? pNW : ((z > 95f) ? pNM : pNS);
             Transform eastParent = (z > 138f) ? pEW : ((z > 95f) ? pEM : pES);
 
-            // Populate West
-            float westWidth = westMaxX - westMinX;
-            if (westWidth > 1.5f)
+            // Populate West (34 tufts)
+            for (int c = 0; c < clustersPerRow; c++)
             {
-                int clusters = Mathf.Max(2, Mathf.RoundToInt(westWidth / stepX));
-                for (int c = 0; c < clusters; c++)
-                {
-                    float frac = (float)c / (clusters - 1);
-                    float posX = Mathf.Lerp(westMinX, westMaxX, frac) + hexOffset + ((float)rng.NextDouble() - 0.5f) * 0.20f;
-                    if (posX < westMinX || posX > westMaxX) continue;
+                float frac = (float)c / (clustersPerRow - 1);
+                float posX = Mathf.Lerp(westOuterX, westInnerX, frac) + ((c % 2 == 1) ? hexOffset : -hexOffset) * 0.4f;
+                float posZ = z + ((float)rng.NextDouble() - 0.5f) * 0.12f;
 
-                    float posZ = z + ((float)rng.NextDouble() - 0.5f) * 0.15f;
+                float s = 2.15f + (float)rng.NextDouble() * 0.35f;
+                float sy = s * (1.0f + (float)rng.NextDouble() * 0.15f);
 
-                    // Large bushy, abundant scale: 2.10 to 2.50!
-                    float s = 2.10f + (float)rng.NextDouble() * 0.40f;
-                    float sy = s * (1.0f + (float)rng.NextDouble() * 0.18f);
-
-                    CreateRiceTuft(westParent, riceMesh, riceMat, new Vector3(posX, groundY, posZ), s, sy, rng);
-                    totalTufts++;
-                }
+                CreateRiceTuft(westParent, riceMesh, riceMat, new Vector3(posX, groundY, posZ), s, sy, rng);
+                totalTufts++;
             }
 
-            // Populate East
-            float eastWidth = eastMaxX - eastMinX;
-            if (eastWidth > 1.5f)
+            // Populate East (34 tufts, exact mirror)
+            for (int c = 0; c < clustersPerRow; c++)
             {
-                int clusters = Mathf.Max(2, Mathf.RoundToInt(eastWidth / stepX));
-                for (int c = 0; c < clusters; c++)
-                {
-                    float frac = (float)c / (clusters - 1);
-                    float posX = Mathf.Lerp(eastMinX, eastMaxX, frac) + hexOffset + ((float)rng.NextDouble() - 0.5f) * 0.20f;
-                    if (posX < eastMinX || posX > eastMaxX) continue;
+                float frac = (float)c / (clustersPerRow - 1);
+                float posX = Mathf.Lerp(eastInnerX, eastOuterX, frac) + ((c % 2 == 1) ? hexOffset : -hexOffset) * 0.4f;
+                float posZ = z + ((float)rng.NextDouble() - 0.5f) * 0.12f;
 
-                    float posZ = z + ((float)rng.NextDouble() - 0.5f) * 0.15f;
+                float s = 2.15f + (float)rng.NextDouble() * 0.35f;
+                float sy = s * (1.0f + (float)rng.NextDouble() * 0.15f);
 
-                    // Large bushy, abundant scale: 2.10 to 2.50!
-                    float s = 2.10f + (float)rng.NextDouble() * 0.40f;
-                    float sy = s * (1.0f + (float)rng.NextDouble() * 0.18f);
-
-                    CreateRiceTuft(eastParent, riceMesh, riceMat, new Vector3(posX, groundY, posZ), s, sy, rng);
-                    totalTufts++;
-                }
+                CreateRiceTuft(eastParent, riceMesh, riceMat, new Vector3(posX, groundY, posZ), s, sy, rng);
+                totalTufts++;
             }
         }
 
