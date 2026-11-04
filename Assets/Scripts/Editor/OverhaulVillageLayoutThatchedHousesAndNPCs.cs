@@ -40,8 +40,8 @@ namespace HoaDo.Editor
             // 1. STANDARDIZE ALL HOUSES TO THE AUTHENTIC THATCHED COTTAGE MODEL (SM_NhaTranh)
             ReplaceAllHousesWithOriginalThatchedCottages();
 
-            // 2. CREATE RADIAL TRAILS CONNECTING HOUSES TO CENTRAL BANYAN TREE
-            BuildRadialTrailsToCentralBanyanTree();
+            // 2. UNIFIED EARTHEN GROUND NETWORK (From Gate to Every House Yard)
+            BuildUnifiedEarthenGroundNetwork();
 
             // 3. SETUP 100% STANDING UPRIGHT NPCS WITH MATCHING GENDER & DIALOGUE
             SetupAllUprightStandingNPCs();
@@ -194,113 +194,263 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 2. RADIAL DIRT TRAILS CONNECTING EACH HOUSE TO CENTRAL TREE
+        // 2. UNIFIED EARTHEN GROUND NETWORK (From Gate to Every House Yard)
         // =========================================================================
-        private static void BuildRadialTrailsToCentralBanyanTree()
+        public static void BuildUnifiedEarthenGroundNetwork()
         {
             var roadMat = AssetDatabase.LoadAssetAtPath<Material>(RoadMatPath);
+            if (roadMat != null)
+            {
+                if (roadMat.HasProperty("_BaseColor")) roadMat.SetColor("_BaseColor", Color.white);
+                roadMat.mainTextureScale = Vector2.one; // 1:1 tiling for world-space UV scaling
+                roadMat.SetFloat("_Cull", 0f);
+                EditorUtility.SetDirty(roadMat);
+            }
+
             var pathsRoot = GameObject.Find("CaMau_1954_Village/Paths_3D_Network") ?? GameObject.Find("Paths_3D_Network");
             if (pathsRoot == null) pathsRoot = new GameObject("Paths_3D_Network");
 
-            var trailsContainer = GameObject.Find("Radial_House_Trails");
-            if (trailsContainer != null) Object.DestroyImmediate(trailsContainer);
+            // 1. Clean up ALL old fragmented separate quads and duplicate containers
+            var oldUnified = GameObject.Find("Unified_Village_Earthen_Ground_Network");
+            if (oldUnified != null) Object.DestroyImmediate(oldUnified);
 
-            trailsContainer = new GameObject("Radial_House_Trails");
-            trailsContainer.transform.SetParent(pathsRoot.transform, false);
-
-            Vector3 hubCenter = new Vector3(-6.0f, 0.506f, 13.0f);
-
-            Vector3[] houseYards = new Vector3[]
+            for (int i = pathsRoot.transform.childCount - 1; i >= 0; i--)
             {
-                new Vector3(3.0f, 0.506f, 17.5f),   // House 1 (Nhà An)
-                new Vector3(-14.0f, 0.506f, 16.5f), // House 2 (Trưởng Thôn Năm)
-                new Vector3(12.5f, 0.506f, 14.0f),  // House 3 (Bác Ba Phi)
-                new Vector3(21.0f, 0.506f, 20.0f),  // House 4 (Chú Năm Thợ Mộc)
-                new Vector3(-9.5f, 0.506f, 32.0f),  // House 5 (Bác Ba Nông Dân / Ra đồng)
-                new Vector3(12.0f, 0.506f, 30.0f),  // House 6 (Thím Bảy Phơi Thóc)
-                new Vector3(-14.5f, 0.506f, 10.0f), // House 7 (Cô Út Bánh Bò)
-                new Vector3(-24.0f, 0.506f, 16.0f), // House 8 (Chú Sáu Vườn)
-                new Vector3(16.0f, 0.506f, 5.0f),   // House 9 (Dì Hai / Giếng nước)
-                new Vector3(-11.0f, 0.506f, -2.5f), // House 10 (Chú Bảy Bến sông)
-                new Vector3(10.0f, 0.506f, -2.5f),  // House 11 (Bến sông Đông)
-                new Vector3(-32.0f, 0.506f, 8.0f)   // House 12 (Xóm trong Tây)
-            };
-
-            for (int i = 0; i < houseYards.Length; i++)
-            {
-                Vector3 dest = houseYards[i];
-                CreateConnectingTrail(trailsContainer.transform, $"Trail_To_House_{i + 1:D2}", hubCenter, dest, roadMat);
+                var c = pathsRoot.transform.GetChild(i);
+                Object.DestroyImmediate(c.gameObject);
             }
 
-            Debug.Log("[Trails] Đã tạo 12 đường mòn đất nối liền từng nhà đến cụm cây lớn trung tâm!");
-        }
+            var oldRadial = GameObject.Find("Radial_House_Trails");
+            if (oldRadial != null) Object.DestroyImmediate(oldRadial);
 
-        private static void CreateConnectingTrail(Transform parent, string trailName, Vector3 start, Vector3 end, Material mat)
-        {
-            var go = new GameObject(trailName);
-            go.transform.SetParent(parent, false);
+            var oldWinding = GameObject.Find("Winding_Country_Dirt_Road");
+            if (oldWinding != null) Object.DestroyImmediate(oldWinding);
 
-            var mf = go.AddComponent<MeshFilter>();
-            var mr = go.AddComponent<MeshRenderer>();
-            if (mat != null) mr.sharedMaterial = mat;
+            // Deactivate legacy extension object without expensive multi-object destruction
+            var legacyExt = GameObject.Find("CaMau_1954_Village/Environment/Terrain_3D/Paddy_5X_Extension_Root");
+            if (legacyExt != null) legacyExt.SetActive(false);
 
-            int segments = 10;
-            float trailWidth = 1.6f;
-            int vertCount = (segments + 1) * 2;
+            // 2. Build the single unified procedural mesh
+            var unifiedObj = new GameObject("Unified_Village_Earthen_Ground_Network");
+            unifiedObj.transform.SetParent(pathsRoot.transform, false);
+            unifiedObj.transform.position = Vector3.zero;
+            unifiedObj.transform.rotation = Quaternion.identity;
+            unifiedObj.transform.localScale = Vector3.one;
 
-            Vector3[] verts = new Vector3[vertCount];
-            Vector2[] uvs = new Vector2[vertCount];
-            Vector3[] normals = new Vector3[vertCount];
-            int[] tris = new int[segments * 6];
+            var mf = unifiedObj.AddComponent<MeshFilter>();
+            var mr = unifiedObj.AddComponent<MeshRenderer>();
+            if (roadMat != null) mr.sharedMaterial = roadMat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = true;
 
-            Vector3 dir = (end - start).normalized;
-            Vector3 side = Vector3.Cross(Vector3.up, dir).normalized * (trailWidth * 0.5f);
+            var verts = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var normals = new List<Vector3>();
+            var tris = new List<int>();
 
-            for (int i = 0; i <= segments; i++)
+            // Uniform ground elevation sitting cleanly 3mm above base terrain (0.505m)
+            const float groundY = 0.508f;
+
+            // A. North Gate Arrival Apron (Sân Đón Cổng Bắc)
+            AddGrid(verts, uvs, normals, tris, -13.0f, -1.0f, 180.0f, 190.0f, 4, 3, groundY);
+
+            // B. North Entrance Avenue (Đường Cổng Bắc xuyên qua đồng lúa)
+            // Connects Z = 184m (Gate) down to Z = 34m (Village Entrance)
+            int avenueSegments = 45;
+            float startZ = 184.0f;
+            float endZ = 34.0f;
+            for (int i = 0; i < avenueSegments; i++)
             {
-                float t = (float)i / segments;
-                float curve = Mathf.Sin(t * Mathf.PI) * 0.45f;
-                Vector3 center = Vector3.Lerp(start, end, t) + side * curve;
+                float t0 = (float)i / avenueSegments;
+                float t1 = (float)(i + 1) / avenueSegments;
 
-                verts[i * 2]     = center - side;
-                verts[i * 2 + 1] = center + side;
+                float z0 = Mathf.Lerp(startZ, endZ, t0);
+                float z1 = Mathf.Lerp(startZ, endZ, t1);
 
-                normals[i * 2]     = Vector3.up;
-                normals[i * 2 + 1] = Vector3.up;
+                float curve0 = Mathf.Sin(t0 * Mathf.PI) * 0.50f;
+                float curve1 = Mathf.Sin(t1 * Mathf.PI) * 0.50f;
 
-                uvs[i * 2]     = new Vector2(0f, t * 4f);
-                uvs[i * 2 + 1] = new Vector2(1f, t * 4f);
+                float cx0 = -7.0f + curve0;
+                float cx1 = -7.0f + curve1;
+
+                // Half width flaring smoothly from 3.3m at North gate to 4.5m at village entry
+                float hw0 = Mathf.Lerp(3.3f, 4.5f, t0);
+                float hw1 = Mathf.Lerp(3.3f, 4.5f, t1);
+
+                Vector3 p0 = new Vector3(cx0 - hw0, groundY, z0);
+                Vector3 p1 = new Vector3(cx0 + hw0, groundY, z0);
+                Vector3 p2 = new Vector3(cx1 + hw1, groundY, z1);
+                Vector3 p3 = new Vector3(cx1 - hw1, groundY, z1);
+
+                AddQuad(verts, uvs, normals, tris, p0, p1, p2, p3);
             }
 
-            int triIdx = 0;
-            for (int i = 0; i < segments; i++)
-            {
-                int bL = i * 2;
-                int bR = bL + 1;
-                int tL = (i + 1) * 2;
-                int tR = tL + 1;
+            // C. Village North Crossway & Entrance Flare (Ngõ Bắc Làng)
+            // Spans X from -23m to +28m, Z from 24m to 35m
+            AddGrid(verts, uvs, normals, tris, -23.0f, 28.0f, 24.0f, 35.0f, 14, 4, groundY);
 
-                tris[triIdx++] = tL;
-                tris[triIdx++] = tR;
-                tris[triIdx++] = bL;
+            // D. Central Sacred Banyan Tree Plaza (Sân Cây Đa Trung Tâm)
+            // Heart of the village: spans X from -19m to +8m, Z from 5m to 25m
+            AddGrid(verts, uvs, normals, tris, -19.0f, 8.0f, 5.0f, 25.0f, 9, 8, groundY);
 
-                tris[triIdx++] = tR;
-                tris[triIdx++] = bR;
-                tris[triIdx++] = bL;
-            }
+            // E. West Village Street & Pier Approach (Đường Phía Tây & Bến Đò)
+            // Street east-west artery
+            AddGrid(verts, uvs, normals, tris, -39.0f, -15.0f, 10.5f, 17.5f, 8, 3, groundY);
+            // Southward approach to Pier
+            AddGrid(verts, uvs, normals, tris, -28.0f, -20.5f, -5.0f, 11.5f, 3, 5, groundY);
+            // Pier Landing Pad
+            AddGrid(verts, uvs, normals, tris, -30.0f, -19.0f, -8.5f, -3.5f, 3, 2, groundY);
 
+            // F. East Village Street & Harbor Approach (Đường Phía Đông & Bến Cảng)
+            // Street east-west artery
+            AddGrid(verts, uvs, normals, tris, 5.0f, 33.0f, 10.5f, 17.5f, 8, 3, groundY);
+            // Southward approach to Harbor & Well
+            AddGrid(verts, uvs, normals, tris, 17.5f, 25.5f, -4.0f, 11.5f, 3, 5, groundY);
+            // Harbor Landing Pad
+            AddGrid(verts, uvs, normals, tris, 15.5f, 28.0f, -8.5f, -3.0f, 3, 2, groundY);
+
+            // G. South Waterfront Promenade & Central South Thoroughfare
+            // Southern canal walkway
+            AddGrid(verts, uvs, normals, tris, -27.0f, 25.0f, -8.0f, -3.5f, 16, 2, groundY);
+            // Central South thoroughfare connecting Banyan Tree Plaza directly to canal wharf & bridge
+            AddGrid(verts, uvs, normals, tris, -11.0f, -1.0f, -4.0f, 6.5f, 4, 4, groundY);
+
+            // Natural organic connectors between streets & yards
+            AddGrid(verts, uvs, normals, tris, 4.0f, 13.0f, 12.0f, 18.0f, 3, 2, groundY);  // Tree court to House 03
+            AddGrid(verts, uvs, normals, tris, -19.0f, -12.0f, 11.5f, 16.0f, 2, 2, groundY); // Tree court to House 07 & 02
+
+            // H. Dedicated Front Yard Pads & Alleys for ALL 12 Thatched Cottages
+            // 1. House 01 (Nhà An & Má): pos=(3.0, 22.0)
+            AddGrid(verts, uvs, normals, tris, -1.5f, 8.0f, 15.5f, 25.0f, 3, 3, groundY);
+
+            // 2. House 02 (Trưởng Thôn Năm): pos=(-16.0, 20.0)
+            AddGrid(verts, uvs, normals, tris, -21.0f, -10.5f, 14.5f, 23.0f, 3, 3, groundY);
+
+            // 3. House 03 (Bác Ba Phi): pos=(16.0, 15.0)
+            AddGrid(verts, uvs, normals, tris, 11.0f, 21.5f, 9.5f, 18.5f, 3, 3, groundY);
+
+            // 4. House 04 (Chú Năm Thợ Mộc): pos=(26.0, 23.0)
+            AddGrid(verts, uvs, normals, tris, 20.0f, 31.0f, 17.0f, 26.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, 21.5f, 27.0f, 13.5f, 18.5f, 2, 2, groundY); // Alley to East St
+
+            // 5. House 05 (Bác Ba Nông Dân): pos=(-14.0, 32.0)
+            AddGrid(verts, uvs, normals, tris, -19.5f, -8.5f, 25.5f, 35.0f, 3, 3, groundY);
+
+            // 6. House 06 (Thím Bảy Phơi Thóc): pos=(14.0, 32.0)
+            AddGrid(verts, uvs, normals, tris, 8.5f, 19.5f, 25.5f, 35.0f, 3, 3, groundY);
+
+            // 7. House 07 (Cô Út Bánh Bò): pos=(-18.0, 9.5)
+            AddGrid(verts, uvs, normals, tris, -22.5f, -11.5f, 5.5f, 14.0f, 3, 3, groundY);
+
+            // 8. House 08 (Chú Sáu Làm Vườn): pos=(-28.0, 17.0)
+            AddGrid(verts, uvs, normals, tris, -33.0f, -22.5f, 12.5f, 21.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, -30.5f, -24.0f, 9.5f, 14.0f, 2, 2, groundY); // Alley to West St
+
+            // 9. House 09 (Dì Hai Giếng Nước): pos=(20.0, 4.0)
+            AddGrid(verts, uvs, normals, tris, 14.0f, 25.0f, 0.5f, 9.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, 17.0f, 22.5f, 7.0f, 12.5f, 2, 2, groundY); // Alley to East St
+
+            // 10. House 10 (Chú Bảy Chèo Đò): pos=(-14.0, -5.5)
+            AddGrid(verts, uvs, normals, tris, -19.0f, -8.5f, -7.5f, 1.0f, 3, 3, groundY);
+
+            // 11. House 11 (Xóm Kênh Đông): pos=(12.0, -5.5)
+            AddGrid(verts, uvs, normals, tris, 6.5f, 17.0f, -7.5f, 1.0f, 3, 3, groundY);
+
+            // 12. House 12 (Xóm Trong Phía Tây): pos=(-36.0, 7.5)
+            AddGrid(verts, uvs, normals, tris, -41.0f, -30.5f, 3.5f, 12.5f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, -35.5f, -27.5f, 9.0f, 15.0f, 2, 2, groundY); // Alley to House 08 / West St
+
+            // 3. Assemble and apply unified procedural mesh
             Mesh mesh = new Mesh();
-            mesh.name = trailName + "_Mesh";
-            mesh.vertices = verts;
-            mesh.uv = uvs;
-            mesh.normals = normals;
-            mesh.triangles = tris;
+            mesh.name = "M_Unified_Village_Earthen_Ground_Network";
+            mesh.vertices = verts.ToArray();
+            mesh.uv = uvs.ToArray();
+            mesh.normals = normals.ToArray();
+            mesh.triangles = tris.ToArray();
             mesh.RecalculateBounds();
 
             mf.sharedMesh = mesh;
-            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            mr.receiveShadows = true;
-            EditorUtility.SetDirty(go);
+            EditorUtility.SetDirty(unifiedObj);
+
+            Debug.Log($"[UnifiedRoad] ĐÃ TẠO MESH ĐẤT NÂU THỐNG NHẤT ({verts.Count} đỉnh, {tris.Count / 3} tam giác)! Nối liền từ cổng vào ({startZ}m) qua toàn bộ 12 sân nhà và bến sông với UV world-space chuẩn xác!");
+        }
+
+        private static void AddQuad(List<Vector3> verts, List<Vector2> uvs, List<Vector3> normals, List<int> tris,
+            Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
+        {
+            int baseIdx = verts.Count;
+
+            verts.Add(p0);
+            verts.Add(p1);
+            verts.Add(p2);
+            verts.Add(p3);
+
+            // World-space UV mapping: identical texture density everywhere (4.54m per tile)
+            const float uvScale = 0.22f;
+            uvs.Add(new Vector2(p0.x * uvScale, p0.z * uvScale));
+            uvs.Add(new Vector2(p1.x * uvScale, p1.z * uvScale));
+            uvs.Add(new Vector2(p2.x * uvScale, p2.z * uvScale));
+            uvs.Add(new Vector2(p3.x * uvScale, p3.z * uvScale));
+
+            normals.Add(Vector3.up);
+            normals.Add(Vector3.up);
+            normals.Add(Vector3.up);
+            normals.Add(Vector3.up);
+
+            // Triangle 1: p0 -> p1 -> p2
+            tris.Add(baseIdx);
+            tris.Add(baseIdx + 1);
+            tris.Add(baseIdx + 2);
+
+            // Triangle 2: p0 -> p2 -> p3
+            tris.Add(baseIdx);
+            tris.Add(baseIdx + 2);
+            tris.Add(baseIdx + 3);
+        }
+
+        private static void AddGrid(List<Vector3> verts, List<Vector2> uvs, List<Vector3> normals, List<int> tris,
+            float minX, float maxX, float minZ, float maxZ, int xSubdivs, int zSubdivs, float y)
+        {
+            const float uvScale = 0.22f;
+            int startVertIdx = verts.Count;
+
+            for (int z = 0; z <= zSubdivs; z++)
+            {
+                float fz = (float)z / zSubdivs;
+                float pz = Mathf.Lerp(minZ, maxZ, fz);
+
+                for (int x = 0; x <= xSubdivs; x++)
+                {
+                    float fx = (float)x / xSubdivs;
+                    float px = Mathf.Lerp(minX, maxX, fx);
+
+                    verts.Add(new Vector3(px, y, pz));
+                    uvs.Add(new Vector2(px * uvScale, pz * uvScale));
+                    normals.Add(Vector3.up);
+                }
+            }
+
+            int rowSize = xSubdivs + 1;
+            for (int z = 0; z < zSubdivs; z++)
+            {
+                for (int x = 0; x < xSubdivs; x++)
+                {
+                    int bL = startVertIdx + z * rowSize + x;
+                    int bR = bL + 1;
+                    int tL = startVertIdx + (z + 1) * rowSize + x;
+                    int tR = tL + 1;
+
+                    // Triangle 1
+                    tris.Add(tL);
+                    tris.Add(tR);
+                    tris.Add(bL);
+
+                    // Triangle 2
+                    tris.Add(tR);
+                    tris.Add(bR);
+                    tris.Add(bL);
+                }
+            }
         }
 
         // =========================================================================
@@ -714,35 +864,35 @@ namespace HoaDo.Editor
         // =========================================================================
         // 5. CAPTURE QA SNAPSHOTS (Rule 4.2: 720p 1280x720)
         // =========================================================================
-        private static void CaptureQASnapshots()
+        public static void CaptureQASnapshots()
         {
             if (!Directory.Exists(ArtifactDir)) Directory.CreateDirectory(ArtifactDir);
 
             int width = 1280;
             int height = 720;
 
-            // Shot 1: Elevated panoramic view of the village showing thatched cottages and radial dirt trails
+            // Shot 1: Elevated panoramic overview showing the entire unified earthen network from gate avenue to all house yards
             RenderShot(
-                new Vector3(-6.0f, 18.0f, -8.0f),
-                Quaternion.Euler(42.0f, 0.0f, 0.0f),
-                width, height, 60.0f,
-                Path.Combine(ArtifactDir, "CaMau_VillageThatchedHouses_Panoramic_QA.jpg")
+                new Vector3(-6.0f, 32.0f, -4.0f),
+                Quaternion.Euler(58.0f, 0.0f, 0.0f),
+                width, height, 64.0f,
+                Path.Combine(ArtifactDir, "CaMau_UnifiedEarthenGround_Overview_QA.jpg")
             );
 
-            // Shot 2: View from the Central Banyan Tree looking across paths to thatched cottages and NPCs
+            // Shot 2: View from North Gate looking down the continuous avenue through paddies into the village
             RenderShot(
-                new Vector3(-6.0f, 2.5f, 13.0f),
-                Quaternion.Euler(5.0f, 35.0f, 0.0f),
-                width, height, 58.0f,
-                Path.Combine(ArtifactDir, "CaMau_CentralBanyanTreeAndTrails_QA.jpg")
+                new Vector3(-7.0f, 2.8f, 186.0f),
+                Quaternion.Euler(11.0f, 180.0f, 0.0f),
+                width, height, 55.0f,
+                Path.Combine(ArtifactDir, "CaMau_NorthGateAvenueToVillage_QA.jpg")
             );
 
-            // Shot 3: Eye-level ground view showing standing NPCs in front of their authentic thatched cottage
+            // Shot 3: Plaza view from Central Banyan Tree showing continuous earthen ground across cottage yards and NPCs
             RenderShot(
-                new Vector3(3.0f, 2.0f, 14.5f),
-                Quaternion.Euler(5.0f, 0.0f, 0.0f),
-                width, height, 50.0f,
-                Path.Combine(ArtifactDir, "CaMau_UprightNPCsAndHouses_QA.jpg")
+                new Vector3(-6.0f, 2.2f, 9.0f),
+                Quaternion.Euler(6.0f, 25.0f, 0.0f),
+                width, height, 56.0f,
+                Path.Combine(ArtifactDir, "CaMau_CentralBanyanAndHouseYards_QA.jpg")
             );
 
             Debug.Log("[QA] Đã chụp và lưu 3 ảnh QA vào artifact directory!");
@@ -753,8 +903,8 @@ namespace HoaDo.Editor
             var camObj = new GameObject("Temp_QA_Camera");
             var cam = camObj.AddComponent<Camera>();
             cam.fieldOfView = fov;
-            cam.nearClipPlane = 0.1f;
-            cam.farClipPlane = 1200f;
+            cam.nearClipPlane = 0.2f;
+            cam.farClipPlane = 280f; // Fast frustum culling within village bounds
             camObj.transform.position = pos;
             camObj.transform.rotation = rot;
 
