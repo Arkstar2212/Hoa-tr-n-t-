@@ -9,14 +9,15 @@ public static class BuildSingleVastBrownPaddy
     private const string BrownEarthTexPath = "Assets/Textures/Ground_Tiles/T_NamBo_BrownEarth_Pebbles_Seamless.png";
     private const string BrownEarthNormPath = "Assets/Textures/Ground_Tiles/T_NamBo_BrownEarth_Pebbles_Normal.png";
     private const string RiceMatPath = "Assets/Materials/RicePlants/Mat_Rice_Meshy.mat";
-    private const string RiceMeshPath = "Assets/Models/RicePlants/SM_Rice_Plant_Meshy_LOD_0.fbx";
+    private const string RiceMeshPathLOD1 = "Assets/Models/RicePlants/SM_Rice_Plant_Meshy_LOD_1.fbx";
+    private const string RiceMeshPathLOD0 = "Assets/Models/RicePlants/SM_Rice_Plant_Meshy_LOD_0.fbx";
     private const string RoadMatPath = "Assets/Materials/M_Village_Road_NamBo.mat";
     private const string ArtifactDir = "C:/Users/ACER/.gemini/antigravity/brain/0b06ba00-d73d-4df0-adee-d4635db3297d";
 
     [MenuItem("Tools/Hoa Do/Build Single Vast Brown Paddy")]
     public static void Execute()
     {
-        Debug.Log("[VastBrownPaddy] Starting transformation into 1 single vast brown paddy field and thinning trees...");
+        Debug.Log("[VastBrownPaddy] Starting transformation into 1 single vast brown paddy field with abundant lush rice...");
 
         // 1. CONFIGURE BROWN PADDY EARTH MATERIAL
         ConfigureBrownPaddyMudMaterial();
@@ -30,7 +31,7 @@ public static class BuildSingleVastBrownPaddy
         // 4. CLEAN UP ALL OLD FRAGMENTED PLOTS, DIKES, AND OLD RICE
         CleanUpOldPlotsAndRice();
 
-        // 5. POPULATE DENSE, CONTINUOUS RICE CROPS ACROSS THE ENTIRE VAST FIELD
+        // 5. POPULATE DENSE, ABUNDANT, LUSH RICE CROPS ACROSS THE ENTIRE VAST FIELD
         PopulateContinuousVastRiceCrops();
 
         // 6. VERIFY ROAD & PLAYER AN
@@ -45,7 +46,7 @@ public static class BuildSingleVastBrownPaddy
         // 8. CAPTURE QA SNAPSHOTS
         CaptureQASnapshots();
 
-        Debug.Log("[VastBrownPaddy] Completed successfully!");
+        Debug.Log("[VastBrownPaddy] Completed successfully with abundant lush rice field!");
     }
 
     private static void ConfigureBrownPaddyMudMaterial()
@@ -67,7 +68,7 @@ public static class BuildSingleVastBrownPaddy
             mudMat.SetFloat("_BumpScale", 1.15f);
         }
 
-        // Rich warm brown soil color
+        // Rich warm brown agricultural soil color
         mudMat.SetColor("_BaseColor", new Color(0.68f, 0.54f, 0.42f, 1.0f));
         mudMat.SetFloat("_Smoothness", 0.04f);
         mudMat.mainTextureScale = new Vector2(16.0f, 32.0f);
@@ -80,7 +81,6 @@ public static class BuildSingleVastBrownPaddy
     {
         int disabledCount = 0;
 
-        // Specific tree parent groups bordering the paddy fields
         string[] targetGroups = new string[]
         {
             "Coconut_Paddy_West_01",
@@ -99,18 +99,15 @@ public static class BuildSingleVastBrownPaddy
                 go.SetActive(false);
                 EditorUtility.SetDirty(go);
                 disabledCount++;
-                Debug.Log($"[ThinTrees] Deactivated border tree group: {gName}");
             }
         }
 
-        // All trees standing directly in or around the paddy field area (Z: 48m to 180m, X: -48m to 42m)
         var allT = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var t in allT)
         {
             if (t == null) continue;
             string n = t.name.ToLower();
 
-            // Check if this object or its parent is a tree/palm/coconut/banana/bamboo
             bool isFoliage = n.Contains("tree") || n.Contains("palm") || n.Contains("coconut") || 
                              n.Contains("banana") || n.Contains("bamboo");
 
@@ -127,8 +124,6 @@ public static class BuildSingleVastBrownPaddy
             if (isFoliage)
             {
                 Vector3 p = t.position;
-                // Only thin trees inside the paddy zone (Z 48 to 180, X -48 to 40)
-                // Preserves North Gate (Z > 181), South Village (Z < 48), and Mountains (X < -48 or X > 42)
                 if (p.z >= 48f && p.z <= 180f && p.x >= -48f && p.x <= 40f)
                 {
                     if (t.gameObject.activeSelf)
@@ -148,7 +143,6 @@ public static class BuildSingleVastBrownPaddy
     {
         var mudMat = AssetDatabase.LoadAssetAtPath<Material>(MudMatPath);
 
-        // Find or create the single vast paddy field GameObject
         var vastPaddyObj = GameObject.Find("Vast_Single_Paddy_Field_BrownSoil");
         if (vastPaddyObj == null)
         {
@@ -166,10 +160,6 @@ public static class BuildSingleVastBrownPaddy
 
         if (mudMat != null) mr.sharedMaterial = mudMat;
 
-        // Generate a continuous subdivided brown soil plane spanning:
-        // X: -48.0m (West mountain foot) to +40.0m (East mountain foot)
-        // Z: 48.0m (South village edge) to 182.0m (North Gate edge)
-        // Height: Y = 0.504m (clean flat plane, flush with 0.500m ground, road sits on top at 0.508m)
         int xSubdivs = 22;
         int zSubdivs = 66;
 
@@ -202,7 +192,6 @@ public static class BuildSingleVastBrownPaddy
             }
         }
 
-        // Triangles with CLOCKWISE winding viewed from above (+Y looking -Y)
         int triIdx = 0;
         for (int z = 0; z < zSubdivs; z++)
         {
@@ -213,12 +202,10 @@ public static class BuildSingleVastBrownPaddy
                 int topLeft  = (z + 1) * (xSubdivs + 1) + x;
                 int topRight = topLeft + 1;
 
-                // Triangle 1: Top-Left -> Top-Right -> Bottom-Left (Clockwise from +Y)
                 triangles[triIdx++] = topLeft;
                 triangles[triIdx++] = topRight;
                 triangles[triIdx++] = botLeft;
 
-                // Triangle 2: Top-Right -> Bottom-Right -> Bottom-Left (Clockwise from +Y)
                 triangles[triIdx++] = topRight;
                 triangles[triIdx++] = botRight;
                 triangles[triIdx++] = botLeft;
@@ -236,13 +223,10 @@ public static class BuildSingleVastBrownPaddy
         mf.sharedMesh = mesh;
         mr.enabled = true;
         EditorUtility.SetDirty(vastPaddyObj);
-
-        Debug.Log($"[VastBrownPaddy] Successfully generated 1 vast brown soil paddy plane with {vertCount} vertices and {triangles.Length / 3} triangles!");
     }
 
     private static void CleanUpOldPlotsAndRice()
     {
-        // Deactivate old 22 plots and dikes in Paddy_5X_Extension_Root
         var root = GameObject.Find("Paddy_5X_Extension_Root");
         if (root != null)
         {
@@ -255,29 +239,21 @@ public static class BuildSingleVastBrownPaddy
             }
         }
 
-        // Deactivate any leftover DenseFiller roots across scene
-        var allGO = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        foreach (var go in allGO)
+        var oldContainer = GameObject.Find("Vast_Paddy_Continuous_Crops_Root");
+        if (oldContainer != null)
         {
-            if (go == null) continue;
-            string n = go.name;
-            if (n.Contains("_DenseFiller_") || (n.StartsWith("Paddy_Plot_") && n.Contains("_R0")))
-            {
-                go.SetActive(false);
-            }
+            Object.DestroyImmediate(oldContainer);
         }
     }
 
     private static void PopulateContinuousVastRiceCrops()
     {
-        var riceMesh = AssetDatabase.LoadAssetAtPath<Mesh>(RiceMeshPath);
-        var riceMat = AssetDatabase.LoadAssetAtPath<Material>(RiceMatPath);
+        // Use lightweight LOD 1 for maximum performance with GPU instancing, or fallback LOD 0
+        var riceMesh = AssetDatabase.LoadAssetAtPath<Mesh>(RiceMeshPathLOD1);
+        if (riceMesh == null) riceMesh = AssetDatabase.LoadAssetAtPath<Mesh>(RiceMeshPathLOD0);
 
-        if (riceMesh == null)
-        {
-            var sampleTuft = GameObject.Find("Tuft_Row_0");
-            if (sampleTuft != null) riceMesh = sampleTuft.GetComponent<MeshFilter>()?.sharedMesh;
-        }
+        var riceMat = AssetDatabase.LoadAssetAtPath<Material>(RiceMatPath);
+        if (riceMat != null) riceMat.enableInstancing = true;
 
         if (riceMesh == null || riceMat == null)
         {
@@ -285,17 +261,20 @@ public static class BuildSingleVastBrownPaddy
             return;
         }
 
-        // Clean up previous container
-        var container = GameObject.Find("Vast_Paddy_Continuous_Crops_Root");
-        if (container != null)
-        {
-            Object.DestroyImmediate(container);
-        }
-        container = new GameObject("Vast_Paddy_Continuous_Crops_Root");
+        var container = new GameObject("Vast_Paddy_Continuous_Crops_Root");
         container.transform.position = Vector3.zero;
 
+        // Group into 6 regional parent transforms to keep hierarchy clean
+        Transform pNW = new GameObject("West_North").transform; pNW.SetParent(container.transform, false);
+        Transform pNM = new GameObject("West_Mid").transform;   pNM.SetParent(container.transform, false);
+        Transform pNS = new GameObject("West_South").transform; pNS.SetParent(container.transform, false);
+
+        Transform pEW = new GameObject("East_North").transform; pEW.SetParent(container.transform, false);
+        Transform pEM = new GameObject("East_Mid").transform;   pEM.SetParent(container.transform, false);
+        Transform pES = new GameObject("East_South").transform; pES.SetParent(container.transform, false);
+
         var rng = new System.Random(1954);
-        int rows = 95; // Dense row spacing (~1.35m per row) across the 130m length
+        int rows = 115; // 115 rows across the 130m length (~1.12m row spacing)
         float startZ = 180.0f;
         float endZ = 52.0f;
         float groundY = 0.505f;
@@ -318,54 +297,71 @@ public static class BuildSingleVastBrownPaddy
                 roadHalfWidth = Mathf.Lerp(3.6f, 7.0f, plazaBlend * plazaBlend);
             }
 
-            // West flank: X from -45.0m to roadCenterX - roadHalfWidth - 0.8m
-            float westMinX = -45.0f;
-            float westMaxX = roadCenterX - roadHalfWidth - 0.8f;
+            // Hexagonal stagger on odd rows for dense interweaving
+            float stepX = 1.05f;
+            float hexOffset = (r % 2 == 1) ? stepX * 0.5f : 0f;
 
-            // East flank: X from roadCenterX + roadHalfWidth + 0.8m to +37.0m
-            float eastMinX = roadCenterX + roadHalfWidth + 0.8f;
-            float eastMaxX = 37.0f;
+            // West flank
+            float westMinX = -46.0f;
+            float westMaxX = roadCenterX - roadHalfWidth - 0.35f;
 
-            // Step in X ~ 1.35m for dense carpet feel
-            float stepX = 1.35f;
+            // East flank
+            float eastMinX = roadCenterX + roadHalfWidth + 0.35f;
+            float eastMaxX = 38.0f;
+
+            // Select zone parent
+            Transform westParent = (z > 138f) ? pNW : ((z > 95f) ? pNM : pNS);
+            Transform eastParent = (z > 138f) ? pEW : ((z > 95f) ? pEM : pES);
 
             // Populate West
             float westWidth = westMaxX - westMinX;
-            if (westWidth > 2.0f)
+            if (westWidth > 1.5f)
             {
                 int clusters = Mathf.Max(2, Mathf.RoundToInt(westWidth / stepX));
                 for (int c = 0; c < clusters; c++)
                 {
                     float frac = (float)c / (clusters - 1);
-                    float posX = Mathf.Lerp(westMinX, westMaxX, frac) + ((float)rng.NextDouble() - 0.5f) * 0.35f;
-                    float posZ = z + ((float)rng.NextDouble() - 0.5f) * 0.25f;
+                    float posX = Mathf.Lerp(westMinX, westMaxX, frac) + hexOffset + ((float)rng.NextDouble() - 0.5f) * 0.20f;
+                    if (posX < westMinX || posX > westMaxX) continue;
 
-                    CreateRiceTuft(container.transform, riceMesh, riceMat, new Vector3(posX, groundY, posZ), rng);
+                    float posZ = z + ((float)rng.NextDouble() - 0.5f) * 0.15f;
+
+                    // Large bushy, abundant scale: 2.10 to 2.50!
+                    float s = 2.10f + (float)rng.NextDouble() * 0.40f;
+                    float sy = s * (1.0f + (float)rng.NextDouble() * 0.18f);
+
+                    CreateRiceTuft(westParent, riceMesh, riceMat, new Vector3(posX, groundY, posZ), s, sy, rng);
                     totalTufts++;
                 }
             }
 
             // Populate East
             float eastWidth = eastMaxX - eastMinX;
-            if (eastWidth > 2.0f)
+            if (eastWidth > 1.5f)
             {
                 int clusters = Mathf.Max(2, Mathf.RoundToInt(eastWidth / stepX));
                 for (int c = 0; c < clusters; c++)
                 {
                     float frac = (float)c / (clusters - 1);
-                    float posX = Mathf.Lerp(eastMinX, eastMaxX, frac) + ((float)rng.NextDouble() - 0.5f) * 0.35f;
-                    float posZ = z + ((float)rng.NextDouble() - 0.5f) * 0.25f;
+                    float posX = Mathf.Lerp(eastMinX, eastMaxX, frac) + hexOffset + ((float)rng.NextDouble() - 0.5f) * 0.20f;
+                    if (posX < eastMinX || posX > eastMaxX) continue;
 
-                    CreateRiceTuft(container.transform, riceMesh, riceMat, new Vector3(posX, groundY, posZ), rng);
+                    float posZ = z + ((float)rng.NextDouble() - 0.5f) * 0.15f;
+
+                    // Large bushy, abundant scale: 2.10 to 2.50!
+                    float s = 2.10f + (float)rng.NextDouble() * 0.40f;
+                    float sy = s * (1.0f + (float)rng.NextDouble() * 0.18f);
+
+                    CreateRiceTuft(eastParent, riceMesh, riceMat, new Vector3(posX, groundY, posZ), s, sy, rng);
                     totalTufts++;
                 }
             }
         }
 
-        Debug.Log($"[PopulateRice] Successfully created {totalTufts} dense rice tufts across the vast brown paddy field!");
+        Debug.Log($"[PopulateRice] Successfully created {totalTufts} large, lush, dense rice tufts across the vast brown paddy field!");
     }
 
-    private static void CreateRiceTuft(Transform parent, Mesh mesh, Material mat, Vector3 pos, System.Random rng)
+    private static void CreateRiceTuft(Transform parent, Mesh mesh, Material mat, Vector3 pos, float s, float sy, System.Random rng)
     {
         var tuft = new GameObject("VastRice_Tuft");
         tuft.transform.SetParent(parent, false);
@@ -373,10 +369,6 @@ public static class BuildSingleVastBrownPaddy
 
         float rotY = (float)rng.NextDouble() * 360f;
         tuft.transform.rotation = Quaternion.Euler(0f, rotY, 0f);
-
-        // Lush, full scale so tufts blend seamlessly into an unbroken golden carpet
-        float s = 1.45f + (float)rng.NextDouble() * 0.20f;
-        float sy = s * (1.0f + (float)rng.NextDouble() * 0.15f);
         tuft.transform.localScale = new Vector3(s, sy, s);
 
         var mf = tuft.AddComponent<MeshFilter>();
