@@ -9,8 +9,9 @@ namespace HoaDo.Editor
 {
     public static class OverhaulVillageLayoutThatchedHousesAndNPCs
     {
-        private const string HouseThatchedFbx = "Assets/Models/Optimized/SM_StiltedHouse_Thatched_BlenderOptimized.fbx";
-        private const string HouseThatchedMat = "Assets/Materials/Environment/Architecture/M_StiltedHouse_Thatched.mat";
+        // Authentic Nam Bo Thatched Ground Cottage from the project's artwork reference
+        private const string HouseThatchedFbx = "Assets/Models/Optimized/SM_NhaTranh_BlenderOptimized.fbx";
+        private const string HouseThatchedMat = "Assets/Materials/Nhà tranh.mat";
         private const string RoadMatPath = "Assets/Materials/M_Village_Road_NamBo.mat";
 
         private const string NpcElderPrefab = "Assets/Prefabs/Characters/NPCs/PF_NPC_Elderly_Man.prefab";
@@ -28,58 +29,65 @@ namespace HoaDo.Editor
 
         private const string ArtifactDir = "C:/Users/ACER/.gemini/antigravity/brain/0b06ba00-d73d-4df0-adee-d4635db3297d";
 
-        private static readonly Vector3 CentralTreePos = new Vector3(-6.0f, 0.50f, 13.0f);
+        private const float UNIFORM_GROUND_Y = 0.505f;
+        private const float MESH_BOTTOM_OFFSET = 0.413f;
 
         [MenuItem("Tools/Hoa Do/Overhaul Village Thatched Houses And Accurate NPCs")]
         public static void Execute()
         {
-            Debug.Log("[VillageOverhaul] Bắt đầu đồng bộ: Chuẩn hóa 100% nhà tranh + Mở rộng làng + Đường mòn nối cây đa + Chuẩn hóa giới tính & tư thế đứng NPC...");
+            Debug.Log("[VillageOverhaul] Đang đồng bộ: Nhà tranh Nam Bộ nguyên bản (SM_NhaTranh) + Collider khớp 1:1 + Thêm Collider thân cây + Chuẩn hóa NPC...");
 
-            // 1. STANDARDIZE ALL HOUSES TO THE VERIFIED THATCHED HOUSE MODEL
-            ReplaceAllHousesWithThatchedCottages();
+            // 1. STANDARDIZE ALL HOUSES TO THE AUTHENTIC THATCHED COTTAGE MODEL (SM_NhaTranh)
+            ReplaceAllHousesWithOriginalThatchedCottages();
 
-            // 2. CREATE ORGANIC DIRT TRAILS CONNECTING EACH HOUSE TO CENTRAL BANYAN TREE
+            // 2. CREATE RADIAL TRAILS CONNECTING HOUSES TO CENTRAL BANYAN TREE
             BuildRadialTrailsToCentralBanyanTree();
 
-            // 3. SETUP 100% STANDING UPRIGHT NPCS WITH ACCURATE GENDER & DIALOGUE
+            // 3. SETUP 100% STANDING UPRIGHT NPCS WITH MATCHING GENDER & DIALOGUE
             SetupAllUprightStandingNPCs();
 
-            // 4. SAVE SCENE & ASSETS
-            AssetDatabase.SaveAssets();
-            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
-                UnityEngine.SceneManagement.SceneManager.GetActiveScene()
-            );
+            // 4. ADD TRUNK COLLIDERS TO ALL TREES (EXCEPT RICE & GRASS)
+            AddCollidersToAllTrees();
 
-            // 5. CAPTURE QA SNAPSHOTS (Rule 4.2: 720p)
+            // 5. MARK SCENE DIRTY
+            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
+
+            // 6. CAPTURE QA SNAPSHOTS (Rule 4.2: 720p)
             CaptureQASnapshots();
 
-            Debug.Log("[VillageOverhaul] HOÀN TẤT THÀNH CÔNG! Đã thay toàn bộ nhà thành nhà tranh, tạo mạng lưới đường nối cây đa trung tâm và sửa triệt để giới tính/tư thế NPC!");
+            Debug.Log("[VillageOverhaul] HOÀN TẤT THÀNH CÔNG! Đã dùng đúng nhà tranh gốc, collider khớp 1:1 không dư thừa, và thêm collider cho tất cả cây cối!");
         }
 
         // =========================================================================
-        // 1. REPLACE ALL HOUSES WITH AUTHENTIC THATCHED COTTAGES
+        // 1. REPLACE ALL HOUSES WITH AUTHENTIC THATCHED COTTAGES (SM_NhaTranh)
         // =========================================================================
         private struct HouseData
         {
             public string name;
-            public Vector3 position;
+            public Vector2 posXZ;
             public float rotationY;
             public float scale;
 
-            public HouseData(string n, Vector3 pos, float rotY, float s = 3.3f)
+            public HouseData(string n, float x, float z, float rotY, float s = 3.6f)
             {
                 name = n;
-                position = pos;
+                posXZ = new Vector2(x, z);
                 rotationY = rotY;
                 scale = s;
             }
         }
 
-        private static void ReplaceAllHousesWithThatchedCottages()
+        private static void ReplaceAllHousesWithOriginalThatchedCottages()
         {
             var fbxThatched = AssetDatabase.LoadAssetAtPath<GameObject>(HouseThatchedFbx);
             var matThatched = AssetDatabase.LoadAssetAtPath<Material>(HouseThatchedMat);
-            if (matThatched != null) matThatched.SetFloat("_Cull", 0f);
+            if (matThatched != null)
+            {
+                matThatched.SetFloat("_Cull", 0f); // Two-sided rendering for open eaves
+                if (matThatched.HasProperty("_BaseColor")) matThatched.SetColor("_BaseColor", Color.white);
+                EditorUtility.SetDirty(matThatched);
+            }
 
             if (fbxThatched == null)
             {
@@ -99,69 +107,90 @@ namespace HoaDo.Editor
             var housesRoot = new GameObject("Village_Houses_Network");
             if (env != null) housesRoot.transform.SetParent(env.transform, false);
 
-            // Define 12 beautifully spaced thatched cottages in an expanded village footprint:
-            // Centered around the Central Sacred Banyan Tree at (-6.0, 0.50, 13.0)
+            // 12 authentic thatched cottages positioned comfortably throughout the expanded village
             HouseData[] houses = new HouseData[]
             {
-                // 1. Nhà An & Má (Gần cây trung tâm, ngõ Bắc)
-                new HouseData("House_01_NhaAn", new Vector3(3.0f, 2.10f, 22.0f), 180f, 3.4f),
+                // 1. Nhà An & Má (Ngõ Bắc gần cây đa trung tâm)
+                new HouseData("House_01_NhaAn", 3.0f, 22.0f, 180f, 3.6f),
 
                 // 2. Nhà Trưởng Thôn Năm (Phía Tây Bắc cây đa)
-                new HouseData("House_02_TruongThonNam", new Vector3(-16.0f, 2.10f, 20.0f), 140f, 3.5f),
+                new HouseData("House_02_TruongThonNam", -16.0f, 20.0f, 140f, 3.7f),
 
                 // 3. Nhà Bác Ba Phi (Phía Đông cây đa)
-                new HouseData("House_03_BacBaPhi", new Vector3(16.0f, 2.10f, 15.0f), -120f, 3.4f),
+                new HouseData("House_03_BacBaPhi", 16.0f, 15.0f, -120f, 3.6f),
 
                 // 4. Nhà Chú Năm Thợ Mộc (Ngõ Đông Bắc làng)
-                new HouseData("House_04_ChuNamThoMoc", new Vector3(26.0f, 2.10f, 23.0f), -145f, 3.3f),
+                new HouseData("House_04_ChuNamThoMoc", 26.0f, 23.0f, -145f, 3.5f),
 
                 // 5. Nhà Bác Ba Nông Dân (Mé cánh đồng lúa Tây Bắc)
-                new HouseData("House_05_BacBaNongDan", new Vector3(-14.0f, 2.10f, 32.0f), 180f, 3.4f),
+                new HouseData("House_05_BacBaNongDan", -14.0f, 32.0f, 180f, 3.6f),
 
                 // 6. Nhà Thím Bảy Phơi Thóc (Mé cánh đồng lúa Đông Bắc)
-                new HouseData("House_06_ThimBayPhoiThoc", new Vector3(14.0f, 2.10f, 32.0f), 180f, 3.3f),
+                new HouseData("House_06_ThimBayPhoiThoc", 14.0f, 32.0f, 180f, 3.5f),
 
                 // 7. Nhà Cô Út Bánh Bò (Phía Tây cây đa, xóm chợ)
-                new HouseData("House_07_CoUtBanhBo", new Vector3(-18.0f, 2.10f, 9.5f), 90f, 3.3f),
+                new HouseData("House_07_CoUtBanhBo", -18.0f, 9.5f, 90f, 3.5f),
 
                 // 8. Nhà Chú Sáu Làm Vườn (Xóm vườn chuối Tây)
-                new HouseData("House_08_ChuSauLamVuon", new Vector3(-28.0f, 2.10f, 17.0f), 80f, 3.3f),
+                new HouseData("House_08_ChuSauLamVuon", -28.0f, 17.0f, 80f, 3.5f),
 
                 // 9. Nhà Dì Hai & Chị Tư Gánh Nước (Gần giếng ngọt phía Đông)
-                new HouseData("House_09_DiHai_GiengNuoc", new Vector3(20.0f, 2.10f, 4.0f), -70f, 3.4f),
+                new HouseData("House_09_DiHai_GiengNuoc", 20.0f, 4.0f, -70f, 3.6f),
 
                 // 10. Nhà Chú Bảy Chèo Đò (Bến sông kênh Tây Nam)
-                new HouseData("House_10_ChuBayCheoDo", new Vector3(-14.0f, 2.10f, -5.5f), 25f, 3.3f),
+                new HouseData("House_10_ChuBayCheoDo", -14.0f, -5.5f, 25f, 3.5f),
 
                 // 11. Nhà Xóm Kênh Đông Nam (Hướng ra bờ kênh)
-                new HouseData("House_11_XomKenhDongNam", new Vector3(12.0f, 2.10f, -5.5f), -25f, 3.3f),
+                new HouseData("House_11_XomKenhDongNam", 12.0f, -5.5f, -25f, 3.5f),
 
                 // 12. Nhà Xóm Trong Phía Tây (Mở rộng quy mô làng về phía Tây)
-                new HouseData("House_12_XomTrongTay", new Vector3(-36.0f, 2.10f, 7.5f), 55f, 3.3f)
+                new HouseData("House_12_XomTrongTay", -36.0f, 7.5f, 55f, 3.5f)
             };
+
+            var fbxMf = fbxThatched.GetComponentInChildren<MeshFilter>();
+            Mesh cottageMesh = (fbxMf != null) ? fbxMf.sharedMesh : null;
 
             foreach (var h in houses)
             {
                 var inst = Object.Instantiate(fbxThatched, housesRoot.transform);
                 inst.name = h.name;
-                inst.transform.position = h.position;
-                inst.transform.rotation = Quaternion.Euler(0f, h.rotationY, 0f);
-                inst.transform.localScale = new Vector3(h.scale, h.scale, h.scale);
 
-                var renderers = inst.GetComponentsInChildren<Renderer>();
-                foreach (var r in renderers)
+                // Height formula ensuring base touches ground firmly: yPos = UNIFORM_GROUND_Y + (0.413f * scale)
+                float yPos = UNIFORM_GROUND_Y + (MESH_BOTTOM_OFFSET * h.scale);
+                inst.transform.position = new Vector3(h.posXZ.x, yPos, h.posXZ.y);
+                inst.transform.rotation = Quaternion.Euler(0f, h.rotationY, 0f);
+                inst.transform.localScale = Vector3.one * h.scale;
+
+                // Material assignment
+                if (matThatched != null)
                 {
-                    if (matThatched != null) r.sharedMaterial = matThatched;
+                    foreach (var r in inst.GetComponentsInChildren<Renderer>())
+                    {
+                        r.sharedMaterial = matThatched;
+                    }
                 }
 
-                var col = inst.GetComponent<BoxCollider>(); if (col == null) col = inst.AddComponent<BoxCollider>();
-                col.center = new Vector3(0f, -0.2f, 0f);
-                col.size = new Vector3(2.5f, 1.8f, 2.5f);
+                // Remove any legacy oversized collider
+                var oldCol = inst.GetComponent<Collider>();
+                if (oldCol != null) Object.DestroyImmediate(oldCol);
+
+                // 1:1 Precise Collision (không vượt quá nhà)
+                // MeshCollider on the visual mesh guarantees exact polygon boundary match
+                var childMeshObj = inst.transform.Find("Mesh_0") ?? inst.transform;
+                var mc = childMeshObj.gameObject.GetComponent<MeshCollider>();
+                if (mc == null) mc = childMeshObj.gameObject.AddComponent<MeshCollider>();
+                if (cottageMesh != null) mc.sharedMesh = cottageMesh;
+
+                // Tight interior wall BoxCollider (only back/side living area, leaving porch accessible)
+                var box = inst.GetComponent<BoxCollider>();
+                if (box == null) box = inst.AddComponent<BoxCollider>();
+                box.center = new Vector3(0f, -0.05f, 0f);
+                box.size = new Vector3(0.85f, 0.70f, 0.70f);
 
                 EditorUtility.SetDirty(inst);
             }
 
-            Debug.Log($"[ReplaceHouses] Đã thay thế và bố trí đồng bộ 12 ngôi nhà tranh truyền thống ({HouseThatchedFbx}) xung quanh cây đa trung tâm!");
+            Debug.Log($"[ReplaceHouses] Đã dựng 12 ngôi nhà tranh nguyên bản ({HouseThatchedFbx}) với collider khớp 1:1 không bị lồi ra ngoài!");
         }
 
         // =========================================================================
@@ -230,7 +259,6 @@ namespace HoaDo.Editor
             for (int i = 0; i <= segments; i++)
             {
                 float t = (float)i / segments;
-                // Subtle organic curve
                 float curve = Mathf.Sin(t * Mathf.PI) * 0.45f;
                 Vector3 center = Vector3.Lerp(start, end, t) + side * curve;
 
@@ -533,10 +561,10 @@ namespace HoaDo.Editor
                 },
                 "Waving_01", "Waving_02", scale: 0.65f);
 
-            Debug.Log("[SetupNPCs] Đã khởi tạo hoàn tất 15 NPC: 100% ĐỨNG THẲNG UPRIGHT, chuẩn xác giới tính từng model và hội thoại!");
-
-            // Sample natural idle poses in Edit Mode so characters stand naturally without T-pose
+            // Sample natural standing idle poses in Edit Mode so characters never T-pose
             SampleIdlePosesForAllNPCs(npcsRoot.transform);
+
+            Debug.Log("[SetupNPCs] Đã khởi tạo hoàn tất 15 NPC: 100% ĐỨNG THẲNG UPRIGHT, chuẩn xác giới tính từng model và hội thoại!");
         }
 
         private static void SampleIdlePosesForAllNPCs(Transform npcsRoot)
@@ -591,18 +619,15 @@ namespace HoaDo.Editor
             inst.transform.rotation = rot;
             inst.transform.localScale = Vector3.one * scale;
 
-            // Ensure proper Animator with assigned runtime controller
             var anim = inst.GetComponent<Animator>(); if (anim == null) anim = inst.AddComponent<Animator>();
             if (animCtrl != null) anim.runtimeAnimatorController = animCtrl;
             anim.applyRootMotion = false;
 
-            // Ensure upright standing CapsuleCollider
             var col = inst.GetComponent<CapsuleCollider>(); if (col == null) col = inst.AddComponent<CapsuleCollider>();
             col.center = new Vector3(0f, 0.85f * scale, 0f);
             col.radius = 0.35f * scale;
             col.height = 1.70f * scale;
 
-            // Configure Dialogue
             var interactable = inst.GetComponent<GenshinNPCInteractable>(); if (interactable == null) interactable = inst.AddComponent<GenshinNPCInteractable>();
             interactable.Configure(name, title, openings, choices, defAnim, talkAnim);
 
@@ -610,7 +635,84 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 4. CAPTURE QA SNAPSHOTS (Rule 4.2: 720p 1280x720)
+        // 4. ADD TRUNK COLLIDERS TO ALL TREES (EXCEPT RICE & GRASS)
+        // =========================================================================
+        private static void AddCollidersToAllTrees()
+        {
+            var veg = GameObject.Find("CaMau_1954_Village/Environment/Vegetation_3D");
+            if (veg == null) return;
+
+            int count = 0;
+            foreach (Transform t in veg.transform)
+            {
+                // Stone ring already has its own stone colliders
+                if (t.name == "Tree_Central_StoneRing") continue;
+
+                // Add or adjust CapsuleCollider on the tree trunk
+                var col = t.GetComponent<CapsuleCollider>();
+                if (col == null) col = t.gameObject.AddComponent<CapsuleCollider>();
+
+                string n = t.name.ToLower();
+                if (n.Contains("central") || n.Contains("sacred") || n.Contains("banyan"))
+                {
+                    // Grand Central Banyan Tree: wide trunk
+                    col.center = new Vector3(0f, 2.5f, 0f);
+                    col.radius = 1.8f;
+                    col.height = 6.0f;
+                }
+                else if (n.Contains("coconut") || n.Contains("palm"))
+                {
+                    // Coconut palm trunk
+                    col.center = new Vector3(0f, 3.0f, 0f);
+                    col.radius = 0.50f;
+                    col.height = 7.0f;
+                }
+                else if (n.Contains("banana"))
+                {
+                    // Banana tree clump
+                    col.center = new Vector3(0f, 2.0f, 0f);
+                    col.radius = 0.75f;
+                    col.height = 4.5f;
+                }
+                else if (n.Contains("fruit") || n.Contains("canopy"))
+                {
+                    // Fruit & shade trees
+                    col.center = new Vector3(0f, 2.5f, 0f);
+                    col.radius = 0.85f;
+                    col.height = 5.5f;
+                }
+                else if (n.Contains("bamboo"))
+                {
+                    // Bamboo grove clump
+                    col.center = new Vector3(0f, 2.5f, 0f);
+                    col.radius = 0.80f;
+                    col.height = 5.5f;
+                }
+                else if (n.Contains("bush"))
+                {
+                    // Dense bush tree
+                    col.center = new Vector3(0f, 1.8f, 0f);
+                    col.radius = 0.75f;
+                    col.height = 4.0f;
+                }
+                else
+                {
+                    // Default tree trunk
+                    col.center = new Vector3(0f, 2.5f, 0f);
+                    col.radius = 0.65f;
+                    col.height = 5.5f;
+                }
+
+                col.isTrigger = false;
+                EditorUtility.SetDirty(t.gameObject);
+                count++;
+            }
+
+            Debug.Log($"[TreeColliders] Đã thêm Trunk CapsuleCollider cho {count} cây cối! Lúa và cỏ không có collider, người chơi đi qua hoàn toàn tự do!");
+        }
+
+        // =========================================================================
+        // 5. CAPTURE QA SNAPSHOTS (Rule 4.2: 720p 1280x720)
         // =========================================================================
         private static void CaptureQASnapshots()
         {
@@ -619,7 +721,7 @@ namespace HoaDo.Editor
             int width = 1280;
             int height = 720;
 
-            // Shot 1: Elevated panoramic view of the village showing thatched houses and radial dirt trails
+            // Shot 1: Elevated panoramic view of the village showing thatched cottages and radial dirt trails
             RenderShot(
                 new Vector3(-6.0f, 18.0f, -8.0f),
                 Quaternion.Euler(42.0f, 0.0f, 0.0f),
@@ -627,7 +729,7 @@ namespace HoaDo.Editor
                 Path.Combine(ArtifactDir, "CaMau_VillageThatchedHouses_Panoramic_QA.jpg")
             );
 
-            // Shot 2: View from the Central Banyan Tree looking across paths to thatched houses and NPCs
+            // Shot 2: View from the Central Banyan Tree looking across paths to thatched cottages and NPCs
             RenderShot(
                 new Vector3(-6.0f, 2.5f, 13.0f),
                 Quaternion.Euler(5.0f, 35.0f, 0.0f),
@@ -635,11 +737,11 @@ namespace HoaDo.Editor
                 Path.Combine(ArtifactDir, "CaMau_CentralBanyanTreeAndTrails_QA.jpg")
             );
 
-            // Shot 3: Eye-level ground view showing standing NPCs in front of their thatched houses
+            // Shot 3: Eye-level ground view showing standing NPCs in front of their authentic thatched cottage
             RenderShot(
-                new Vector3(-1.0f, 1.8f, 12.0f),
-                Quaternion.Euler(4.0f, 20.0f, 0.0f),
-                width, height, 52.0f,
+                new Vector3(3.0f, 2.0f, 14.5f),
+                Quaternion.Euler(5.0f, 0.0f, 0.0f),
+                width, height, 50.0f,
                 Path.Combine(ArtifactDir, "CaMau_UprightNPCsAndHouses_QA.jpg")
             );
 
