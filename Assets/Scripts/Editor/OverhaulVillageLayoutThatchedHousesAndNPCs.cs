@@ -78,7 +78,7 @@ namespace HoaDo.Editor
             }
         }
 
-        private static void ReplaceAllHousesWithOriginalThatchedCottages()
+        public static void ReplaceAllHousesWithOriginalThatchedCottages()
         {
             var fbxThatched = AssetDatabase.LoadAssetAtPath<GameObject>(HouseThatchedFbx);
             var matThatched = AssetDatabase.LoadAssetAtPath<Material>(HouseThatchedMat);
@@ -107,44 +107,44 @@ namespace HoaDo.Editor
             var housesRoot = new GameObject("Village_Houses_Network");
             if (env != null) housesRoot.transform.SetParent(env.transform, false);
 
-            // 12 authentic thatched cottages positioned comfortably throughout the expanded village
+            // 12 authentic thatched cottages positioned comfortably throughout the expanded village (scaled up ~22% for authentic proportions)
             HouseData[] houses = new HouseData[]
             {
                 // 1. Nhà An & Má (Ngõ Bắc gần cây đa trung tâm)
-                new HouseData("House_01_NhaAn", 3.0f, 22.0f, 180f, 3.6f),
+                new HouseData("House_01_NhaAn", 3.0f, 22.0f, 180f, 4.4f),
 
                 // 2. Nhà Trưởng Thôn Năm (Phía Tây Bắc cây đa)
-                new HouseData("House_02_TruongThonNam", -16.0f, 20.0f, 140f, 3.7f),
+                new HouseData("House_02_TruongThonNam", -16.0f, 20.0f, 140f, 4.5f),
 
                 // 3. Nhà Bác Ba Phi (Phía Đông cây đa)
-                new HouseData("House_03_BacBaPhi", 16.0f, 15.0f, -120f, 3.6f),
+                new HouseData("House_03_BacBaPhi", 16.0f, 15.0f, -120f, 4.4f),
 
                 // 4. Nhà Chú Năm Thợ Mộc (Ngõ Đông Bắc làng)
-                new HouseData("House_04_ChuNamThoMoc", 26.0f, 23.0f, -145f, 3.5f),
+                new HouseData("House_04_ChuNamThoMoc", 26.0f, 23.0f, -145f, 4.3f),
 
                 // 5. Nhà Bác Ba Nông Dân (Mé cánh đồng lúa Tây Bắc)
-                new HouseData("House_05_BacBaNongDan", -14.0f, 32.0f, 180f, 3.6f),
+                new HouseData("House_05_BacBaNongDan", -14.0f, 32.0f, 180f, 4.4f),
 
                 // 6. Nhà Thím Bảy Phơi Thóc (Mé cánh đồng lúa Đông Bắc)
-                new HouseData("House_06_ThimBayPhoiThoc", 14.0f, 32.0f, 180f, 3.5f),
+                new HouseData("House_06_ThimBayPhoiThoc", 14.0f, 32.0f, 180f, 4.3f),
 
                 // 7. Nhà Cô Út Bánh Bò (Phía Tây cây đa, xóm chợ)
-                new HouseData("House_07_CoUtBanhBo", -18.0f, 9.5f, 90f, 3.5f),
+                new HouseData("House_07_CoUtBanhBo", -18.0f, 9.5f, 90f, 4.3f),
 
                 // 8. Nhà Chú Sáu Làm Vườn (Xóm vườn chuối Tây)
-                new HouseData("House_08_ChuSauLamVuon", -28.0f, 17.0f, 80f, 3.5f),
+                new HouseData("House_08_ChuSauLamVuon", -28.0f, 17.0f, 80f, 4.3f),
 
                 // 9. Nhà Dì Hai & Chị Tư Gánh Nước (Gần giếng ngọt phía Đông)
-                new HouseData("House_09_DiHai_GiengNuoc", 20.0f, 4.0f, -70f, 3.6f),
+                new HouseData("House_09_DiHai_GiengNuoc", 20.0f, 4.0f, -70f, 4.4f),
 
                 // 10. Nhà Chú Bảy Chèo Đò (Bến sông kênh Tây Nam)
-                new HouseData("House_10_ChuBayCheoDo", -14.0f, -5.5f, 25f, 3.5f),
+                new HouseData("House_10_ChuBayCheoDo", -14.0f, -5.5f, 25f, 4.3f),
 
                 // 11. Nhà Xóm Kênh Đông Nam (Hướng ra bờ kênh)
-                new HouseData("House_11_XomKenhDongNam", 12.0f, -5.5f, -25f, 3.5f),
+                new HouseData("House_11_XomKenhDongNam", 12.0f, -5.5f, -25f, 4.3f),
 
                 // 12. Nhà Xóm Trong Phía Tây (Mở rộng quy mô làng về phía Tây)
-                new HouseData("House_12_XomTrongTay", -36.0f, 7.5f, 55f, 3.5f)
+                new HouseData("House_12_XomTrongTay", -36.0f, 7.5f, 55f, 4.3f)
             };
 
             var fbxMf = fbxThatched.GetComponentInChildren<MeshFilter>();
@@ -456,7 +456,7 @@ namespace HoaDo.Editor
         // =========================================================================
         // 3. SETUP 100% STANDING UPRIGHT NPCS WITH ACCURATE GENDER & DIALOGUE
         // =========================================================================
-        private static void SetupAllUprightStandingNPCs()
+        public static void SetupAllUprightStandingNPCs()
         {
             var pElder = AssetDatabase.LoadAssetAtPath<GameObject>(NpcElderPrefab);
             var pFemale = AssetDatabase.LoadAssetAtPath<GameObject>(NpcFemalePrefab);
@@ -480,25 +480,9 @@ namespace HoaDo.Editor
 
             float groundY = 0.505f;
 
-            // 1. MÁ CỦA AN (Nữ - Đứng trước sân Nhà An)
-            BuildAccurateNPC(npcsRoot.transform, pMother, cFemale, "NPC_Mother_An",
-                new Vector3(2.5f, groundY, 17.5f), Quaternion.Euler(0f, 180f, 0f),
-                "Má của An", "Má Năm - Xóm Bờ Kênh",
-                new string[]
-                {
-                    "An đó hả con? Đi chơi đâu từ sớm tới giờ, lúa chín vàng cả cánh đồng rồi kìa.",
-                    "Về nhà ăn chén cơm gạo mới má vừa nấu, dẻo và thơm lừng luôn nè con."
-                },
-                new DialogueChoice[]
-                {
-                    new DialogueChoice { choiceText = "Dạ má, cơm gạo mới thơm quá má ơi!", responseLine = "Ừ, ăn no rồi phụ các bác ngoài sân phơi lúa nghe con. Nhớ đừng chạy nhảy làm đổ nia thóc.", responseAnim = "Female_Talking_01" },
-                    new DialogueChoice { choiceText = "Má ơi, chiều nay con ra bến xem tàu tập kết nghen?", responseLine = "Được chớ, nhớ rủ thằng Minh đi chung cho có bạn, chớ có giỡn dưới mé nước sâu nghe chưa!", responseAnim = "Female_Talking_02" }
-                },
-                "Female_Waving", "Female_Talking_01");
-
-            // 2. TRƯỞNG THÔN NĂM (Nam Cao Niên - Đứng trước nhà Trưởng thôn)
-            BuildAccurateNPC(npcsRoot.transform, pElder, cElder, "NPC_Elderly_VillageChief",
-                new Vector3(-14.0f, groundY, 16.5f), Quaternion.Euler(0f, 140f, 0f),
+            // 1. TRƯỞNG THÔN NĂM (Nam Cao Niên - Đứng trước sân Nhà Trưởng thôn)
+            BuildAccurateNPC(npcsRoot.transform, pElder, cElder, "NPC_01_TruongThonNam",
+                new Vector3(-13.5f, groundY, 16.5f), Quaternion.Euler(0f, 140f, 0f),
                 "Trưởng Thôn Năm", "Bậc cao niên xóm Rạch Gốc",
                 new string[]
                 {
@@ -508,13 +492,30 @@ namespace HoaDo.Editor
                 new DialogueChoice[]
                 {
                     new DialogueChoice { choiceText = "Cháu thấy đồng lúa vàng trải dài đẹp quá thưa bác!", responseLine = "Đúng rồi cháu, đất đai Nam Bộ phù sa màu mỡ nuôi nấng người dân mình. Giữ lấy hạt ngọc trời này nghe con.", responseAnim = "OldMan_Talking" },
-                    new DialogueChoice { choiceText = "Bác cho cháu hỏi tàu tập kết bao giờ rời bến?", responseLine = "Sắp rồi con à. Chú Bảy ngoài bến đò đang hối hả chuyển những bao gạo cuối cùng lên ghe đấy.", responseAnim = "OldMan_Talking" }
+                    new DialogueChoice { choiceText = "Bác cho cháu hỏi tàu tập kết bao giờ rời bến?", responseLine = "Sắp rồi con à. Chú Bảy ngoài bến đò đang hối hả chuyển những bao gạo cuối cùng lên ghe đấy.", responseAnim = "OldMan_Talking" },
+                    new DialogueChoice { choiceText = "Cháu xin phép đi dạo tiếp quanh xóm ạ.", responseLine = "Đi cẩn thận nghe con, nhớ ghé qua má dặn chuyện nhà trước khi trời tối nghen.", responseAnim = "OldMan_Talking" }
                 },
-                "OldMan_Idle", "OldMan_Talking");
+                "OldMan_Idle", "OldMan_Talking", scale: 1.42f);
 
-            // 3. BÁC BA PHI (Nam Cao Niên - Đứng trước nhà Bác Ba)
-            BuildAccurateNPC(npcsRoot.transform, pElder, cElder, "NPC_Elderly_UncleBa",
-                new Vector3(12.5f, groundY, 14.0f), Quaternion.Euler(0f, -90f, 0f),
+            // 2. MÁ CỦA AN (Nữ Trưởng Thành - Đứng trước hiên Nhà An)
+            BuildAccurateNPC(npcsRoot.transform, pMother, cFemale, "NPC_02_MaAnMother",
+                new Vector3(2.5f, groundY, 17.0f), Quaternion.Euler(0f, 180f, 0f),
+                "Má của An", "Má Năm - Xóm Bờ Kênh",
+                new string[]
+                {
+                    "An đó hả con? Đi chơi đâu từ sáng tới giờ, lúa chín vàng cả cánh đồng rồi kìa.",
+                    "Về nhà ăn chén cơm gạo mới má vừa nấu, dẻo và thơm lừng luôn nè con."
+                },
+                new DialogueChoice[]
+                {
+                    new DialogueChoice { choiceText = "Dạ má, cơm gạo mới thơm quá má ơi!", responseLine = "Ừ, ăn no rồi phụ các bác ngoài sân phơi lúa nghe con. Nhớ đừng chạy nhảy làm đổ nia thóc.", responseAnim = "Female_Talking_01" },
+                    new DialogueChoice { choiceText = "Má ơi, chiều nay con ra bến xem tàu tập kết nghen?", responseLine = "Được chớ, nhớ rủ thằng Minh đi chung cho có bạn, chớ có nhảy giỡn dưới mé nước sâu nghe chưa!", responseAnim = "Female_Talking_02" }
+                },
+                "Female_Waving", "Female_Talking_01", scale: 1.40f);
+
+            // 3. BÁC BA PHI (Nam Cao Niên - Đứng trước sân Nhà Bác Ba)
+            BuildAccurateNPC(npcsRoot.transform, pElder, cElder, "NPC_03_BacBaPhi",
+                new Vector3(12.5f, groundY, 13.5f), Quaternion.Euler(0f, -120f, 0f),
                 "Bác Ba Phi", "Huyền thoại kể chuyện rừng U Minh",
                 new string[]
                 {
@@ -526,89 +527,12 @@ namespace HoaDo.Editor
                     new DialogueChoice { choiceText = "Bác Ba kể thiệt không hay bác lại nói dóc đó?", responseLine = "Tổ cha mày! Bác Ba mày mà thèm nói dóc hả! Hỏi cả xóm Rạch Gốc này ai mà không phục tài bác!", responseAnim = "OldMan_Talking" },
                     new DialogueChoice { choiceText = "Con thích nghe chuyện bác Ba cưỡi rùa vàng hơn!", responseLine = "Hè hè, để bữa nào rảnh bác dẫn mày vô lung Tràm, chỉ cho con rùa to bằng cái nia phơi lúa!", responseAnim = "OldMan_Talking" }
                 },
-                "OldMan_Idle", "OldMan_Talking");
+                "OldMan_Idle", "OldMan_Talking", scale: 1.42f);
 
-            // 4. BÁC BA NÔNG DÂN (Nam Trưởng Thành - Đứng đầu bờ ruộng lúa)
-            BuildAccurateNPC(npcsRoot.transform, pMale01, cMale, "NPC_Farmer_UncleBa",
-                new Vector3(-9.5f, groundY, 35.5f), Quaternion.Euler(0f, 165f, 0f),
-                "Bác Ba Nông Dân", "Lão nông tri điền xóm Lúa",
-                new string[]
-                {
-                    "Chào cháu An! Lúa chín vàng cả cánh đồng mênh mông rồi con ơi, vụ mùa này bà con mình trúng lớn lắm!",
-                    "Bà con xóm mình đang gom những giạ lúa mẩy nhất gửi theo tàu tập kết ra nuôi cán bộ, chiến sĩ miền Bắc đó con."
-                },
-                new DialogueChoice[]
-                {
-                    new DialogueChoice { choiceText = "Lúa năm nay đẹp quá thưa bác Ba!", responseLine = "Đúng rồi cháu, đất phù sa Nam Bộ màu mỡ nuôi nấng người dân mình. Giữ lấy hạt ngọc trời này nghe con.", responseAnim = "Male_Talking_01" },
-                    new DialogueChoice { choiceText = "Cháu thấy không khí xóm mình rộn ràng quá!", responseLine = "Sắp tới giờ tàu rời bến ngoài cửa Sông Đốc rồi, ai nấy đều muốn gửi chút tình quê hương ra Bắc.", responseAnim = "Male_Talking_02" }
-                },
-                "Male_Waving", "Male_Talking_01");
-
-            // 5. CÔ ÚT BÁNH BÒ (Nữ Trưởng Thành - Đứng trước quán bánh ngõ Tây)
-            BuildAccurateNPC(npcsRoot.transform, pFemale, cFemale, "NPC_Merchant_CoUt",
-                new Vector3(-14.5f, groundY, 10.0f), Quaternion.Euler(0f, 90f, 0f),
-                "Cô Út Bánh Bò", "Gánh bánh ngọt xóm chợ",
-                new string[]
-                {
-                    "An đó hả con? Lại đây cô Út cho cái bánh bò nước cốt dừa mới ra lò thơm nức mũi nè!",
-                    "Cô thức từ sáng sớm làm mẻ bánh này vừa dẻo vừa béo, làm quà tiễn các anh bộ đội xuống tàu tập kết đó."
-                },
-                new DialogueChoice[]
-                {
-                    new DialogueChoice { choiceText = "Bánh của cô Út thơm phức luôn ạ!", responseLine = "Ăn ngon thì ăn nhiều nghe con, mai mốt hòa bình cô làm thêm một chõ bự thết đãi cả xóm!", responseAnim = "Female_Talking_01" },
-                    new DialogueChoice { choiceText = "Cô ơi, tàu tập kết chừng nào nhổ neo vậy cô?", responseLine = "Chú Tư ngoài bến bảo đợi nước lớn chiều nay là tàu rời bến, cờ bay rợp cả mặt sông.", responseAnim = "Female_Talking_02" }
-                },
-                "Female_Waving", "Female_Talking_01");
-
-            // 6. CHÚ NĂM THỢ MỘC (Nam Trưởng Thành - Đứng trước xưởng mộc ngõ Đông)
-            BuildAccurateNPC(npcsRoot.transform, pMale04, cMale, "NPC_Carpenter_UncleNam",
-                new Vector3(21.5f, groundY, 21.0f), Quaternion.Euler(0f, -135f, 0f),
-                "Chú Năm Thợ Mộc", "Thợ dựng nhà sàn & xuồng ba lá",
-                new string[]
-                {
-                    "Chào cậu nhỏ An! Chú đang đẽo nốt mấy mái dầm xuồng ba lá cho bà con chèo ra tàu tập kết ngoài cửa biển.",
-                    "Gỗ tràm, gỗ đước rừng ngập mặn Cà Mau mình dẻo dai chịu nước mặn bền bỉ dữ lắm con à."
-                },
-                new DialogueChoice[]
-                {
-                    new DialogueChoice { choiceText = "Chú làm dầm xuồng đẹp quá chú Năm!", responseLine = "Hahaha! Khen hay lắm, ráng học giỏi sau này đóng tàu sắt lớn vượt đại dương nghe con trai!", responseAnim = "Male_Talking_01" }
-                },
-                "Male_Waving", "Male_Talking_01");
-
-            // 7. ANH HAI DU KÍCH (Nam Thanh Niên - Đứng ngã ba đường xóm)
-            BuildAccurateNPC(npcsRoot.transform, pMale01, cMale, "NPC_Guerrilla_AnhHai",
-                new Vector3(-3.5f, groundY, 3.0f), Quaternion.Euler(0f, 170f, 0f),
-                "Anh Hai Du Kích", "Chiến sĩ bảo vệ xóm làng",
-                new string[]
-                {
-                    "Chào em An! Em đã gói ghém nắm đất đỏ quê hương gửi ra miền Bắc cho Bác Hồ chưa?",
-                    "Nắm đất phù sa Nam Bộ tuy nhỏ bé nhưng mang trọn tấm lòng sắt son của đồng bào miền Nam gửi gắm nơi phương Bắc."
-                },
-                new DialogueChoice[]
-                {
-                    new DialogueChoice { choiceText = "Dạ em đã bọc trong khăn tay cẩn thận rồi anh Hai!", responseLine = "Giỏi lắm em trai! Dù tạm thời cách trở non sông, lòng người Nam Bắc một nhà không bao giờ phai nhạt.", responseAnim = "Male_Talking_02" }
-                },
-                "Male_Waving", "Male_Talking_01");
-
-            // 8. THÍM BẢY PHƠI THÓC (Nữ Trưởng Thành - Đứng mé ruộng phía Đông)
-            BuildAccurateNPC(npcsRoot.transform, pFemale, cFemale, "NPC_Villager_AuntBay",
-                new Vector3(11.5f, groundY, 33.0f), Quaternion.Euler(0f, -75f, 0f),
-                "Thím Bảy Phơi Thóc", "Phụ nữ xóm Lúa Rạch Gốc",
-                new string[]
-                {
-                    "Nắng giòn phơi thóc mẩy hạt, lúa năm nay óng ánh như tơ vàng An ơi!",
-                    "Cháu chạy nhảy coi chừng trượt chân xuống rãnh nước ruộng nghen con."
-                },
-                new DialogueChoice[]
-                {
-                    new DialogueChoice { choiceText = "Dạ thím Bảy, cháu đi men theo đường thôi ạ.", responseLine = "Ngoan! Lát về thím thưởng cho củ khoai mì hấp nước cốt dừa bùi béo nghen cháu.", responseAnim = "Female_Talking_01" }
-                },
-                "Female_Waving", "Female_Talking_01");
-
-            // 9. CHÚ BẢY CHÈO ĐÒ (Nam Ngư Dân - Đứng đầu cầu bến sông)
-            BuildAccurateNPC(npcsRoot.transform, pMale05, cMale, "NPC_Ferryman_UncleBay",
-                new Vector3(-11.0f, groundY, -3.5f), Quaternion.Euler(0f, 25f, 0f),
-                "Chú Bảy Chèo Đò", "Chủ xuồng ba lá bến Sông Đốc",
+            // 4. CHÚ BẢY CHÈO ĐÒ (Nam Ngư Dân - Đứng bến sông Nhà 10)
+            BuildAccurateNPC(npcsRoot.transform, pMale05, cMale, "NPC_04_ChuBayCheoDo",
+                new Vector3(-12.0f, groundY, -3.5f), Quaternion.Euler(0f, 25f, 0f),
+                "Chú Bảy Chèo Đò", "Chủ xuồng ba lá - Bến Sông Đốc",
                 new string[]
                 {
                     "Xuồng ba lá chuẩn bị tách bến sang cồn dừa nước rồi đây con ơi!",
@@ -616,13 +540,30 @@ namespace HoaDo.Editor
                 },
                 new DialogueChoice[]
                 {
+                    new DialogueChoice { choiceText = "Chú Bảy cho con quá giang qua bên kia sông với!", responseLine = "Lên xuồng ngồi im nghe con, sông sâu nước xiết, chớ thò tay quơ nước kẻo trượt chân!", responseAnim = "Male_Talking_01" },
                     new DialogueChoice { choiceText = "Chú ơi, ngoài biển Sông Đốc tàu tập kết to lắm hả chú?", responseLine = "To như quả núi con à! Tàu chở cán bộ đồng bào ra Bắc, cờ đỏ sao vàng bay rực rỡ cả góc trời!", responseAnim = "Male_Talking_02" }
                 },
-                "Male_Waving", "Male_Talking_01");
+                "Male_Waving", "Male_Talking_01", scale: 1.42f);
 
-            // 10. CHỊ TƯ GÁNH NƯỚC (Nữ Trưởng Thành - Đứng bên giếng ngọt phía Đông)
-            BuildAccurateNPC(npcsRoot.transform, pFemale, cFemale, "NPC_Female_WaterCarrier",
-                new Vector3(16.0f, groundY, 4.5f), Quaternion.Euler(0f, -90f, 0f),
+            // 5. THẰNG MINH (Bé Trai - Bạn cùng lứa Bé An, đứng gần ngã ba sân đình)
+            BuildAccurateNPC(npcsRoot.transform, pMale01, cSocial, "NPC_05_ThangMinh",
+                new Vector3(-6.0f, groundY, 7.5f), Quaternion.Euler(0f, 20f, 0f),
+                "Thằng Minh", "Bạn nối khố của Bé An",
+                new string[]
+                {
+                    "Ê An! Đi bắt cào cào trong ruộng lúa vàng với tao không?",
+                    "Hôm qua tao thấy tổ chim sẻ đồng núp dưới gốc lúa bự chà bá luôn á!"
+                },
+                new DialogueChoice[]
+                {
+                    new DialogueChoice { choiceText = "Đi liền! Nhưng coi chừng dẫm gãy lúa của bác Năm nha!", responseLine = "Biết rồi, tao đi men theo bờ mẫu ruộng thôi, không có dẫm bậy bạ đâu mà sợ!", responseAnim = "Waving_02" },
+                    new DialogueChoice { choiceText = "Má tao đang gọi về ăn cơm rồi, lát gặp nghen!", responseLine = "Ờ, ăn lẹ rồi chạy ra đầu cầu khỉ đầu xóm hú tao một tiếng!", responseAnim = "Waving_01" }
+                },
+                "Waving_01", "Waving_02", scale: 1.25f);
+
+            // 6. CHỊ TƯ GÁNH NƯỚC (Nữ Trưởng Thành - Đứng bên giếng ngọt Nhà 09)
+            BuildAccurateNPC(npcsRoot.transform, pFemale, cFemale, "NPC_06_ChiTuGanhNuoc",
+                new Vector3(16.5f, groundY, 5.0f), Quaternion.Euler(0f, -75f, 0f),
                 "Chị Tư Gánh Nước", "Người gánh nước giếng ngọt xóm",
                 new string[]
                 {
@@ -633,26 +574,11 @@ namespace HoaDo.Editor
                 {
                     new DialogueChoice { choiceText = "Để em phụ chị xách một thùng nghen!", responseLine = "Thôi khỏi chú em nhỏ xíu, xách nặng đau lưng má la chị chết! Lo đi chơi ngoan đi.", responseAnim = "Female_Talking_01" }
                 },
-                "Female_Waving", "Female_Talking_01");
+                "Female_Waving", "Female_Talking_01", scale: 1.40f);
 
-            // 11. DÌ HAI (Nữ Trung Niên - Đứng cạnh giếng nước)
-            BuildAccurateNPC(npcsRoot.transform, pFemale, cFemale, "NPC_Villager_Waving_Mother",
-                new Vector3(18.0f, groundY, 2.5f), Quaternion.Euler(0f, -60f, 0f),
-                "Dì Hai", "Hậu phương tiễn đoàn tập kết",
-                new string[]
-                {
-                    "Bà con mang thêm bánh tét, gạo mới ra bến Sông Đốc gửi các anh bộ đội nghen!",
-                    "Đi mạnh giỏi, ngày thống nhất hòa bình lại về với quê hương Cà Mau!"
-                },
-                new DialogueChoice[]
-                {
-                    new DialogueChoice { choiceText = "Dì Hai ơi, mọi người sẽ sớm trở về sum họp phải không dì?", responseLine = "Chắc chắn rồi cháu! Đồng bào miền Nam lúc nào cũng hướng về ngày hội ngộ.", responseAnim = "Female_Talking_01" }
-                },
-                "Female_Waving", "Female_Talking_01");
-
-            // 12. CHÚ SÁU LÀM VƯỜN (Nam Nông Dân - Đứng xóm vườn chuối Tây)
-            BuildAccurateNPC(npcsRoot.transform, pMale04, cMale, "NPC_Villager_Gardener",
-                new Vector3(-24.5f, groundY, 16.5f), Quaternion.Euler(0f, 95f, 0f),
+            // 7. CHÚ SÁU LÀM VƯỜN (Nam Nông Dân - Đứng xóm vườn chuối Nhà 08)
+            BuildAccurateNPC(npcsRoot.transform, pMale04, cMale, "NPC_07_ChuSauLamVuon",
+                new Vector3(-24.5f, groundY, 16.5f), Quaternion.Euler(0f, 80f, 0f),
                 "Chú Sáu Làm Vườn", "Nông dân vườn chuối & dừa nước",
                 new string[]
                 {
@@ -663,27 +589,26 @@ namespace HoaDo.Editor
                 {
                     new DialogueChoice { choiceText = "Dạ, dừa nước chấm đường ăn ngon hết sẩy!", responseLine = "Hahaha, đúng điệu dân Cà Mau rồi đó cháu!", responseAnim = "Male_Talking_01" }
                 },
-                "Male_Waving", "Male_Talking_01");
+                "Male_Waving", "Male_Talking_01", scale: 1.42f);
 
-            // 13. THẰNG MINH (Bé Trai - Đứng dưới gốc cây đa trung tâm)
-            BuildAccurateNPC(npcsRoot.transform, pMale01, cSocial, "NPC_Friend_Minh",
-                new Vector3(-6.0f, groundY, 8.5f), Quaternion.Euler(0f, 0f, 0f),
-                "Thằng Minh", "Bạn nối khố của Bé An",
+            // 8. BÉ TÈO (Trẻ Chăn Trâu - Đứng xóm trong phía Tây Nhà 12)
+            BuildAccurateNPC(npcsRoot.transform, pMale04, cSocial, "NPC_08_BeTeo",
+                new Vector3(-31.5f, groundY, 8.5f), Quaternion.Euler(0f, 60f, 0f),
+                "Bé Tèo", "Trẻ chăn trâu xóm trong",
                 new string[]
                 {
-                    "Ê An! Đi bắt cào cào trong ruộng lúa vàng với tao không?",
-                    "Hôm qua tao thấy tổ chim sẻ đồng núp dưới gốc lúa bự chà bá luôn á!"
+                    "Anh An ơi! Cào cào của em bắt được bự hơn của anh nè!",
+                    "Nó búng một cái bay qua tận rãnh mương luôn á!"
                 },
                 new DialogueChoice[]
                 {
-                    new DialogueChoice { choiceText = "Đi liền! Nhưng coi chừng dẫm gãy lúa của bác Năm nha!", responseLine = "Biết rồi, tao đi men theo bờ đường thôi, không có dẫm bậy bạ đâu mà sợ!", responseAnim = "Waving_02" },
-                    new DialogueChoice { choiceText = "Má tao đang gọi về ăn cơm rồi, lát gặp nghen!", responseLine = "Ờ, ăn lẹ rồi chạy ra gốc cây đa hú tao một tiếng!", responseAnim = "Waving_01" }
+                    new DialogueChoice { choiceText = "Để anh bắt con muồm muỗm to gấp đôi cho em coi!", responseLine = "Dạ, em thách anh bắt được đó!", responseAnim = "Waving_02" }
                 },
-                "Waving_01", "Waving_02", scale: 0.88f);
+                "Waving_01", "Waving_02", scale: 1.15f);
 
-            // 14. BÉ MẬN (Bé Gái - Đứng dưới tán bàng cạnh cây đa)
-            BuildAccurateNPC(npcsRoot.transform, pChildGirl, cSocial, "NPC_Child_Playing_Girl",
-                new Vector3(-9.0f, groundY, 9.5f), Quaternion.Euler(0f, 45f, 0f),
+            // 9. BÉ MẬN (Bé Gái - Đứng xóm chợ Nhà 07)
+            BuildAccurateNPC(npcsRoot.transform, pChildGirl, cSocial, "NPC_09_BeMan",
+                new Vector3(-14.5f, groundY, 9.5f), Quaternion.Euler(0f, 90f, 0f),
                 "Bé Mận", "Bé gái xóm chợ Rạch Gốc",
                 new string[]
                 {
@@ -694,11 +619,11 @@ namespace HoaDo.Editor
                 {
                     new DialogueChoice { choiceText = "Khéo tay quá, như nón công chúa miền Tây!", responseLine = "Hi hi, em cảm ơn anh An nhiều nghen!", responseAnim = "Waving_03" }
                 },
-                "Waving_02", "Waving_03", scale: 0.82f);
+                "Waving_02", "Waving_03", scale: 1.10f);
 
-            // 15. BÉ ÚT (Em Bé - Đứng trước sân Nhà An)
-            BuildAccurateNPC(npcsRoot.transform, pChildGirl, cSocial, "NPC_Baby_Toddler",
-                new Vector3(0.5f, groundY, 15.5f), Quaternion.Euler(0f, 180f, 0f),
+            // 10. BÉ ÚT (Em Bé - Đứng trước sân Nhà An)
+            BuildAccurateNPC(npcsRoot.transform, pChildGirl, cSocial, "NPC_10_BeUt",
+                new Vector3(0.5f, groundY, 15.5f), Quaternion.Euler(0f, 175f, 0f),
                 "Bé Út", "Em bé ngoan của xóm",
                 new string[]
                 {
@@ -709,12 +634,42 @@ namespace HoaDo.Editor
                 {
                     new DialogueChoice { choiceText = "Út đứng ngoan kẻo ngã nghen, lát anh hái hoa cho!", responseLine = "Dạ... Út ngoan mà!", responseAnim = "Waving_01" }
                 },
-                "Waving_01", "Waving_02", scale: 0.65f);
+                "Waving_01", "Waving_02", scale: 0.85f);
+
+            // 11. DÌ HAI (Nữ Trung Niên - Đứng bờ kênh Nhà 11)
+            BuildAccurateNPC(npcsRoot.transform, pFemale, cFemale, "NPC_11_DiHai",
+                new Vector3(10.5f, groundY, -2.5f), Quaternion.Euler(0f, -25f, 0f),
+                "Dì Hai", "Hậu phương tiễn đoàn tập kết",
+                new string[]
+                {
+                    "Bà con mang thêm bánh tét, gạo mới ra bến Sông Đốc gửi các anh bộ đội nghen!",
+                    "Đi mạnh giỏi, ngày thống nhất hòa bình lại về với quê hương Cà Mau!"
+                },
+                new DialogueChoice[]
+                {
+                    new DialogueChoice { choiceText = "Dì Hai ơi, mọi người sẽ sớm trở về sum họp phải không dì?", responseLine = "Chắc chắn rồi cháu! Đồng bào miền Nam lúc nào cũng hướng về ngày hội ngộ.", responseAnim = "Female_Talking_02" }
+                },
+                "Female_Waving", "Female_Talking_02", scale: 1.40f);
+
+            // 12. CỤ BẢY GIÀ (Lão Thành - Ngồi/đứng dưới bóng Cây Đa Trung Tâm)
+            BuildAccurateNPC(npcsRoot.transform, pElder, cElder, "NPC_12_CuBayGia",
+                new Vector3(-4.5f, groundY, 14.5f), Quaternion.Euler(0f, -90f, 0f),
+                "Cụ Bảy Già", "Lão thành cách mạng xóm kênh",
+                new string[]
+                {
+                    "Cây tràm, cây đước Cà Mau bám rễ sâu như tấm lòng người dân Nam Bộ vậy cháu à.",
+                    "Dù có đi đâu xa, ngửi mùi rơm rạ lúa chín là nhớ da diết quê nhà."
+                },
+                new DialogueChoice[]
+                {
+                    new DialogueChoice { choiceText = "Cháu sẽ luôn ghi nhớ lời cụ dạy ạ.", responseLine = "Cháu là đứa trẻ ngoan. Lớn lên phụ giúp quê hương đất nước nghen cháu.", responseAnim = "OldMan_Talking" }
+                },
+                "OldMan_Idle", "OldMan_Talking", scale: 1.42f);
 
             // Sample natural standing idle poses in Edit Mode so characters never T-pose
             SampleIdlePosesForAllNPCs(npcsRoot.transform);
 
-            Debug.Log("[SetupNPCs] Đã khởi tạo hoàn tất 15 NPC: 100% ĐỨNG THẲNG UPRIGHT, chuẩn xác giới tính từng model và hội thoại!");
+            Debug.Log("[SetupNPCs] Đã khởi tạo hoàn tất 12 NPC CHUẨN XÁC 1:1 theo kịch bản thoại với kích cỡ phóng to tự nhiên!");
         }
 
         private static void SampleIdlePosesForAllNPCs(Transform npcsRoot)
@@ -787,7 +742,7 @@ namespace HoaDo.Editor
         // =========================================================================
         // 4. ADD TRUNK COLLIDERS TO ALL TREES (EXCEPT RICE & GRASS)
         // =========================================================================
-        private static void AddCollidersToAllTrees()
+        public static void AddCollidersToAllTrees()
         {
             var veg = GameObject.Find("CaMau_1954_Village/Environment/Vegetation_3D");
             if (veg == null) return;
@@ -879,12 +834,12 @@ namespace HoaDo.Editor
                 Path.Combine(ArtifactDir, "CaMau_UnifiedEarthenGround_Overview_QA.jpg")
             );
 
-            // Shot 2: View from North Gate looking down the continuous avenue through paddies into the village
+            // Shot 2: Eye-level ground view showing scaled-up NPCs (Má của An & Bé Út) in front of their enlarged authentic thatched cottage
             RenderShot(
-                new Vector3(-7.0f, 2.8f, 186.0f),
-                Quaternion.Euler(11.0f, 180.0f, 0.0f),
-                width, height, 55.0f,
-                Path.Combine(ArtifactDir, "CaMau_NorthGateAvenueToVillage_QA.jpg")
+                new Vector3(2.5f, 1.8f, 13.5f),
+                Quaternion.Euler(4.0f, 0.0f, 0.0f),
+                width, height, 54.0f,
+                Path.Combine(ArtifactDir, "CaMau_EnlargedNPCsAndHouse_QA.jpg")
             );
 
             // Shot 3: Plaza view from Central Banyan Tree showing continuous earthen ground across cottage yards and NPCs
