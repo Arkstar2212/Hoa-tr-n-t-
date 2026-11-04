@@ -35,12 +35,15 @@ namespace HoaDo.Editor
         [MenuItem("Tools/Hoa Do/Overhaul Village Thatched Houses And Accurate NPCs")]
         public static void Execute()
         {
-            Debug.Log("[VillageOverhaul] Đang đồng bộ: Nhà tranh Nam Bộ nguyên bản (SM_NhaTranh) + Collider khớp 1:1 + Thêm Collider thân cây + Chuẩn hóa NPC...");
+            Debug.Log("[VillageOverhaul] Đang đồng bộ: Nhà tranh Nam Bộ nguyên bản (SM_NhaTranh) phóng to thêm + Xóa ghost triggers hội thoại ma + Tinh chỉnh đất nâu + Collider chuẩn...");
 
-            // 1. STANDARDIZE ALL HOUSES TO THE AUTHENTIC THATCHED COTTAGE MODEL (SM_NhaTranh)
+            // 0. CLEANUP LEGACY GHOST NPC DIALOGUE TRIGGERS (Prevent phantom dialogue prompts when no NPC is present)
+            CleanupLegacyNPCGameplayTriggers();
+
+            // 1. STANDARDIZE ALL HOUSES TO THE AUTHENTIC THATCHED COTTAGE MODEL (SM_NhaTranh) ENLARGED
             ReplaceAllHousesWithOriginalThatchedCottages();
 
-            // 2. UNIFIED EARTHEN GROUND NETWORK (From Gate to Every House Yard)
+            // 2. UNIFIED EARTHEN GROUND NETWORK (From Gate to Every House Yard with Expanded Pads)
             BuildUnifiedEarthenGroundNetwork();
 
             // 3. SETUP 100% STANDING UPRIGHT NPCS WITH MATCHING GENDER & DIALOGUE
@@ -56,7 +59,42 @@ namespace HoaDo.Editor
             // 6. CAPTURE QA SNAPSHOTS (Rule 4.2: 720p)
             CaptureQASnapshots();
 
-            Debug.Log("[VillageOverhaul] HOÀN TẤT THÀNH CÔNG! Đã dùng đúng nhà tranh gốc, collider khớp 1:1 không dư thừa, và thêm collider cho tất cả cây cối!");
+            Debug.Log("[VillageOverhaul] HOÀN TẤT THÀNH CÔNG! Đã phóng to nhà tranh thêm 1 mức, dọn sạch trigger hội thoại ma, và phủ kín sân đất nâu!");
+        }
+
+        // =========================================================================
+        // 0. CLEANUP LEGACY GHOST NPC DIALOGUE TRIGGERS
+        // =========================================================================
+        public static void CleanupLegacyNPCGameplayTriggers()
+        {
+            var triggers = GameObject.Find("CaMau_1954_Village/Gameplay_Triggers");
+            if (triggers == null) return;
+
+            string[] legacyNpcTriggers = new string[]
+            {
+                "Trigger_01_Mother",
+                "Trigger_06_ElderBa",
+                "Trigger_07_RoadVillagerTu",
+                "Trigger_08_VillageChief",
+                "Trigger_09_VillageKids",
+                "Trigger_11_BabyToddler",
+                "Trigger_12_Gardener",
+                "Trigger_14_FarmerRiceField",
+                "Trigger_16_Ferryman"
+            };
+
+            int removedCount = 0;
+            foreach (var name in legacyNpcTriggers)
+            {
+                var tr = triggers.transform.Find(name);
+                if (tr != null)
+                {
+                    Object.DestroyImmediate(tr.gameObject);
+                    removedCount++;
+                }
+            }
+
+            Debug.Log($"[CleanupTriggers] Đã xóa hoàn toàn {removedCount} legacy NPC triggers vô hình khỏi Gameplay_Triggers để không bị hiện hộp thoại ma khi không có NPC!");
         }
 
         // =========================================================================
@@ -107,44 +145,44 @@ namespace HoaDo.Editor
             var housesRoot = new GameObject("Village_Houses_Network");
             if (env != null) housesRoot.transform.SetParent(env.transform, false);
 
-            // 12 authentic thatched cottages positioned comfortably throughout the expanded village (scaled up ~22% for authentic proportions)
+            // 12 authentic thatched cottages enlarged further (~5.2f - 5.5f) as requested by user
             HouseData[] houses = new HouseData[]
             {
                 // 1. Nhà An & Má (Ngõ Bắc gần cây đa trung tâm)
-                new HouseData("House_01_NhaAn", 3.0f, 22.0f, 180f, 4.4f),
+                new HouseData("House_01_NhaAn", 3.0f, 22.0f, 180f, 5.4f),
 
                 // 2. Nhà Trưởng Thôn Năm (Phía Tây Bắc cây đa)
-                new HouseData("House_02_TruongThonNam", -16.0f, 20.0f, 140f, 4.5f),
+                new HouseData("House_02_TruongThonNam", -16.0f, 20.0f, 140f, 5.5f),
 
                 // 3. Nhà Bác Ba Phi (Phía Đông cây đa)
-                new HouseData("House_03_BacBaPhi", 16.0f, 15.0f, -120f, 4.4f),
+                new HouseData("House_03_BacBaPhi", 16.0f, 15.0f, -120f, 5.4f),
 
                 // 4. Nhà Chú Năm Thợ Mộc (Ngõ Đông Bắc làng)
-                new HouseData("House_04_ChuNamThoMoc", 26.0f, 23.0f, -145f, 4.3f),
+                new HouseData("House_04_ChuNamThoMoc", 26.0f, 23.0f, -145f, 5.3f),
 
                 // 5. Nhà Bác Ba Nông Dân (Mé cánh đồng lúa Tây Bắc)
-                new HouseData("House_05_BacBaNongDan", -14.0f, 32.0f, 180f, 4.4f),
+                new HouseData("House_05_BacBaNongDan", -14.0f, 32.0f, 180f, 5.4f),
 
                 // 6. Nhà Thím Bảy Phơi Thóc (Mé cánh đồng lúa Đông Bắc)
-                new HouseData("House_06_ThimBayPhoiThoc", 14.0f, 32.0f, 180f, 4.3f),
+                new HouseData("House_06_ThimBayPhoiThoc", 14.0f, 32.0f, 180f, 5.3f),
 
                 // 7. Nhà Cô Út Bánh Bò (Phía Tây cây đa, xóm chợ)
-                new HouseData("House_07_CoUtBanhBo", -18.0f, 9.5f, 90f, 4.3f),
+                new HouseData("House_07_CoUtBanhBo", -18.0f, 9.5f, 90f, 5.3f),
 
                 // 8. Nhà Chú Sáu Làm Vườn (Xóm vườn chuối Tây)
-                new HouseData("House_08_ChuSauLamVuon", -28.0f, 17.0f, 80f, 4.3f),
+                new HouseData("House_08_ChuSauLamVuon", -28.0f, 17.0f, 80f, 5.3f),
 
                 // 9. Nhà Dì Hai & Chị Tư Gánh Nước (Gần giếng ngọt phía Đông)
-                new HouseData("House_09_DiHai_GiengNuoc", 20.0f, 4.0f, -70f, 4.4f),
+                new HouseData("House_09_DiHai_GiengNuoc", 20.0f, 4.0f, -70f, 5.4f),
 
                 // 10. Nhà Chú Bảy Chèo Đò (Bến sông kênh Tây Nam)
-                new HouseData("House_10_ChuBayCheoDo", -14.0f, -5.5f, 25f, 4.3f),
+                new HouseData("House_10_ChuBayCheoDo", -14.0f, -5.5f, 25f, 5.3f),
 
                 // 11. Nhà Xóm Kênh Đông Nam (Hướng ra bờ kênh)
-                new HouseData("House_11_XomKenhDongNam", 12.0f, -5.5f, -25f, 4.3f),
+                new HouseData("House_11_XomKenhDongNam", 12.0f, -5.5f, -25f, 5.3f),
 
                 // 12. Nhà Xóm Trong Phía Tây (Mở rộng quy mô làng về phía Tây)
-                new HouseData("House_12_XomTrongTay", -36.0f, 7.5f, 55f, 4.3f)
+                new HouseData("House_12_XomTrongTay", -36.0f, 7.5f, 55f, 5.3f)
             };
 
             var fbxMf = fbxThatched.GetComponentInChildren<MeshFilter>();
@@ -319,45 +357,45 @@ namespace HoaDo.Editor
             AddGrid(verts, uvs, normals, tris, 4.0f, 13.0f, 12.0f, 18.0f, 3, 2, groundY);  // Tree court to House 03
             AddGrid(verts, uvs, normals, tris, -19.0f, -12.0f, 11.5f, 16.0f, 2, 2, groundY); // Tree court to House 07 & 02
 
-            // H. Dedicated Front Yard Pads & Alleys for ALL 12 Thatched Cottages
+            // H. Dedicated Expanded Front Yard Pads & Alleys for ALL 12 Thatched Cottages
             // 1. House 01 (Nhà An & Má): pos=(3.0, 22.0)
-            AddGrid(verts, uvs, normals, tris, -1.5f, 8.0f, 15.5f, 25.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, -4.0f, 10.0f, 15.0f, 28.0f, 4, 4, groundY);
 
             // 2. House 02 (Trưởng Thôn Năm): pos=(-16.0, 20.0)
-            AddGrid(verts, uvs, normals, tris, -21.0f, -10.5f, 14.5f, 23.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, -23.5f, -8.5f, 13.0f, 27.0f, 4, 4, groundY);
 
             // 3. House 03 (Bác Ba Phi): pos=(16.0, 15.0)
-            AddGrid(verts, uvs, normals, tris, 11.0f, 21.5f, 9.5f, 18.5f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, 9.0f, 23.0f, 8.0f, 22.0f, 4, 4, groundY);
 
             // 4. House 04 (Chú Năm Thợ Mộc): pos=(26.0, 23.0)
-            AddGrid(verts, uvs, normals, tris, 20.0f, 31.0f, 17.0f, 26.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, 19.0f, 33.0f, 16.0f, 30.0f, 4, 4, groundY);
             AddGrid(verts, uvs, normals, tris, 21.5f, 27.0f, 13.5f, 18.5f, 2, 2, groundY); // Alley to East St
 
             // 5. House 05 (Bác Ba Nông Dân): pos=(-14.0, 32.0)
-            AddGrid(verts, uvs, normals, tris, -19.5f, -8.5f, 25.5f, 35.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, -21.5f, -6.5f, 25.0f, 39.0f, 4, 4, groundY);
 
             // 6. House 06 (Thím Bảy Phơi Thóc): pos=(14.0, 32.0)
-            AddGrid(verts, uvs, normals, tris, 8.5f, 19.5f, 25.5f, 35.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, 6.5f, 21.5f, 25.0f, 39.0f, 4, 4, groundY);
 
             // 7. House 07 (Cô Út Bánh Bò): pos=(-18.0, 9.5)
-            AddGrid(verts, uvs, normals, tris, -22.5f, -11.5f, 5.5f, 14.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, -25.0f, -11.0f, 3.0f, 16.0f, 4, 4, groundY);
 
             // 8. House 08 (Chú Sáu Làm Vườn): pos=(-28.0, 17.0)
-            AddGrid(verts, uvs, normals, tris, -33.0f, -22.5f, 12.5f, 21.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, -35.5f, -20.5f, 10.0f, 24.0f, 4, 4, groundY);
             AddGrid(verts, uvs, normals, tris, -30.5f, -24.0f, 9.5f, 14.0f, 2, 2, groundY); // Alley to West St
 
             // 9. House 09 (Dì Hai Giếng Nước): pos=(20.0, 4.0)
-            AddGrid(verts, uvs, normals, tris, 14.0f, 25.0f, 0.5f, 9.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, 13.0f, 27.0f, -3.0f, 11.0f, 4, 4, groundY);
             AddGrid(verts, uvs, normals, tris, 17.0f, 22.5f, 7.0f, 12.5f, 2, 2, groundY); // Alley to East St
 
             // 10. House 10 (Chú Bảy Chèo Đò): pos=(-14.0, -5.5)
-            AddGrid(verts, uvs, normals, tris, -19.0f, -8.5f, -7.5f, 1.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, -21.0f, -7.0f, -12.5f, 1.5f, 4, 4, groundY);
 
             // 11. House 11 (Xóm Kênh Đông): pos=(12.0, -5.5)
-            AddGrid(verts, uvs, normals, tris, 6.5f, 17.0f, -7.5f, 1.0f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, 5.0f, 19.0f, -12.5f, 1.5f, 4, 4, groundY);
 
             // 12. House 12 (Xóm Trong Phía Tây): pos=(-36.0, 7.5)
-            AddGrid(verts, uvs, normals, tris, -41.0f, -30.5f, 3.5f, 12.5f, 3, 3, groundY);
+            AddGrid(verts, uvs, normals, tris, -43.0f, -29.0f, 1.0f, 14.0f, 4, 4, groundY);
             AddGrid(verts, uvs, normals, tris, -35.5f, -27.5f, 9.0f, 15.0f, 2, 2, groundY); // Alley to House 08 / West St
 
             // 3. Assemble and apply unified procedural mesh
@@ -850,7 +888,15 @@ namespace HoaDo.Editor
                 Path.Combine(ArtifactDir, "CaMau_CentralBanyanAndHouseYards_QA.jpg")
             );
 
-            Debug.Log("[QA] Đã chụp và lưu 3 ảnh QA vào artifact directory!");
+            // Shot 4: Eye-level view of the barrel yard at (20, 22) confirming enlarged house & clean yard with NO ghost prompts
+            RenderShot(
+                new Vector3(18.0f, 1.8f, 18.5f),
+                Quaternion.Euler(5.0f, 40.0f, 0.0f),
+                width, height, 54.0f,
+                Path.Combine(ArtifactDir, "CaMau_BarrelYard_NoGhostPrompt_QA.jpg")
+            );
+
+            Debug.Log("[QA] Đã chụp và lưu 4 ảnh QA vào artifact directory!");
         }
 
         private static void RenderShot(Vector3 pos, Quaternion rot, int w, int h, float fov, string outPath)
