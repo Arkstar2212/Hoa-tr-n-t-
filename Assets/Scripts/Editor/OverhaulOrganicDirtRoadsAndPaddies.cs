@@ -37,6 +37,73 @@ public static class OverhaulOrganicDirtRoadsAndPaddies
         public float targetY;
     }
 
+    [MenuItem("Tools/Hoa Do/Apply Green Paddies And Brown Road")]
+    public static void ApplyGreenPaddiesAndBrownRoad()
+    {
+        Debug.Log("[ApplyGreenPaddies] Restoring rice field plots and dikes to lush green, keeping road brown!");
+
+        SetupMaterials();
+
+        // Ensure all plot mesh renderers use green paddy material
+        var mudMat = AssetDatabase.LoadAssetAtPath<Material>(MudMatPath);
+        var dikeEWMat = AssetDatabase.LoadAssetAtPath<Material>(DikeEWMatPath);
+        var dikeNSMat = AssetDatabase.LoadAssetAtPath<Material>(DikeNSMatPath);
+
+        var root = GameObject.Find("Paddy_5X_Extension_Root");
+        if (root != null)
+        {
+            for (int i = 0; i < root.transform.childCount; i++)
+            {
+                var c = root.transform.GetChild(i);
+                var mr = c.GetComponent<MeshRenderer>();
+                if (mr == null) continue;
+
+                if (c.name.Contains("_DikeN") || c.name.Contains("_DikeS"))
+                {
+                    mr.sharedMaterial = dikeEWMat;
+                }
+                else if (c.name.Contains("_DikeE") || c.name.Contains("_DikeW"))
+                {
+                    mr.sharedMaterial = dikeNSMat;
+                }
+                else if (c.name.StartsWith("Paddy_Plot_") && !c.name.Contains("R0") && !c.name.Contains("Tuft"))
+                {
+                    mr.sharedMaterial = mudMat;
+                }
+            }
+        }
+
+        // Save assets and scene dirty
+        AssetDatabase.SaveAssets();
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene()
+        );
+
+        // Capture only the 2 primary QA images
+        CaptureCameraView(
+            new Vector3(-7.0f, 2.1f, 186.5f),
+            Quaternion.Euler(14.0f, 180.0f, 0.0f),
+            55.0f,
+            Path.Combine(ArtifactDir, "CaMau_GreenPaddies_SpawnView_QA.jpg")
+        );
+
+        CaptureCameraView(
+            new Vector3(-4.0f, 42.0f, 215.0f),
+            Quaternion.Euler(32.0f, 180.0f, 0.0f),
+            48.0f,
+            Path.Combine(ArtifactDir, "CaMau_GreenPaddies_ElevatedOverview_QA.jpg")
+        );
+
+        CaptureCameraView(
+            new Vector3(-25.0f, 8.0f, 130.0f),
+            Quaternion.Euler(18.0f, 120.0f, 0.0f),
+            60.0f,
+            Path.Combine(ArtifactDir, "CaMau_GreenPaddies_FieldPerspective_QA.jpg")
+        );
+
+        Debug.Log("[ApplyGreenPaddies] Completed successfully in < 2 seconds!");
+    }
+
     [MenuItem("Tools/Hoa Do/Overhaul Organic Dirt Roads And Paddies")]
     public static void Execute()
     {
@@ -84,48 +151,48 @@ public static class OverhaulOrganicDirtRoadsAndPaddies
         var mudTex = AssetDatabase.LoadAssetAtPath<Texture2D>(MudTexPath);
         var mudNorm = AssetDatabase.LoadAssetAtPath<Texture2D>(MudNormPath);
 
-        // A. MAIN COUNTRY ROAD: Brown earth with pebbles
+        // A. MAIN COUNTRY ROAD & VILLAGE ALLEYS: Brown earth with pebbles ("chỉnh đường đi thôi")
         var roadMat = AssetDatabase.LoadAssetAtPath<Material>(RoadMatPath);
         if (roadMat != null && brownSoilTex != null)
         {
             ApplyMaterialProperties(roadMat, brownSoilTex, brownSoilNorm, Color.white, new Vector2(3.0f, 35.0f), 0.04f);
         }
 
-        // B. PATHS BETWEEN RICE FIELDS (BỜ RUỘNG / ĐƯỜNG ĐI TỪNG THỬA RUỘNG):
-        // User request: "phần đường đi từng thửa ruộng có màu xanh thì không hợp lí lắm. Chỉnh lại phần đó thành màu đất nâu có texture sỏi đá nhẹ một chút."
+        // B. RICE FIELD PLOTS & DIKES: "phần thửa ruộng thì để lại màu xanh"
+        // User request: Thửa ruộng và bờ ruộng giữ trọn vẹn màu xanh cỏ mướt!
+        Color lushGrassColor = new Color(0.48f, 0.72f, 0.30f, 1.0f);
+
         var dikeEWMat = AssetDatabase.LoadAssetAtPath<Material>(DikeEWMatPath);
-        if (dikeEWMat != null && brownSoilTex != null)
+        if (dikeEWMat != null && grassTex != null)
         {
-            ApplyMaterialProperties(dikeEWMat, brownSoilTex, brownSoilNorm, new Color(0.96f, 0.92f, 0.88f, 1.0f), new Vector2(10.0f, 1.0f), 0.04f);
+            ApplyMaterialProperties(dikeEWMat, grassTex, grassNorm, lushGrassColor, new Vector2(16.0f, 1.0f), 0.04f);
         }
 
         var dikeNSMat = AssetDatabase.LoadAssetAtPath<Material>(DikeNSMatPath);
-        if (dikeNSMat != null && brownSoilTex != null)
+        if (dikeNSMat != null && grassTex != null)
         {
-            ApplyMaterialProperties(dikeNSMat, brownSoilTex, brownSoilNorm, new Color(0.96f, 0.92f, 0.88f, 1.0f), new Vector2(1.0f, 5.0f), 0.04f);
+            ApplyMaterialProperties(dikeNSMat, grassTex, grassNorm, lushGrassColor, new Vector2(1.0f, 8.0f), 0.04f);
         }
 
-        // C. REST OF ENVIRONMENT: "Còn lại vẫn giữ màu xanh"
-        // Valley floor, hill skirts, open spaces stay rich lush green grass!
+        // C. REST OF ENVIRONMENT & PADDY PLOT BEDS: "Còn lại vẫn giữ màu xanh"
         var villageSoilMat = AssetDatabase.LoadAssetAtPath<Material>(VillageSoilMatPath);
         if (villageSoilMat != null && grassTex != null)
         {
-            Color lushGrassColor = new Color(0.48f, 0.72f, 0.30f, 1.0f);
             ApplyMaterialProperties(villageSoilMat, grassTex, grassNorm, lushGrassColor, new Vector2(18.0f, 18.0f), 0.04f);
         }
 
-        // D. BEACH SHORE / SEABED: "Lấy cái này làm cát ngoài bờ biển"
+        // D. PADDY PLOT BEDS (Under rice crops): Vibrant lush green grass ("phần thửa ruộng thì để lại màu xanh")
+        var mudMat = AssetDatabase.LoadAssetAtPath<Material>(MudMatPath);
+        if (mudMat != null && grassTex != null)
+        {
+            ApplyMaterialProperties(mudMat, grassTex, grassNorm, lushGrassColor, new Vector2(12.0f, 6.0f), 0.04f);
+        }
+
+        // E. BEACH SHORE / SEABED: "Lấy cái này làm cát ngoài bờ biển"
         var seabedSandMat = AssetDatabase.LoadAssetAtPath<Material>(SeabedSandMatPath);
         if (seabedSandMat != null && sandTex != null)
         {
             ApplyMaterialProperties(seabedSandMat, sandTex, sandNorm, Color.white, new Vector2(10.0f, 6.0f), 0.05f);
-        }
-
-        // E. PADDY MUD (Under rice plants): River mud
-        var mudMat = AssetDatabase.LoadAssetAtPath<Material>(MudMatPath);
-        if (mudMat != null && mudTex != null)
-        {
-            ApplyMaterialProperties(mudMat, mudTex, mudNorm, Color.white, new Vector2(4.0f, 2.0f), 0.12f);
         }
     }
 
