@@ -49,8 +49,8 @@ namespace HoaDo.Editor
             // 3. SETUP 100% STANDING UPRIGHT NPCS WITH MATCHING GENDER & DIALOGUE
             SetupAllUprightStandingNPCs();
 
-            // 4. ADD TRUNK COLLIDERS TO ALL TREES (EXCEPT RICE & GRASS)
-            AddCollidersToAllTrees();
+            // 4. OVERHAUL ALL TREES TO 8-DIRECTION 3D VOLUMETRIC, FIRMLY ROOTED INTO GROUND, AND DENSE PADDY FLANKS
+            OverhaulAllTrees8DirectionsAndDenseFlanks();
 
             // 5. MARK SCENE DIRTY
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -778,14 +778,18 @@ namespace HoaDo.Editor
         }
 
         // =========================================================================
-        // 4. ADD TRUNK COLLIDERS TO ALL TREES (EXCEPT RICE & GRASS) & HIDE ALL STAKES
+        // 4. OVERHAUL ALL TREES: 8-DIRECTION VOLUMETRIC, FIRMLY ROOTED INTO GROUND, AND DENSE PADDY FLANKS
         // =========================================================================
-        public static void AddCollidersToAllTrees()
+        public static void OverhaulAllTrees8DirectionsAndDenseFlanks()
         {
             var veg = GameObject.Find("CaMau_1954_Village/Environment/Vegetation_3D");
-            if (veg == null) return;
+            if (veg == null)
+            {
+                Debug.LogWarning("[TreeOverhaul] Không tìm thấy CaMau_1954_Village/Environment/Vegetation_3D");
+                return;
+            }
 
-            // 1. Remove ALL visible cylinder/stake meshes inside trees (Trunk_3D_SolidCore) so only the tree is visible
+            // 1. Dọn dẹp cọc hình trụ Trunk_3D_SolidCore nếu còn sót
             var allChildren = veg.GetComponentsInChildren<Transform>(true);
             int removedCylinders = 0;
             foreach (var tr in allChildren)
@@ -796,76 +800,299 @@ namespace HoaDo.Editor
                     removedCylinders++;
                 }
             }
-            Debug.Log($"[TreeColliders] Đã xóa hoàn toàn {removedCylinders} cọc hình trụ (Trunk_3D_SolidCore) bên trong cây cối. Cây chỉ hiển thị tán lá và thân cây vẽ tay authentic!");
-
-            // 2. Ensure each tree has an invisible physics CapsuleCollider (no renderer, 100% invisible)
-            int count = 0;
-            foreach (Transform t in veg.transform)
+            if (removedCylinders > 0)
             {
-                // Stone ring already has its own stone colliders
-                if (t.name == "Tree_Central_StoneRing") continue;
-
-                // Add or adjust invisible CapsuleCollider on the tree trunk
-                var col = t.GetComponent<CapsuleCollider>();
-                if (col == null) col = t.gameObject.AddComponent<CapsuleCollider>();
-
-                string n = t.name.ToLower();
-                if (n.Contains("central") || n.Contains("sacred") || n.Contains("banyan"))
-                {
-                    // Grand Central Banyan Tree: wide trunk
-                    col.center = new Vector3(0f, 2.5f, 0f);
-                    col.radius = 1.8f;
-                    col.height = 6.0f;
-                }
-                else if (n.Contains("coconut") || n.Contains("palm"))
-                {
-                    // Coconut palm trunk
-                    col.center = new Vector3(0f, 3.0f, 0f);
-                    col.radius = 0.50f;
-                    col.height = 7.0f;
-                }
-                else if (n.Contains("banana"))
-                {
-                    // Banana tree clump
-                    col.center = new Vector3(0f, 2.0f, 0f);
-                    col.radius = 0.75f;
-                    col.height = 4.5f;
-                }
-                else if (n.Contains("fruit") || n.Contains("canopy"))
-                {
-                    // Fruit & shade trees
-                    col.center = new Vector3(0f, 2.5f, 0f);
-                    col.radius = 0.85f;
-                    col.height = 5.5f;
-                }
-                else if (n.Contains("bamboo"))
-                {
-                    // Bamboo grove clump
-                    col.center = new Vector3(0f, 2.5f, 0f);
-                    col.radius = 0.80f;
-                    col.height = 5.5f;
-                }
-                else if (n.Contains("bush"))
-                {
-                    // Dense bush tree
-                    col.center = new Vector3(0f, 1.8f, 0f);
-                    col.radius = 0.75f;
-                    col.height = 4.0f;
-                }
-                else
-                {
-                    // Default tree trunk
-                    col.center = new Vector3(0f, 2.5f, 0f);
-                    col.radius = 0.65f;
-                    col.height = 5.5f;
-                }
-
-                col.isTrigger = false;
-                EditorUtility.SetDirty(t.gameObject);
-                count++;
+                Debug.Log($"[TreeOverhaul] Đã xóa dọn dẹp {removedCylinders} cọc hình trụ cũ.");
             }
 
-            Debug.Log($"[TreeColliders] Đã cấu hình CapsuleCollider vô hình cho {count} cây cối! Lúa và cỏ không có collider, người chơi đi qua tự do; thân cây chặn đi xuyên mà KHÔNG hề hiện cọc!");
+            // 2. TẠO DẢI RỪNG CÂY DÀY ĐẶC 3 TẦNG 2 BÊN THỬA RUỘNG (West Flank & East Flank)
+            // Đồng ruộng lúa trải dài từ Z = 36m đến 182m
+            var oldFlanks = veg.transform.Find("Dense_Paddy_Flanking_Orchards");
+            if (oldFlanks != null) Object.DestroyImmediate(oldFlanks.gameObject);
+
+            var denseFlanks = new GameObject("Dense_Paddy_Flanking_Orchards");
+            denseFlanks.transform.SetParent(veg.transform, false);
+
+            string[] treeSpritePaths = new string[]
+            {
+                "Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_01_LargeCanopy.png",
+                "Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_02_Medium.png",
+                "Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_03_SmallBushTree.png",
+                "Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_04_SlenderTall.png",
+                "Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_05_Banana.png",
+                "Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_06_Coconut.png",
+                "Assets/Textures/Environment/Lana_VN_Pack/Trees/T_LanaVN_Tree_07_BambooGrove.png"
+            };
+
+            var loadedSprites = new Sprite[treeSpritePaths.Length];
+            for (int i = 0; i < treeSpritePaths.Length; i++)
+            {
+                loadedSprites[i] = AssetDatabase.LoadAssetAtPath<Sprite>(treeSpritePaths[i]);
+            }
+
+            int spawnedCount = 0;
+
+            // West Flank Belt: X in [-74, -48], Z in [36, 182]
+            for (float z = 36f; z <= 182f; z += 8.0f)
+            {
+                // Inner row: Medium fruit, banana, coconut, small bush
+                float xInner = -49f - Mathf.Sin(z * 0.22f) * 2.5f;
+                int[] innerPool = new int[] { 1, 4, 5, 2 };
+                int innerIdx = ((int)(z / 8.0f)) % innerPool.Length;
+                SpawnFlankTree(denseFlanks.transform, loadedSprites[innerPool[innerIdx]],
+                    new Vector3(xInner, 0.505f, z), Random.Range(1.10f, 1.25f), $"Tree_Flank_West_Inner_{z:F0}");
+                spawnedCount++;
+
+                // Mid row: Slender tall, bamboo grove, fruit tree, large canopy
+                float xMid = -61f + Mathf.Cos(z * 0.17f) * 3.0f;
+                int[] midPool = new int[] { 3, 6, 1, 0 };
+                int midIdx = ((int)(z / 8.0f) + 1) % midPool.Length;
+                SpawnFlankTree(denseFlanks.transform, loadedSprites[midPool[midIdx]],
+                    new Vector3(xMid, 0.505f, z + 4.0f), Random.Range(1.20f, 1.35f), $"Tree_Flank_West_Mid_{z:F0}");
+                spawnedCount++;
+
+                // Outer row: Massive canopy, bamboo grove, coconut
+                float xOuter = -72f - Mathf.Sin(z * 0.14f) * 3.0f;
+                int[] outerPool = new int[] { 0, 6, 5, 3 };
+                int outerIdx = ((int)(z / 8.0f) + 2) % outerPool.Length;
+                SpawnFlankTree(denseFlanks.transform, loadedSprites[outerPool[outerIdx]],
+                    new Vector3(xOuter, 0.505f, z), Random.Range(1.30f, 1.50f), $"Tree_Flank_West_Outer_{z:F0}");
+                spawnedCount++;
+            }
+
+            // East Flank Belt: X in [44, 74], Z in [36, 182]
+            for (float z = 36f; z <= 182f; z += 8.0f)
+            {
+                // Inner row: Medium fruit, coconut, banana, small bush
+                float xInner = 44f + Mathf.Sin(z * 0.25f) * 2.5f;
+                int[] innerPool = new int[] { 1, 5, 4, 2 };
+                int innerIdx = ((int)(z / 8.0f)) % innerPool.Length;
+                SpawnFlankTree(denseFlanks.transform, loadedSprites[innerPool[innerIdx]],
+                    new Vector3(xInner, 0.505f, z), Random.Range(1.10f, 1.25f), $"Tree_Flank_East_Inner_{z:F0}");
+                spawnedCount++;
+
+                // Mid row: Slender tall, bamboo grove, fruit tree, large canopy
+                float xMid = 57f + Mathf.Cos(z * 0.19f) * 3.0f;
+                int[] midPool = new int[] { 3, 6, 1, 0 };
+                int midIdx = ((int)(z / 8.0f) + 1) % midPool.Length;
+                SpawnFlankTree(denseFlanks.transform, loadedSprites[midPool[midIdx]],
+                    new Vector3(xMid, 0.505f, z + 4.0f), Random.Range(1.20f, 1.35f), $"Tree_Flank_East_Mid_{z:F0}");
+                spawnedCount++;
+
+                // Outer row: Large canopy, bamboo grove, coconut
+                float xOuter = 69f + Mathf.Sin(z * 0.15f) * 3.0f;
+                int[] outerPool = new int[] { 0, 6, 5, 3 };
+                int outerIdx = ((int)(z / 8.0f) + 2) % outerPool.Length;
+                SpawnFlankTree(denseFlanks.transform, loadedSprites[outerPool[outerIdx]],
+                    new Vector3(xOuter, 0.505f, z), Random.Range(1.30f, 1.50f), $"Tree_Flank_East_Outer_{z:F0}");
+                spawnedCount++;
+            }
+
+            Debug.Log($"[TreeOverhaul] Đã trồng bổ sung {spawnedCount} cây dải rừng nhiệt đới dày đặc 3 tầng 2 bên cánh đồng lúa!");
+
+            // 3. XỬ LÝ MỌI CÂY TRÊN TOÀN MAP: 8 HƯỚNG 3D VOLUMETRIC VÀ CẮM RỄ SÂU VÀO ĐẤT
+            int processedCount = 0;
+            ProcessAllTreesInHierarchy(veg.transform, ref processedCount);
+
+            Debug.Log($"[TreeOverhaul] HOÀN TẤT NÂNG CẤP {processedCount} CÂY TRÊN MAP: 8 hướng sao đa chiều 3D volumetric, cắm rễ chìm 25-35cm vào nền đất, và CapsuleCollider vô hình chặn đi xuyên!");
+        }
+
+        private static void ProcessAllTreesInHierarchy(Transform parent, ref int count)
+        {
+            foreach (Transform child in parent)
+            {
+                if (child.name == "Dense_Paddy_Flanking_Orchards")
+                {
+                    foreach (Transform flankTree in child)
+                    {
+                        ProcessSingleTreeTo8DirectionsAndPlantRoots(flankTree);
+                        count++;
+                    }
+                }
+                else if (child.name != "Tree_Central_StoneRing" && child.name != "Road_Organic_Flora_Root")
+                {
+                    ProcessSingleTreeTo8DirectionsAndPlantRoots(child);
+                    count++;
+                }
+            }
+        }
+
+        private static void ProcessSingleTreeTo8DirectionsAndPlantRoots(Transform t)
+        {
+            if (t.name == "Tree_Central_StoneRing" || t.name == "Road_Organic_Flora_Root" || t.name == "Dense_Paddy_Flanking_Orchards")
+                return;
+
+            // 1. Tìm SpriteRenderer & Sprite gốc
+            var sr = t.GetComponent<SpriteRenderer>();
+            Sprite treeSprite = null;
+            Material treeMat = null;
+
+            if (sr != null && sr.sprite != null)
+            {
+                treeSprite = sr.sprite;
+                treeMat = sr.sharedMaterial;
+            }
+            else
+            {
+                var childSRs = t.GetComponentsInChildren<SpriteRenderer>(true);
+                foreach (var csr in childSRs)
+                {
+                    if (csr.sprite != null)
+                    {
+                        treeSprite = csr.sprite;
+                        treeMat = csr.sharedMaterial;
+                        break;
+                    }
+                }
+            }
+
+            if (treeSprite == null) return;
+
+            // 2. Dọn sạch toàn bộ các card con cũ (xóa triệt để các card bị nghiêng góc hay phồng vòm sai lệch)
+            for (int i = t.childCount - 1; i >= 0; i--)
+            {
+                var child = t.GetChild(i);
+                if (child.name.Contains("Card") || child.name.Contains("Canopy") || child.name.Contains("Dome") ||
+                    child.name.Contains("Fork") || child.name.Contains("Palm") || child.name.Contains("Bamboo") ||
+                    child.name.Contains("Banana") || child.name.Contains("SolidCore"))
+                {
+                    Object.DestroyImmediate(child.gameObject);
+                }
+            }
+
+            // 3. Cài đặt SpriteRenderer gốc (Card 0 tại góc 0 độ)
+            if (sr == null) sr = t.gameObject.AddComponent<SpriteRenderer>();
+            sr.sprite = treeSprite;
+            if (treeMat != null) sr.sharedMaterial = treeMat;
+            sr.color = Color.white;
+            sr.sortingOrder = 0;
+
+            // 4. Tính toán độ cao mặt đất và CẮM RỄ SÂU XUỐNG ĐẤT (Firm Root Planting)
+            float groundY = GetGroundSurfaceY(t.position.x, t.position.z);
+            float scaleY = t.localScale.y;
+
+            string lowName = t.name.ToLower();
+            float targetPosY;
+
+            if (lowName.Contains("banyan") || lowName.Contains("ghibli") || lowName.Contains("sacred"))
+            {
+                // Cây đa cổ thụ trung tâm: chìm gốc 20cm vào nền đất quảng trường
+                targetPosY = groundY - 0.20f;
+            }
+            else
+            {
+                // Toàn bộ cây Lana: bounds.min.y ~ -0.24 đến -0.29.
+                // Cho đầu chót rễ chìm 32cm dưới mặt đất để phần bạnh rễ và gốc cây cắm thẳng, vững chãi vào đất
+                float targetLowestRootWorldY = groundY - 0.32f;
+                targetPosY = targetLowestRootWorldY - (treeSprite.bounds.min.y * scaleY);
+            }
+
+            t.position = new Vector3(t.position.x, targetPosY, t.position.z);
+
+            // 5. Tạo 7 Card hướng tâm thẳng đứng quanh trục Y (22.5, 45, 67.5, 90, 112.5, 135, 157.5 độ)
+            // Kết hợp Card 0 (0 độ) và tính chất 2 mặt (Double-sided) tạo thành 16 hướng trọn vẹn 360 độ
+            float[] angles = new float[] { 22.5f, 45.0f, 67.5f, 90.0f, 112.5f, 135.0f, 157.5f };
+            Color[] shadings = new Color[]
+            {
+                new Color(0.97f, 0.97f, 0.97f, 1f),
+                new Color(0.93f, 0.94f, 0.92f, 1f),
+                new Color(0.90f, 0.91f, 0.89f, 1f),
+                new Color(0.87f, 0.88f, 0.86f, 1f),
+                new Color(0.91f, 0.92f, 0.90f, 1f),
+                new Color(0.94f, 0.95f, 0.93f, 1f),
+                new Color(0.98f, 0.98f, 0.97f, 1f)
+            };
+
+            for (int k = 0; k < angles.Length; k++)
+            {
+                var cardObj = new GameObject($"Card_Volumetric_{angles[k]:F1}Deg");
+                cardObj.transform.SetParent(t, false);
+                cardObj.transform.localPosition = Vector3.zero;
+                cardObj.transform.localRotation = Quaternion.Euler(0f, angles[k], 0f);
+                cardObj.transform.localScale = Vector3.one;
+
+                var cardSR = cardObj.AddComponent<SpriteRenderer>();
+                cardSR.sprite = treeSprite;
+                if (treeMat != null) cardSR.sharedMaterial = treeMat;
+                cardSR.color = shadings[k];
+                cardSR.sortingOrder = 0;
+            }
+
+            // 6. CapsuleCollider vô hình (vật lý chặn người chơi đi xuyên cây, không hiển thị bất kỳ cọc nào)
+            var col = t.GetComponent<CapsuleCollider>();
+            if (col == null) col = t.gameObject.AddComponent<CapsuleCollider>();
+
+            if (lowName.Contains("central") || lowName.Contains("sacred") || lowName.Contains("banyan"))
+            {
+                col.center = new Vector3(0f, 2.5f, 0f);
+                col.radius = 1.8f;
+                col.height = 6.0f;
+            }
+            else if (lowName.Contains("coconut") || lowName.Contains("palm"))
+            {
+                col.center = new Vector3(0f, 3.2f, 0f);
+                col.radius = 0.45f;
+                col.height = 7.5f;
+            }
+            else if (lowName.Contains("banana"))
+            {
+                col.center = new Vector3(0f, 2.0f, 0f);
+                col.radius = 0.70f;
+                col.height = 4.5f;
+            }
+            else if (lowName.Contains("fruit") || lowName.Contains("canopy"))
+            {
+                col.center = new Vector3(0f, 2.5f, 0f);
+                col.radius = 0.85f;
+                col.height = 5.5f;
+            }
+            else if (lowName.Contains("bamboo"))
+            {
+                col.center = new Vector3(0f, 2.5f, 0f);
+                col.radius = 0.75f;
+                col.height = 5.5f;
+            }
+            else if (lowName.Contains("bush"))
+            {
+                col.center = new Vector3(0f, 1.8f, 0f);
+                col.radius = 0.70f;
+                col.height = 4.0f;
+            }
+            else
+            {
+                col.center = new Vector3(0f, 2.5f, 0f);
+                col.radius = 0.65f;
+                col.height = 5.5f;
+            }
+            col.isTrigger = false;
+
+            EditorUtility.SetDirty(t.gameObject);
+        }
+
+        private static void SpawnFlankTree(Transform parent, Sprite sprite, Vector3 pos, float scale, string name)
+        {
+            if (sprite == null) return;
+
+            var treeObj = new GameObject(name);
+            treeObj.transform.SetParent(parent, false);
+            treeObj.transform.position = pos;
+            treeObj.transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+            treeObj.transform.localScale = Vector3.one * scale;
+
+            var sr = treeObj.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.sortingOrder = 0;
+
+            string matPath = $"Assets/Materials/Environment/FoliageCutout/M_Cutout_{sprite.name}.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+            if (mat != null) sr.sharedMaterial = mat;
+        }
+
+        public static float GetGroundSurfaceY(float x, float z)
+        {
+            if (z >= -3.0f) return UNIFORM_GROUND_Y; // 0.505f
+            float t = Mathf.InverseLerp(-3.0f, -12.5f, z);
+            return Mathf.Lerp(UNIFORM_GROUND_Y, 0.15f, t);
         }
 
         // =========================================================================
@@ -886,12 +1113,12 @@ namespace HoaDo.Editor
                 Path.Combine(ArtifactDir, "CaMau_UnifiedEarthenGround_Overview_QA.jpg")
             );
 
-            // Shot 2: Eye-level ground view showing scaled-up NPCs (Má của An & Bé Út) in front of their enlarged authentic thatched cottage
+            // Shot 2: Spectacular view from rice field avenue showing dense 3-tier tropical forest belts on both West & East flanks
             RenderShot(
-                new Vector3(2.5f, 1.8f, 13.5f),
-                Quaternion.Euler(4.0f, 0.0f, 0.0f),
-                width, height, 54.0f,
-                Path.Combine(ArtifactDir, "CaMau_EnlargedNPCsAndHouse_QA.jpg")
+                new Vector3(-3.0f, 3.8f, 52.0f),
+                Quaternion.Euler(6.0f, 0.0f, 0.0f),
+                width, height, 65.0f,
+                Path.Combine(ArtifactDir, "CaMau_Paddy_Dense_Flank_Forest_QA.jpg")
             );
 
             // Shot 3: Plaza view from Central Banyan Tree showing continuous earthen ground across cottage yards and NPCs
@@ -902,20 +1129,20 @@ namespace HoaDo.Editor
                 Path.Combine(ArtifactDir, "CaMau_CentralBanyanAndHouseYards_QA.jpg")
             );
 
-            // Shot 4: Eye-level view of the barrel yard at (20, 22) confirming enlarged house & clean yard with NO ghost prompts
+            // Shot 4: Eye-level view of FruitTree_House07_Corner showing 8-direction volumetric roundness and FIRMLY ROOTED into ground with NO stake
             RenderShot(
-                new Vector3(18.0f, 1.8f, 18.5f),
-                Quaternion.Euler(5.0f, 40.0f, 0.0f),
-                width, height, 54.0f,
-                Path.Combine(ArtifactDir, "CaMau_BarrelYard_NoGhostPrompt_QA.jpg")
+                new Vector3(12.0f, 1.4f, 3.2f),
+                Quaternion.Euler(14.0f, 34.0f, 0.0f),
+                width, height, 56.0f,
+                Path.Combine(ArtifactDir, "CaMau_Tree_8Way_Volumetric_Rooted_QA.jpg")
             );
 
-            // Shot 5: Exact view matching user screenshot verifying tree has NO visible stake/cọc, only authentic foliage
+            // Shot 5: Eye-level view of FruitTree_House02_Side showing natural root planting into soil and no visible stake
             RenderShot(
-                new Vector3(13.8f, 1.7f, 2.5f),
-                Quaternion.Euler(6.0f, 2.0f, 0.0f),
+                new Vector3(-31.5f, 1.4f, 25.5f),
+                Quaternion.Euler(14.0f, -45.0f, 0.0f),
                 width, height, 56.0f,
-                Path.Combine(ArtifactDir, "CaMau_Tree_NoVisibleStake_QA.jpg")
+                Path.Combine(ArtifactDir, "CaMau_Tree_NoVisibleStake_House02_QA.jpg")
             );
 
             Debug.Log("[QA] Đã chụp và lưu 5 ảnh QA vào artifact directory!");
