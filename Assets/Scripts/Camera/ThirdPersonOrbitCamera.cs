@@ -28,9 +28,9 @@ namespace HoaVaMau
 
         [Header("Distance & Zoom")]
         [Tooltip("Khoảng cách mặc định từ Camera tới nhân vật")]
-        [SerializeField] private float defaultDistance = 4.0f;
-        [SerializeField] private float minDistance = 1.4f;
-        [SerializeField] private float maxDistance = 8.5f;
+        [SerializeField] private float defaultDistance = 2.6f;
+        [SerializeField] private float minDistance = 0.8f;
+        [SerializeField] private float maxDistance = 7.5f;
         [SerializeField] private float zoomSpeed = 2.5f;
 
         [Header("Rotation & Sensitivity")]
@@ -190,7 +190,7 @@ namespace HoaVaMau
             if (target == null) return;
 
             if (pivotOffset.y < 0.7f) pivotOffset = new Vector3(0f, 1.05f, 0f);
-            if (defaultDistance < 2.5f) defaultDistance = 4.0f;
+            if (defaultDistance < 0.8f) defaultDistance = 2.6f;
 
             currentPivotPosition = target.position + pivotOffset;
             smoothFollowVelocity = Vector3.zero;
@@ -293,13 +293,28 @@ namespace HoaVaMau
             float scroll = 0f;
 #if ENABLE_INPUT_SYSTEM
             var ms = Mouse.current;
-            if (ms != null) scroll = ms.scroll.ReadValue().y * 0.001f;
-#else
-            scroll = Input.GetAxis("Mouse ScrollWheel");
+            if (ms != null)
+            {
+                float val = ms.scroll.ReadValue().y;
+                if (Mathf.Abs(val) > 0.01f)
+                {
+                    scroll = Mathf.Clamp(val / 120.0f, -3f, 3f);
+                }
+            }
 #endif
+            if (Mathf.Abs(scroll) < 0.001f)
+            {
+                try
+                {
+                    Vector2 legacyDelta = Input.mouseScrollDelta;
+                    if (Mathf.Abs(legacyDelta.y) > 0.001f) scroll = legacyDelta.y;
+                    else scroll = Input.GetAxis("Mouse ScrollWheel") * 10f;
+                }
+                catch { }
+            }
             if (Mathf.Abs(scroll) > 0.001f)
             {
-                targetDistance = Mathf.Clamp(targetDistance - scroll * zoomSpeed * 3.0f, minDistance, maxDistance);
+                targetDistance = Mathf.Clamp(targetDistance - scroll * 0.45f * zoomSpeed, minDistance, maxDistance);
             }
         }
 
