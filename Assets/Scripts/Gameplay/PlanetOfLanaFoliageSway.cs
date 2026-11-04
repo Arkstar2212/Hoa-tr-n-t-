@@ -68,6 +68,7 @@ namespace HoaVaMau.Gameplay
         private static Vector3 s_LastPlayerPos = Vector3.zero;
         private static float s_PlayerVelX = 0f;
         private static float s_LastPlayerSampleTime = 0f;
+        private Transform m_CachedShadowTransform = null;
 
         public bool EnableCharacterInteraction
         {
@@ -129,6 +130,7 @@ namespace HoaVaMau.Gameplay
             baseAnchorLocalPos = initialLocalPos - new Vector3(0f, spriteHalfHeight, 0f);
             currentPushAngle = 0f;
             pushAngleVelocity = 0f;
+            m_CachedShadowTransform = transform.Find("Contact_Shadow");
             isInitialized = true;
             UpdatePhase();
         }
@@ -211,6 +213,10 @@ namespace HoaVaMau.Gameplay
             }
 
             // Đảm bảo tuyệt đối không bị co giãn vật thể
+            if (m_CachedShadowTransform != null)
+            {
+                m_CachedShadowTransform.localRotation = Quaternion.Inverse(Quaternion.Euler(0f, 0f, finalAngle));
+            }
             transform.localScale = initialLocalScale;
         }
 

@@ -28,6 +28,7 @@ namespace HoaVaMau.Gameplay
 
         [Header("Cinemachine Integration (Optional)")]
         [SerializeField] private CinemachineCamera virtualCamera;
+        [SerializeField] private CinemachineCamera dedicatedVirtualCamera;
 
         private Cinematic2DCamera customCamera;
         private Camera unityCamera;
@@ -38,6 +39,7 @@ namespace HoaVaMau.Gameplay
             var col = GetComponent<Collider>();
             if (col != null) col.isTrigger = true;
 
+            if (dedicatedVirtualCamera != null) dedicatedVirtualCamera.Priority.Value = 0;
             customCamera = UnityEngine.Object.FindAnyObjectByType<Cinematic2DCamera>();
             unityCamera = Camera.main;
             if (virtualCamera == null)
@@ -52,6 +54,7 @@ namespace HoaVaMau.Gameplay
             if (IsPlayer(other))
             {
                 isPlayerInside = true;
+                if (dedicatedVirtualCamera != null) dedicatedVirtualCamera.Priority.Value = 60;
             }
         }
 
@@ -60,6 +63,7 @@ namespace HoaVaMau.Gameplay
             if (IsPlayer(other))
             {
                 isPlayerInside = false;
+                if (dedicatedVirtualCamera != null) dedicatedVirtualCamera.Priority.Value = 0;
             }
         }
 
@@ -71,6 +75,14 @@ namespace HoaVaMau.Gameplay
         private void Update()
         {
             float dt = Time.deltaTime;
+            if (dedicatedVirtualCamera != null)
+            {
+                int targetPriority = isPlayerInside ? 60 : 0;
+                if (dedicatedVirtualCamera.Priority.Value != targetPriority)
+                {
+                    dedicatedVirtualCamera.Priority.Value = targetPriority;
+                }
+            }
             float targetFov = isPlayerInside ? panoramaFov : defaultFov;
 
             // Update Cinemachine Lens FOV on the 2.5D follow camera so CinemachineBrain blends cleanly
