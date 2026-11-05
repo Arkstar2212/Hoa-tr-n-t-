@@ -41,3 +41,8 @@ When performing development tasks, refer to and adhere to the project's speciali
 ### 4.3. Nguyên tắc Bảo Toàn Scene Overhaul (Chỉ Thêm Mới - Additive Only)
 - **BẢO TỒN NGUYÊN TRẠNG SCENE**: Tuyệt đối không xóa, di dời, ghi đè hoặc làm biến đổi cấu trúc, vị trí, cơ chế hiện có trong `New Scene 1_Overhaul.unity`. Toàn bộ scene hiện trạng là chuẩn mực của người dùng.
 - **CHỈ THÊM MỚI (ADDITIVE ONLY)**: Mọi nhiệm vụ dàn dựng tiếp theo chỉ được phép bổ sung/làm thêm các thành phần mới (new props, foliage, VFX, audio, triggers...) vào các nhóm/parent riêng biệt rõ ràng mà không được tác động tiêu cực đến các vật thể gốc đã có sẵn.
+
+### 4.4. Quy tắc Git Push (CHỈ PUSH KHI CÓ LỆNH YÊU CẦU RÕ RÀNG)
+- **CẤM TUYỆT ĐỐI TỰ Ý PUSH**: Tuyệt đối không bao giờ tự động chạy `git push` lên bất kỳ nhánh remote nào (`origin/2.5d`, `origin/main`...) sau khi hoàn thành task.
+- **LƯU TRỮ VÀ KIỂM THỬ LOCAL**: Mọi thay đổi code, asset, scene chỉ được lưu trữ và kiểm thử tại local máy tính.
+- **CHỈ PUSH KHI ĐƯỢC CHỈ ĐỊNH**: Chỉ được phép thực hiện `git push` khi người dùng đưa ra câu lệnh rõ ràng bằng văn bản (ví dụ: *"push lên nhánh 2.5d"*, *"push git đi"*). Chưa có lệnh thì tuyệt đối không push.
