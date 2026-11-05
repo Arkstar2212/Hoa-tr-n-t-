@@ -45,6 +45,8 @@ namespace HoaVaMau.Gameplay
         private void OnTriggerEnter(Collider other)
         {
             if (Time.time - lastTriggerTime < triggerCooldown) return;
+            if (HoaVaMau.Cinematics.CinematicVillageIntroDirector.Instance != null && 
+                HoaVaMau.Cinematics.CinematicVillageIntroDirector.Instance.IsCutsceneActive) return;
 
             bool isPlayer = other.CompareTag("Player") ||
                             other.name.Contains("Player") ||

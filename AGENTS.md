@@ -41,3 +41,9 @@ When performing development tasks, refer to and adhere to the project's speciali
 ### 4.3. Nguyên tắc Bảo Toàn Scene Overhaul (Chỉ Thêm Mới - Additive Only)
 - **BẢO TỒN NGUYÊN TRẠNG SCENE**: Tuyệt đối không xóa, di dời, ghi đè hoặc làm biến đổi cấu trúc, vị trí, cơ chế hiện có trong `New Scene 1_Overhaul.unity`. Toàn bộ scene hiện trạng là chuẩn mực của người dùng.
 - **CHỈ THÊM MỚI (ADDITIVE ONLY)**: Mọi nhiệm vụ dàn dựng tiếp theo chỉ được phép bổ sung/làm thêm các thành phần mới (new props, foliage, VFX, audio, triggers...) vào các nhóm/parent riêng biệt rõ ràng mà không được tác động tiêu cực đến các vật thể gốc đã có sẵn.
+
+
+## 5. Nguyên Tắc Bảo Vệ Ruộng Lúa Bất Di Bất Dịch (STRICT RICE PADDY SANCTITY)
+- **CẤM ĐỤNG VÀO RUỘNG LÚA**: Từ nay về sau tuyệt đối KHÔNG ĐƯỢC PHÉP đụng vào ruộng lúa (`Vast_Paddy_Continuous_Crops_Root`, `West_Paddy_Flank`, `East_Paddy_Flank`) cho dù người dùng yêu cầu thiết kế bất kỳ cảnh quan hay đối tượng nào khác.
+- **NGOẠI LỆ DUY NHẤT**: Trừ khi người dùng nêu rõ bằng văn bản yêu cầu chỉnh sửa ruộng lúa thì mới được phép chỉnh sửa. Mọi mệnh lệnh khác đều CẤM thêm, bớt hoặc chỉnh sửa bất kỳ thứ gì liên quan đến khu vực lúa.
+- **VÙNG BẢO VỆ TUYỆT ĐỐI**: Toàn bộ không gian cánh đồng lúa (Tây: $X \in [-48.0, -10.0]$, Đông: $X \in [-4.0, 34.0]$, dọc từ $Z = 33.0\text{m}$ đến $181.0\text{m}$) phải hoàn toàn sạch bóng cây cối, đá hay bất kỳ vật thể ngoại lai nào xâm lấn. Cây cối chỉ được phép trồng hoàn toàn bên ngoài ranh giới này.
