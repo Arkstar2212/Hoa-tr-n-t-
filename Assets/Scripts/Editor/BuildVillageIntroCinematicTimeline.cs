@@ -88,14 +88,14 @@ namespace HoaVaMau.EditorScripts
                 GameObject.DestroyImmediate(rigGo.transform.GetChild(0).gameObject);
             }
 
-            // Single continuous moving camera (One-Shot)
+            // Single continuous moving camera (One-Shot - starts at Keyframe 1 Gate Wide)
             var camGo = new GameObject("CM_Continuous_CutsceneCam");
             camGo.transform.SetParent(rigGo.transform, false);
-            camGo.transform.position = new Vector3(-5.8f, 1.8f, 173.0f);
-            camGo.transform.LookAt(new Vector3(-7.0f, 1.25f, 184.0f));
+            camGo.transform.position = new Vector3(-7.0f, 2.35f, 175.0f);
+            camGo.transform.rotation = Quaternion.Euler(6.5f, 0.0f, 0.0f);
 
             var continuousCam = camGo.AddComponent<CinemachineCamera>();
-            continuousCam.Lens.FieldOfView = 48f;
+            continuousCam.Lens.FieldOfView = 50f;
             continuousCam.Lens.NearClipPlane = 0.1f;
             continuousCam.Lens.FarClipPlane = 1000f;
             continuousCam.Priority.Value = 25;
