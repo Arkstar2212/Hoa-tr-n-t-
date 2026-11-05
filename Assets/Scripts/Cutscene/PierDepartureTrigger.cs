@@ -118,7 +118,10 @@ namespace HoaVaMau.Cutscene
 
             // 5. Load Cutscene Scene
             Debug.Log($"[PierDepartureTrigger] Loading cutscene scene '{targetSceneName}'...");
-            SceneManager.LoadScene(targetSceneName);
+            HoaVaMau.Gameplay.SceneTransitionBotWLoader.LoadSceneWithBotWScreen(
+                targetSceneName,
+                "ĐANG RA BẾN TẬP KẾT XUỒNG BA LÁ..."
+            );
         }
 
         private void CreateFadeCanvas()

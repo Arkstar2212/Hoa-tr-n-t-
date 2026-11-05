@@ -25,6 +25,9 @@ namespace HoaVaMau.Gameplay
         };
 
         [Header("Animation & Living Behavior")]
+        [Header("Voice Dialogue Audio (2D)")]
+        [SerializeField] private AudioClip[] voiceClips = new AudioClip[0];
+        private AudioSource voiceAudioSource;
         [SerializeField] private string defaultAnimState = "Idle";
         [SerializeField] private bool facePlayerWhenClose = true;
         [SerializeField] private float interactRadius = 2.0f;
@@ -55,13 +58,20 @@ namespace HoaVaMau.Gameplay
         private static VillageNPCInteractable activeDialogueOwner;
 
         public static bool HasActivePromptOwner => activePromptOwner != null;
+        public AudioClip[] VoiceClips => voiceClips;
 
-        public void ConfigureNPC(string speakerName, string[] lines, string initialAnimState = "Idle", float patrolDist = 0f)
+        public void ConfigureNPC(string speakerName, string[] lines, string initialAnimState = "Idle", float patrolDist = 0f, AudioClip[] clips = null)
         {
             npcName = speakerName;
             dialogueLines = lines;
             defaultAnimState = initialAnimState;
             patrolRangeX = patrolDist;
+            if (clips != null) voiceClips = clips;
+        }
+
+        public void SetVoiceClips(AudioClip[] clips)
+        {
+            voiceClips = clips;
         }
 
         private void Awake()
@@ -141,6 +151,10 @@ namespace HoaVaMau.Gameplay
 
         private void OnDisable()
         {
+            if (voiceAudioSource != null && voiceAudioSource.isPlaying)
+            {
+                voiceAudioSource.Stop();
+            }
             if (activePromptOwner == this)
             {
                 activePromptOwner = null;
@@ -325,6 +339,30 @@ namespace HoaVaMau.Gameplay
             if (sharedSpeakerText != null) sharedSpeakerText.text = npcName.ToUpperInvariant();
             if (sharedLineText != null) sharedLineText.text = $"“{dialogueLines[currentLineIndex]}”";
             if (sharedDialogueGroup != null) sharedDialogueGroup.alpha = 1f;
+
+            PlayVoiceClip(currentLineIndex);
+        }
+
+        private void PlayVoiceClip(int index)
+        {
+            if (voiceClips != null && index >= 0 && index < voiceClips.Length && voiceClips[index] != null)
+            {
+                if (voiceAudioSource == null)
+                {
+                    voiceAudioSource = GetComponent<AudioSource>();
+                    if (voiceAudioSource == null) voiceAudioSource = gameObject.AddComponent<AudioSource>();
+                    voiceAudioSource.playOnAwake = false;
+                    voiceAudioSource.spatialBlend = 0f; // Crisp 2D voice
+                }
+                voiceAudioSource.Stop();
+                voiceAudioSource.clip = voiceClips[index];
+                voiceAudioSource.volume = 1f;
+                voiceAudioSource.Play();
+                if (voiceClips[index].length + 0.5f > dialogueDisplayTimer)
+                {
+                    dialogueDisplayTimer = voiceClips[index].length + 0.5f;
+                }
+            }
         }
 
         private void EndDialogue()
@@ -335,6 +373,10 @@ namespace HoaVaMau.Gameplay
             {
                 activeDialogueOwner = null;
                 if (sharedDialogueGroup != null) sharedDialogueGroup.alpha = 0f;
+            }
+            if (voiceAudioSource != null && voiceAudioSource.isPlaying)
+            {
+                voiceAudioSource.Stop();
             }
             TryPlayAnimatorState(defaultAnimState, 0.35f, true);
         }

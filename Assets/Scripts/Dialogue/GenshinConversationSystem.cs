@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -48,6 +48,10 @@ namespace HoaVaMau.Dialogue
         [SerializeField] private Text worldPromptNameText;
         [SerializeField] private Text worldPromptActionText;
 
+        [Header("Dialogue Audio")]
+        [SerializeField] private AudioSource dialogueAudioSource;
+        [SerializeField] private AudioClip shipHornClip;
+
         private Camera mainCamera;
         private GenshinNPCInteractable closestNPC;
         private GenshinNPCInteractable activeNPC;
@@ -58,6 +62,7 @@ namespace HoaVaMau.Dialogue
         private Coroutine typewriterCoroutine;
         private string targetDialogueLine = "";
         private bool showingChoices = false;
+        private bool showingPlayerChoiceSpeech = false;
         private bool showingResponseLine = false;
         private DialogueChoice activeSelectedChoice = null;
 
@@ -115,6 +120,19 @@ namespace HoaVaMau.Dialogue
             if (player3D == null) player3D = Object.FindAnyObjectByType<Player3DController>();
             if (orbitCam == null) orbitCam = Object.FindAnyObjectByType<ThirdPersonOrbitCamera>();
             if (mainCamera == null) mainCamera = Camera.main;
+            if (dialogueAudioSource == null)
+            {
+                dialogueAudioSource = GetComponent<AudioSource>();
+                if (dialogueAudioSource == null) dialogueAudioSource = gameObject.AddComponent<AudioSource>();
+                dialogueAudioSource.playOnAwake = false;
+                dialogueAudioSource.spatialBlend = 0f;
+            }
+            if (shipHornClip == null)
+            {
+#if UNITY_EDITOR
+                shipHornClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_Vintage_ShipHorn_1950s.mp3");
+#endif
+            }
         }
 
         private void Update()
@@ -233,6 +251,7 @@ namespace HoaVaMau.Dialogue
             activeNPC = npc;
             currentOpeningLineIndex = 0;
             showingChoices = false;
+            showingPlayerChoiceSpeech = false;
             showingResponseLine = false;
             activeSelectedChoice = null;
 
@@ -261,10 +280,11 @@ namespace HoaVaMau.Dialogue
             if (speakerNameText != null) speakerNameText.text = $"【 {activeNPC.NPCName.ToUpper()} 】";
             if (speakerTitleText != null) speakerTitleText.text = activeNPC.NPCTitle;
 
-            // Gõ dòng đầu tiên
+            // Gõ dòng đầu tiên và phát voice
             if (activeNPC.OpeningLines != null && activeNPC.OpeningLines.Length > 0)
             {
                 ShowDialogueLine(activeNPC.OpeningLines[0]);
+                PlayVoice(activeNPC.OpeningVoiceClips, 0);
             }
             else
             {
@@ -375,8 +395,27 @@ namespace HoaVaMau.Dialogue
                 return;
             }
 
+            if (showingPlayerChoiceSpeech)
+            {
+                showingPlayerChoiceSpeech = false;
+                showingResponseLine = true;
+                if (speakerNameText != null) speakerNameText.text = $"【 {activeNPC.NPCName.ToUpper()} 】";
+                if (speakerTitleText != null) speakerTitleText.text = activeNPC.NPCTitle;
+                if (activeSelectedChoice != null)
+                {
+                    if (!string.IsNullOrEmpty(activeSelectedChoice.responseAnim))
+                    {
+                        activeNPC.PlayAnim(activeSelectedChoice.responseAnim);
+                    }
+                    ShowDialogueLine(activeSelectedChoice.responseLine);
+                    PlayClip(activeSelectedChoice.responseVoiceClip);
+                }
+                return;
+            }
+
             if (showingResponseLine)
             {
+                StopVoice();
                 if (activeSelectedChoice != null && !string.IsNullOrEmpty(activeSelectedChoice.targetSceneName))
                 {
                     string target = activeSelectedChoice.targetSceneName;
@@ -392,15 +431,18 @@ namespace HoaVaMau.Dialogue
             {
                 currentOpeningLineIndex++;
                 ShowDialogueLine(activeNPC.OpeningLines[currentOpeningLineIndex]);
+                PlayVoice(activeNPC.OpeningVoiceClips, currentOpeningLineIndex);
                 return;
             }
 
             if (activeNPC.Choices != null && activeNPC.Choices.Length > 0 && !showingChoices)
             {
+                StopVoice();
                 DisplayChoiceOptions();
                 return;
             }
 
+            StopVoice();
             EndConversation();
         }
 
@@ -470,26 +512,87 @@ namespace HoaVaMau.Dialogue
             if (activeNPC == null || index < 0 || index >= activeNPC.Choices.Length) return;
 
             showingChoices = false;
-            showingResponseLine = true;
             if (choiceContainer != null) choiceContainer.SetActive(false);
 
             DialogueChoice choice = activeNPC.Choices[index];
             activeSelectedChoice = choice;
 
-            if (!string.IsNullOrEmpty(choice.responseAnim))
+            if (choice.playerVoiceClip != null)
             {
-                activeNPC.PlayAnim(choice.responseAnim);
+                showingPlayerChoiceSpeech = true;
+                showingResponseLine = false;
+                if (speakerNameText != null) speakerNameText.text = "【 BÉ AN 】";
+                if (speakerTitleText != null) speakerTitleText.text = "Cậu bé xóm Rạch Gốc";
+                ShowDialogueLine(choice.choiceText);
+                PlayClip(choice.playerVoiceClip);
             }
+            else
+            {
+                showingPlayerChoiceSpeech = false;
+                showingResponseLine = true;
+                if (speakerNameText != null) speakerNameText.text = $"【 {activeNPC.NPCName.ToUpper()} 】";
+                if (speakerTitleText != null) speakerTitleText.text = activeNPC.NPCTitle;
 
-            ShowDialogueLine(choice.responseLine);
+                if (!string.IsNullOrEmpty(choice.responseAnim))
+                {
+                    activeNPC.PlayAnim(choice.responseAnim);
+                }
+
+                ShowDialogueLine(choice.responseLine);
+                PlayClip(choice.responseVoiceClip);
+            }
+        }
+
+        private void PlayVoice(AudioClip[] clips, int index)
+        {
+            if (clips != null && index >= 0 && index < clips.Length && clips[index] != null)
+            {
+                PlayClip(clips[index]);
+            }
+        }
+
+        private void PlayClip(AudioClip clip)
+        {
+            if (dialogueAudioSource == null) ResolveReferences();
+            if (dialogueAudioSource != null)
+            {
+                dialogueAudioSource.Stop();
+                if (clip != null)
+                {
+                    dialogueAudioSource.clip = clip;
+                    dialogueAudioSource.volume = 1f;
+                    dialogueAudioSource.Play();
+                }
+            }
+        }
+
+        private void StopVoice()
+        {
+            if (dialogueAudioSource != null && dialogueAudioSource.isPlaying)
+            {
+                dialogueAudioSource.Stop();
+            }
         }
 
         private IEnumerator TransitionToSceneRoutine(string sceneName)
         {
+            StopVoice();
             if (player3D != null) player3D.IsInputLocked = true;
             if (choiceContainer != null) choiceContainer.SetActive(false);
 
-            float duration = 0.35f;
+            // Echo the vintage steamship horn across the coastal rivermouth when departing
+            if (shipHornClip != null)
+            {
+                if (dialogueAudioSource != null)
+                {
+                    dialogueAudioSource.Stop();
+                    dialogueAudioSource.clip = shipHornClip;
+                    dialogueAudioSource.volume = 1f;
+                    dialogueAudioSource.Play();
+                }
+            }
+
+            float duration = 0.65f;
             float elapsed = 0f;
 
             while (elapsed < duration)
@@ -516,6 +619,7 @@ namespace HoaVaMau.Dialogue
         {
             if (!isInConversation) return;
 
+            StopVoice();
             StartCoroutine(AnimateExitCutscene());
         }
 
@@ -543,6 +647,7 @@ namespace HoaVaMau.Dialogue
 
         private IEnumerator AnimateExitCutscene()
         {
+            StopVoice();
             float duration = 0.28f;
             float elapsed = 0f;
 

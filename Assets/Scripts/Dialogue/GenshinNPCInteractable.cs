@@ -9,9 +9,15 @@ namespace HoaVaMau.Dialogue
         [Tooltip("Nội dung lựa chọn câu trả lời của Bé An (Genshin style)")]
         public string choiceText = "Dạ con hiểu rồi.";
 
+        [Tooltip("Audio giọng nói của Bé An khi chọn câu này")]
+        public AudioClip playerVoiceClip;
+
         [Tooltip("Câu đối thoại phản hồi của NPC sau khi chọn")]
         [TextArea(2, 4)]
         public string responseLine = "Tốt lắm con!";
+
+        [Tooltip("Audio giọng nói NPC phản hồi")]
+        public AudioClip responseVoiceClip;
 
         [Tooltip("Animation state khi NPC phản hồi (tùy chọn)")]
         public string responseAnim = "";
@@ -39,6 +45,9 @@ namespace HoaVaMau.Dialogue
             "Chào cháu An! Lúa năm nay trúng mùa lớn quá."
         };
 
+        [Header("Voice Clips (3D Audio)")]
+        [SerializeField] private AudioClip[] openingVoiceClips = new AudioClip[0];
+
         [Header("Player Branching Choices (Genshin Style)")]
         [SerializeField]
         private DialogueChoice[] choices = new DialogueChoice[0];
@@ -58,6 +67,7 @@ namespace HoaVaMau.Dialogue
         public string NPCName => npcName;
         public string NPCTitle => npcTitle;
         public string[] OpeningLines => openingLines;
+        public AudioClip[] OpeningVoiceClips => openingVoiceClips;
         public DialogueChoice[] Choices => choices;
         public string DefaultAnimState => defaultAnimState;
         public string TalkAnimState => talkAnimState;
@@ -65,7 +75,7 @@ namespace HoaVaMau.Dialogue
         public Vector3 PromptOffset => promptOffset;
         public Vector3 CustomCamOffset => customCamOffset;
 
-        public void Configure(string name, string title, string[] openings, DialogueChoice[] choiceList, string defaultAnim, string talkAnim)
+        public void Configure(string name, string title, string[] openings, DialogueChoice[] choiceList, string defaultAnim, string talkAnim, AudioClip[] openingClips = null)
         {
             npcName = name;
             npcTitle = title;
@@ -73,6 +83,12 @@ namespace HoaVaMau.Dialogue
             choices = choiceList;
             defaultAnimState = defaultAnim;
             talkAnimState = talkAnim;
+            if (openingClips != null) openingVoiceClips = openingClips;
+        }
+
+        public void SetVoiceClips(AudioClip[] openingClips)
+        {
+            openingVoiceClips = openingClips;
         }
 
         private void Awake()

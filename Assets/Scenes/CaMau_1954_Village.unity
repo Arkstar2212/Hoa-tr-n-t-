@@ -50341,9 +50341,14 @@ MonoBehaviour:
   openingLines:
   - "M\u1EA5y qu\xE0y d\u1EEBa n\u01B0\u1EDBc b\xEAn kia m\u01B0\u01A1ng ng\u1ECDt n\u01B0\u1EDBc c\u01A1m d\xE0y d\u1EEF l\u1EAFm An \u01A1i."
   - "Chi\u1EC1u nay gh\xE9 ch\xFA ch\u1EB7t cho m\u1ED9t tr\xE1i d\u1EEBa n\u01B0\u1EDBc \u0103n cho m\xE1t d\u1EA1."
+  openingVoiceClips:
+  - {fileID: 8300000, guid: e525c138f69afee499dc51fa347052a2, type: 3}
+  - {fileID: 8300000, guid: d48898da8b884544fb5e2c8faec9c272, type: 3}
   choices:
   - choiceText: "D\u1EA1, d\u1EEBa n\u01B0\u1EDBc ch\u1EA5m \u0111\u01B0\u1EDDng \u0103n ngon h\u1EBFt s\u1EA9y!"
+    playerVoiceClip: {fileID: 8300000, guid: 0db9eda749773314bb58c8ce5cd0079d, type: 3}
     responseLine: "Hahaha, \u0111\xFAng \u0111i\u1EC7u d\xE2n C\xE0 Mau r\u1ED3i \u0111\xF3 ch\xE1u!"
+    responseVoiceClip: {fileID: 8300000, guid: 6617ddc1dd52d4c44947d632d09a6813, type: 3}
     responseAnim: Male_Talking_01
     targetSceneName: 
   defaultAnimState: Male_Waving
@@ -143754,9 +143759,14 @@ MonoBehaviour:
   openingLines:
   - "C\xE2y tr\xE0m, c\xE2y \u0111\u01B0\u1EDBc C\xE0 Mau b\xE1m r\u1EC5 s\xE2u nh\u01B0 t\u1EA5m l\xF2ng ng\u01B0\u1EDDi d\xE2n Nam B\u1ED9 v\u1EADy ch\xE1u \xE0."
   - "D\xF9 c\xF3 \u0111i \u0111\xE2u xa, ng\u1EEDi m\xF9i r\u01A1m r\u1EA1 l\xFAa ch\xEDn l\xE0 nh\u1EDB da di\u1EBFt qu\xEA nh\xE0."
+  openingVoiceClips:
+  - {fileID: 8300000, guid: 510a36b703198e449ba4a833e9e84ff4, type: 3}
+  - {fileID: 8300000, guid: aa3ec294b86ae444a9818d51f46cf365, type: 3}
   choices:
   - choiceText: "Ch\xE1u s\u1EBD lu\xF4n ghi nh\u1EDB l\u1EDDi c\u1EE5 d\u1EA1y \u1EA1."
+    playerVoiceClip: {fileID: 8300000, guid: 067b1aa58176ece47a095080d6bdc424, type: 3}
     responseLine: "Ch\xE1u l\xE0 \u0111\u1EE9a tr\u1EBB ngoan. L\u1EDBn l\xEAn ph\u1EE5 gi\xFAp qu\xEA h\u01B0\u01A1ng \u0111\u1EA5t n\u01B0\u1EDBc nghen ch\xE1u."
+    responseVoiceClip: {fileID: 8300000, guid: 44c979ed5530bc448ae0b22a715a4347, type: 3}
     responseAnim: OldMan_Talking
     targetSceneName: 
   defaultAnimState: OldMan_Idle
@@ -149941,13 +149951,20 @@ MonoBehaviour:
   openingLines:
   - "\xCA An! \u0110i b\u1EAFt c\xE0o c\xE0o trong ru\u1ED9ng l\xFAa v\xE0ng v\u1EDBi tao kh\xF4ng?"
   - "H\xF4m qua tao th\u1EA5y t\u1ED5 chim s\u1EBB \u0111\u1ED3ng n\xFAp d\u01B0\u1EDBi g\u1ED1c l\xFAa b\u1EF1 ch\xE0 b\xE1 lu\xF4n \xE1!"
+  openingVoiceClips:
+  - {fileID: 8300000, guid: 77eb082b48cc66a4880941e58dedfa3c, type: 3}
+  - {fileID: 8300000, guid: d58daa6c7b953484688b838f342ae1da, type: 3}
   choices:
   - choiceText: "\u0110i li\u1EC1n! Nh\u01B0ng coi ch\u1EEBng d\u1EABm g\xE3y l\xFAa c\u1EE7a b\xE1c N\u0103m nha!"
+    playerVoiceClip: {fileID: 8300000, guid: 8d56d742c032337499653feca2325093, type: 3}
     responseLine: "Bi\u1EBFt r\u1ED3i, tao \u0111i men theo b\u1EDD m\u1EABu ru\u1ED9ng th\xF4i, kh\xF4ng c\xF3 d\u1EABm b\u1EADy b\u1EA1 \u0111\xE2u m\xE0 s\u1EE3!"
+    responseVoiceClip: {fileID: 8300000, guid: 3688b78075e788d4e975ecf076bf557c, type: 3}
     responseAnim: Waving_02
     targetSceneName: 
   - choiceText: "M\xE1 tao \u0111ang g\u1ECDi v\u1EC1 \u0103n c\u01A1m r\u1ED3i, l\xE1t g\u1EB7p nghen!"
+    playerVoiceClip: {fileID: 8300000, guid: 97b81ff8622a63c42964e0b4ba467dcd, type: 3}
     responseLine: "\u1EDC, \u0103n l\u1EB9 r\u1ED3i ch\u1EA1y ra \u0111\u1EA7u c\u1EA7u kh\u1EC9 \u0111\u1EA7u x\xF3m h\xFA tao m\u1ED9t ti\u1EBFng!"
+    responseVoiceClip: {fileID: 8300000, guid: 5caf2be8a90895c46960c74fb4000cba, type: 3}
     responseAnim: Waving_01
     targetSceneName: 
   defaultAnimState: Waving_01
@@ -208772,9 +208789,14 @@ MonoBehaviour:
   openingLines:
   - "Anh An \u01A1i! C\xE0o c\xE0o c\u1EE7a em b\u1EAFt \u0111\u01B0\u1EE3c b\u1EF1 h\u01A1n c\u1EE7a anh n\xE8!"
   - "N\xF3 b\xFAng m\u1ED9t c\xE1i bay qua t\u1EADn r\xE3nh m\u01B0\u01A1ng lu\xF4n \xE1!"
+  openingVoiceClips:
+  - {fileID: 8300000, guid: 5c55e79ea5da1f94b9064ff870530be0, type: 3}
+  - {fileID: 8300000, guid: 2de05aee1544d87498735e89f77788af, type: 3}
   choices:
   - choiceText: "\u0110\u1EC3 anh b\u1EAFt con mu\u1ED3m mu\u1ED7m to g\u1EA5p \u0111\xF4i cho em coi!"
+    playerVoiceClip: {fileID: 8300000, guid: 041b485d6dfd16e4c93f1efad393b14d, type: 3}
     responseLine: "D\u1EA1, em th\xE1ch anh b\u1EAFt \u0111\u01B0\u1EE3c \u0111\xF3!"
+    responseVoiceClip: {fileID: 8300000, guid: 5bdc9027edceb6a4ab15af7a75fb7d9f, type: 3}
     responseAnim: Waving_02
     targetSceneName: 
   defaultAnimState: Waving_01
@@ -324799,17 +324821,26 @@ MonoBehaviour:
   openingLines:
   - "Xu\u1ED3ng ba l\xE1 chu\u1EA9n b\u1ECB t\xE1ch b\u1EBFn sang c\u1ED3n d\u1EEBa n\u01B0\u1EDBc r\u1ED3i \u0111\xE2y con \u01A1i!"
   - "Gi\xF3 bi\u1EC3n C\xE0 Mau th\u1ED5i l\u1ED3ng l\u1ED9ng, con n\u01B0\u1EDBc r\xF2ng \u0111\u01B0a ghe thuy\u1EC1n t\u1EA5p n\u1EADp v\u1EC1 c\u1EEDa bi\u1EC3n."
+  openingVoiceClips:
+  - {fileID: 8300000, guid: 987c12a38c1fad34c9f908be02f71479, type: 3}
+  - {fileID: 8300000, guid: ef2268dc9ec04dc4ba620ec70c7f734b, type: 3}
   choices:
   - choiceText: "Ch\xFA B\u1EA3y cho con qu\xE1 giang qua b\xEAn kia s\xF4ng v\u1EDBi!"
+    playerVoiceClip: {fileID: 8300000, guid: 49aa8a64e2f628044a14edd664f123cb, type: 3}
     responseLine: "L\xEAn xu\u1ED3ng ng\u1ED3i im nghe con, s\xF4ng s\xE2u n\u01B0\u1EDBc xi\u1EBFt, ch\u1EDB th\xF2 tay qu\u01A1 n\u01B0\u1EDBc k\u1EBBo tr\u01B0\u1EE3t ch\xE2n!"
+    responseVoiceClip: {fileID: 8300000, guid: 58dd8f4105f68c541867c9659e0e03fe, type: 3}
     responseAnim: Male_Talking_01
     targetSceneName: 
   - choiceText: "Ch\xFA \u01A1i, ngo\xE0i bi\u1EC3n S\xF4ng \u0110\u1ED1c t\xE0u t\u1EADp k\u1EBFt to l\u1EAFm h\u1EA3 ch\xFA?"
+    playerVoiceClip: {fileID: 8300000, guid: 50c197320f696684885c94e7a087d9af, type: 3}
     responseLine: "To nh\u01B0 qu\u1EA3 n\xFAi con \xE0! T\xE0u ch\u1EDF c\xE1n b\u1ED9 \u0111\u1ED3ng b\xE0o ra B\u1EAFc, c\u1EDD \u0111\u1ECF sao v\xE0ng bay r\u1EF1c r\u1EE1 c\u1EA3 g\xF3c tr\u1EDDi!"
+    responseVoiceClip: {fileID: 8300000, guid: 43548cee0689be34cbac4d47316014e5, type: 3}
     responseAnim: Male_Talking_02
     targetSceneName: 
   - choiceText: "Ch\xFA B\u1EA3y \u01A1i, ch\u1EDF con ra \u0111o\xE0n t\xE0u t\u1EADp k\u1EBFt ra kh\u01A1i v\u1EDBi!"
+    playerVoiceClip: {fileID: 0}
     responseLine: "\u0110\u01B0\u1EE3c r\u1ED3i con, l\xEAn xu\u1ED3ng mau k\u1EBBo t\xE0u nh\u1ED5 neo! Chuy\u1EBFn t\xE0u n\xE0y ch\u1EDF theo bao ni\u1EC1m tin v\xE0 \u01B0\u1EDBc v\u1ECDng c\u1EE7a \u0111\u1ED3ng b\xE0o mi\u1EC1n Nam!"
+    responseVoiceClip: {fileID: 0}
     responseAnim: Male_Waving
     targetSceneName: Cutscene_EndGame
   defaultAnimState: Male_Talking_02
@@ -345217,6 +345248,7 @@ Transform:
   - {fileID: 1249177739}
   - {fileID: 1690607699}
   - {fileID: 798716671}
+  - {fileID: 1055194135}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &796041537
@@ -391102,9 +391134,14 @@ MonoBehaviour:
   openingLines:
   - "Tr\xE1nh \u0111\u01B0\u1EDDng cho ch\u1ECB g\xE1nh \u0111\xF4i th\xF9ng n\u01B0\u1EDBc m\u01B0a ng\u1ECDt v\u1EC1 \u0111\u1ED5 lu nghe An!"
   - "N\u01B0\u1EDBc m\u01B0a m\xF9a n\xE0y trong veo ng\u1ECDt l\u1ECBm, n\u1EA5u tr\xE0 cho c\xE1c c\u1EE5 u\u1ED1ng l\xE0 s\u1ED1 m\u1ED9t."
+  openingVoiceClips:
+  - {fileID: 8300000, guid: 1a1bb406ba4b7104d9c2f2f31edeaba4, type: 3}
+  - {fileID: 8300000, guid: 362a2bd636f35e54983cd345a5b123a9, type: 3}
   choices:
   - choiceText: "\u0110\u1EC3 em ph\u1EE5 ch\u1ECB x\xE1ch m\u1ED9t th\xF9ng nghen!"
+    playerVoiceClip: {fileID: 8300000, guid: db32c21920469ac4388162c5ead0db9d, type: 3}
     responseLine: "Th\xF4i kh\u1ECFi ch\xFA em nh\u1ECF x\xEDu, x\xE1ch n\u1EB7ng \u0111au l\u01B0ng m\xE1 la ch\u1ECB ch\u1EBFt! Lo \u0111i ch\u01A1i ngoan \u0111i."
+    responseVoiceClip: {fileID: 8300000, guid: 51007f146c2d6444ba0a044864a9056c, type: 3}
     responseAnim: Female_Talking_01
     targetSceneName: 
   defaultAnimState: Female_Waving
@@ -460185,6 +460222,77 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1055071502}
   m_Mesh: {fileID: -2367776165622456874, guid: 97703b298bd6b10439d8fd643a44dd4e, type: 3}
+--- !u!1 &1055194134
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1055194135}
+  - component: {fileID: 1055194137}
+  - component: {fileID: 1055194136}
+  m_Layer: 0
+  m_Name: Trigger_PierDeparture_Tip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1055194135
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1055194134}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 56, y: 0.89, z: -43.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 795744059}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1055194136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1055194134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da3b9447164e86a49bd7dfa35297f4ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Cutscene.PierDepartureTrigger
+  targetSceneName: Cutscene_EndGame
+  waitBeforeFadeSeconds: 1
+  fadeDurationSeconds: 1.8
+  shipHornClip: {fileID: 8300000, guid: 8a406f0346fa46e41959db761393e06c, type: 3}
+  hornVolume: 1
+--- !u!65 &1055194137
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1055194134}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 4.5, y: 3, z: 3.5}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!1 &1055844788
 GameObject:
   m_ObjectHideFlags: 0
@@ -584754,17 +584862,26 @@ MonoBehaviour:
   openingLines:
   - "Ch\xE0o ch\xE1u An! L\xFAa n\u0103m nay tr\xFAng m\xF9a l\u1EDBn, h\u1EA1t n\xE0o h\u1EA1t n\u1EA5y m\u1EA9y v\xE0ng \xF3ng \u1EA3 kh\u1EAFp \u0111\u1ED3ng."
   - "X\xF3m m\xECnh \u0111ang ph\u01A1i l\xFAa m\u1EDBi \u0111\u1EC3 \u0111\xF3ng bao g\u1EEDi ra mi\u1EC1n B\u1EAFc theo \u0111o\xE0n t\xE0u t\u1EADp k\u1EBFt ngo\xE0i c\u1EEDa S\xF4ng \u0110\u1ED1c \u0111\xF3."
+  openingVoiceClips:
+  - {fileID: 8300000, guid: cfd99c874e6f6fe498b8868e1b941462, type: 3}
+  - {fileID: 8300000, guid: 88d1ac1e77799fe4e9b70182a38305d5, type: 3}
   choices:
   - choiceText: "Ch\xE1u th\u1EA5y \u0111\u1ED3ng l\xFAa v\xE0ng tr\u1EA3i d\xE0i \u0111\u1EB9p qu\xE1 th\u01B0a b\xE1c!"
+    playerVoiceClip: {fileID: 8300000, guid: 19dfc6745717fb4409a7ccd911580f60, type: 3}
     responseLine: "\u0110\xFAng r\u1ED3i ch\xE1u, \u0111\u1EA5t \u0111ai Nam B\u1ED9 ph\xF9 sa m\xE0u m\u1EE1 nu\xF4i n\u1EA5ng ng\u01B0\u1EDDi d\xE2n m\xECnh. Gi\u1EEF l\u1EA5y h\u1EA1t ng\u1ECDc tr\u1EDDi n\xE0y nghe con."
+    responseVoiceClip: {fileID: 8300000, guid: f7a3e9f1749a4f94f9fa0ffc6b748fe4, type: 3}
     responseAnim: OldMan_Talking
     targetSceneName: 
   - choiceText: "B\xE1c cho ch\xE1u h\u1ECFi t\xE0u t\u1EADp k\u1EBFt bao gi\u1EDD r\u1EDDi b\u1EBFn?"
+    playerVoiceClip: {fileID: 8300000, guid: 72d289449dd983549b934cee36760db2, type: 3}
     responseLine: "S\u1EAFp r\u1ED3i con \xE0. Ch\xFA B\u1EA3y ngo\xE0i b\u1EBFn \u0111\xF2 \u0111ang h\u1ED1i h\u1EA3 chuy\u1EC3n nh\u1EEFng bao g\u1EA1o cu\u1ED1i c\xF9ng l\xEAn ghe \u0111\u1EA5y."
+    responseVoiceClip: {fileID: 8300000, guid: c766d477a139c6744a6509df6e7909bc, type: 3}
     responseAnim: OldMan_Talking
     targetSceneName: 
   - choiceText: "Ch\xE1u xin ph\xE9p \u0111i d\u1EA1o ti\u1EBFp quanh x\xF3m \u1EA1."
+    playerVoiceClip: {fileID: 8300000, guid: 50dedc2fc28da3c42a8c7d74c9d6256f, type: 3}
     responseLine: "\u0110i c\u1EA9n th\u1EADn nghe con, nh\u1EDB gh\xE9 qua m\xE1 d\u1EB7n chuy\u1EC7n nh\xE0 tr\u01B0\u1EDBc khi tr\u1EDDi t\u1ED1i nghen."
+    responseVoiceClip: {fileID: 8300000, guid: d589d8becc732094bae8fb9a72e1f8ae, type: 3}
     responseAnim: OldMan_Talking
     targetSceneName: 
   defaultAnimState: OldMan_Idle
@@ -614602,13 +614719,20 @@ MonoBehaviour:
   openingLines:
   - "Hahaha! Th\u1EB1ng nh\u1ECF An l\u1EA1i \u0111\xE2y b\xE1c Ba k\u1EC3 chuy\u1EC7n b\u1EAFt c\xE1 s\u1EA5u kh\u1ED5ng l\u1ED3 \u1EDF lung Tr\xE0m cho nghe!"
   - "B\u1EEFa \u0111\xF3 s\u1EA5u n\u1ED5i \u0111\u1EB7c nh\u01B0 b\xE8o, b\xE1c ch\u1EC9 c\u1EA7n qu\u0103ng m\u1ED9t s\u1EE3i d\xE2y m\xE2y l\xE0 l\xF4i th\u1EB3ng l\xEAn b\u1EDD m\u1ED9t con d\xE0i c\u1EA3 ch\u1EE5c th\u01B0\u1EDBc!"
+  openingVoiceClips:
+  - {fileID: 8300000, guid: 55ab502f2d9bf0446ad27b86130643c9, type: 3}
+  - {fileID: 8300000, guid: cd86cdc6eb61b3142a4c05ddf6fdf328, type: 3}
   choices:
   - choiceText: "B\xE1c Ba k\u1EC3 thi\u1EC7t kh\xF4ng hay b\xE1c l\u1EA1i n\xF3i d\xF3c \u0111\xF3?"
+    playerVoiceClip: {fileID: 8300000, guid: a5897e4cf4090524398f513c09733fff, type: 3}
     responseLine: "T\u1ED5 cha m\xE0y! B\xE1c Ba m\xE0y m\xE0 th\xE8m n\xF3i d\xF3c h\u1EA3! H\u1ECFi c\u1EA3 x\xF3m R\u1EA1ch G\u1ED1c n\xE0y ai m\xE0 kh\xF4ng ph\u1EE5c t\xE0i b\xE1c!"
+    responseVoiceClip: {fileID: 8300000, guid: 3316c7f562d283f4a80de7cae1ca93fe, type: 3}
     responseAnim: OldMan_Talking
     targetSceneName: 
   - choiceText: "Con th\xEDch nghe chuy\u1EC7n b\xE1c Ba c\u01B0\u1EE1i r\xF9a v\xE0ng h\u01A1n!"
+    playerVoiceClip: {fileID: 8300000, guid: f70178ae27f9b6d4eb158049e82080a2, type: 3}
     responseLine: "H\xE8 h\xE8, \u0111\u1EC3 b\u1EEFa n\xE0o r\u1EA3nh b\xE1c d\u1EABn m\xE0y v\xF4 lung Tr\xE0m, ch\u1EC9 cho con r\xF9a to b\u1EB1ng c\xE1i nia ph\u01A1i l\xFAa!"
+    responseVoiceClip: {fileID: 8300000, guid: ba1d719c819e8f74eb21afd786d4a01f, type: 3}
     responseAnim: OldMan_Talking
     targetSceneName: 
   defaultAnimState: OldMan_Idle
@@ -684586,9 +684710,14 @@ MonoBehaviour:
   openingLines:
   - "B\xE0 con mang th\xEAm b\xE1nh t\xE9t, g\u1EA1o m\u1EDBi ra b\u1EBFn S\xF4ng \u0110\u1ED1c g\u1EEDi c\xE1c anh b\u1ED9 \u0111\u1ED9i nghen!"
   - "\u0110i m\u1EA1nh gi\u1ECFi, ng\xE0y th\u1ED1ng nh\u1EA5t h\xF2a b\xECnh l\u1EA1i v\u1EC1 v\u1EDBi qu\xEA h\u01B0\u01A1ng C\xE0 Mau!"
+  openingVoiceClips:
+  - {fileID: 8300000, guid: fb6cce3182bc6734189640bc62f6c57e, type: 3}
+  - {fileID: 8300000, guid: 2daa46a0f30d61d489d8eb7f23e73436, type: 3}
   choices:
   - choiceText: "D\xEC Hai \u01A1i, m\u1ECDi ng\u01B0\u1EDDi s\u1EBD s\u1EDBm tr\u1EDF v\u1EC1 sum h\u1ECDp ph\u1EA3i kh\xF4ng d\xEC?"
+    playerVoiceClip: {fileID: 8300000, guid: 32b1987c671a38142ab754b5177feed9, type: 3}
     responseLine: "Ch\u1EAFc ch\u1EAFn r\u1ED3i ch\xE1u! \u0110\u1ED3ng b\xE0o mi\u1EC1n Nam l\xFAc n\xE0o c\u0169ng h\u01B0\u1EDBng v\u1EC1 ng\xE0y h\u1ED9i ng\u1ED9."
+    responseVoiceClip: {fileID: 8300000, guid: eff2743b5bd68554a97a311028ede0ff, type: 3}
     responseAnim: Female_Talking_02
     targetSceneName: 
   defaultAnimState: Female_Waving
@@ -730556,9 +730685,14 @@ MonoBehaviour:
   openingLines:
   - "Anh An coi em k\u1EBFt hoa d\u1EA1i c\xE0i l\xEAn n\xF3n l\xE1 \u0111\u1EB9p ch\u01B0a n\xE8!"
   - "Hoa m\xE0u v\xE0ng nh\u01B0 m\xE0u h\u1EA1t l\xFAa ch\xEDn ngo\xE0i \u0111\u1ED3ng v\u1EADy \u0111\xF3."
+  openingVoiceClips:
+  - {fileID: 8300000, guid: b3bad5c5e90ad4744bee3ebaeb76f685, type: 3}
+  - {fileID: 8300000, guid: 47fd15d2ee6667b43a6e4c35a3eda54f, type: 3}
   choices:
   - choiceText: "Kh\xE9o tay qu\xE1, nh\u01B0 n\xF3n c\xF4ng ch\xFAa mi\u1EC1n T\xE2y!"
+    playerVoiceClip: {fileID: 8300000, guid: 717b87e7fa232f443b7d357ed609f8fe, type: 3}
     responseLine: "Hi hi, em c\u1EA3m \u01A1n anh An nhi\u1EC1u nghen!"
+    responseVoiceClip: {fileID: 8300000, guid: a38667964e6430d4499d16acef58f785, type: 3}
     responseAnim: Waving_03
     targetSceneName: 
   defaultAnimState: Waving_02
@@ -740114,13 +740248,20 @@ MonoBehaviour:
   openingLines:
   - "An \u0111\xF3 h\u1EA3 con? \u0110i ch\u01A1i \u0111\xE2u t\u1EEB s\xE1ng t\u1EDBi gi\u1EDD, l\xFAa ch\xEDn v\xE0ng c\u1EA3 c\xE1nh \u0111\u1ED3ng r\u1ED3i k\xECa."
   - "V\u1EC1 nh\xE0 \u0103n ch\xE9n c\u01A1m g\u1EA1o m\u1EDBi m\xE1 v\u1EEBa n\u1EA5u, d\u1EBBo v\xE0 th\u01A1m l\u1EEBng lu\xF4n n\xE8 con."
+  openingVoiceClips:
+  - {fileID: 8300000, guid: 93e3232ae91a7f84d9c9828a579fb9de, type: 3}
+  - {fileID: 8300000, guid: e5cfebd2ce4742d44b310870eef6dd35, type: 3}
   choices:
   - choiceText: "D\u1EA1 m\xE1, c\u01A1m g\u1EA1o m\u1EDBi th\u01A1m qu\xE1 m\xE1 \u01A1i!"
+    playerVoiceClip: {fileID: 8300000, guid: c03aa92a1629caf45ac78f819c9449ee, type: 3}
     responseLine: "\u1EEA, \u0103n no r\u1ED3i ph\u1EE5 c\xE1c b\xE1c ngo\xE0i s\xE2n ph\u01A1i l\xFAa nghe con. Nh\u1EDB \u0111\u1EEBng ch\u1EA1y nh\u1EA3y l\xE0m \u0111\u1ED5 nia th\xF3c."
+    responseVoiceClip: {fileID: 8300000, guid: 29fa30c7e8536344398ca75556ffe620, type: 3}
     responseAnim: Female_Talking_01
     targetSceneName: 
   - choiceText: "M\xE1 \u01A1i, chi\u1EC1u nay con ra b\u1EBFn xem t\xE0u t\u1EADp k\u1EBFt nghen?"
+    playerVoiceClip: {fileID: 8300000, guid: 378a2083b0e6bc046ab6b00583f098e6, type: 3}
     responseLine: "\u0110\u01B0\u1EE3c ch\u1EDB, nh\u1EDB r\u1EE7 th\u1EB1ng Minh \u0111i chung cho c\xF3 b\u1EA1n, ch\u1EDB c\xF3 nh\u1EA3y gi\u1EE1n d\u01B0\u1EDBi m\xE9 n\u01B0\u1EDBc s\xE2u nghe ch\u01B0a!"
+    responseVoiceClip: {fileID: 8300000, guid: c771d8a6d56b20c4d9451d5f73094a68, type: 3}
     responseAnim: Female_Talking_02
     targetSceneName: 
   defaultAnimState: Female_Waving
@@ -743269,6 +743410,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1690607699}
   - component: {fileID: 1690607700}
+  - component: {fileID: 1690607701}
   m_Layer: 0
   m_Name: InteractionSystem_Genshin_Dialogue
   m_TagString: Untagged
@@ -743322,6 +743464,105 @@ MonoBehaviour:
   worldPromptKeyText: {fileID: 1091734969}
   worldPromptNameText: {fileID: 1218370896}
   worldPromptActionText: {fileID: 1583922186}
+  dialogueAudioSource: {fileID: 0}
+  shipHornClip: {fileID: 8300000, guid: 8a406f0346fa46e41959db761393e06c, type: 3}
+--- !u!82 &1690607701
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1690607698}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &1690738475
 GameObject:
   m_ObjectHideFlags: 0
@@ -747896,9 +748137,14 @@ MonoBehaviour:
   openingLines:
   - "A... anh An... b\u1EBF \xDAt... b\u1EBF \xDAt ra xem chim s\u1EBB \u0111\u1ED3ng!"
   - "\xDAt th\xEDch hoa v\xE0ng l\xFAa v\xE0ng l\u1EAFm!"
+  openingVoiceClips:
+  - {fileID: 8300000, guid: ed45f558b7ec29744baf8ee04716886c, type: 3}
+  - {fileID: 8300000, guid: 95b2a173fbeb5b643ab5efd56b1bacbb, type: 3}
   choices:
   - choiceText: "\xDAt \u0111\u1EE9ng ngoan k\u1EBBo ng\xE3 nghen, l\xE1t anh h\xE1i hoa cho!"
+    playerVoiceClip: {fileID: 8300000, guid: 4870dbd0a710513439487c66eb876b8d, type: 3}
     responseLine: "D\u1EA1... \xDAt ngoan m\xE0!"
+    responseVoiceClip: {fileID: 8300000, guid: 4685fdc7d5f029548aa01c61ea8c0bbd, type: 3}
     responseAnim: Waving_01
     targetSceneName: 
   defaultAnimState: Waving_01
