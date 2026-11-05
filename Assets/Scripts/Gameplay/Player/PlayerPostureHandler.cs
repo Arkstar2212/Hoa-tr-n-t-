@@ -47,12 +47,13 @@ namespace HoaVaMau.Gameplay
 
             if (grounded)
             {
-                if (crouchPressed)
+                bool lowOverhangAhead = CheckLowOverhangAhead(moveInputX, facingDirection);
+
+                if (crouchPressed || (Mathf.Abs(moveInputX) > 0.05f && lowOverhangAhead))
                 {
-                    // Người chơi chủ động bấm phím ngồi (S)
+                    // Người chơi bấm S HOẶC đang chủ động di chuyển tiến vào hốc/khe thấp
                     IsCrouching = true;
-                    // Bò nếu trần ép thấp (< 1.1m) hoặc đang di chuyển qua khe hẹp
-                    IsCrawling = blockedFromCrouch || (Mathf.Abs(moveInputX) > 0.05f && ceilingBlocked);
+                    IsCrawling = blockedFromCrouch || lowOverhangAhead || (Mathf.Abs(moveInputX) > 0.05f && ceilingBlocked);
                 }
                 else
                 {
