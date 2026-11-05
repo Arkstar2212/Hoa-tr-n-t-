@@ -13,19 +13,10 @@ using HoaVaMau.Test3D;
 namespace HoaVaMau.EditorScripts
 {
     /// <summary>
-    /// Automated Builder for the Village Gate Cinematic Sequence in "CaMau_1954_Village.unity".
-    /// Creates:
-    /// - Timeline Asset: Assets/Timelines/TL_Village_Intro.playable with Cinemachine Track & 5 Shot Clips
-    /// - Cinemachine Brain on Main Camera with EaseInOut blends (1.8s)
-    /// - 5 CinemachineCameras under "Cinematic_Cutscene_Rig":
-    ///     1. CM_Shot1_GateEstablishing: Chiếu camera từ cổng làng
-    ///     2. CM_Shot2_FaceCloseUp: Zoom vào mặt nhân vật
-    ///     3. CM_Shot3_BehindBack: Từ mặt quay qua sau lưng nhân vật
-    ///     4. CM_Shot4_CranePullBackHigh: Zoom camera ra xa từ sau lưng và cao lên từ từ
-    ///     5. CM_Shot5_GameplayBlend: Chuyển mượt về camera gameplay tại cổng làng
-    /// - Fullscreen UI Fade Canvas "Cinematic_FadeCanvas"
-    /// - Cutscene Manager "Cinematic_Cutscene_Manager" with CinematicVillageIntroDirector
-    /// - Full reference binding and scene persistence
+    /// Automated Builder for the One-Shot Continuous Cinematic Sequence in "CaMau_1954_Village.unity".
+    /// Kịch bản Một Cú Máy Liền Mạch (One-Shot):
+    /// - 1 Camera duy nhất di chuyển liên tục, không chuyển khung hình / không cắt cảnh.
+    /// - Cổng làng -> Dolly-in Zoom mặt -> Lượn 180° sau lưng -> An chạy về làng & Camera lùi xa bay lên cao -> An vào làng & Camera hạ xuống gameplay -> Bàn giao điều khiển.
     /// </summary>
     public static class BuildVillageIntroCinematicTimeline
     {
@@ -34,13 +25,14 @@ namespace HoaVaMau.EditorScripts
         private const string TimelinePath = "Assets/Timelines/TL_Village_Intro.playable";
 
         private const string WindAudioPath = "Assets/Audio/SFX/SFX_Ambience_RiceField_Wind.mp3";
+        private const string DirtFootstepAudioPath = "Assets/Audio/SFX/SFX_An_Footsteps_Dirt.mp3";
         private const string BgmAudioPath = "Assets/Audio/Phat_Hien_Binh_Yen.mp3";
 
         [MenuItem("Tools/Hoa Tren Dat Do/Build Village Intro Cinematic")]
         public static string Execute()
         {
             var activeScene = EditorSceneManager.GetActiveScene();
-            Debug.Log("[Cinematics Builder] Starting automated setup for Village Intro Cutscene...");
+            Debug.Log("[Cinematics Builder] Building One-Shot Continuous Intro Cutscene...");
 
             // 1. Locate Bé An
             var playerGo = GameObject.Find("An_Player");
@@ -57,6 +49,13 @@ namespace HoaVaMau.EditorScripts
             playerGo.transform.position = new Vector3(-7.0f, 0.505f, 184.0f);
             playerGo.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
 
+            var spawnGo = GameObject.Find("PlayerSpawn");
+            if (spawnGo != null)
+            {
+                spawnGo.transform.position = new Vector3(-7.0f, 0.505f, 184.0f);
+                spawnGo.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+            }
+
             // 2. Setup Main Camera & CinemachineBrain
             var mainCam = Camera.main;
             if (mainCam == null)
@@ -71,11 +70,10 @@ namespace HoaVaMau.EditorScripts
             {
                 brain = mainCam.gameObject.AddComponent<CinemachineBrain>();
             }
-            brain.DefaultBlend = new CinemachineBlendDefinition(CinemachineBlendDefinition.Styles.EaseInOut, 1.8f);
             brain.ShowDebugText = false;
             brain.enabled = true;
 
-            // 3. Setup Cinematic_Cutscene_Rig & Virtual Cameras
+            // 3. Setup Cinematic_Cutscene_Rig & SINGLE Continuous Virtual Camera
             var rigGo = GameObject.Find("Cinematic_Cutscene_Rig");
             if (rigGo == null)
             {
@@ -83,45 +81,23 @@ namespace HoaVaMau.EditorScripts
                 Undo.RegisterCreatedObjectUndo(rigGo, "Create Cutscene Rig");
             }
 
-            // Shot 1: Chiếu camera từ cổng làng
-            var shot1 = SetupCinemachineCamera(rigGo, "CM_Shot1_GateEstablishing",
-                new Vector3(-5.8f, 1.8f, 173.0f),
-                Quaternion.Euler(2.85f, 353.77f, 0.0f),
-                fov: 48f, priority: 25);
+            // Clean up any old discrete shot cameras
+            while (rigGo.transform.childCount > 0)
+            {
+                GameObject.DestroyImmediate(rigGo.transform.GetChild(0).gameObject);
+            }
 
-            // Shot 2: Zoom vào mặt nhân vật
-            var shot2 = SetupCinemachineCamera(rigGo, "CM_Shot2_FaceCloseUp",
-                new Vector3(-6.75f, 1.34f, 182.4f),
-                Quaternion.Euler(0.0f, 351.12f, 0.0f),
-                fov: 34f, priority: 10);
+            // Single continuous moving camera (One-Shot)
+            var camGo = new GameObject("CM_Continuous_CutsceneCam");
+            camGo.transform.SetParent(rigGo.transform, false);
+            camGo.transform.position = new Vector3(-5.8f, 1.8f, 173.0f);
+            camGo.transform.LookAt(new Vector3(-7.0f, 1.25f, 184.0f));
 
-            // Shot 3: Từ mặt quay qua sau lưng nhân vật
-            var shot3 = SetupCinemachineCamera(rigGo, "CM_Shot3_BehindBack",
-                new Vector3(-6.7f, 1.45f, 185.6f),
-                Quaternion.Euler(1.10f, 181.10f, 0.0f),
-                fov: 42f, priority: 10);
-
-            // Shot 4: Zoom camera ra xa từ sau lưng và cao lên từ từ
-            var shot4 = SetupCinemachineCamera(rigGo, "CM_Shot4_CranePullBackHigh",
-                new Vector3(-7.0f, 4.5f, 191.5f),
-                Quaternion.Euler(5.98f, 180.0f, 0.0f),
-                fov: 50f, priority: 10);
-
-            // Shot 5: Chuyển mượt về camera gameplay tại cổng làng
-            var shot5 = SetupCinemachineCamera(rigGo, "CM_Shot5_GameplayBlend",
-                new Vector3(-7.0f, 2.05f, 186.6f),
-                Quaternion.Euler(18.0f, 180.0f, 0.0f),
-                fov: 56.0f, priority: 10);
-
-            // Clean up any old unused shot cameras
-            var oldShot = rigGo.transform.Find("CM_Shot1_NorthGateWide");
-            if (oldShot != null) GameObject.DestroyImmediate(oldShot.gameObject);
-            oldShot = rigGo.transform.Find("CM_Shot2_FollowBehind");
-            if (oldShot != null) GameObject.DestroyImmediate(oldShot.gameObject);
-            oldShot = rigGo.transform.Find("CM_Shot3_RiceFieldTrack");
-            if (oldShot != null) GameObject.DestroyImmediate(oldShot.gameObject);
-            oldShot = rigGo.transform.Find("CM_Shot4_HighVillageVista");
-            if (oldShot != null) GameObject.DestroyImmediate(oldShot.gameObject);
+            var continuousCam = camGo.AddComponent<CinemachineCamera>();
+            continuousCam.Lens.FieldOfView = 48f;
+            continuousCam.Lens.NearClipPlane = 0.1f;
+            continuousCam.Lens.FarClipPlane = 1000f;
+            continuousCam.Priority.Value = 25;
 
             // 4. Setup Fade UI Canvas
             var fadeCanvasGo = GameObject.Find("Cinematic_FadeCanvas");
@@ -146,11 +122,10 @@ namespace HoaVaMau.EditorScripts
 
             var canvasGroup = fadeCanvasGo.GetComponent<CanvasGroup>();
             if (canvasGroup == null) canvasGroup = fadeCanvasGo.AddComponent<CanvasGroup>();
-            canvasGroup.alpha = 0f; // Hidden by default in Editor; activated during cutscene
+            canvasGroup.alpha = 0f; // Activated during cutscene runtime
             canvasGroup.blocksRaycasts = false;
             canvasGroup.interactable = false;
 
-            // Fullscreen black panel
             var panelTransform = fadeCanvasGo.transform.Find("BlackOverlay");
             GameObject panelGo = panelTransform != null ? panelTransform.gameObject : null;
             if (panelGo == null)
@@ -181,7 +156,6 @@ namespace HoaVaMau.EditorScripts
             }
             else
             {
-                // Clear existing tracks
                 var existingTracks = timeline.GetOutputTracks();
                 foreach (var track in existingTracks)
                 {
@@ -189,49 +163,15 @@ namespace HoaVaMau.EditorScripts
                 }
             }
 
-            // Create Cinemachine Track
+            // Create Cinemachine Track with ONE single continuous clip for the full cutscene
             var cmTrack = timeline.CreateTrack<CinemachineTrack>(null, "Cinemachine Track");
-
-            // Create clips
-            var clip1 = cmTrack.CreateClip<CinemachineShot>();
-            clip1.start = 0.0;
-            clip1.duration = 3.0;
-            clip1.displayName = "Shot 1: Gate Establishing";
-            var shotAsset1 = clip1.asset as CinemachineShot;
-            string guid1 = Guid.NewGuid().ToString();
-            shotAsset1.VirtualCamera.exposedName = guid1;
-
-            var clip2 = cmTrack.CreateClip<CinemachineShot>();
-            clip2.start = 3.0;
-            clip2.duration = 3.5;
-            clip2.displayName = "Shot 2: Zoom Into Face";
-            var shotAsset2 = clip2.asset as CinemachineShot;
-            string guid2 = Guid.NewGuid().ToString();
-            shotAsset2.VirtualCamera.exposedName = guid2;
-
-            var clip3 = cmTrack.CreateClip<CinemachineShot>();
-            clip3.start = 6.5;
-            clip3.duration = 3.0;
-            clip3.displayName = "Shot 3: Orbit Behind Back";
-            var shotAsset3 = clip3.asset as CinemachineShot;
-            string guid3 = Guid.NewGuid().ToString();
-            shotAsset3.VirtualCamera.exposedName = guid3;
-
-            var clip4 = cmTrack.CreateClip<CinemachineShot>();
-            clip4.start = 9.5;
-            clip4.duration = 3.5;
-            clip4.displayName = "Shot 4: Crane Pull Back High";
-            var shotAsset4 = clip4.asset as CinemachineShot;
-            string guid4 = Guid.NewGuid().ToString();
-            shotAsset4.VirtualCamera.exposedName = guid4;
-
-            var clip5 = cmTrack.CreateClip<CinemachineShot>();
-            clip5.start = 13.0;
-            clip5.duration = 1.5;
-            clip5.displayName = "Shot 5: Gameplay Perspective Blend";
-            var shotAsset5 = clip5.asset as CinemachineShot;
-            string guid5 = Guid.NewGuid().ToString();
-            shotAsset5.VirtualCamera.exposedName = guid5;
+            var clip = cmTrack.CreateClip<CinemachineShot>();
+            clip.start = 0.0;
+            clip.duration = 17.5;
+            clip.displayName = "One-Shot Continuous Village Intro";
+            var shotAsset = clip.asset as CinemachineShot;
+            string guid = Guid.NewGuid().ToString();
+            shotAsset.VirtualCamera.exposedName = guid;
 
             EditorUtility.SetDirty(timeline);
             AssetDatabase.SaveAssets();
@@ -250,37 +190,37 @@ namespace HoaVaMau.EditorScripts
             director.playOnAwake = true;
             director.extrapolationMode = DirectorWrapMode.None;
 
-            // Bind CinemachineBrain and Virtual Cameras to PlayableDirector
             director.SetGenericBinding(cmTrack, brain);
-            director.SetReferenceValue(guid1, shot1);
-            director.SetReferenceValue(guid2, shot2);
-            director.SetReferenceValue(guid3, shot3);
-            director.SetReferenceValue(guid4, shot4);
-            director.SetReferenceValue(guid5, shot5);
+            director.SetReferenceValue(guid, continuousCam);
 
-            // Setup Audio Sources
+            // Audio Sources
             var audioSources = mgrGo.GetComponents<AudioSource>();
             AudioSource ambienceSrc = audioSources.Length > 0 ? audioSources[0] : mgrGo.AddComponent<AudioSource>();
+            AudioSource footstepSrc = audioSources.Length > 1 ? audioSources[1] : mgrGo.AddComponent<AudioSource>();
 
             ambienceSrc.playOnAwake = false;
             ambienceSrc.spatialBlend = 0f;
             ambienceSrc.loop = true;
 
+            footstepSrc.playOnAwake = false;
+            footstepSrc.spatialBlend = 0f;
+            footstepSrc.loop = false;
+
             var windClip = AssetDatabase.LoadAssetAtPath<AudioClip>(WindAudioPath);
+            var dirtClip = AssetDatabase.LoadAssetAtPath<AudioClip>(DirtFootstepAudioPath);
             var bgmClip = AssetDatabase.LoadAssetAtPath<AudioClip>(BgmAudioPath);
 
             // Setup CinematicVillageIntroDirector component
             var introDirector = mgrGo.GetComponent<CinematicVillageIntroDirector>();
             if (introDirector == null) introDirector = mgrGo.AddComponent<CinematicVillageIntroDirector>();
 
-            // Serialize all references using SerializedObject
             var so = new SerializedObject(introDirector);
             so.Update();
 
-            so.FindProperty("cutsceneDuration").floatValue = 14.0f;
+            so.FindProperty("cutsceneDuration").floatValue = 17.5f;
             so.FindProperty("autoPlayOnStart").boolValue = true;
             so.FindProperty("allowSkip").boolValue = true;
-            so.FindProperty("fadeInDuration").floatValue = 1.6f;
+            so.FindProperty("fadeInDuration").floatValue = 1.5f;
 
             so.FindProperty("playerController").objectReferenceValue = playerController;
             so.FindProperty("characterController").objectReferenceValue = characterController;
@@ -289,16 +229,14 @@ namespace HoaVaMau.EditorScripts
 
             so.FindProperty("playableDirector").objectReferenceValue = director;
             so.FindProperty("cinemachineBrain").objectReferenceValue = brain;
-
-            so.FindProperty("shot1GateWide").objectReferenceValue = shot1;
-            so.FindProperty("shot2FaceCloseUp").objectReferenceValue = shot2;
-            so.FindProperty("shot3BehindBack").objectReferenceValue = shot3;
-            so.FindProperty("shot4CranePullBackHigh").objectReferenceValue = shot4;
-            so.FindProperty("shot5GameplayBlend").objectReferenceValue = shot5;
+            so.FindProperty("continuousCam").objectReferenceValue = continuousCam;
 
             so.FindProperty("fadeCanvasGroup").objectReferenceValue = canvasGroup;
 
             so.FindProperty("ambienceAudioSource").objectReferenceValue = ambienceSrc;
+            so.FindProperty("footstepAudioSource").objectReferenceValue = footstepSrc;
+
+            so.FindProperty("dirtFootstepClip").objectReferenceValue = dirtClip;
             so.FindProperty("windAmbienceClip").objectReferenceValue = windClip;
             so.FindProperty("villageBgmClip").objectReferenceValue = bgmClip;
 
@@ -307,33 +245,8 @@ namespace HoaVaMau.EditorScripts
             // Mark Scene Dirty
             EditorSceneManager.MarkSceneDirty(activeScene);
 
-            Debug.Log("[Cinematics Builder] Village Intro Cutscene setup successfully updated!");
-            return "SUCCESS: Village Intro Cutscene updated with Gate Establishing -> Face Zoom -> Turn Behind -> Crane Pull Back High -> Gameplay Handover.";
-        }
-
-        private static CinemachineCamera SetupCinemachineCamera(GameObject parent, string name, Vector3 pos, Quaternion rot, float fov, int priority)
-        {
-            var childTransform = parent.transform.Find(name);
-            GameObject camGo = childTransform != null ? childTransform.gameObject : null;
-            if (camGo == null)
-            {
-                camGo = new GameObject(name);
-                camGo.transform.SetParent(parent.transform, false);
-                Undo.RegisterCreatedObjectUndo(camGo, $"Create {name}");
-            }
-
-            camGo.transform.position = pos;
-            camGo.transform.rotation = rot;
-
-            var cmCam = camGo.GetComponent<CinemachineCamera>();
-            if (cmCam == null) cmCam = camGo.AddComponent<CinemachineCamera>();
-
-            cmCam.Lens.FieldOfView = fov;
-            cmCam.Lens.NearClipPlane = 0.1f;
-            cmCam.Lens.FarClipPlane = 1000f;
-            cmCam.Priority.Value = priority;
-
-            return cmCam;
+            Debug.Log("[Cinematics Builder] One-Shot Continuous Intro Cutscene built successfully!");
+            return "SUCCESS: One-Shot Continuous Intro Cutscene built (Single Camera: Gate -> Face Dolly -> 180° Orbit -> Sprint to Village & Crane-Up High -> Handover).";
         }
     }
 }
