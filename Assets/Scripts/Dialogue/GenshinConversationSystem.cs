@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -59,6 +59,7 @@ namespace HoaVaMau.Dialogue
         private string targetDialogueLine = "";
         private bool showingChoices = false;
         private bool showingResponseLine = false;
+        private DialogueChoice activeSelectedChoice = null;
 
         private List<Button> activeChoiceButtons = new List<Button>();
 
@@ -233,6 +234,7 @@ namespace HoaVaMau.Dialogue
             currentOpeningLineIndex = 0;
             showingChoices = false;
             showingResponseLine = false;
+            activeSelectedChoice = null;
 
             // Khóa di chuyển Bé An
             if (player3D != null) player3D.IsInputLocked = true;
@@ -375,6 +377,13 @@ namespace HoaVaMau.Dialogue
 
             if (showingResponseLine)
             {
+                if (activeSelectedChoice != null && !string.IsNullOrEmpty(activeSelectedChoice.targetSceneName))
+                {
+                    string target = activeSelectedChoice.targetSceneName;
+                    activeSelectedChoice = null;
+                    StartCoroutine(TransitionToSceneRoutine(target));
+                    return;
+                }
                 EndConversation();
                 return;
             }
@@ -465,6 +474,7 @@ namespace HoaVaMau.Dialogue
             if (choiceContainer != null) choiceContainer.SetActive(false);
 
             DialogueChoice choice = activeNPC.Choices[index];
+            activeSelectedChoice = choice;
 
             if (!string.IsNullOrEmpty(choice.responseAnim))
             {
@@ -472,6 +482,34 @@ namespace HoaVaMau.Dialogue
             }
 
             ShowDialogueLine(choice.responseLine);
+        }
+
+        private IEnumerator TransitionToSceneRoutine(string sceneName)
+        {
+            if (player3D != null) player3D.IsInputLocked = true;
+            if (choiceContainer != null) choiceContainer.SetActive(false);
+
+            float duration = 0.35f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+
+                if (topLetterbox != null) topLetterbox.anchoredPosition = new Vector2(0f, Mathf.Lerp(0f, 120f, t));
+                if (bottomLetterbox != null) bottomLetterbox.anchoredPosition = new Vector2(0f, Mathf.Lerp(0f, -120f, t));
+                if (dialogueCardGroup != null) dialogueCardGroup.alpha = 1f - t;
+
+                yield return null;
+            }
+
+            isInConversation = false;
+
+            HoaVaMau.Gameplay.SceneTransitionBotWLoader.LoadSceneWithBotWScreen(
+                sceneName,
+                "ĐANG RA BẾN TẬP KẾT XUỒNG BA LÁ..."
+            );
         }
 
         public void EndConversation()

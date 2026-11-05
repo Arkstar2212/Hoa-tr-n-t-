@@ -20919,6 +20919,109 @@ Transform:
   m_Children: []
   m_Father: {fileID: 795744059}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &48484661
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 790147247}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 4.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 56
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.28
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -44.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 6d4cf4e0dae26174db59e3d1ecb0b76c, type: 2}
+    - target: {fileID: 919132149155446097, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      propertyPath: m_Name
+      value: XuongBaLa_Moored_ChuBay
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 48484664}
+  m_SourcePrefab: {fileID: 100100000, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+--- !u!4 &48484662 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+  m_PrefabInstance: {fileID: 48484661}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &48484663 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: ef988794b1df5644c8ed60423d512dc5, type: 3}
+  m_PrefabInstance: {fileID: 48484661}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &48484664
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 48484663}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 815f624b47a433347bbfb928b1d116cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Test3D.FloatingBoat3D
+  bobHeight: 0.04
+  bobSpeed: 1.1
+  pitchAngle: 1.2
+  rollAngle: 1.8
+  rockSpeed: 1
 --- !u!1 &49007147
 GameObject:
   m_ObjectHideFlags: 0
@@ -50242,6 +50345,7 @@ MonoBehaviour:
   - choiceText: "D\u1EA1, d\u1EEBa n\u01B0\u1EDBc ch\u1EA5m \u0111\u01B0\u1EDDng \u0103n ngon h\u1EBFt s\u1EA9y!"
     responseLine: "Hahaha, \u0111\xFAng \u0111i\u1EC7u d\xE2n C\xE0 Mau r\u1ED3i \u0111\xF3 ch\xE1u!"
     responseAnim: Male_Talking_01
+    targetSceneName: 
   defaultAnimState: Male_Waving
   talkAnimState: Male_Talking_01
   interactRadius: 3
@@ -143654,6 +143758,7 @@ MonoBehaviour:
   - choiceText: "Ch\xE1u s\u1EBD lu\xF4n ghi nh\u1EDB l\u1EDDi c\u1EE5 d\u1EA1y \u1EA1."
     responseLine: "Ch\xE1u l\xE0 \u0111\u1EE9a tr\u1EBB ngoan. L\u1EDBn l\xEAn ph\u1EE5 gi\xFAp qu\xEA h\u01B0\u01A1ng \u0111\u1EA5t n\u01B0\u1EDBc nghen ch\xE1u."
     responseAnim: OldMan_Talking
+    targetSceneName: 
   defaultAnimState: OldMan_Idle
   talkAnimState: OldMan_Talking
   interactRadius: 3
@@ -149840,9 +149945,11 @@ MonoBehaviour:
   - choiceText: "\u0110i li\u1EC1n! Nh\u01B0ng coi ch\u1EEBng d\u1EABm g\xE3y l\xFAa c\u1EE7a b\xE1c N\u0103m nha!"
     responseLine: "Bi\u1EBFt r\u1ED3i, tao \u0111i men theo b\u1EDD m\u1EABu ru\u1ED9ng th\xF4i, kh\xF4ng c\xF3 d\u1EABm b\u1EADy b\u1EA1 \u0111\xE2u m\xE0 s\u1EE3!"
     responseAnim: Waving_02
+    targetSceneName: 
   - choiceText: "M\xE1 tao \u0111ang g\u1ECDi v\u1EC1 \u0103n c\u01A1m r\u1ED3i, l\xE1t g\u1EB7p nghen!"
     responseLine: "\u1EDC, \u0103n l\u1EB9 r\u1ED3i ch\u1EA1y ra \u0111\u1EA7u c\u1EA7u kh\u1EC9 \u0111\u1EA7u x\xF3m h\xFA tao m\u1ED9t ti\u1EBFng!"
     responseAnim: Waving_01
+    targetSceneName: 
   defaultAnimState: Waving_01
   talkAnimState: Waving_02
   interactRadius: 3
@@ -208669,6 +208776,7 @@ MonoBehaviour:
   - choiceText: "\u0110\u1EC3 anh b\u1EAFt con mu\u1ED3m mu\u1ED7m to g\u1EA5p \u0111\xF4i cho em coi!"
     responseLine: "D\u1EA1, em th\xE1ch anh b\u1EAFt \u0111\u01B0\u1EE3c \u0111\xF3!"
     responseAnim: Waving_02
+    targetSceneName: 
   defaultAnimState: Waving_01
   talkAnimState: Waving_02
   interactRadius: 3
@@ -261284,6 +261392,7 @@ MonoBehaviour:
   walkFootstepVolume: 0.95
   sprintFootstepVolume: 1
   crouchFootstepVolume: 0.6
+  footstepVolumeBoost: 1.3
 --- !u!143 &596441488
 CharacterController:
   m_ObjectHideFlags: 0
@@ -324664,8 +324773,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 748354826}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -13, y: 0.505, z: -3}
+  m_LocalRotation: {x: -0, y: 0.08715574, z: -0, w: 0.9961947}
+  m_LocalPosition: {x: 56, y: 0.89, z: -40.5}
   m_LocalScale: {x: 1.42, y: 1.42, z: 1.42}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -324694,14 +324803,20 @@ MonoBehaviour:
   - choiceText: "Ch\xFA B\u1EA3y cho con qu\xE1 giang qua b\xEAn kia s\xF4ng v\u1EDBi!"
     responseLine: "L\xEAn xu\u1ED3ng ng\u1ED3i im nghe con, s\xF4ng s\xE2u n\u01B0\u1EDBc xi\u1EBFt, ch\u1EDB th\xF2 tay qu\u01A1 n\u01B0\u1EDBc k\u1EBBo tr\u01B0\u1EE3t ch\xE2n!"
     responseAnim: Male_Talking_01
+    targetSceneName: 
   - choiceText: "Ch\xFA \u01A1i, ngo\xE0i bi\u1EC3n S\xF4ng \u0110\u1ED1c t\xE0u t\u1EADp k\u1EBFt to l\u1EAFm h\u1EA3 ch\xFA?"
     responseLine: "To nh\u01B0 qu\u1EA3 n\xFAi con \xE0! T\xE0u ch\u1EDF c\xE1n b\u1ED9 \u0111\u1ED3ng b\xE0o ra B\u1EAFc, c\u1EDD \u0111\u1ECF sao v\xE0ng bay r\u1EF1c r\u1EE1 c\u1EA3 g\xF3c tr\u1EDDi!"
     responseAnim: Male_Talking_02
-  defaultAnimState: Male_Waving
+    targetSceneName: 
+  - choiceText: "Ch\xFA B\u1EA3y \u01A1i, ch\u1EDF con ra \u0111o\xE0n t\xE0u t\u1EADp k\u1EBFt ra kh\u01A1i v\u1EDBi!"
+    responseLine: "\u0110\u01B0\u1EE3c r\u1ED3i con, l\xEAn xu\u1ED3ng mau k\u1EBBo t\xE0u nh\u1ED5 neo! Chuy\u1EBFn t\xE0u n\xE0y ch\u1EDF theo bao ni\u1EC1m tin v\xE0 \u01B0\u1EDBc v\u1ECDng c\u1EE7a \u0111\u1ED3ng b\xE0o mi\u1EC1n Nam!"
+    responseAnim: Male_Waving
+    targetSceneName: Cutscene_EndGame
+  defaultAnimState: Male_Talking_02
   talkAnimState: Male_Talking_01
-  interactRadius: 3
+  interactRadius: 3.8
   promptOffset: {x: 0, y: 2.05, z: 0}
-  customCamOffset: {x: 0, y: 0, z: 0}
+  customCamOffset: {x: -0.6, y: 0.45, z: 0.3}
 --- !u!136 &748354829
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -324721,10 +324836,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.49699998
-  m_Height: 2.414
+  m_Radius: 0.35
+  m_Height: 1.8
   m_Direction: 1
-  m_Center: {x: 0, y: 1.207, z: 0}
+  m_Center: {x: 0, y: 0.9, z: 0}
 --- !u!95 &748354830
 Animator:
   serializedVersion: 7
@@ -343573,7 +343688,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 48484662}
   m_Father: {fileID: 1798382501}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &790477208
@@ -390990,6 +391106,7 @@ MonoBehaviour:
   - choiceText: "\u0110\u1EC3 em ph\u1EE5 ch\u1ECB x\xE1ch m\u1ED9t th\xF9ng nghen!"
     responseLine: "Th\xF4i kh\u1ECFi ch\xFA em nh\u1ECF x\xEDu, x\xE1ch n\u1EB7ng \u0111au l\u01B0ng m\xE1 la ch\u1ECB ch\u1EBFt! Lo \u0111i ch\u01A1i ngoan \u0111i."
     responseAnim: Female_Talking_01
+    targetSceneName: 
   defaultAnimState: Female_Waving
   talkAnimState: Female_Talking_01
   interactRadius: 3
@@ -584641,12 +584758,15 @@ MonoBehaviour:
   - choiceText: "Ch\xE1u th\u1EA5y \u0111\u1ED3ng l\xFAa v\xE0ng tr\u1EA3i d\xE0i \u0111\u1EB9p qu\xE1 th\u01B0a b\xE1c!"
     responseLine: "\u0110\xFAng r\u1ED3i ch\xE1u, \u0111\u1EA5t \u0111ai Nam B\u1ED9 ph\xF9 sa m\xE0u m\u1EE1 nu\xF4i n\u1EA5ng ng\u01B0\u1EDDi d\xE2n m\xECnh. Gi\u1EEF l\u1EA5y h\u1EA1t ng\u1ECDc tr\u1EDDi n\xE0y nghe con."
     responseAnim: OldMan_Talking
+    targetSceneName: 
   - choiceText: "B\xE1c cho ch\xE1u h\u1ECFi t\xE0u t\u1EADp k\u1EBFt bao gi\u1EDD r\u1EDDi b\u1EBFn?"
     responseLine: "S\u1EAFp r\u1ED3i con \xE0. Ch\xFA B\u1EA3y ngo\xE0i b\u1EBFn \u0111\xF2 \u0111ang h\u1ED1i h\u1EA3 chuy\u1EC3n nh\u1EEFng bao g\u1EA1o cu\u1ED1i c\xF9ng l\xEAn ghe \u0111\u1EA5y."
     responseAnim: OldMan_Talking
+    targetSceneName: 
   - choiceText: "Ch\xE1u xin ph\xE9p \u0111i d\u1EA1o ti\u1EBFp quanh x\xF3m \u1EA1."
     responseLine: "\u0110i c\u1EA9n th\u1EADn nghe con, nh\u1EDB gh\xE9 qua m\xE1 d\u1EB7n chuy\u1EC7n nh\xE0 tr\u01B0\u1EDBc khi tr\u1EDDi t\u1ED1i nghen."
     responseAnim: OldMan_Talking
+    targetSceneName: 
   defaultAnimState: OldMan_Idle
   talkAnimState: OldMan_Talking
   interactRadius: 3
@@ -614486,9 +614606,11 @@ MonoBehaviour:
   - choiceText: "B\xE1c Ba k\u1EC3 thi\u1EC7t kh\xF4ng hay b\xE1c l\u1EA1i n\xF3i d\xF3c \u0111\xF3?"
     responseLine: "T\u1ED5 cha m\xE0y! B\xE1c Ba m\xE0y m\xE0 th\xE8m n\xF3i d\xF3c h\u1EA3! H\u1ECFi c\u1EA3 x\xF3m R\u1EA1ch G\u1ED1c n\xE0y ai m\xE0 kh\xF4ng ph\u1EE5c t\xE0i b\xE1c!"
     responseAnim: OldMan_Talking
+    targetSceneName: 
   - choiceText: "Con th\xEDch nghe chuy\u1EC7n b\xE1c Ba c\u01B0\u1EE1i r\xF9a v\xE0ng h\u01A1n!"
     responseLine: "H\xE8 h\xE8, \u0111\u1EC3 b\u1EEFa n\xE0o r\u1EA3nh b\xE1c d\u1EABn m\xE0y v\xF4 lung Tr\xE0m, ch\u1EC9 cho con r\xF9a to b\u1EB1ng c\xE1i nia ph\u01A1i l\xFAa!"
     responseAnim: OldMan_Talking
+    targetSceneName: 
   defaultAnimState: OldMan_Idle
   talkAnimState: OldMan_Talking
   interactRadius: 3
@@ -684468,6 +684590,7 @@ MonoBehaviour:
   - choiceText: "D\xEC Hai \u01A1i, m\u1ECDi ng\u01B0\u1EDDi s\u1EBD s\u1EDBm tr\u1EDF v\u1EC1 sum h\u1ECDp ph\u1EA3i kh\xF4ng d\xEC?"
     responseLine: "Ch\u1EAFc ch\u1EAFn r\u1ED3i ch\xE1u! \u0110\u1ED3ng b\xE0o mi\u1EC1n Nam l\xFAc n\xE0o c\u0169ng h\u01B0\u1EDBng v\u1EC1 ng\xE0y h\u1ED9i ng\u1ED9."
     responseAnim: Female_Talking_02
+    targetSceneName: 
   defaultAnimState: Female_Waving
   talkAnimState: Female_Talking_02
   interactRadius: 3
@@ -730437,6 +730560,7 @@ MonoBehaviour:
   - choiceText: "Kh\xE9o tay qu\xE1, nh\u01B0 n\xF3n c\xF4ng ch\xFAa mi\u1EC1n T\xE2y!"
     responseLine: "Hi hi, em c\u1EA3m \u01A1n anh An nhi\u1EC1u nghen!"
     responseAnim: Waving_03
+    targetSceneName: 
   defaultAnimState: Waving_02
   talkAnimState: Waving_03
   interactRadius: 3
@@ -739994,9 +740118,11 @@ MonoBehaviour:
   - choiceText: "D\u1EA1 m\xE1, c\u01A1m g\u1EA1o m\u1EDBi th\u01A1m qu\xE1 m\xE1 \u01A1i!"
     responseLine: "\u1EEA, \u0103n no r\u1ED3i ph\u1EE5 c\xE1c b\xE1c ngo\xE0i s\xE2n ph\u01A1i l\xFAa nghe con. Nh\u1EDB \u0111\u1EEBng ch\u1EA1y nh\u1EA3y l\xE0m \u0111\u1ED5 nia th\xF3c."
     responseAnim: Female_Talking_01
+    targetSceneName: 
   - choiceText: "M\xE1 \u01A1i, chi\u1EC1u nay con ra b\u1EBFn xem t\xE0u t\u1EADp k\u1EBFt nghen?"
     responseLine: "\u0110\u01B0\u1EE3c ch\u1EDB, nh\u1EDB r\u1EE7 th\u1EB1ng Minh \u0111i chung cho c\xF3 b\u1EA1n, ch\u1EDB c\xF3 nh\u1EA3y gi\u1EE1n d\u01B0\u1EDBi m\xE9 n\u01B0\u1EDBc s\xE2u nghe ch\u01B0a!"
     responseAnim: Female_Talking_02
+    targetSceneName: 
   defaultAnimState: Female_Waving
   talkAnimState: Female_Talking_01
   interactRadius: 3
@@ -747774,6 +747900,7 @@ MonoBehaviour:
   - choiceText: "\xDAt \u0111\u1EE9ng ngoan k\u1EBBo ng\xE3 nghen, l\xE1t anh h\xE1i hoa cho!"
     responseLine: "D\u1EA1... \xDAt ngoan m\xE0!"
     responseAnim: Waving_01
+    targetSceneName: 
   defaultAnimState: Waving_01
   talkAnimState: Waving_02
   interactRadius: 3

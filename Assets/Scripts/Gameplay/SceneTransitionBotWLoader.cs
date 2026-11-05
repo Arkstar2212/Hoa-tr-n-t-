@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -435,6 +435,26 @@ namespace HoaVaMau.Gameplay
             if (font == null) font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             // 1. BotW Split Loading Panel (Built first so Black Curtain sits on top for clean fade-in/out)
+                        if (boySilhouetteSprite == null)
+            {
+#if UNITY_EDITOR
+                boySilhouetteSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Textures/PierScene/running_boy_sprite.png");
+#endif
+            }
+            if (shipSilhouetteSprite == null)
+            {
+#if UNITY_EDITOR
+                shipSilhouetteSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Textures/Canh1_Sprites/TransportShip_1954_Card.png")
+                    ?? UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Textures/Environment/T_Camau_Boat_Hero.png");
+#endif
+            }
+            if (softDotSprite == null)
+            {
+#if UNITY_EDITOR
+                softDotSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Textures/UI/T_Loading_SoftDot.png");
+#endif
+            }
+
             BuildBotWLoadingPanel(canvasGO.transform, font);
 
             // 2. Topmost Pure Black Curtain (#020205)

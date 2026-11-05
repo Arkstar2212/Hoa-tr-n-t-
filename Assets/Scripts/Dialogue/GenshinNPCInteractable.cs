@@ -15,6 +15,9 @@ namespace HoaVaMau.Dialogue
 
         [Tooltip("Animation state khi NPC phản hồi (tùy chọn)")]
         public string responseAnim = "";
+
+        [Tooltip("Tên Scene đích để chuyển tiếp sau khi phản hồi (để trống nếu chỉ trò chuyện bình thường)")]
+        public string targetSceneName = "";
     }
 
     /// <summary>
