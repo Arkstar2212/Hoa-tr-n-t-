@@ -8325,7 +8325,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 36d3450730859404da68f4d9e113162e, type: 3}
       propertyPath: m_Name
-      value: VillageChild_02_BeTu
+      value: VillageChild_02_BeMan
       objectReference: {fileID: 0}
     - target: {fileID: 1568410546411677557, guid: 36d3450730859404da68f4d9e113162e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -8917,10 +8917,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf97530dc9d9e441b1b91f066980432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.VillageNPCInteractable
-  npcName: "B\xE9 T\u01B0"
+  npcName: "B\xE9 M\u1EADn"
   dialogueLines:
-  - "Anh An \u01A1i, gi\xE0n b\u1EA7u nh\xE0 em h\xF4m nay n\u1EDF hoa v\xE0ng \u0111\u1EB9p l\u1EAFm!"
-  - "Anh qua th\u0103m m\xE1 v\u1EDBi c\u1EA3 nh\xE0 mau \u0111i nha!"
+  - "Anh An coi em k\u1EBFt hoa d\u1EA1i c\xE0i l\xEAn n\xF3n l\xE1 \u0111\u1EB9p ch\u01B0a n\xE8! Hoa m\xE0u v\xE0ng t\u01B0\u01A1i nh\u01B0 h\u1EA1t l\xFAa ch\xEDn ngo\xE0i \u0111\u1ED3ng v\u1EADy \u0111\xF3."
+  - "Chi\u1EC1u nay em \u0111em n\xF3n hoa ra b\u1EBFn S\xF4ng \u0110\u1ED1c t\u1EB7ng m\u1EA5y ch\xFA b\u1ED9 \u0111\u1ED9i t\u1EADp k\u1EBFt, ch\xFAc c\xE1c ch\xFA \u0111i m\u1EA1nh gi\u1ECFi ng\xE0y h\xF2a b\xECnh sum h\u1ECDp!"
   defaultAnimState: Idle2
   facePlayerWhenClose: 1
   interactRadius: 2.6
@@ -30973,7 +30973,7 @@ Transform:
   m_GameObject: {fileID: 299519733}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 91.8, y: -0.45999992, z: -10.5}
+  m_LocalPosition: {x: -3.2, y: 75, z: -13.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -31064,7 +31064,7 @@ Camera:
     height: 1
   near clip plane: 0.1
   far clip plane: 5000
-  field of view: 24
+  field of view: 38
   orthographic: 0
   orthographic size: 10
   m_Depth: 10
@@ -41767,7 +41767,7 @@ Transform:
   m_GameObject: {fileID: 452856967}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 89.12046, y: -0.011199999, z: 0}
+  m_LocalPosition: {x: -0.17954402, y: 1.498, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -57557,7 +57557,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 4cbd623f1ce44d94fb24118c3b4d6798, type: 3}
       propertyPath: m_Name
-      value: VillageNPC_06_AnhHai
+      value: VillageNPC_06_ChuBayCheoDo
       objectReference: {fileID: 0}
     - target: {fileID: 1337605077062658954, guid: 4cbd623f1ce44d94fb24118c3b4d6798, type: 3}
       propertyPath: m_LocalPosition.x
@@ -58157,10 +58157,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf97530dc9d9e441b1b91f066980432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.VillageNPCInteractable
-  npcName: "Anh Hai Thanh Ni\xEAn"
+  npcName: "Ch\xFA B\u1EA3y Ch\xE8o \u0110\xF2"
   dialogueLines:
-  - "H\u1EB9n hai n\u0103m n\u1EEFa th\u1ED1ng nh\u1EA5t n\u01B0\u1EDBc nh\xE0, anh Hai s\u1EBD v\u1EC1 l\u1EA1i x\xF3m R\u1EA1ch G\u1ED1c g\u1EB7t l\xFAa c\xF9ng t\u1EE5i em!"
-  - "\u1EDE nh\xE0 r\xE1ng h\u1ECDc h\xE0nh v\xE0 ph\u1EE5 m\xE1 nghe An!"
+  - "Xu\u1ED3ng ba l\xE1 ch\xFA \u0111\xE3 bu\u1ED9c ch\xE8o s\u1EB5n s\xE0ng n\u01A1i b\u1EBFn n\u01B0\u1EDBc r\u1ED3i \u0111\xE2y An con \u01A1i!"
+  - "Gi\xF3 bi\u1EC3n C\xE0 Mau th\u1ED5i l\u1ED3ng l\u1ED9ng, con n\u01B0\u1EDBc r\xF2ng \u0111\u01B0a ghe thuy\u1EC1n t\u1EA5p n\u1EADp v\u1EC1 c\u1EEDa bi\u1EC3n S\xF4ng \u0110\u1ED1c ti\u1EC5n \u0111o\xE0n t\xE0u t\u1EADp k\u1EBFt r\u1ED3i \u0111\xF3 con."
   defaultAnimState: Talk
   facePlayerWhenClose: 1
   interactRadius: 2.6
@@ -73611,7 +73611,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: f4f6e0298b1b17c46aee1d424551cae5, type: 3}
       propertyPath: m_Name
-      value: VillageNPC_03_OngBayElder
+      value: VillageNPC_03_TruongThonNam
       objectReference: {fileID: 0}
     - target: {fileID: 1337605077062658954, guid: f4f6e0298b1b17c46aee1d424551cae5, type: 3}
       propertyPath: m_LocalPosition.x
@@ -74219,10 +74219,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf97530dc9d9e441b1b91f066980432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.VillageNPCInteractable
-  npcName: "\xD4ng B\u1EA3y"
+  npcName: "Tr\u01B0\u1EDFng Th\xF4n N\u0103m"
   dialogueLines:
-  - "\u0110\u1EA5t \u0111\u1ECF, ph\xF9 sa v\xE0 r\u1EEBng \u0111\u01B0\u1EDBc C\xE0 Mau \u0111\xE3 nu\xF4i l\u1EDBn bao th\u1EBF h\u1EC7 ng\u01B0\u1EDDi d\xE2n mi\u1EC1n Nam m\xECnh."
-  - "D\xF9 ai \u0111i xa t\u1EDBi \u0111\xE2u, ch\u1EC9 c\u1EA7n nh\u1EDB m\xE0u l\xFAa v\xE0ng v\xE0 b\xF3ng nh\xE0 s\xE0n n\xE0y l\xE0 nh\u1EDB \u0111\u01B0\u1EDDng v\u1EC1 qu\xEA h\u01B0\u01A1ng."
+  - "Ch\xE0o ch\xE1u An! \u0110i ch\u01A1i tr\xEAn r\u1EEBng v\u1EC1 c\xF3 \u0111\xF3i b\u1EE5ng kh\xF4ng con? Nh\xECn c\xE1nh \u0111\u1ED3ng l\xFAa ch\xEDn v\xE0ng \xF3ng \u1EA3 tr\u1EA3i d\xE0i t\xEDt t\u1EAFp th\u1EA5y \u1EA5m no c\u1EA3 x\xF3m l\xE0ng."
+  - "\u0110\u1EA5t \u0111ai Nam B\u1ED9 ph\xF9 sa m\xE0u m\u1EE1 nu\xF4i l\u1EDBn ng\u01B0\u1EDDi d\xE2n m\xECnh. X\xF3m m\xECnh \u0111ang \u0111\xF3ng bao nh\u1EEFng h\u1EA1t ng\u1ECDc tr\u1EDDi g\u1EEDi theo \u0111o\xE0n t\xE0u ra mi\u1EC1n B\u1EAFc \u0111\xF3 ch\xE1u."
   defaultAnimState: Idle
   facePlayerWhenClose: 1
   interactRadius: 2.6
@@ -89216,10 +89216,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf97530dc9d9e441b1b91f066980432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.VillageNPCInteractable
-  npcName: "M\xE1 C\u1EE7a An"
+  npcName: "M\xE1 c\u1EE7a An"
   dialogueLines:
-  - "An c\u1EE7a m\xE1 v\u1EC1 r\u1ED3i \u0111\xF3 h\u1EA3 con! \u0110i ch\u01A1i tr\xEAn r\u1EEBng c\xF3 m\u1EC7t kh\xF4ng con?"
-  - "B\xE0 con trong x\xF3m \u0111ang chu\u1EA9n b\u1ECB ra b\u1EBFn s\xF4ng ti\u1EC5n \u0111o\xE0n t\xE0u n\u0103m 1954. Con gi\u1EEF g\xECn s\u1EE9c kh\u1ECFe, nh\u1EDB l\u1EDDi m\xE1 d\u1EB7n nghen!"
+  - "An \u0111\xF3 h\u1EA3 con! \u0110i ch\u01A1i \u0111\xE2u t\u1EEB s\xE1ng t\u1EDBi gi\u1EDD, l\xFAa ch\xEDn v\xE0ng c\u1EA3 c\xE1nh \u0111\u1ED3ng r\u1ED3i k\xECa con."
+  - "V\u1EC1 nh\xE0 \u0103n ch\xE9n c\u01A1m g\u1EA1o m\u1EDBi m\xE1 v\u1EEBa n\u1EA5u, d\u1EBBo v\xE0 th\u01A1m l\u1EEBng n\xE8 con. \u0102n xong r\u1ED3i nh\u1EDB d\u1EA1o quanh x\xF3m ch\xE0o c\xE1c b\xE1c, c\xE1c c\xF4 nghen!"
   defaultAnimState: Wave
   facePlayerWhenClose: 1
   interactRadius: 2.6
@@ -93872,7 +93872,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: dd913573126822f46ab634c54c291531, type: 3}
       propertyPath: m_Name
-      value: VillageNPC_07_CoUt
+      value: VillageNPC_07_DiHai
       objectReference: {fileID: 0}
     - target: {fileID: 1337605077062658954, guid: dd913573126822f46ab634c54c291531, type: 3}
       propertyPath: m_LocalPosition.x
@@ -94488,10 +94488,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf97530dc9d9e441b1b91f066980432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.VillageNPCInteractable
-  npcName: "C\xF4 \xDAt"
+  npcName: "D\xEC Hai"
   dialogueLines:
-  - "Ngo\xE0i b\u1EBFn s\xF4ng \u0110\u1ED1c c\u1EDD hoa r\u1EE3p tr\u1EDDi r\u1ED3i \u0111\xF3 An \u01A1i."
-  - "\u0110i th\xEAm m\u1ED9t \u0111o\u1EA1n n\u1EEFa qua r\u1EB7ng d\u1EEBa l\xE0 t\u1EDBi b\u1EBFn thuy\u1EC1n c\u1EE7a x\xF3m m\xECnh r\u1ED3i."
+  - "B\xE0 con mang th\xEAm b\xE1nh t\xE9t v\u1EDBi g\u1EA1o m\u1EDBi ra b\u1EBFn S\xF4ng \u0110\u1ED1c g\u1EEDi c\xE1c anh b\u1ED9 \u0111\u1ED9i nghen!"
+  - "\u0110i m\u1EA1nh gi\u1ECFi nghen c\xE1c anh, ng\xE0y th\u1ED1ng nh\u1EA5t h\xF2a b\xECnh l\u1EA1i v\u1EC1 v\u1EDBi qu\xEA h\u01B0\u01A1ng C\xE0 Mau ru\u1ED9t th\u1ECBt!"
   defaultAnimState: Idle2
   facePlayerWhenClose: 1
   interactRadius: 2.6
@@ -113361,7 +113361,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 7de63364202178d45820951363b06926, type: 3}
       propertyPath: m_Name
-      value: VillageChild_01_Ti
+      value: VillageChild_01_ThangMinh
       objectReference: {fileID: 0}
     - target: {fileID: 1002098295827509562, guid: 7de63364202178d45820951363b06926, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -113981,10 +113981,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf97530dc9d9e441b1b91f066980432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.VillageNPCInteractable
-  npcName: "Cu T\xED"
+  npcName: "Th\u1EB1ng Minh"
   dialogueLines:
-  - "Anh An v\u1EC1 r\u1ED3i k\xECa! M\xE1 anh \u0111ang n\u1EA5u c\u01A1m trong nh\xE0 s\xE0n \u0111\u1EB1ng kia \u0111\xF3!"
-  - "Chuy\u1EBFn t\xE0u chuy\u1EC3n qu\xE2n ngo\xE0i b\u1EBFn s\xF4ng \u0110\u1ED1c s\u1EAFp r\u1EDDi b\u1EBFn r\u1ED3i!"
+  - "\xCA An! M\xE0y \u0111i r\u1EEBng v\u1EC1 r\u1ED3i h\u1EA3? Mau l\u1EA1i \u0111\xE2y \u0111i b\u1EAFt c\xE0o c\xE0o v\u1EDBi tao, h\xF4m qua tao th\u1EA5y t\u1ED5 chim s\u1EBB \u0111\u1ED3ng n\xFAp d\u01B0\u1EDBi g\u1ED1c l\xFAa b\u1EF1 ch\xE0 b\xE1 lu\xF4n \xE1!"
+  - "M\xE1 N\u0103m n\u1EA5u c\u01A1m m\u1EDBi th\u01A1m ph\u1EE9c \u0111\u1EE3i m\xE0y trong nh\xE0 k\xECa, \u0103n l\u1EB9 r\u1ED3i ch\u1EA1y ra \u0111\u1EA7u c\u1EA7u kh\u1EC9 h\xFA tao m\u1ED9t ti\u1EBFng \u0111i xem t\xE0u t\u1EADp k\u1EBFt nghen!"
   defaultAnimState: Wave
   facePlayerWhenClose: 1
   interactRadius: 2.6
@@ -119060,7 +119060,7 @@ Transform:
   m_GameObject: {fileID: 1404618480}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: 0.24000001, z: -13}
+  m_LocalPosition: {x: 1.8, y: -0.45999992, z: -10.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -121438,7 +121438,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 04cdc5238ede31944bdd2a792bee1814, type: 3}
       propertyPath: m_Name
-      value: VillageNPC_04_ChuTuStrolling
+      value: VillageNPC_04_ChuSauLamVuon
       objectReference: {fileID: 0}
     - target: {fileID: 1337605077062658954, guid: 04cdc5238ede31944bdd2a792bee1814, type: 3}
       propertyPath: m_LocalPosition.x
@@ -122034,10 +122034,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf97530dc9d9e441b1b91f066980432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.VillageNPCInteractable
-  npcName: "Ch\xFA T\u01B0 D\xE2n L\xE0ng"
+  npcName: "Ch\xFA S\xE1u L\xE0m V\u01B0\u1EDDn"
   dialogueLines:
-  - "Ch\xFA \u0111ang ki\u1EC3m tra l\u1EA1i m\u1EA5y bao th\xF3c m\u1EDBi ph\u01A1i kh\xF4 ngo\xE0i s\xE2n."
-  - "M\xE1 con \u0111ang \u0111\u1EE9ng \u0111\u1EE3i ngay tr\u01B0\u1EDBc hi\xEAn nh\xE0 s\xE0n \u0111\u1EB1ng kia k\xECa An!"
+  - "M\u1EA5y qu\xE0y d\u1EEBa n\u01B0\u1EDBc b\xEAn kia m\u01B0\u01A1ng ng\u1ECDt n\u01B0\u1EDBc c\u01A1m d\xE0y d\u1EEF l\u1EAFm An \u01A1i. L\xE1t gh\xE9 v\u01B0\u1EDDn ch\xFA ch\u1EB7t cho m\u1ED9t tr\xE1i \u0103n m\xE1t d\u1EA1 nghen!"
+  - "L\xFAa n\u0103m nay tr\xFAng m\xF9a tr\u0129u h\u1EA1t, ch\xFA m\u1EDBi ph\u1EE5 ph\u01A1i xong m\u1EA5y nong th\xF3c v\xE0ng r\u1EF1c ngo\xE0i s\xE2n \u0111\xECnh \u0111\u1EB1ng tr\u01B0\u1EDBc k\xECa."
   defaultAnimState: Walk
   facePlayerWhenClose: 1
   interactRadius: 2.6
@@ -136115,7 +136115,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: cff11e491a6b0c24dbfede559b0fcac6, type: 3}
       propertyPath: m_Name
-      value: VillageNPC_01_BacBaWelcomer
+      value: VillageNPC_01_BacBaPhi
       objectReference: {fileID: 0}
     - target: {fileID: 1337605077062658954, guid: cff11e491a6b0c24dbfede559b0fcac6, type: 3}
       propertyPath: m_LocalPosition.x
@@ -136736,10 +136736,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf97530dc9d9e441b1b91f066980432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.VillageNPCInteractable
-  npcName: "B\xE1c Ba N\xF4ng D\xE2n"
+  npcName: "B\xE1c Ba Phi"
   dialogueLines:
-  - "V\u1EC1 t\u1EDBi x\xF3m r\u1ED3i h\u1EA3 An! Nh\xECn c\xE1nh \u0111\u1ED3ng l\xFAa ch\xEDn v\xE0ng r\u1EF1c c\u1EA3 g\xF3c tr\u1EDDi th\u1EA5y \u1EA5m l\xF2ng qu\xE1 con hen."
-  - "N\u0103m nay tr\xFAng m\xF9a, b\xE0 con m\xECnh g\u1EB7t l\xFAa \u0111em g\xF3p g\u1EA1o ti\u1EC5n \u0111o\xE0n qu\xE2n t\u1EADp k\u1EBFt ngo\xE0i b\u1EBFn S\xF4ng \u0110\u1ED1c."
+  - "Hahaha! Th\u1EB1ng nh\u1ECF An v\u1EC1 t\u1EDBi x\xF3m r\u1ED3i h\u1EA3! Mau l\u1EA1i \u0111\xE2y b\xE1c Ba k\u1EC3 chuy\u1EC7n c\u01B0\u1EE1i r\xF9a v\xE0ng v\u1EDBi b\u1EAFt c\xE1 s\u1EA5u kh\u1ED5ng l\u1ED3 \u1EDF lung Tr\xE0m cho nghe!"
+  - "N\u0103m nay l\xFAa tr\xFAng m\xF9a v\xE0ng r\u1EF1c c\u1EA3 c\xE1nh \u0111\u1ED3ng, b\xE0 con x\xF3m R\u1EA1ch G\u1ED1c m\xECnh \u0111ang h\u1ED1i h\u1EA3 g\u1EB7t l\xFAa g\xF3p g\u1EA1o ti\u1EC5n \u0111o\xE0n t\xE0u t\u1EADp k\u1EBFt ngo\xE0i b\u1EBFn S\xF4ng \u0110\u1ED1c \u0111\xF3 con!"
   defaultAnimState: Wave
   facePlayerWhenClose: 1
   interactRadius: 2.6
@@ -149645,7 +149645,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: acafecb4c64df0e459a547ef85476579, type: 3}
       propertyPath: m_Name
-      value: VillageNPC_02_CoSauGourdTrellis
+      value: VillageNPC_02_ChiTuGanhNuoc
       objectReference: {fileID: 0}
     - target: {fileID: 1568410546411677557, guid: acafecb4c64df0e459a547ef85476579, type: 3}
       propertyPath: m_LocalPosition.x
@@ -150245,10 +150245,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf97530dc9d9e441b1b91f066980432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HoaVaMau.Gameplay.VillageNPCInteractable
-  npcName: "C\xF4 S\xE1u"
+  npcName: "Ch\u1ECB T\u01B0 G\xE1nh N\u01B0\u1EDBc"
   dialogueLines:
-  - "M\u1EA5y tr\xE1i b\u1EA7u d\u01B0\u1EDBi gi\xE0n n\u0103m nay sai tr\xE1i l\u1EAFm An \u01A1i."
-  - "C\xF4 h\xE1i s\u1EB5n m\u1EA5y b\u1EA7u n\u01B0\u1EDBc ng\u1ECDt m\xE1t \u0111\u1EC3 d\xE0nh cho m\u1EA5y ch\xFA b\u1ED9 \u0111\u1ED9i mang l\xEAn t\xE0u."
+  - "Tr\xE1nh \u0111\u01B0\u1EDDng cho ch\u1ECB g\xE1nh \u0111\xF4i th\xF9ng n\u01B0\u1EDBc m\u01B0a ng\u1ECDt v\u1EC1 \u0111\u1ED5 lu nghe An! N\u01B0\u1EDBc gi\u1EBFng l\xE0ng m\xECnh m\xF9a n\xE0y trong veo ng\u1ECDt l\u1ECBm \xE0."
+  - "Ch\u1ECB g\xE1nh th\xEAm m\u1EA5y g\xE1o n\u1EEFa v\u1EC1 ph\u1EE5 m\xE1 em n\u1EA5u n\u1ED3i ch\xE8 \u0111\u1EADu \u0111en v\u1EDBi h\xE1i m\u1EA5y tr\xE1i b\u1EA7u non ti\u1EBFp s\u1EE9c cho m\u1EA5y ch\xFA b\u1ED9 \u0111\u1ED9i tr\u01B0\u1EDBc gi\u1EDD xu\u1ED1ng t\xE0u."
   defaultAnimState: Talk
   facePlayerWhenClose: 1
   interactRadius: 2.6

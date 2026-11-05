@@ -1676,11 +1676,11 @@ namespace HoaVaMau.Editor
                 "Assets/Models/Characters/NPCs/Character_NPC_06.fbx",
                 "Assets/Models/Characters/NPCs/T_Character_NPC_06_BaseColor.jpg",
                 new Vector3(101.5f, -1.85f, 0.55f), 110f, 1.32f,
-                "Cu Tí",
+                "Thằng Minh",
                 new[]
                 {
-                    "Anh An về rồi kìa! Má anh đang nấu cơm trong nhà sàn đằng kia đó!",
-                    "Chuyến tàu chuyển quân ngoài bến sông Đốc sắp rời bến rồi!"
+                    "Ê An! Mày đi rừng về rồi hả? Mau lại đây đi bắt cào cào với tao, hôm qua tao thấy tổ chim sẻ đồng núp dưới gốc lúa bự chà bá luôn á!",
+                    "Má Năm nấu cơm mới thơm phức đợi mày trong nhà kìa, ăn lẹ rồi chạy ra đầu cầu khỉ hú tao một tiếng đi xem tàu tập kết nghen!"
                 },
                 "Wave"
             );
@@ -1690,11 +1690,11 @@ namespace HoaVaMau.Editor
                 "Assets/TripoModels/Meshy_AI_Quiet_Village_Child_1008013430_texture/Meshy_AI_Quiet_Village_Child_1008013430_texture.fbx",
                 "Assets/TripoModels/Meshy_AI_Quiet_Village_Child_1008013430_texture/Meshy_AI_Quiet_Village_Child_1008013430_texture.fbm/Meshy_AI_Quiet_Village_Child_1008013430_texture_fbx_basecolor.JPEG",
                 new Vector3(111.0f, -1.85f, 0.62f), -105f, 1.26f,
-                "Bé Tư",
+                "Bé Mận",
                 new[]
                 {
-                    "Anh An ơi, giàn bầu nhà em hôm nay nở hoa vàng đẹp lắm!",
-                    "Anh qua thăm má với cả nhà mau đi nha!"
+                    "Anh An coi em kết hoa dại cài lên nón lá đẹp chưa nè! Hoa màu vàng tươi như hạt lúa chín ngoài đồng vậy đó.",
+                    "Chiều nay em đem nón hoa ra bến Sông Đốc tặng mấy chú bộ đội tập kết, chúc các chú đi mạnh giỏi ngày hòa bình sum họp!"
                 },
                 "Idle2"
             );
@@ -1705,11 +1705,11 @@ namespace HoaVaMau.Editor
                 "Assets/Models/Characters/NPCs/Character_NPC_01.fbx",
                 "Assets/Models/Characters/NPCs/T_Character_NPC_01_BaseColor.jpg",
                 new Vector3(99.2f, -1.85f, 0.58f), -105f, 1.65f,
-                "Bác Ba Nông Dân",
+                "Bác Ba Phi",
                 new[]
                 {
-                    "Về tới xóm rồi hả An! Nhìn cánh đồng lúa chín vàng rực cả góc trời thấy ấm lòng quá con hen.",
-                    "Năm nay trúng mùa, bà con mình gặt lúa đem góp gạo tiễn đoàn quân tập kết ngoài bến Sông Đốc."
+                    "Hahaha! Thằng nhỏ An về tới xóm rồi hả! Mau lại đây bác Ba kể chuyện cưỡi rùa vàng với bắt cá sấu khổng lồ ở lung Tràm cho nghe!",
+                    "Năm nay lúa trúng mùa vàng rực cả cánh đồng, bà con xóm Rạch Gốc mình đang hối hả gặt lúa góp gạo tiễn đoàn tàu tập kết ngoài bến Sông Đốc đó con!"
                 },
                 "Wave"
             );
@@ -1719,11 +1719,11 @@ namespace HoaVaMau.Editor
                 "Assets/TripoModels/female_Vietnamese/female_Vietnamese.fbx",
                 "Assets/TripoModels/female_Vietnamese/female_Vietnamese.fbm/female_Vietnamese_basecolor.JPEG",
                 new Vector3(104.6f, -1.85f, 0.65f), -95f, 1.60f,
-                "Cô Sáu",
+                "Chị Tư Gánh Nước",
                 new[]
                 {
-                    "Mấy trái bầu dưới giàn năm nay sai trái lắm An ơi.",
-                    "Cô hái sẵn mấy bầu nước ngọt mát để dành cho mấy chú bộ đội mang lên tàu."
+                    "Tránh đường cho chị gánh đôi thùng nước mưa ngọt về đổ lu nghe An! Nước giếng làng mình mùa này trong veo ngọt lịm à.",
+                    "Chị gánh thêm mấy gáo nữa về phụ má em nấu nồi chè đậu đen với hái mấy trái bầu non tiếp sức cho mấy chú bộ đội trước giờ xuống tàu."
                 },
                 "Talk"
             );
@@ -1733,11 +1733,11 @@ namespace HoaVaMau.Editor
                 "Assets/Models/Characters/NPCs/Character_NPC_07.fbx",
                 "Assets/Models/Characters/NPCs/T_Character_NPC_07_BaseColor.jpg",
                 new Vector3(108.8f, -1.85f, 0.62f), 115f, 1.62f,
-                "Ông Bảy",
+                "Trưởng Thôn Năm",
                 new[]
                 {
-                    "Đất đỏ, phù sa và rừng đước Cà Mau đã nuôi lớn bao thế hệ người dân miền Nam mình.",
-                    "Dù ai đi xa tới đâu, chỉ cần nhớ màu lúa vàng và bóng nhà sàn này là nhớ đường về quê hương."
+                    "Chào cháu An! Đi chơi trên rừng về có đói bụng không con? Nhìn cánh đồng lúa chín vàng óng ả trải dài tít tắp thấy ấm no cả xóm làng.",
+                    "Đất đai Nam Bộ phù sa màu mỡ nuôi lớn người dân mình. Xóm mình đang đóng bao những hạt ngọc trời gửi theo đoàn tàu ra miền Bắc đó cháu."
                 },
                 "Idle"
             );
@@ -1747,11 +1747,11 @@ namespace HoaVaMau.Editor
                 "Assets/Models/Characters/NPCs/Character_NPC_03.fbx",
                 "Assets/Models/Characters/NPCs/T_Character_NPC_03_BaseColor.jpg",
                 new Vector3(114.0f, -1.85f, 0.72f), 90f, 1.66f,
-                "Chú Tư Dân Làng",
+                "Chú Sáu Làm Vườn",
                 new[]
                 {
-                    "Chú đang kiểm tra lại mấy bao thóc mới phơi khô ngoài sân.",
-                    "Má con đang đứng đợi ngay trước hiên nhà sàn đằng kia kìa An!"
+                    "Mấy quày dừa nước bên kia mương ngọt nước cơm dày dữ lắm An ơi. Lát ghé vườn chú chặt cho một trái ăn mát dạ nghen!",
+                    "Lúa năm nay trúng mùa trĩu hạt, chú mới phụ phơi xong mấy nong thóc vàng rực ngoài sân đình đằng trước kìa."
                 },
                 "Walk",
                 patrolRange: 2.8f
@@ -1762,11 +1762,11 @@ namespace HoaVaMau.Editor
                 "Assets/Models/Characters/NPCs/Character_AnMother_35.fbx",
                 "Assets/Models/Characters/NPCs/T_Character_AnMother_35_BaseColor.jpg",
                 new Vector3(118.6f, -1.85f, 0.55f), -105f, 1.62f,
-                "Má Của An",
+                "Má của An",
                 new[]
                 {
-                    "An của má về rồi đó hả con! Đi chơi trên rừng có mệt không con?",
-                    "Bà con trong xóm đang chuẩn bị ra bến sông tiễn đoàn tàu năm 1954. Con giữ gìn sức khỏe, nhớ lời má dặn nghen!"
+                    "An đó hả con! Đi chơi đâu từ sáng tới giờ, lúa chín vàng cả cánh đồng rồi kìa con.",
+                    "Về nhà ăn chén cơm gạo mới má vừa nấu, dẻo và thơm lừng nè con. Ăn xong rồi nhớ dạo quanh xóm chào các bác, các cô nghen!"
                 },
                 "Wave"
             );
@@ -1776,11 +1776,11 @@ namespace HoaVaMau.Editor
                 "Assets/Models/Characters/NPCs/Character_NPC_04.fbx",
                 "Assets/Models/Characters/NPCs/T_Character_NPC_04_BaseColor.jpg",
                 new Vector3(123.8f, -1.85f, 0.65f), 105f, 1.66f,
-                "Anh Hai Thanh Niên",
+                "Chú Bảy Chèo Đò",
                 new[]
                 {
-                    "Hẹn hai năm nữa thống nhất nước nhà, anh Hai sẽ về lại xóm Rạch Gốc gặt lúa cùng tụi em!",
-                    "Ở nhà ráng học hành và phụ má nghe An!"
+                    "Xuồng ba lá chú đã buộc chèo sẵn sàng nơi bến nước rồi đây An con ơi!",
+                    "Gió biển Cà Mau thổi lồng lộng, con nước ròng đưa ghe thuyền tấp nập về cửa biển Sông Đốc tiễn đoàn tàu tập kết rồi đó con."
                 },
                 "Talk"
             );
@@ -1790,11 +1790,11 @@ namespace HoaVaMau.Editor
                 "Assets/Models/Characters/NPCs/Character_NPC_05.fbx",
                 "Assets/Models/Characters/NPCs/T_Character_NPC_05_BaseColor.jpg",
                 new Vector3(128.5f, -1.85f, 0.62f), -110f, 1.60f,
-                "Cô Út",
+                "Dì Hai",
                 new[]
                 {
-                    "Ngoài bến sông Đốc cờ hoa rợp trời rồi đó An ơi.",
-                    "Đi thêm một đoạn nữa qua rặng dừa là tới bến thuyền của xóm mình rồi."
+                    "Bà con mang thêm bánh tét với gạo mới ra bến Sông Đốc gửi các anh bộ đội nghen!",
+                    "Đi mạnh giỏi nghen các anh, ngày thống nhất hòa bình lại về với quê hương Cà Mau ruột thịt!"
                 },
                 "Idle2"
             );

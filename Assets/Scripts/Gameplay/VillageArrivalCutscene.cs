@@ -1,4 +1,4 @@
-﻿#pragma warning disable 0414
+#pragma warning disable 0414
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -149,8 +149,8 @@ namespace HoaVaMau.Gameplay
             StartCoroutine(AnimateLetterboxRoutine(true, 1.2f));
 
             // Find child villagers for responsive ambient greeting
-            Animator tiAnim = GameObject.Find("VillageChild_01_Ti")?.GetComponentInChildren<Animator>();
-            Animator betuAnim = GameObject.Find("VillageChild_02_BeTu")?.GetComponentInChildren<Animator>();
+            Animator tiAnim = (GameObject.Find("VillageChild_01_ThangMinh") ?? GameObject.Find("VillageChild_01_Ti"))?.GetComponentInChildren<Animator>();
+            Animator betuAnim = (GameObject.Find("VillageChild_02_BeMan") ?? GameObject.Find("VillageChild_02_BeTu"))?.GetComponentInChildren<Animator>();
 
             bool bacBaWaved = false;
             bool tiWaved = false;
