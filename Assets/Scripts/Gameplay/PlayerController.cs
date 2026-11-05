@@ -122,7 +122,7 @@ namespace HoaVaMau.Gameplay
         {
             if (motor == null || postureHandler == null || inputReader == null)
             {
-                InitializeHandlers();
+                InitializeHandlers(); if (postureHandler != null) postureHandler.UpdatePostures(true, false, 0f, FacingDirection);
             }
         }
 
@@ -186,7 +186,7 @@ namespace HoaVaMau.Gameplay
 
         private void Awake()
         {
-            InitializeHandlers();
+            InitializeHandlers(); if (postureHandler != null) postureHandler.UpdatePostures(true, false, 0f, FacingDirection);
         }
 
         private void OnEnable()
