@@ -195,8 +195,8 @@ namespace HoaVaMau.Cinematics
                 continuousCam.Priority.Value = 25;
             }
 
-            // 2. Position character at the starting gate (Bé An bắt đầu chạy ngay từ đầu)
-            Vector3 startRunPos = new Vector3(-7.0f, 0.505f, 185.0f);
+            // 2. Position character inside cave mouth (Bé An xuất phát từ trong hang núi đá chạy ra qua cổng)
+            Vector3 startRunPos = new Vector3(-7.0f, 0.505f, 186.5f);
             ApplyCharacterPosition(startRunPos, Quaternion.Euler(0f, 180f, 0f));
 
             // 3. Prepare initial animation & UI fade - BÉ AN CHẠY NGAY TỪ ĐẦU (Không đứng chờ)
@@ -266,9 +266,9 @@ namespace HoaVaMau.Cinematics
             {
                 elapsed += Time.deltaTime;
 
-                // 1. VỊ TRÍ BÉ AN: Chạy liên tục từ Z = 185m về Z = 24m (đã tiến vào trong làng)
+                // 1. VỊ TRÍ BÉ AN: Chạy liên tục từ trong hang đá (Z = 186.5m) xuyên qua cổng về Z = 24m (trong làng)
                 float uRun = Mathf.Clamp01(elapsed / runDuration);
-                float currentAnZ = Mathf.Lerp(185.0f, 24.0f, uRun);
+                float currentAnZ = Mathf.Lerp(186.5f, 24.0f, uRun);
                 // Đường đất hơi uốn nhẹ vào sân làng từ X = -7.0m về X = -6.2m
                 float currentAnX = Mathf.Lerp(-7.0f, -6.2f, uRun) + Mathf.Sin(uRun * 20.0f) * 0.06f;
                 Vector3 anPos = new Vector3(currentAnX, 0.505f, currentAnZ);
