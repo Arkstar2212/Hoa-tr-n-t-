@@ -10,20 +10,18 @@ namespace HoaVaMau.Cinematics
 {
     /// <summary>
     /// Master Cinematic Director for the Opening Village Cutscene in "CaMau_1954_Village.unity".
-    /// Controls:
-    /// 1. Timeline PlayableDirector synchronization
-    /// 2. Cinemachine 3 multi-shot choreography (5 distinct cinematic shots)
-    /// 3. Physical 3D Waypoint character locomotion for Bé An (Gate -> Rice Fields -> Village Square)
-    /// 4. Synchronized Animator states (Idle -> Run -> Walk -> Idle) with zero foot-sliding
-    /// 5. Fullscreen cinematic Fade In transition
-    /// 6. Audio mix (ambient rice field wind, dirt footsteps, atmospheric BGM)
-    /// 7. Seamless handover to ThirdPersonOrbitCamera and Player3DController input
+    /// Cutscene Narrative (theo yêu cầu người dùng):
+    /// 1. Chiếu camera từ cổng làng (Wide gate establishing shot, screen fades in)
+    /// 2. Zoom mượt mà vào mặt nhân vật (Portrait close-up, Bé An nhìn quanh)
+    /// 3. Từ mặt quay vòng qua sau lưng nhân vật (Orbital camera pan to over-the-shoulder view)
+    /// 4. Zoom camera ra xa từ sau lưng và từ từ nâng cao lên (Elevated crane pull-back vista)
+    /// 5. Chuyển mượt về camera gameplay và mở khóa điều khiển cho người chơi.
     /// </summary>
     public class CinematicVillageIntroDirector : MonoBehaviour
     {
         [Header("Cinematic Settings")]
         [Tooltip("Total duration of the intro cutscene in seconds")]
-        [SerializeField] private float cutsceneDuration = 18.0f;
+        [SerializeField] private float cutsceneDuration = 14.0f;
         [SerializeField] private bool autoPlayOnStart = true;
         [SerializeField] private bool allowSkip = true;
 
@@ -36,10 +34,10 @@ namespace HoaVaMau.Cinematics
         [Header("Timeline & Cinemachine")]
         [SerializeField] private PlayableDirector playableDirector;
         [SerializeField] private Unity.Cinemachine.CinemachineBrain cinemachineBrain;
-        [SerializeField] private Unity.Cinemachine.CinemachineCamera shot1NorthGateWide;
-        [SerializeField] private Unity.Cinemachine.CinemachineCamera shot2FollowBehind;
-        [SerializeField] private Unity.Cinemachine.CinemachineCamera shot3RiceFieldTrack;
-        [SerializeField] private Unity.Cinemachine.CinemachineCamera shot4HighVillageVista;
+        [SerializeField] private Unity.Cinemachine.CinemachineCamera shot1GateWide;
+        [SerializeField] private Unity.Cinemachine.CinemachineCamera shot2FaceCloseUp;
+        [SerializeField] private Unity.Cinemachine.CinemachineCamera shot3BehindBack;
+        [SerializeField] private Unity.Cinemachine.CinemachineCamera shot4CranePullBackHigh;
         [SerializeField] private Unity.Cinemachine.CinemachineCamera shot5GameplayBlend;
 
         [Header("UI & Transitions")]
@@ -48,23 +46,17 @@ namespace HoaVaMau.Cinematics
 
         [Header("Audio")]
         [SerializeField] private AudioSource ambienceAudioSource;
-        [SerializeField] private AudioSource footstepAudioSource;
-        [SerializeField] private AudioClip dirtFootstepClip;
         [SerializeField] private AudioClip windAmbienceClip;
         [SerializeField] private AudioClip villageBgmClip;
 
-        // Waypoints
-        private static readonly Vector3 NorthGateStartPos = new Vector3(-7.0f, 0.505f, 184.0f);
-        private static readonly Vector3 RiceSprintStartPos = new Vector3(-7.0f, 0.505f, 175.0f);
-        private static readonly Vector3 VillageEntrancePos = new Vector3(-7.0f, 0.505f, 35.0f);
-        private static readonly Vector3 VillageDecelPos = new Vector3(-6.8f, 0.505f, 22.0f);
-        private static readonly Vector3 CentralSquareFinalPos = new Vector3(-6.5f, 0.505f, 17.5f);
+        // An's established post at the North Village Gate
+        private static readonly Vector3 NorthGatePos = new Vector3(-7.0f, 0.505f, 184.0f);
+        private static readonly Quaternion NorthGateRot = Quaternion.Euler(0f, 180f, 0f);
 
         // State tracking
         private bool isCutsceneActive = false;
         private bool isCutsceneFinished = false;
         private Coroutine cutsceneRoutine;
-        private float stepTimer = 0f;
 
         public bool IsCutsceneActive => isCutsceneActive;
 
@@ -154,14 +146,16 @@ namespace HoaVaMau.Cinematics
             if (cinemachineBrain != null)
             {
                 cinemachineBrain.enabled = true;
+                cinemachineBrain.DefaultBlend = new Unity.Cinemachine.CinemachineBlendDefinition(
+                    Unity.Cinemachine.CinemachineBlendDefinition.Styles.EaseInOut, 1.8f);
             }
 
-            // 2. Position character at the starting gate
+            // 2. Position character at North Gate threshold
             if (characterController != null) characterController.enabled = false;
             if (playerController != null)
             {
-                playerController.transform.position = NorthGateStartPos;
-                playerController.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+                playerController.transform.position = NorthGatePos;
+                playerController.transform.rotation = NorthGateRot;
             }
             if (characterController != null) characterController.enabled = true;
 
@@ -178,7 +172,7 @@ namespace HoaVaMau.Cinematics
                 fadeCanvasGroup.alpha = 1.0f;
             }
 
-            // 4. Start Audio
+            // 4. Start Ambiance Audio
             if (ambienceAudioSource != null && windAmbienceClip != null)
             {
                 ambienceAudioSource.clip = windAmbienceClip;
@@ -202,10 +196,13 @@ namespace HoaVaMau.Cinematics
         private IEnumerator CutsceneChoreographyRoutine()
         {
             float elapsed = 0f;
-            SetShotPriority(shot1NorthGateWide);
 
-            // Phase 1: 0.0s - 2.5s -> Establishing Shot at North Gate, Screen Fades In
-            while (elapsed < 2.5f)
+            // -------------------------------------------------------------
+            // Shot 1: 0.0s – 2.8s -> Chiếu camera từ cổng làng (Fade In)
+            // -------------------------------------------------------------
+            SetShotPriority(shot1GateWide);
+
+            while (elapsed < 2.8f)
             {
                 elapsed += Time.deltaTime;
 
@@ -222,103 +219,55 @@ namespace HoaVaMau.Cinematics
                 yield return null;
             }
 
-            // Phase 2: 2.5s - 3.5s -> Character accelerates forward, blend to Shot 2 (Follow Behind)
-            SetShotPriority(shot2FollowBehind);
+            // -------------------------------------------------------------
+            // Shot 2: 2.8s – 6.2s -> Zoom mượt mà vào mặt nhân vật
+            // -------------------------------------------------------------
+            SetShotPriority(shot2FaceCloseUp);
+
+            // Bé An thể hiện cảm xúc, nhìn ngắm phong cảnh quê hương
             if (playerAnimator != null)
             {
-                playerAnimator.CrossFadeInFixedTime("Run", 0.18f);
-                playerAnimator.speed = 1.35f;
+                playerAnimator.CrossFadeInFixedTime("LookAround", 0.35f);
             }
 
-            while (elapsed < 3.5f)
+            while (elapsed < 6.2f)
             {
                 elapsed += Time.deltaTime;
-                float t = Mathf.InverseLerp(2.5f, 3.5f, elapsed);
-                float smoothT = Mathf.SmoothStep(0f, 1f, t);
-                Vector3 currentPos = Vector3.Lerp(NorthGateStartPos, RiceSprintStartPos, smoothT);
-                ApplyCharacterPosition(currentPos, Quaternion.Euler(0f, 180f, 0f));
-                PlayFootstepAudio(0.38f);
                 yield return null;
             }
 
-            // Phase 3: 3.5s - 8.0s -> Full Sprint down the Central Dirt Avenue (Behind Chase Shot)
-            while (elapsed < 8.0f)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.InverseLerp(3.5f, 14.5f, elapsed);
-                Vector3 currentPos = Vector3.Lerp(RiceSprintStartPos, VillageEntrancePos, t);
-                // Subtle organic road sway
-                currentPos.x = -7.0f + Mathf.Sin(elapsed * 2.8f) * 0.12f;
-                ApplyCharacterPosition(currentPos, Quaternion.Euler(0f, 180f, 0f));
-                PlayFootstepAudio(0.34f);
-                yield return null;
-            }
+            // -------------------------------------------------------------
+            // Shot 3: 6.2s – 9.2s -> Từ mặt quay qua sau lưng nhân vật
+            // -------------------------------------------------------------
+            SetShotPriority(shot3BehindBack);
 
-            // Phase 4: 8.0s - 12.5s -> Blend to Shot 3 (Diagonal Rice Field Profile Track)
-            SetShotPriority(shot3RiceFieldTrack);
-            while (elapsed < 12.5f)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.InverseLerp(3.5f, 14.5f, elapsed);
-                Vector3 currentPos = Vector3.Lerp(RiceSprintStartPos, VillageEntrancePos, t);
-                currentPos.x = -7.0f + Mathf.Sin(elapsed * 2.8f) * 0.12f;
-                ApplyCharacterPosition(currentPos, Quaternion.Euler(0f, 180f, 0f));
-                PlayFootstepAudio(0.34f);
-                yield return null;
-            }
-
-            // Phase 5: 12.5s - 14.5s -> Blend to Shot 4 (High Village Vista Crane Angle)
-            SetShotPriority(shot4HighVillageVista);
-            while (elapsed < 14.5f)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.InverseLerp(3.5f, 14.5f, elapsed);
-                Vector3 currentPos = Vector3.Lerp(RiceSprintStartPos, VillageEntrancePos, t);
-                currentPos.x = -7.0f + Mathf.Sin(elapsed * 2.8f) * 0.10f;
-                ApplyCharacterPosition(currentPos, Quaternion.Euler(0f, 180f, 0f));
-                PlayFootstepAudio(0.35f);
-                yield return null;
-            }
-
-            // Phase 6: 14.5s - 16.5s -> Entering Village, Decelerate from Sprint to Walk
-            if (playerAnimator != null)
-            {
-                playerAnimator.CrossFadeInFixedTime("Walk", 0.22f);
-                playerAnimator.speed = 1.0f;
-            }
-
-            while (elapsed < 16.5f)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.InverseLerp(14.5f, 16.5f, elapsed);
-                float smoothT = Mathf.SmoothStep(0f, 1f, t);
-                Vector3 currentPos = Vector3.Lerp(VillageEntrancePos, VillageDecelPos, smoothT);
-                ApplyCharacterPosition(currentPos, Quaternion.Euler(0f, 180f, 0f));
-                PlayFootstepAudio(0.55f);
-                yield return null;
-            }
-
-            // Phase 7: 16.5s - 18.0s -> Blend to Shot 5 (Gameplay Perspective), Approach Banyan Tree & Stop
-            SetShotPriority(shot5GameplayBlend);
-
-            while (elapsed < 17.5f)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.InverseLerp(16.5f, 17.5f, elapsed);
-                float smoothT = Mathf.SmoothStep(0f, 1f, t);
-                Vector3 currentPos = Vector3.Lerp(VillageDecelPos, CentralSquareFinalPos, smoothT);
-                ApplyCharacterPosition(currentPos, Quaternion.Euler(0f, 180f, 0f));
-                PlayFootstepAudio(0.60f);
-                yield return null;
-            }
-
-            // Settle into Idle facing South towards central square
+            // Chuyển mượt về Idle
             if (playerAnimator != null)
             {
                 playerAnimator.CrossFadeInFixedTime("Idle", 0.25f);
-                playerAnimator.speed = 1.0f;
             }
-            ApplyCharacterPosition(CentralSquareFinalPos, Quaternion.Euler(0f, 180f, 0f));
+
+            while (elapsed < 9.2f)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            // -------------------------------------------------------------
+            // Shot 4: 9.2s – 12.2s -> Zoom camera ra xa từ sau lưng và cao lên từ từ
+            // -------------------------------------------------------------
+            SetShotPriority(shot4CranePullBackHigh);
+
+            while (elapsed < 12.2f)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            // -------------------------------------------------------------
+            // Shot 5: 12.2s – 14.0s -> Hạ mượt xuống góc nhìn gameplay qua vai
+            // -------------------------------------------------------------
+            SetShotPriority(shot5GameplayBlend);
 
             while (elapsed < cutsceneDuration)
             {
@@ -326,39 +275,10 @@ namespace HoaVaMau.Cinematics
                 yield return null;
             }
 
-            // Cutscene Finished: Handover to Gameplay!
+            // -------------------------------------------------------------
+            // Kết thúc cutscene: Bàn giao quyền điều khiển ngay tại cổng làng
+            // -------------------------------------------------------------
             EndCutsceneAndHandover(instant: false);
-        }
-
-        private void ApplyCharacterPosition(Vector3 worldPos, Quaternion rotation)
-        {
-            if (playerController == null) return;
-
-            if (characterController != null && characterController.enabled)
-            {
-                characterController.enabled = false;
-                playerController.transform.position = worldPos;
-                playerController.transform.rotation = rotation;
-                characterController.enabled = true;
-            }
-            else
-            {
-                playerController.transform.position = worldPos;
-                playerController.transform.rotation = rotation;
-            }
-        }
-
-        private void PlayFootstepAudio(float interval)
-        {
-            if (footstepAudioSource == null || dirtFootstepClip == null) return;
-
-            stepTimer += Time.deltaTime;
-            if (stepTimer >= interval)
-            {
-                stepTimer = 0f;
-                footstepAudioSource.pitch = Random.Range(0.92f, 1.08f);
-                footstepAudioSource.PlayOneShot(dirtFootstepClip, 0.75f);
-            }
         }
 
         private void SetShotPriority(Unity.Cinemachine.CinemachineCamera activeCam)
@@ -366,10 +286,10 @@ namespace HoaVaMau.Cinematics
             if (activeCam == null) return;
 
             // Reset all shot cameras to low priority
-            if (shot1NorthGateWide != null) shot1NorthGateWide.Priority.Value = 10;
-            if (shot2FollowBehind != null) shot2FollowBehind.Priority.Value = 10;
-            if (shot3RiceFieldTrack != null) shot3RiceFieldTrack.Priority.Value = 10;
-            if (shot4HighVillageVista != null) shot4HighVillageVista.Priority.Value = 10;
+            if (shot1GateWide != null) shot1GateWide.Priority.Value = 10;
+            if (shot2FaceCloseUp != null) shot2FaceCloseUp.Priority.Value = 10;
+            if (shot3BehindBack != null) shot3BehindBack.Priority.Value = 10;
+            if (shot4CranePullBackHigh != null) shot4CranePullBackHigh.Priority.Value = 10;
             if (shot5GameplayBlend != null) shot5GameplayBlend.Priority.Value = 10;
 
             // Raise active camera priority
@@ -389,11 +309,14 @@ namespace HoaVaMau.Cinematics
             isCutsceneActive = false;
             isCutsceneFinished = true;
 
-            // 1. Ensure Bé An is stationed at the final position
+            // 1. Ensure Bé An is stationed at the North Gate
+            if (characterController != null) characterController.enabled = false;
             if (playerController != null)
             {
-                ApplyCharacterPosition(CentralSquareFinalPos, Quaternion.Euler(0f, 180f, 0f));
+                playerController.transform.position = NorthGatePos;
+                playerController.transform.rotation = NorthGateRot;
             }
+            if (characterController != null) characterController.enabled = true;
 
             if (playerAnimator != null)
             {
@@ -408,13 +331,7 @@ namespace HoaVaMau.Cinematics
                 fadeCanvasGroup.gameObject.SetActive(false);
             }
 
-            // 3. Stop or fade cutscene audio
-            if (footstepAudioSource != null && footstepAudioSource.isPlaying)
-            {
-                footstepAudioSource.Stop();
-            }
-
-            // 4. Handover Camera to ThirdPersonOrbitCamera
+            // 3. Handover Camera to ThirdPersonOrbitCamera
             if (cinemachineBrain != null)
             {
                 cinemachineBrain.enabled = false;
@@ -427,13 +344,13 @@ namespace HoaVaMau.Cinematics
                 gameplayCamera.SnapToTarget(180.0f);
             }
 
-            // 5. Unlock Player Input
+            // 4. Unlock Player Input
             if (playerController != null)
             {
                 playerController.IsInputLocked = false;
             }
 
-            Debug.Log("[Cinematics] Intro Cutscene finished! Control seamlessly handed over to player.");
+            Debug.Log("[Cinematics] Cutscene finished! Player now has full gameplay control at the Village Gate.");
         }
     }
 }
