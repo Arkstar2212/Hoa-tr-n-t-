@@ -46,3 +46,8 @@ When performing development tasks, refer to and adhere to the project's speciali
 - **CẤM TUYỆT ĐỐI TỰ Ý PUSH**: Tuyệt đối không bao giờ tự động chạy `git push` lên bất kỳ nhánh remote nào (`origin/2.5d`, `origin/main`...) sau khi hoàn thành task.
 - **LƯU TRỮ VÀ KIỂM THỬ LOCAL**: Mọi thay đổi code, asset, scene chỉ được lưu trữ và kiểm thử tại local máy tính.
 - **CHỈ PUSH KHI ĐƯỢC CHỈ ĐỊNH**: Chỉ được phép thực hiện `git push` khi người dùng đưa ra câu lệnh rõ ràng bằng văn bản (ví dụ: *"push lên nhánh 2.5d"*, *"push git đi"*). Chưa có lệnh thì tuyệt đối không push.
+
+## 5. Nguyên Tắc Bảo Vệ Ruộng Lúa Bất Di Bất Dịch (STRICT RICE PADDY SANCTITY)
+- **CẤM ĐỤNG VÀO RUỘNG LÚA**: Từ nay về sau tuyệt đối KHÔNG ĐƯỢC PHÉP đụng vào ruộng lúa (`Vast_Paddy_Continuous_Crops_Root`, `West_Paddy_Flank`, `East_Paddy_Flank`) cho dù người dùng yêu cầu thiết kế bất kỳ cảnh quan hay đối tượng nào khác.
+- **NGOẠI LỆ DUY NHẤT**: Trừ khi người dùng nêu rõ bằng văn bản yêu cầu chỉnh sửa ruộng lúa thì mới được phép chỉnh sửa. Mọi mệnh lệnh khác đều CẤM thêm, bớt hoặc chỉnh sửa bất kỳ thứ gì liên quan đến khu vực lúa.
+- **VÙNG BẢO VỆ TUYỆT ĐỐI**: Toàn bộ không gian cánh đồng lúa (Tây: $X \in [-48.0, -10.0]$, Đông: $X \in [-4.0, 34.0]$, dọc từ $Z = 33.0\text{m}$ đến $181.0\text{m}$) phải hoàn toàn sạch bóng cây cối, đá hay bất kỳ vật thể ngoại lai nào xâm lấn. Cây cối chỉ được phép trồng hoàn toàn bên ngoài ranh giới này.

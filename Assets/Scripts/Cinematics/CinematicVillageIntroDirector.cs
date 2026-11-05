@@ -59,25 +59,25 @@ namespace HoaVaMau.Cinematics
         // Vị trí kết thúc cutscene & bắt đầu gameplay: Ngay trong sân làng trước cây đa cổ thụ
         private static readonly Vector3 GameplayStartPos = new Vector3(-6.2f, 0.505f, 18.0f);
 
-        // 5 Calibrated Keyframes (Hình 1 -> Hình 5 theo kịch bản người dùng)
-        // Hình 1: Toàn cảnh cổng làng Bắc (Gate Wide)
-        private static readonly Vector3 KF1_Pos = new Vector3(-7.0f, 2.35f, 175.0f);
-        private static readonly Quaternion KF1_Rot = Quaternion.Euler(6.5f, 0.0f, 0.0f);
+        // 5 Calibrated Keyframes (Hình 1 -> Hình 5 theo kịch bản người dùng & 100% Concept Art)
+        // Hình 1: Toàn cảnh cổng làng Bắc (Gate Wide 1:1 Concept Art Reference Match - Không dính lúa)
+        private static readonly Vector3 KF1_Pos = new Vector3(-6.85f, 2.05f, 187.2f);
+        private static readonly Quaternion KF1_Rot = Quaternion.Euler(5.0f, 0.0f, 0.0f);
         private const float KF1_Fov = 50.0f;
 
         // Hình 2: Cận cảnh khuôn mặt Bé An (Face Close-Up)
-        private static readonly Vector3 KF2_Pos = new Vector3(-7.0f, 1.32f, 182.65f);
+        private static readonly Vector3 KF2_Pos = new Vector3(-6.85f, 1.35f, 196.5f);
         private static readonly Quaternion KF2_Rot = Quaternion.Euler(1.0f, 0.0f, 0.0f);
-        private const float KF2_Fov = 20.0f;
+        private const float KF2_Fov = 22.0f;
 
         // Hình 3: Góc nghiêng 90° nhìn sườn phải Bé An, cột cổng và khóm tre phía sau (Side Profile)
-        private static readonly Vector3 KF3_Pos = new Vector3(-8.5f, 1.42f, 183.7f);
-        private static readonly Quaternion KF3_Rot = Quaternion.Euler(6.0f, 75.0f, 0.0f);
+        private static readonly Vector3 KF3_Pos = new Vector3(-8.3f, 1.45f, 197.2f);
+        private static readonly Quaternion KF3_Rot = Quaternion.Euler(4.0f, 75.0f, 0.0f);
         private const float KF3_Fov = 42.0f;
 
         // Hình 4: Góc cao sau vai nhìn dọc con đường xuyên qua đồng lúa (Over-The-Shoulder High Angle)
-        private static readonly Vector3 KF4_Pos = new Vector3(-6.0f, 3.1f, 186.2f);
-        private static readonly Quaternion KF4_Rot = Quaternion.Euler(36.0f, 186.0f, 0.0f);
+        private static readonly Vector3 KF4_Pos = new Vector3(-6.0f, 3.1f, 198.5f);
+        private static readonly Quaternion KF4_Rot = Quaternion.Euler(34.0f, 186.0f, 0.0f);
         private const float KF4_Fov = 52.0f;
 
         // Hình 5: Đại cảnh trên sườn núi nhìn toàn bộ thung lũng, đồng lúa và ngôi làng (Grand Mountain Cliff Vista)
@@ -92,9 +92,11 @@ namespace HoaVaMau.Cinematics
         private float stepTimer = 0f;
 
         public bool IsCutsceneActive => isCutsceneActive;
+        public static CinematicVillageIntroDirector Instance { get; private set; }
 
         private void Awake()
         {
+            Instance = this;
             ResolveReferences();
         }
 
@@ -178,6 +180,11 @@ namespace HoaVaMau.Cinematics
             if (playerController != null)
             {
                 playerController.IsInputLocked = true;
+                var playerAudio = playerController.GetComponent<AudioSource>();
+                if (playerAudio != null && playerAudio.isPlaying)
+                {
+                    playerAudio.Stop();
+                }
             }
 
             if (gameplayCamera != null)
@@ -196,7 +203,7 @@ namespace HoaVaMau.Cinematics
             }
 
             // 2. Position character inside cave mouth (Bé An xuất phát từ trong hang núi đá chạy ra qua cổng)
-            Vector3 startRunPos = new Vector3(-7.0f, 0.505f, 186.5f);
+            Vector3 startRunPos = new Vector3(-6.85f, 0.505f, 199.5f);
             ApplyCharacterPosition(startRunPos, Quaternion.Euler(0f, 180f, 0f));
 
             // 3. Prepare initial animation & UI fade - BÉ AN CHẠY NGAY TỪ ĐẦU (Không đứng chờ)
@@ -212,13 +219,23 @@ namespace HoaVaMau.Cinematics
                 fadeCanvasGroup.alpha = 1.0f;
             }
 
-            // 4. Start Audio
+            // 4. Start Audio (BGM gió & 1 luồng âm thanh bước chân duy nhất)
             if (ambienceAudioSource != null && windAmbienceClip != null)
             {
                 ambienceAudioSource.clip = windAmbienceClip;
                 ambienceAudioSource.loop = true;
                 ambienceAudioSource.volume = 0.85f;
                 ambienceAudioSource.Play();
+            }
+
+            if (footstepAudioSource != null && dirtFootstepClip != null)
+            {
+                footstepAudioSource.clip = dirtFootstepClip;
+                footstepAudioSource.loop = true;
+                footstepAudioSource.volume = 0.80f;
+                footstepAudioSource.pitch = 1.0f;
+                footstepAudioSource.spatialBlend = 0f;
+                footstepAudioSource.Play();
             }
 
             // 5. Play Timeline if assigned
@@ -266,16 +283,16 @@ namespace HoaVaMau.Cinematics
             {
                 elapsed += Time.deltaTime;
 
-                // 1. VỊ TRÍ BÉ AN: Chạy liên tục từ trong hang đá (Z = 186.5m) xuyên qua cổng về Z = 24m (trong làng)
+                // 1. VỊ TRÍ BÉ AN: Chạy liên tục từ trong hang đá (Z = 202.0m) xuyên qua cổng (Z = 196m) về Z = 24m (trong làng)
                 float uRun = Mathf.Clamp01(elapsed / runDuration);
-                float currentAnZ = Mathf.Lerp(186.5f, 24.0f, uRun);
-                // Đường đất hơi uốn nhẹ vào sân làng từ X = -7.0m về X = -6.2m
-                float currentAnX = Mathf.Lerp(-7.0f, -6.2f, uRun) + Mathf.Sin(uRun * 20.0f) * 0.06f;
+                float currentAnZ = Mathf.Lerp(202.0f, 24.0f, uRun);
+                // Đường đất hơi uốn nhẹ vào sân làng từ X = -6.85m về X = -6.2m
+                float currentAnX = Mathf.Lerp(-6.85f, -6.2f, uRun) + Mathf.Sin(uRun * 20.0f) * 0.06f;
                 Vector3 anPos = new Vector3(currentAnX, 0.505f, currentAnZ);
                 ApplyCharacterPosition(anPos, Quaternion.Euler(0f, 180f, 0f));
 
-                // Tiếng bước chân nhịp nhàng liên tục theo nhịp chạy trẻ nhỏ
-                PlayFootstepAudio(0.36f);
+                // Âm bước chân nhịp nhàng liên tục (duy nhất 1 luồng âm, không chồng lặp)
+                PlayFootstepAudio();
 
                 // 2. ĐIỀU PHỐI CAMERA LIÊN TỤC
                 if (elapsed < 2.2f)
@@ -291,8 +308,9 @@ namespace HoaVaMau.Cinematics
                     }
 
                     float t1 = elapsed / 2.2f;
-                    Vector3 camGatePos = Vector3.Lerp(KF1_Pos, new Vector3(-7.0f, 2.15f, 172.5f), Mathf.SmoothStep(0f, 1f, t1));
-                    Quaternion camGateRot = Quaternion.Euler(Mathf.Lerp(6.5f, 4.0f, t1), 0f, 0f);
+                    Vector3 camGateEndPos = new Vector3(-6.85f, 2.00f, 186.5f);
+                    Vector3 camGatePos = Vector3.Lerp(KF1_Pos, camGateEndPos, Mathf.SmoothStep(0f, 1f, t1));
+                    Quaternion camGateRot = Quaternion.Euler(Mathf.Lerp(5.0f, 3.5f, t1), 0f, 0f);
 
                     if (camTransform != null)
                     {
@@ -306,10 +324,10 @@ namespace HoaVaMau.Cinematics
                     // GIAI ĐOẠN 2 (2.2s – 4.6s) | Hình 1 -> Hình 2: Dolly Zoom cận mặt Bé An khi đang chạy
                     float u2 = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(2.2f, 4.6f, elapsed));
 
-                    Vector3 camGateEndPos = new Vector3(-7.0f, 2.15f, 172.5f);
+                    Vector3 camGateEndPos = new Vector3(-6.85f, 2.00f, 186.5f);
                     Vector3 faceCamTargetPos = anPos + new Vector3(0.0f, 0.82f, -1.85f);
                     Vector3 currentCamPos = Vector3.Lerp(camGateEndPos, faceCamTargetPos, u2);
-                    Quaternion currentCamRot = Quaternion.Slerp(Quaternion.Euler(4.0f, 0f, 0f), KF2_Rot, u2);
+                    Quaternion currentCamRot = Quaternion.Slerp(Quaternion.Euler(3.5f, 0f, 0f), KF2_Rot, u2);
                     float currentFov = Mathf.Lerp(KF1_Fov, KF2_Fov, u2);
 
                     if (camTransform != null)
@@ -379,7 +397,7 @@ namespace HoaVaMau.Cinematics
                 float uApproach = Mathf.InverseLerp(fadeOutStartTime, fadeOutEndTime, elapsed);
                 float currentAnZ = Mathf.Lerp(24.0f, 18.0f, uApproach);
                 ApplyCharacterPosition(new Vector3(-6.2f, 0.505f, currentAnZ), Quaternion.Euler(0f, 180f, 0f));
-                PlayFootstepAudio(0.36f);
+                PlayFootstepAudio();
 
                 // Màn hình tối đen dần lại
                 if (fadeCanvasGroup != null)
@@ -483,16 +501,19 @@ namespace HoaVaMau.Cinematics
             }
         }
 
-        private void PlayFootstepAudio(float interval)
+        private void PlayFootstepAudio()
         {
             if (footstepAudioSource == null || dirtFootstepClip == null) return;
 
-            stepTimer += Time.deltaTime;
-            if (stepTimer >= interval)
+            // Đảm bảo chỉ phát đúng 1 luồng âm thanh bước chân duy nhất (không chồng lặp PlayOneShot)
+            if (!footstepAudioSource.isPlaying)
             {
-                stepTimer = 0f;
-                footstepAudioSource.pitch = Random.Range(0.92f, 1.08f);
-                footstepAudioSource.PlayOneShot(dirtFootstepClip, 0.75f);
+                footstepAudioSource.clip = dirtFootstepClip;
+                footstepAudioSource.loop = true;
+                footstepAudioSource.volume = 0.80f;
+                footstepAudioSource.pitch = 1.0f;
+                footstepAudioSource.spatialBlend = 0f;
+                footstepAudioSource.Play();
             }
         }
 
