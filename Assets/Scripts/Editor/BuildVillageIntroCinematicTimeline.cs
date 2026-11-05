@@ -168,7 +168,7 @@ namespace HoaVaMau.EditorScripts
             var cmTrack = timeline.CreateTrack<CinemachineTrack>(null, "Cinemachine Track");
             var clip = cmTrack.CreateClip<CinemachineShot>();
             clip.start = 0.0;
-            clip.duration = 16.5;
+            clip.duration = 21.2;
             clip.displayName = "One-Shot Continuous Village Intro";
             var shotAsset = clip.asset as CinemachineShot;
             string guid = Guid.NewGuid().ToString();
@@ -218,7 +218,7 @@ namespace HoaVaMau.EditorScripts
             var so = new SerializedObject(introDirector);
             so.Update();
 
-            so.FindProperty("cutsceneDuration").floatValue = 16.5f;
+            so.FindProperty("cutsceneDuration").floatValue = 21.2f;
             so.FindProperty("autoPlayOnStart").boolValue = true;
             so.FindProperty("allowSkip").boolValue = true;
             so.FindProperty("fadeInDuration").floatValue = 1.4f;
