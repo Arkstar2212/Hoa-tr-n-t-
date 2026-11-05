@@ -177,6 +177,7 @@ namespace HoaVaMau.Cinematics
             if (playerController != null)
             {
                 playerController.IsInputLocked = true;
+                playerController.enabled = false; // Tạm ngưng để không ghi đè Animation và vận tốc di chuyển cutscene
             }
 
             if (gameplayCamera != null)
@@ -194,14 +195,15 @@ namespace HoaVaMau.Cinematics
                 continuousCam.Priority.Value = 25;
             }
 
-            // 2. Position character at the starting gate
-            ApplyCharacterPosition(NorthGatePos, Quaternion.Euler(0f, 180f, 0f));
+            // 2. Position character at the starting gate (Bé An bắt đầu chạy ngay từ đầu)
+            Vector3 startRunPos = new Vector3(-7.0f, 0.505f, 185.0f);
+            ApplyCharacterPosition(startRunPos, Quaternion.Euler(0f, 180f, 0f));
 
-            // 3. Prepare initial animation & UI fade
+            // 3. Prepare initial animation & UI fade - BÉ AN CHẠY NGAY TỪ ĐẦU (Không đứng chờ)
             if (playerAnimator != null)
             {
-                playerAnimator.Play("Idle", 0, 0f);
-                playerAnimator.speed = 1.0f;
+                playerAnimator.Play("Run", 0, 0f);
+                playerAnimator.speed = 1.0f; // Tốc độ chạy tự nhiên, giảm 50% so với trước
             }
 
             if (fadeCanvasGroup != null)
@@ -244,160 +246,136 @@ namespace HoaVaMau.Cinematics
             }
             if (continuousCam != null) continuousCam.Lens.FieldOfView = KF1_Fov;
 
-            // =========================================================================
-            // GIAI ĐOẠN 1: 0.0s – 2.2s | Hình 1: Toàn cảnh cổng làng & Fade In
-            // =========================================================================
-            while (elapsed < 2.2f)
+            // Đảm bảo Bé An chạy ngay lập tức khi cutscene bắt đầu
+            if (playerAnimator != null)
             {
-                elapsed += Time.deltaTime;
-
-                // Fade In screen from black
-                if (fadeCanvasGroup != null && elapsed <= fadeInDuration)
-                {
-                    fadeCanvasGroup.alpha = Mathf.Clamp01(1.0f - (elapsed / fadeInDuration));
-                }
-                else if (fadeCanvasGroup != null && fadeCanvasGroup.alpha > 0f)
-                {
-                    fadeCanvasGroup.alpha = 0f;
-                }
-
-                // Nhẹ nhàng trôi nhẹ tới trước 0.3m
-                float tDrift = elapsed / 2.2f;
-                if (camTransform != null)
-                {
-                    camTransform.position = Vector3.Lerp(KF1_Pos, KF1_Pos + new Vector3(0f, 0f, 0.35f), tDrift);
-                    camTransform.rotation = KF1_Rot;
-                }
-
-                yield return null;
+                playerAnimator.Play("Run", 0, 0f);
+                playerAnimator.speed = 1.0f;
             }
 
-            // =========================================================================
-            // GIAI ĐOẠN 2: 2.2s – 4.8s | Hình 1 -> Hình 2: Trượt tới Dolly-in Zoom cận mặt Bé An
-            // =========================================================================
-            Vector3 startDollyPos = camTransform != null ? camTransform.position : KF1_Pos;
-            bool lookAroundTriggered = false;
-
-            while (elapsed < 4.8f)
-            {
-                elapsed += Time.deltaTime;
-                float u = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(2.2f, 4.8f, elapsed));
-
-                if (camTransform != null)
-                {
-                    camTransform.position = Vector3.Lerp(startDollyPos, KF2_Pos, u);
-                    camTransform.rotation = Quaternion.Slerp(KF1_Rot, KF2_Rot, u);
-                }
-
-                if (continuousCam != null)
-                {
-                    continuousCam.Lens.FieldOfView = Mathf.Lerp(KF1_Fov, KF2_Fov, u);
-                }
-
-                // Bé An đưa mắt nhìn quanh phong cảnh quê hương
-                if (elapsed >= 2.8f && !lookAroundTriggered)
-                {
-                    lookAroundTriggered = true;
-                    if (playerAnimator != null) playerAnimator.CrossFadeInFixedTime("LookAround", 0.35f);
-                }
-
-                yield return null;
-            }
+            Vector3 camPosAtPhase4End = KF4_Pos;
+            Quaternion camRotAtPhase4End = KF4_Rot;
 
             // =========================================================================
-            // GIAI ĐOẠN 3: 4.8s – 7.2s | Hình 2 -> Hình 3: Lượn vòng cung sang góc nghiêng 90°
-            // =========================================================================
-            Vector3 pCtrl_2to3 = new Vector3(-8.8f, 1.36f, 182.5f);
-
-            while (elapsed < 7.2f)
-            {
-                elapsed += Time.deltaTime;
-                float u = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(4.8f, 7.2f, elapsed));
-
-                if (camTransform != null)
-                {
-                    camTransform.position = QuadraticBezier(KF2_Pos, pCtrl_2to3, KF3_Pos, u);
-                    camTransform.rotation = Quaternion.Slerp(KF2_Rot, KF3_Rot, u);
-                }
-
-                if (continuousCam != null)
-                {
-                    continuousCam.Lens.FieldOfView = Mathf.Lerp(KF2_Fov, KF3_Fov, u);
-                }
-
-                // Chuẩn bị về Idle trước khi xuất phát chạy
-                if (elapsed >= 6.8f && playerAnimator != null)
-                {
-                    playerAnimator.CrossFadeInFixedTime("Idle", 0.25f);
-                }
-
-                yield return null;
-            }
-
-            // =========================================================================
-            // GIAI ĐOẠN 4: 7.2s – 9.2s | Hình 3 -> Hình 4: Trôi lên cao ra sau vai Bé An
-            // =========================================================================
-            Vector3 pCtrl_3to4 = new Vector3(-8.0f, 2.6f, 186.2f);
-            bool runTriggered = false;
-
-            while (elapsed < 9.2f)
-            {
-                elapsed += Time.deltaTime;
-                float u = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(7.2f, 9.2f, elapsed));
-
-                if (camTransform != null)
-                {
-                    camTransform.position = QuadraticBezier(KF3_Pos, pCtrl_3to4, KF4_Pos, u);
-                    camTransform.rotation = Quaternion.Slerp(KF3_Rot, KF4_Rot, u);
-                }
-
-                if (continuousCam != null)
-                {
-                    continuousCam.Lens.FieldOfView = Mathf.Lerp(KF3_Fov, KF4_Fov, u);
-                }
-
-                // Bé An bắt đầu bứt tốc chạy ở giây thứ 8.5
-                if (elapsed >= 8.5f && !runTriggered)
-                {
-                    runTriggered = true;
-                    if (playerAnimator != null)
-                    {
-                        playerAnimator.CrossFadeInFixedTime("Run", 0.18f);
-                        playerAnimator.speed = 1.35f;
-                    }
-                }
-
-                yield return null;
-            }
-
-            // =========================================================================
-            // GIAI ĐOẠN 5: 9.2s – 14.0s | Hình 4 -> Hình 5: BÉ AN CHẠY VỀ LÀNG & CAMERA BAY LÊN ĐẠI CẢNH
+            // CHUỖI 5 GÓC QUAY LIÊN TỤC VỚI BÉ AN CHẠY NGAY TỪ ĐẦU (TỐC ĐỘ GIẢM 50%)
             // =========================================================================
             while (elapsed < 14.0f)
             {
                 elapsed += Time.deltaTime;
-                float uSprint = Mathf.InverseLerp(9.2f, 14.0f, elapsed);
 
-                // Bé An chạy dọc con đường đất từ Z = 184m về Z = 38m (gần tới làng)
-                float currentAnZ = Mathf.Lerp(184.0f, 38.0f, uSprint);
-                float swayX = Mathf.Sin(uSprint * 18.0f) * 0.12f;
-                Vector3 currentAnPos = new Vector3(-7.0f + swayX, 0.505f, currentAnZ);
-                ApplyCharacterPosition(currentAnPos, Quaternion.Euler(0f, 180f, 0f));
+                // 1. VỊ TRÍ BÉ AN: Chạy liên tục từ Z = 185m về Z = 38m trong 14 giây (~10.5 m/s, giảm 50% so với trước)
+                float uRun = Mathf.Clamp01(elapsed / 14.0f);
+                float currentAnZ = Mathf.Lerp(185.0f, 38.0f, uRun);
+                float swayX = Mathf.Sin(uRun * 20.0f) * 0.08f;
+                Vector3 anPos = new Vector3(-7.0f + swayX, 0.505f, currentAnZ);
+                ApplyCharacterPosition(anPos, Quaternion.Euler(0f, 180f, 0f));
 
-                // Tiếng bước chân đất nhịp nhàng
-                PlayFootstepAudio(0.33f);
+                // Tiếng bước chân nhịp nhàng liên tục
+                PlayFootstepAudio(0.34f);
 
-                // Camera từ sau vai Bé An bay lùi xa và nâng cao dần ra đúng góc đại cảnh Hình 5 của bạn!
-                float kArc = Mathf.SmoothStep(0f, 1f, uSprint);
-                if (camTransform != null)
+                // 2. ĐIỀU PHỐI CAMERA THEO 5 GIAI ĐOẠN LIÊN TỤC
+                if (elapsed < 2.2f)
                 {
-                    camTransform.position = Vector3.Lerp(KF4_Pos, KF5_Pos, kArc);
-                    camTransform.rotation = Quaternion.Slerp(KF4_Rot, KF5_Rot, kArc);
+                    // GIAI ĐOẠN 1 (0.0s – 2.2s) | Hình 1: Toàn cảnh cổng làng & Fade In khi Bé An chạy qua cổng
+                    if (fadeCanvasGroup != null && elapsed <= fadeInDuration)
+                    {
+                        fadeCanvasGroup.alpha = Mathf.Clamp01(1.0f - (elapsed / fadeInDuration));
+                    }
+                    else if (fadeCanvasGroup != null && fadeCanvasGroup.alpha > 0f)
+                    {
+                        fadeCanvasGroup.alpha = 0f;
+                    }
+
+                    float t1 = elapsed / 2.2f;
+                    Vector3 camGatePos = Vector3.Lerp(KF1_Pos, new Vector3(-7.0f, 2.15f, 172.5f), Mathf.SmoothStep(0f, 1f, t1));
+                    Quaternion camGateRot = Quaternion.Euler(Mathf.Lerp(6.5f, 4.0f, t1), 0f, 0f);
+
+                    if (camTransform != null)
+                    {
+                        camTransform.position = camGatePos;
+                        camTransform.rotation = camGateRot;
+                    }
+                    if (continuousCam != null) continuousCam.Lens.FieldOfView = KF1_Fov;
                 }
-
-                if (continuousCam != null)
+                else if (elapsed < 4.8f)
                 {
-                    continuousCam.Lens.FieldOfView = Mathf.Lerp(KF4_Fov, KF5_Fov, kArc);
+                    // GIAI ĐOẠN 2 (2.2s – 4.8s) | Hình 1 -> Hình 2: Dolly Zoom cận mặt Bé An khi đang chạy
+                    float u2 = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(2.2f, 4.8f, elapsed));
+
+                    Vector3 camGateEndPos = new Vector3(-7.0f, 2.15f, 172.5f);
+                    Vector3 faceCamTargetPos = anPos + new Vector3(0.0f, 0.82f, -1.85f);
+                    Vector3 currentCamPos = Vector3.Lerp(camGateEndPos, faceCamTargetPos, u2);
+                    Quaternion currentCamRot = Quaternion.Slerp(Quaternion.Euler(4.0f, 0f, 0f), KF2_Rot, u2);
+                    float currentFov = Mathf.Lerp(KF1_Fov, KF2_Fov, u2);
+
+                    if (camTransform != null)
+                    {
+                        camTransform.position = currentCamPos;
+                        camTransform.rotation = currentCamRot;
+                    }
+                    if (continuousCam != null) continuousCam.Lens.FieldOfView = currentFov;
+                }
+                else if (elapsed < 7.2f)
+                {
+                    // GIAI ĐOẠN 3 (4.8s – 7.2s) | Hình 2 -> Hình 3: Lượn vòng cung sang góc nghiêng 90° sườn phải
+                    float u3 = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(4.8f, 7.2f, elapsed));
+
+                    Vector3 offsetFace = new Vector3(0.0f, 0.82f, -1.85f);
+                    Vector3 offsetCtrl = new Vector3(-1.8f, 0.86f, -1.4f);
+                    Vector3 offsetSide = new Vector3(-1.5f, 0.91f, -0.2f);
+                    Vector3 currentOffset = QuadraticBezier(offsetFace, offsetCtrl, offsetSide, u3);
+
+                    Vector3 currentCamPos = anPos + currentOffset;
+                    Quaternion currentCamRot = Quaternion.Slerp(KF2_Rot, KF3_Rot, u3);
+                    float currentFov = Mathf.Lerp(KF2_Fov, KF3_Fov, u3);
+
+                    if (camTransform != null)
+                    {
+                        camTransform.position = currentCamPos;
+                        camTransform.rotation = currentCamRot;
+                    }
+                    if (continuousCam != null) continuousCam.Lens.FieldOfView = currentFov;
+                }
+                else if (elapsed < 9.2f)
+                {
+                    // GIAI ĐOẠN 4 (7.2s – 9.2s) | Hình 3 -> Hình 4: Trôi lên cao ra sau vai Bé An nhìn dọc con đường
+                    float u4 = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(7.2f, 9.2f, elapsed));
+
+                    Vector3 offsetSide = new Vector3(-1.5f, 0.91f, -0.2f);
+                    Vector3 offsetCtrl = new Vector3(-0.8f, 2.1f, +2.4f);
+                    Vector3 offsetBehind = new Vector3(0.9f, 2.6f, +2.2f);
+                    Vector3 currentOffset = QuadraticBezier(offsetSide, offsetCtrl, offsetBehind, u4);
+
+                    Vector3 currentCamPos = anPos + currentOffset;
+                    Quaternion currentCamRot = Quaternion.Slerp(KF3_Rot, KF4_Rot, u4);
+                    float currentFov = Mathf.Lerp(KF3_Fov, KF4_Fov, u4);
+
+                    if (camTransform != null)
+                    {
+                        camTransform.position = currentCamPos;
+                        camTransform.rotation = currentCamRot;
+                    }
+                    if (continuousCam != null) continuousCam.Lens.FieldOfView = currentFov;
+
+                    // Lưu lại vị trí và góc xoay cuối Phase 4 để chuyển tiếp mượt sang Phase 5
+                    camPosAtPhase4End = currentCamPos;
+                    camRotAtPhase4End = currentCamRot;
+                }
+                else
+                {
+                    // GIAI ĐOẠN 5 (9.2s – 14.0s) | Hình 4 -> Hình 5: Bé An tiếp tục chạy & Camera bay vút lên đại cảnh sườn núi
+                    float u5 = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(9.2f, 14.0f, elapsed));
+
+                    Vector3 currentCamPos = Vector3.Lerp(camPosAtPhase4End, KF5_Pos, u5);
+                    Quaternion currentCamRot = Quaternion.Slerp(camRotAtPhase4End, KF5_Rot, u5);
+                    float currentFov = Mathf.Lerp(KF4_Fov, KF5_Fov, u5);
+
+                    if (camTransform != null)
+                    {
+                        camTransform.position = currentCamPos;
+                        camTransform.rotation = currentCamRot;
+                    }
+                    if (continuousCam != null) continuousCam.Lens.FieldOfView = currentFov;
                 }
 
                 yield return null;
@@ -417,7 +395,7 @@ namespace HoaVaMau.Cinematics
                 float uApproach = Mathf.InverseLerp(14.0f, fadeOutEndTime, elapsed);
                 float currentAnZ = Mathf.Lerp(38.0f, 26.0f, uApproach);
                 ApplyCharacterPosition(new Vector3(-7.0f, 0.505f, currentAnZ), Quaternion.Euler(0f, 180f, 0f));
-                PlayFootstepAudio(0.38f);
+                PlayFootstepAudio(0.34f);
 
                 // Màn hình tối đen dần lại
                 if (fadeCanvasGroup != null)
@@ -462,9 +440,10 @@ namespace HoaVaMau.Cinematics
                 gameplayCamera.SnapToTarget(180.0f);
             }
 
-            // 4. Mở khóa Input cho người chơi
+            // 4. Mở khóa Input & kích hoạt lại Player Controller
             if (playerController != null)
             {
+                playerController.enabled = true;
                 playerController.IsInputLocked = false;
             }
 
@@ -580,9 +559,10 @@ namespace HoaVaMau.Cinematics
                 gameplayCamera.SnapToTarget(180.0f);
             }
 
-            // 5. Unlock Player Input
+            // 5. Unlock Player Input & kích hoạt lại Player Controller
             if (playerController != null)
             {
+                playerController.enabled = true;
                 playerController.IsInputLocked = false;
             }
 

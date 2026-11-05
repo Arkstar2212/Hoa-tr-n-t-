@@ -46,14 +46,14 @@ namespace HoaVaMau.EditorScripts
             var characterController = playerGo.GetComponent<CharacterController>();
             var playerAnimator = playerGo.GetComponent<Animator>();
 
-            // Ensure An is stationed at the North Gate
-            playerGo.transform.position = new Vector3(-7.0f, 0.505f, 184.0f);
+            // Ensure An is stationed at the North Gate ready to run
+            playerGo.transform.position = new Vector3(-7.0f, 0.505f, 185.0f);
             playerGo.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
 
             var spawnGo = GameObject.Find("PlayerSpawn");
             if (spawnGo != null)
             {
-                spawnGo.transform.position = new Vector3(-7.0f, 0.505f, 184.0f);
+                spawnGo.transform.position = new Vector3(-7.0f, 0.505f, 185.0f);
                 spawnGo.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
             }
 
