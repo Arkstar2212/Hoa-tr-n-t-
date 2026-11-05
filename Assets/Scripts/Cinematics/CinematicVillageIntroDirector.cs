@@ -60,10 +60,10 @@ namespace HoaVaMau.Cinematics
         private static readonly Vector3 GameplayStartPos = new Vector3(-6.2f, 0.505f, 18.0f);
 
         // 5 Calibrated Keyframes (Hình 1 -> Hình 5 theo kịch bản người dùng)
-        // Hình 1: Toàn cảnh cổng làng Bắc (Gate Wide)
-        private static readonly Vector3 KF1_Pos = new Vector3(-7.0f, 2.35f, 175.0f);
-        private static readonly Quaternion KF1_Rot = Quaternion.Euler(6.5f, 0.0f, 0.0f);
-        private const float KF1_Fov = 50.0f;
+        // Hình 1: Toàn cảnh cổng làng Bắc (Gate Wide 1:1 Reference Match)
+        private static readonly Vector3 KF1_Pos = new Vector3(-7.0f, 2.05f, 172.5f);
+        private static readonly Quaternion KF1_Rot = Quaternion.Euler(6.0f, 0.0f, 0.0f);
+        private const float KF1_Fov = 48.0f;
 
         // Hình 2: Cận cảnh khuôn mặt Bé An (Face Close-Up)
         private static readonly Vector3 KF2_Pos = new Vector3(-7.0f, 1.32f, 182.65f);
@@ -178,6 +178,11 @@ namespace HoaVaMau.Cinematics
             if (playerController != null)
             {
                 playerController.IsInputLocked = true;
+                var playerAudio = playerController.GetComponent<AudioSource>();
+                if (playerAudio != null && playerAudio.isPlaying)
+                {
+                    playerAudio.Stop();
+                }
             }
 
             if (gameplayCamera != null)
@@ -212,13 +217,23 @@ namespace HoaVaMau.Cinematics
                 fadeCanvasGroup.alpha = 1.0f;
             }
 
-            // 4. Start Audio
+            // 4. Start Audio (BGM gió & 1 luồng âm thanh bước chân duy nhất)
             if (ambienceAudioSource != null && windAmbienceClip != null)
             {
                 ambienceAudioSource.clip = windAmbienceClip;
                 ambienceAudioSource.loop = true;
                 ambienceAudioSource.volume = 0.85f;
                 ambienceAudioSource.Play();
+            }
+
+            if (footstepAudioSource != null && dirtFootstepClip != null)
+            {
+                footstepAudioSource.clip = dirtFootstepClip;
+                footstepAudioSource.loop = true;
+                footstepAudioSource.volume = 0.80f;
+                footstepAudioSource.pitch = 1.0f;
+                footstepAudioSource.spatialBlend = 0f;
+                footstepAudioSource.Play();
             }
 
             // 5. Play Timeline if assigned
@@ -274,8 +289,8 @@ namespace HoaVaMau.Cinematics
                 Vector3 anPos = new Vector3(currentAnX, 0.505f, currentAnZ);
                 ApplyCharacterPosition(anPos, Quaternion.Euler(0f, 180f, 0f));
 
-                // Tiếng bước chân nhịp nhàng liên tục theo nhịp chạy trẻ nhỏ
-                PlayFootstepAudio(0.36f);
+                // Âm bước chân nhịp nhàng liên tục (duy nhất 1 luồng âm, không chồng lặp)
+                PlayFootstepAudio();
 
                 // 2. ĐIỀU PHỐI CAMERA LIÊN TỤC
                 if (elapsed < 2.2f)
@@ -379,7 +394,7 @@ namespace HoaVaMau.Cinematics
                 float uApproach = Mathf.InverseLerp(fadeOutStartTime, fadeOutEndTime, elapsed);
                 float currentAnZ = Mathf.Lerp(24.0f, 18.0f, uApproach);
                 ApplyCharacterPosition(new Vector3(-6.2f, 0.505f, currentAnZ), Quaternion.Euler(0f, 180f, 0f));
-                PlayFootstepAudio(0.36f);
+                PlayFootstepAudio();
 
                 // Màn hình tối đen dần lại
                 if (fadeCanvasGroup != null)
@@ -483,16 +498,19 @@ namespace HoaVaMau.Cinematics
             }
         }
 
-        private void PlayFootstepAudio(float interval)
+        private void PlayFootstepAudio()
         {
             if (footstepAudioSource == null || dirtFootstepClip == null) return;
 
-            stepTimer += Time.deltaTime;
-            if (stepTimer >= interval)
+            // Đảm bảo chỉ phát đúng 1 luồng âm thanh bước chân duy nhất (không chồng lặp PlayOneShot)
+            if (!footstepAudioSource.isPlaying)
             {
-                stepTimer = 0f;
-                footstepAudioSource.pitch = Random.Range(0.92f, 1.08f);
-                footstepAudioSource.PlayOneShot(dirtFootstepClip, 0.75f);
+                footstepAudioSource.clip = dirtFootstepClip;
+                footstepAudioSource.loop = true;
+                footstepAudioSource.volume = 0.80f;
+                footstepAudioSource.pitch = 1.0f;
+                footstepAudioSource.spatialBlend = 0f;
+                footstepAudioSource.Play();
             }
         }
 
