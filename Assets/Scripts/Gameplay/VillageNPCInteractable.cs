@@ -27,7 +27,7 @@ namespace HoaVaMau.Gameplay
         [Header("Animation & Living Behavior")]
         [SerializeField] private string defaultAnimState = "Idle";
         [SerializeField] private bool facePlayerWhenClose = true;
-        [SerializeField] private float interactRadius = 2.6f;
+        [SerializeField] private float interactRadius = 2.0f;
         [SerializeField] private float patrolRangeX = 0f;
         [SerializeField] private float patrolSpeed = 1.15f;
 
@@ -223,16 +223,25 @@ namespace HoaVaMau.Gameplay
                 transform.rotation = Quaternion.Slerp(transform.rotation, baseRotation, Time.deltaTime * 3.0f);
             }
 
-            // 2. Manage minimalist [E] key glyph ownership
+            // 2. Manage minimalist [E] key glyph ownership (closest NPC takes priority)
             if (inRange)
             {
-                if (activePromptOwner == null || activePromptOwner == this)
+                float currentOwnerDist = float.MaxValue;
+                if (activePromptOwner != null)
+                {
+                    Transform opt = activePromptOwner.transform;
+                    currentOwnerDist = is3DMode
+                        ? Vector2.Distance(new Vector2(pTr.position.x, pTr.position.z), new Vector2(opt.position.x, opt.position.z))
+                        : Mathf.Abs(pTr.position.x - opt.position.x);
+                }
+
+                if (activePromptOwner == null || activePromptOwner == this || planarDist < currentOwnerDist - 0.15f)
                 {
                     activePromptOwner = this;
                     UpdateKeyGlyphPosition();
                 }
 
-                if (KeybindingManager.IsActionPressed(GameAction.Interact))
+                if (activePromptOwner == this && KeybindingManager.IsActionPressed(GameAction.Interact))
                 {
                     AdvanceDialogue(pTr, is3DMode);
                 }
