@@ -71,7 +71,8 @@ namespace HoaVaMau.Gameplay
             }
 
             yield return new WaitForSeconds(1.5f);
-            ShowPrompt(PromptType.Move, "DI CHUYỂN", null, 6f);
+            var p = Object.FindAnyObjectByType<PlayerController>();
+            ShowPrompt(PromptType.Move, "DI CHUYỂN", p != null ? p.transform : null, 5f);
         }
 
         private void Update()
