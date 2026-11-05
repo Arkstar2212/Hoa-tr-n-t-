@@ -10,21 +10,22 @@ namespace HoaVaMau.Cinematics
 {
     /// <summary>
     /// Master Cinematic Director for the Opening Village Cutscene in "CaMau_1954_Village.unity".
-    /// Kịch bản chuẩn xác theo yêu cầu người dùng (MỘT CÚ MÁY LIỀN MẠCH DUY NHẤT - ONE-SHOT CINEMATOGRAPHY):
+    /// Kịch bản chuẩn xác theo yêu cầu người dùng:
     /// 1. Chiếu camera từ cổng làng (Fade In toàn cảnh cổng làng Bắc, Bé An đứng ở ngưỡng cổng).
-    /// 2. Camera mượt mà trượt tới (dolly-in) zoom vào cận cảnh khuôn mặt Bé An (Bé An nhìn quanh).
+    /// 2. Camera mượt mà trượt tới (dolly-in) zoom vào cận cảnh khuôn mặt Bé An (Bé An nhìn quanh quê hương).
     /// 3. Camera lượn vòng cung 180 độ quanh vai ra sau lưng Bé An (Over-the-shoulder).
     /// 4. ĐOẠN CHẠY VỀ PHÍA LÀNG: Bé An bứt tốc chạy nước rút dọc con đường đất xuyên qua đồng lúa.
-    ///    Trong lúc An chạy, camera từ sau lưng trôi lùi ra xa và từ từ nâng cao lên (crane-up / flycam đại cảnh)
-    ///    thu trọn cảnh An chạy giữa cánh đồng lúa vàng bao la hướng về làng.
-    /// 5. Khi An vào làng, camera hạ dần độ cao xuống sau lưng và kết thúc cutscene,
-    ///    chuyển mượt về camera gameplay ThirdPersonOrbitCamera và mở khóa điều khiển cho người chơi.
+    ///    Trong lúc An chạy, camera từ sau lưng trôi lùi ra xa và từ từ bay bổng lên cao sang góc sườn núi,
+    ///    zoom ra ĐÚNG GÓC ĐẠI CẢNG (Pos = -60.85, 50.99, 185.46 | Rot = 36.58, 150.01, 0.03 | FOV = 60).
+    /// 5. Khi nhân vật chạy gần tới làng (Z = 38m): Màn hình tối đen lại (Fade out to black).
+    /// 6. Trong bóng tối, chuyển mượt về camera gameplay (ThirdPersonOrbitCamera), mở khóa điều khiển,
+    ///    và màn hình sáng dần trở lại (Fade in) để người chơi trực tiếp điều khiển Bé An!
     /// </summary>
     public class CinematicVillageIntroDirector : MonoBehaviour
     {
         [Header("Cinematic Settings")]
-        [Tooltip("Tổng thời lượng cutscene liền mạch (giây)")]
-        [SerializeField] private float cutsceneDuration = 17.5f;
+        [Tooltip("Tổng thời lượng cutscene (giây)")]
+        [SerializeField] private float cutsceneDuration = 16.5f;
         [SerializeField] private bool autoPlayOnStart = true;
         [SerializeField] private bool allowSkip = true;
 
@@ -37,12 +38,13 @@ namespace HoaVaMau.Cinematics
         [Header("Cinemachine Single Camera")]
         [SerializeField] private PlayableDirector playableDirector;
         [SerializeField] private Unity.Cinemachine.CinemachineBrain cinemachineBrain;
-        [Tooltip("Camera điện ảnh duy nhất di chuyển liên tục không chuyển khung hình (One-Shot)")]
+        [Tooltip("Camera điện ảnh duy nhất di chuyển liên tục (One-Shot)")]
         [SerializeField] private Unity.Cinemachine.CinemachineCamera continuousCam;
 
         [Header("UI & Transitions")]
         [SerializeField] private CanvasGroup fadeCanvasGroup;
-        [SerializeField] private float fadeInDuration = 1.5f;
+        [SerializeField] private float fadeInDuration = 1.4f;
+        [SerializeField] private float fadeOutDuration = 1.3f;
 
         [Header("Audio")]
         [SerializeField] private AudioSource ambienceAudioSource;
@@ -53,9 +55,13 @@ namespace HoaVaMau.Cinematics
 
         // Key Locations
         private static readonly Vector3 NorthGatePos = new Vector3(-7.0f, 0.505f, 184.0f);
-        private static readonly Vector3 VillageEntrancePos = new Vector3(-7.0f, 0.505f, 35.0f);
-        private static readonly Vector3 VillageDecelPos = new Vector3(-6.8f, 0.505f, 22.0f);
-        private static readonly Vector3 CentralSquarePos = new Vector3(-6.5f, 0.505f, 17.5f);
+        private static readonly Vector3 VillageApproachPos = new Vector3(-7.0f, 0.505f, 38.0f);
+        private static readonly Vector3 GameplayStartPos = new Vector3(-6.8f, 0.505f, 22.0f);
+
+        // User's exact grand vista camera framing
+        private static readonly Vector3 UserVistaPos = new Vector3(-60.85f, 50.99f, 185.46f);
+        private static readonly Quaternion UserVistaRot = Quaternion.Euler(36.58f, 150.01f, 0.03f);
+        private const float UserVistaFov = 60f;
 
         // State tracking
         private bool isCutsceneActive = false;
@@ -323,109 +329,140 @@ namespace HoaVaMau.Cinematics
                 yield return null;
             }
 
+            // Ghi nhận vị trí và góc xoay sau lưng trước khi bắt đầu bứt tốc
+            Quaternion camBehindRot = camTransform != null ? camTransform.rotation : Quaternion.Euler(6.3f, 180f, 0f);
+            Vector3 actualCamBehindPos = camTransform != null ? camTransform.position : camBehindPos;
+
             // =========================================================================
-            // GIAI ĐOẠN 4: 7.5s – 14.8s | BÉ AN CHẠY VỀ PHÍA LÀNG & CAMERA CAO LÊN TỪ TỪ
+            // GIAI ĐOẠN 4: 7.5s – 14.0s | BÉ AN CHẠY VỀ LÀNG & CAMERA BAY RA ĐÚNG GÓC ĐẠI CẢNH
             // =========================================================================
-            // Bé An bứt tốc chạy nước rút!
             if (playerAnimator != null)
             {
                 playerAnimator.CrossFadeInFixedTime("Run", 0.16f);
                 playerAnimator.speed = 1.35f;
             }
 
-            while (elapsed < 14.8f)
+            while (elapsed < 14.0f)
             {
                 elapsed += Time.deltaTime;
-                float uSprint = Mathf.InverseLerp(7.5f, 14.8f, elapsed);
+                float uSprint = Mathf.InverseLerp(7.5f, 14.0f, elapsed);
 
-                // Tọa độ Bé An chạy dọc con đường đất từ Z = 184m về Z = 35m (Cổng vào làng)
-                float currentAnZ = Mathf.Lerp(184.0f, 35.0f, uSprint);
-                float swayX = Mathf.Sin(uSprint * 18.0f) * 0.12f;
+                // Bé An chạy dọc con đường đất từ Z = 184m về Z = 38m (gần tới làng)
+                float currentAnZ = Mathf.Lerp(184.0f, 38.0f, uSprint);
+                float swayX = Mathf.Sin(uSprint * 16.0f) * 0.12f;
                 Vector3 currentAnPos = new Vector3(-7.0f + swayX, 0.505f, currentAnZ);
                 ApplyCharacterPosition(currentAnPos, Quaternion.Euler(0f, 180f, 0f));
 
-                // Âm thanh bước chân dồn dập
+                // Tiếng bước chân đất dồn dập
                 PlayFootstepAudio(0.34f);
 
-                // Camera từ sau lưng lùi xa ra và từ từ nâng cao lên (Flycam / Crane-up)
-                float kHeight = Mathf.SmoothStep(0f, 1f, uSprint);
-                float camDistBehind = Mathf.Lerp(1.8f, 12.0f, kHeight);
-                float camAltitude = Mathf.Lerp(1.55f, 9.5f, kHeight);
-                float camSideOffset = Mathf.Lerp(0.3f, 0.0f, kHeight);
-
+                // Camera từ sau lưng Bé An bay lùi xa và nâng cao dần ra đúng góc hình của người dùng!
+                float kArc = Mathf.SmoothStep(0f, 1f, uSprint);
                 if (camTransform != null)
                 {
-                    camTransform.position = new Vector3(-7.0f + camSideOffset, camAltitude, currentAnZ + camDistBehind);
-                    // Camera nghiêng nhìn xuống Bé An và bao quát phong cảnh cánh đồng phía trước
-                    Vector3 lookAheadTarget = new Vector3(-7.0f, Mathf.Lerp(1.1f, 0.5f, kHeight), currentAnZ - Mathf.Lerp(6.0f, 18.0f, kHeight));
-                    camTransform.LookAt(lookAheadTarget);
+                    camTransform.position = Vector3.Lerp(actualCamBehindPos, UserVistaPos, kArc);
+                    camTransform.rotation = Quaternion.Slerp(camBehindRot, UserVistaRot, kArc);
                 }
 
                 if (continuousCam != null)
                 {
-                    continuousCam.Lens.FieldOfView = Mathf.Lerp(44f, 52f, kHeight);
+                    continuousCam.Lens.FieldOfView = Mathf.Lerp(44f, UserVistaFov, kArc);
                 }
 
                 yield return null;
             }
 
             // =========================================================================
-            // GIAI ĐOẠN 5: 14.8s – 17.0s | TIẾN VÀO LÀNG, GIẢM TỐC & CAMERA HẠ CÁNH MƯỢT MÀ
+            // GIAI ĐOẠN 5: 14.0s – 15.3s | KHI CHẠY GẦN TỚI LÀNG -> MÀN HÌNH TỐI ĐEN LẠI (FADE OUT)
             // =========================================================================
-            // Bé An vào làng, giảm tốc từ Chạy sang Đi bộ
+            float fadeOutStartTime = 14.0f;
+            float fadeOutEndTime = 15.3f;
+
+            while (elapsed < fadeOutEndTime)
+            {
+                elapsed += Time.deltaTime;
+
+                // An tiếp tục chạy đến lối vào làng Z = 30m
+                float uApproach = Mathf.InverseLerp(14.0f, fadeOutEndTime, elapsed);
+                float currentAnZ = Mathf.Lerp(38.0f, 26.0f, uApproach);
+                ApplyCharacterPosition(new Vector3(-7.0f, 0.505f, currentAnZ), Quaternion.Euler(0f, 180f, 0f));
+                PlayFootstepAudio(0.38f);
+
+                // Màn hình tối đen dần lại
+                if (fadeCanvasGroup != null)
+                {
+                    fadeCanvasGroup.alpha = Mathf.Clamp01((elapsed - fadeOutStartTime) / (fadeOutEndTime - fadeOutStartTime));
+                }
+
+                yield return null;
+            }
+
+            // Đảm bảo màn hình hoàn toàn đen
+            if (fadeCanvasGroup != null) fadeCanvasGroup.alpha = 1.0f;
+
+            // =========================================================================
+            // GIAI ĐOẠN 6: CHUYỂN VỀ GAMEPLAY TRONG BÓNG TỐI & MÀN HÌNH SÁNG LẠI (FADE IN)
+            // =========================================================================
+            // 1. Đặt Bé An tại vị trí bắt đầu gameplay ở làng
+            ApplyCharacterPosition(GameplayStartPos, Quaternion.Euler(0f, 180f, 0f));
+
             if (playerAnimator != null)
             {
-                playerAnimator.CrossFadeInFixedTime("Walk", 0.22f);
+                playerAnimator.Play("Idle", 0, 0f);
                 playerAnimator.speed = 1.0f;
             }
 
-            while (elapsed < 16.8f)
+            // 2. Tắt âm bước chân cutscene
+            if (footstepAudioSource != null && footstepAudioSource.isPlaying)
+            {
+                footstepAudioSource.Stop();
+            }
+
+            // 3. Chuyển quyền điều khiển Camera về ThirdPersonOrbitCamera
+            if (cinemachineBrain != null)
+            {
+                cinemachineBrain.enabled = false;
+            }
+
+            if (gameplayCamera != null)
+            {
+                gameplayCamera.enabled = true;
+                // Camera bắt góc sau vai nhìn về phía sân làng (yaw = 180f)
+                gameplayCamera.SnapToTarget(180.0f);
+            }
+
+            // 4. Mở khóa Input cho người chơi
+            if (playerController != null)
+            {
+                playerController.IsInputLocked = false;
+            }
+
+            isCutsceneActive = false;
+            isCutsceneFinished = true;
+
+            Debug.Log("[Cinematics] Cutscene completed with Fade Out at village approach. Handing over to Gameplay...");
+
+            // 5. Màn hình sáng dần trở lại để người chơi bắt đầu gameplay (Fade in from black)
+            float fadeInStartTime = elapsed;
+            float fadeInEndTime = fadeInStartTime + 1.2f;
+
+            while (elapsed < fadeInEndTime)
             {
                 elapsed += Time.deltaTime;
-                float uVillage = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(14.8f, 16.8f, elapsed));
-
-                // Bé An đi bộ từ cổng làng (Z = 35) vào quảng trường cây đa (Z = 17.5)
-                Vector3 currentAnPos = Vector3.Lerp(VillageEntrancePos, CentralSquarePos, uVillage);
-                ApplyCharacterPosition(currentAnPos, Quaternion.Euler(0f, 180f, 0f));
-                PlayFootstepAudio(0.55f);
-
-                // Camera từ trên cao hạ dần độ cao về sau lưng Bé An (Góc nhìn gameplay ThirdPerson)
-                float camAltitude = Mathf.Lerp(9.5f, 2.1f, uVillage);
-                float camDistBehind = Mathf.Lerp(12.0f, 2.6f, uVillage);
-                float camSideOffset = Mathf.Lerp(0.0f, 0.0f, uVillage);
-
-                if (camTransform != null)
+                if (fadeCanvasGroup != null)
                 {
-                    camTransform.position = new Vector3(currentAnPos.x + camSideOffset, camAltitude, currentAnPos.z + camDistBehind);
-                    camTransform.LookAt(new Vector3(currentAnPos.x, 1.2f, currentAnPos.z - 4.0f));
+                    fadeCanvasGroup.alpha = Mathf.Clamp01(1.0f - ((elapsed - fadeInStartTime) / 1.2f));
                 }
-
-                if (continuousCam != null)
-                {
-                    continuousCam.Lens.FieldOfView = Mathf.Lerp(52f, 56f, uVillage);
-                }
-
                 yield return null;
             }
 
-            // Bé An dừng lại đứng nghiêm trang trước cây đa cổ thụ (Idle)
-            if (playerAnimator != null)
+            if (fadeCanvasGroup != null)
             {
-                playerAnimator.CrossFadeInFixedTime("Idle", 0.25f);
-                playerAnimator.speed = 1.0f;
-            }
-            ApplyCharacterPosition(CentralSquarePos, Quaternion.Euler(0f, 180f, 0f));
-
-            while (elapsed < cutsceneDuration)
-            {
-                elapsed += Time.deltaTime;
-                yield return null;
+                fadeCanvasGroup.alpha = 0.0f;
+                fadeCanvasGroup.gameObject.SetActive(false);
             }
 
-            // =========================================================================
-            // GIAI ĐOẠN 6: KẾT THÚC CUTSCENE & BÀN GIAO QUYỀN ĐIỀU KHIỂN
-            // =========================================================================
-            EndCutsceneAndHandover(instant: false);
+            Debug.Log("[Cinematics] Gameplay fully active! Player has complete control of Bé An.");
         }
 
         private void ApplyCharacterPosition(Vector3 worldPos, Quaternion rotation)
@@ -472,8 +509,8 @@ namespace HoaVaMau.Cinematics
             isCutsceneActive = false;
             isCutsceneFinished = true;
 
-            // 1. Station Bé An at final position in the village square
-            ApplyCharacterPosition(CentralSquarePos, Quaternion.Euler(0f, 180f, 0f));
+            // 1. Station Bé An at the gameplay entrance position
+            ApplyCharacterPosition(GameplayStartPos, Quaternion.Euler(0f, 180f, 0f));
 
             if (playerAnimator != null)
             {
@@ -503,7 +540,6 @@ namespace HoaVaMau.Cinematics
             if (gameplayCamera != null)
             {
                 gameplayCamera.enabled = true;
-                // Snap directly behind Bé An facing South (yaw = 180f)
                 gameplayCamera.SnapToTarget(180.0f);
             }
 
@@ -513,7 +549,7 @@ namespace HoaVaMau.Cinematics
                 playerController.IsInputLocked = false;
             }
 
-            Debug.Log("[Cinematics] One-Shot Continuous Cutscene finished! Gameplay handed over to player.");
+            Debug.Log("[Cinematics] Cutscene instantly handed over to player.");
         }
     }
 }

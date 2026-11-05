@@ -14,9 +14,10 @@ namespace HoaVaMau.EditorScripts
 {
     /// <summary>
     /// Automated Builder for the One-Shot Continuous Cinematic Sequence in "CaMau_1954_Village.unity".
-    /// Kịch bản Một Cú Máy Liền Mạch (One-Shot):
-    /// - 1 Camera duy nhất di chuyển liên tục, không chuyển khung hình / không cắt cảnh.
-    /// - Cổng làng -> Dolly-in Zoom mặt -> Lượn 180° sau lưng -> An chạy về làng & Camera lùi xa bay lên cao -> An vào làng & Camera hạ xuống gameplay -> Bàn giao điều khiển.
+    /// Kịch bản chuẩn xác theo yêu cầu người dùng:
+    /// - 1 Camera duy nhất di chuyển liên tục, không chuyển khung hình.
+    /// - Cổng làng -> Dolly-in Zoom mặt -> Lượn 180° sau lưng -> An chạy về làng & Camera bay ra đúng góc đại cảnh của bạn.
+    /// - Khi chạy gần tới làng -> Tối đen lại (Fade Out) và chuyển mượt về gameplay.
     /// </summary>
     public static class BuildVillageIntroCinematicTimeline
     {
@@ -32,7 +33,7 @@ namespace HoaVaMau.EditorScripts
         public static string Execute()
         {
             var activeScene = EditorSceneManager.GetActiveScene();
-            Debug.Log("[Cinematics Builder] Building One-Shot Continuous Intro Cutscene...");
+            Debug.Log("[Cinematics Builder] Building One-Shot Continuous Intro Cutscene with User Vista & Fade-to-Gameplay...");
 
             // 1. Locate Bé An
             var playerGo = GameObject.Find("An_Player");
@@ -122,7 +123,7 @@ namespace HoaVaMau.EditorScripts
 
             var canvasGroup = fadeCanvasGo.GetComponent<CanvasGroup>();
             if (canvasGroup == null) canvasGroup = fadeCanvasGo.AddComponent<CanvasGroup>();
-            canvasGroup.alpha = 0f; // Activated during cutscene runtime
+            canvasGroup.alpha = 0f;
             canvasGroup.blocksRaycasts = false;
             canvasGroup.interactable = false;
 
@@ -163,11 +164,11 @@ namespace HoaVaMau.EditorScripts
                 }
             }
 
-            // Create Cinemachine Track with ONE single continuous clip for the full cutscene
+            // Create Cinemachine Track with ONE single continuous clip
             var cmTrack = timeline.CreateTrack<CinemachineTrack>(null, "Cinemachine Track");
             var clip = cmTrack.CreateClip<CinemachineShot>();
             clip.start = 0.0;
-            clip.duration = 17.5;
+            clip.duration = 16.5;
             clip.displayName = "One-Shot Continuous Village Intro";
             var shotAsset = clip.asset as CinemachineShot;
             string guid = Guid.NewGuid().ToString();
@@ -217,10 +218,11 @@ namespace HoaVaMau.EditorScripts
             var so = new SerializedObject(introDirector);
             so.Update();
 
-            so.FindProperty("cutsceneDuration").floatValue = 17.5f;
+            so.FindProperty("cutsceneDuration").floatValue = 16.5f;
             so.FindProperty("autoPlayOnStart").boolValue = true;
             so.FindProperty("allowSkip").boolValue = true;
-            so.FindProperty("fadeInDuration").floatValue = 1.5f;
+            so.FindProperty("fadeInDuration").floatValue = 1.4f;
+            so.FindProperty("fadeOutDuration").floatValue = 1.3f;
 
             so.FindProperty("playerController").objectReferenceValue = playerController;
             so.FindProperty("characterController").objectReferenceValue = characterController;
@@ -245,8 +247,8 @@ namespace HoaVaMau.EditorScripts
             // Mark Scene Dirty
             EditorSceneManager.MarkSceneDirty(activeScene);
 
-            Debug.Log("[Cinematics Builder] One-Shot Continuous Intro Cutscene built successfully!");
-            return "SUCCESS: One-Shot Continuous Intro Cutscene built (Single Camera: Gate -> Face Dolly -> 180° Orbit -> Sprint to Village & Crane-Up High -> Handover).";
+            Debug.Log("[Cinematics Builder] One-Shot Continuous Cutscene with User Vista & Fade Out successfully updated!");
+            return "SUCCESS: Cutscene updated with User Vista Angle & Fade Out at village approach.";
         }
     }
 }
