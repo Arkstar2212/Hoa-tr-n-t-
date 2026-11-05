@@ -177,7 +177,12 @@ namespace HoaVaMau.Test3D
 
 #if UNITY_EDITOR
             // Trong Unity Editor: luôn ưu tiên vị trí authored trong Scene hoặc GameObject PlayerSpawn
-            if (spawnPoint != null)
+            var introDirector = Object.FindAnyObjectByType<HoaVaMau.Cinematics.CinematicVillageIntroDirector>();
+            if (introDirector != null && introDirector.isActiveAndEnabled)
+            {
+                // Cutscene Director quản lý vị trí bắt đầu tại cổng và kết thúc tại làng
+            }
+            else if (spawnPoint != null)
             {
                 RespawnAt(spawnPoint.position, spawnPoint.rotation);
                 return;
@@ -351,11 +356,8 @@ namespace HoaVaMau.Test3D
 
             if (IsInputLocked)
             {
-                horizontal = 0f;
-                vertical = 0f;
-                sprintHeld = false;
-                jumpPressed = false;
-                crouchPressed = false;
+                velocity = Vector3.zero;
+                return;
             }
 
             // Toggle Stealth Crouch on [C] / [LeftCtrl]

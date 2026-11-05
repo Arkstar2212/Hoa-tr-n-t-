@@ -178,7 +178,6 @@ namespace HoaVaMau.Cinematics
             if (playerController != null)
             {
                 playerController.IsInputLocked = true;
-                playerController.enabled = false; // Tạm ngưng để không ghi đè Animation và vận tốc di chuyển cutscene
             }
 
             if (gameplayCamera != null)

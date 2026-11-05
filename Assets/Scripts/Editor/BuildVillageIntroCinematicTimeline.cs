@@ -50,10 +50,11 @@ namespace HoaVaMau.EditorScripts
             playerGo.transform.position = new Vector3(-7.0f, 0.505f, 185.0f);
             playerGo.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
 
+            // Gameplay PlayerSpawn permanently stationed inside village courtyard
             var spawnGo = GameObject.Find("PlayerSpawn");
             if (spawnGo != null)
             {
-                spawnGo.transform.position = new Vector3(-7.0f, 0.505f, 185.0f);
+                spawnGo.transform.position = new Vector3(-6.2f, 0.505f, 18.0f);
                 spawnGo.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
             }
 
