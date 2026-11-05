@@ -252,6 +252,41 @@ namespace HoaVaMau.Gameplay
                     }
                 }
             }
+
+            // 6. Crawl / Crouch under Vine-Covered Rock Cave Pass (PF_Rock_Mountain_CavePass & Creeping Vines, X ~ 130.0m .. 136.5m)
+            if (x >= 130.0f && x <= 136.5f && pPos.y < 0.5f)
+            {
+                if (!player.IsCrawling && !player.IsCrouching)
+                {
+                    string crouchKey = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Crouch));
+                    if (string.IsNullOrEmpty(crouchKey)) crouchKey = "C";
+                    keys = new[] { crouchKey };
+                    offset = new Vector3(0f, 1.95f, 0f);
+                    return;
+                }
+            }
+
+            // 7. Talk / Interact with Villager Child Thang Minh (X ~ 147.5m .. 151.0m)
+            if (x >= 147.5f && x <= 151.0f)
+            {
+                string interact = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.Interact));
+                if (string.IsNullOrEmpty(interact)) interact = "E";
+                keys = new[] { interact };
+                var npc = GameObject.Find("VillageChild_01_ThangMinh");
+                if (npc != null) target = npc.transform;
+                offset = new Vector3(0f, 1.85f, 0f);
+                return;
+            }
+
+            // 8. Move forward towards Ca Mau 3D Village at End of Map (X ~ 177.0m .. 182.5m)
+            if (x >= 177.0f && x <= 182.5f)
+            {
+                string right = KeybindingManager.GetKeyDisplayName(KeybindingManager.GetKey(GameAction.MoveRight));
+                if (string.IsNullOrEmpty(right)) right = "D";
+                keys = new[] { right };
+                offset = new Vector3(0f, 2.25f, 0f);
+                return;
+            }
         }
 
         private void UpdateWorldToScreenPosition()

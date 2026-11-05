@@ -180,8 +180,10 @@ namespace HoaVaMau.Gameplay
 
                     float dx = myWorldPos.x - playerWorldPos.x;
                     float dy = Mathf.Abs(myWorldPos.y - playerWorldPos.y);
+                    float dz = Mathf.Abs(myWorldPos.z - playerWorldPos.z);
 
-                    if (dy < 1.6f && Mathf.Abs(dx) < interactionRadius)
+                    // Phan dinh chieu sau 2.5D: Chi tuong tac khi nhan vat o cung mat phang buoc chan (dz < 0.65m)
+                    if (dz < 0.65f && dy < 1.6f && Mathf.Abs(dx) < interactionRadius)
                     {
                         float proximity = 1f - (Mathf.Abs(dx) / interactionRadius);
                         float smoothProx = proximity * proximity; // Rơi mượt phi tuyến

@@ -52689,7 +52689,7 @@ MonoBehaviour:
   forcePlayIntro: 1
   autoFindReferencesOnStart: 1
   useHistoricalVideo: 1
-  historicalVideoClip: {fileID: 32900000, guid: 826c76b54ac51d042b0286f3ecaacf11, type: 3}
+  historicalVideoClip: {fileID: 0}
   videoVolume: 1
   videoFadeInDuration: 0.65
   videoFadeOutDuration: 0.85
@@ -52795,8 +52795,8 @@ MonoBehaviour:
   projectorAudioSource: {fileID: 732346854}
   ambientAudioSource: {fileID: 76819707}
   voiceoverAudioSource: {fileID: 1960825454}
-  videoAudioSource: {fileID: 190340553}
-  historicalVideoPlayer: {fileID: 190340551}
+  videoAudioSource: {fileID: 0}
+  historicalVideoPlayer: {fileID: 0}
   maxProjectorVolume: 0.55
   targetAmbientVolume: 0.7
   voiceoverVolume: 0.95
@@ -52815,10 +52815,10 @@ MonoBehaviour:
   cutsceneCanvas: {fileID: 1497472600}
   cutsceneCanvasGroup: {fileID: 1497472599}
   blackCurtainImage: {fileID: 1513551252}
-  videoScreenRoot: {fileID: 764994228}
-  videoRawImage: {fileID: 633943882}
-  videoCanvasGroup: {fileID: 764994227}
-  videoAspectFitter: {fileID: 633943879}
+  videoScreenRoot: {fileID: 0}
+  videoRawImage: {fileID: 0}
+  videoCanvasGroup: {fileID: 0}
+  videoAspectFitter: {fileID: 0}
   projectorApertureRect: {fileID: 835311143}
   slideImage: {fileID: 1014152450}
   slideImageGroup: {fileID: 1014152447}
@@ -55316,7 +55316,7 @@ Transform:
   m_GameObject: {fileID: 620080086}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3, y: -1.2, z: -4.81}
+  m_LocalPosition: {x: -3, y: -1.2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -67045,7 +67045,7 @@ MonoBehaviour:
   defaultOffsetY: 2
   transitionSpeed: 1.35
   virtualCamera: {fileID: 0}
-  dedicatedVirtualCamera: {fileID: 1404618483}
+  dedicatedVirtualCamera: {fileID: 0}
 --- !u!65 &749829743
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -84215,6 +84215,66 @@ Transform:
   m_Children:
   - {fileID: 603410273}
   m_Father: {fileID: 1264986419}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &965022331
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 965022333}
+  - component: {fileID: 965022332}
+  m_Layer: 0
+  m_Name: '[Additive_Sky_Birds]'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &965022332
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 965022331}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca649ff42221847439f1bd39cb0174a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoaTrenDatDo.Environment.AmbientSkyBirdsManager
+  birdPrefab: {fileID: 2415327715191749496, guid: d85321b5811305142924b0b800df54c1, type: 3}
+  minInterval: 22
+  maxInterval: 50
+  spawnChance: 0.85
+  autoStart: 1
+  minFlockSize: 1
+  maxFlockSize: 3
+  birdStaggerDistance: {x: 1.8, y: 0.7}
+  minBoundaryX: -30
+  maxBoundaryX: 150
+  minAltitudeY: 10
+  maxAltitudeY: 16
+  minDepthZ: 16
+  maxDepthZ: 21
+  speedRange: {x: 3.5, y: 5}
+  scaleRange: {x: 0.5, y: 0.85}
+--- !u!4 &965022333
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 965022331}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &965315117
 GameObject:
@@ -188994,3 +189054,4 @@ SceneRoots:
   - {fileID: 1306510342}
   - {fileID: 1394929939}
   - {fileID: 348719108}
+  - {fileID: 965022333}

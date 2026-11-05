@@ -1,4 +1,4 @@
-#pragma warning disable 0414
+﻿#pragma warning disable 0414
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -364,8 +364,7 @@ namespace HoaVaMau.Gameplay
                 {
                     "Assets/Audio/Phat_Hien_Binh_Yen.mp3",
                     "Assets/Audio/Pastoral_Alien.mp3",
-                    "Assets/Audio/Breath of the World.mp3",
-                    "Assets/Audio/Haru Haru (Piano Cover).mp3"
+                    "Assets/Audio/Breath of the World.mp3"
                 };
                 foreach (var path in searchPaths)
                 {
@@ -612,7 +611,6 @@ namespace HoaVaMau.Gameplay
             if (n.Contains("Phat_Hien_Binh_Yen") || n.Contains("Phát Hiện Bình Yên")) return "Phát Hiện Bình Yên";
             if (n.Contains("Pastoral_Alien") || n.Contains("Pastoral Alien")) return "Pastoral Alien";
             if (n.Contains("Breath of the World")) return "Breath of the World";
-            if (n.Contains("Haru Haru")) return "Haru Haru (Piano Cover)";
             return n.Replace('_', ' ');
         }
 
@@ -1741,19 +1739,27 @@ namespace HoaVaMau.Gameplay
             if (item == null || item.LabelText == null) return;
             if (!item.IsInteractable) return;
 
-            // Planet of Lana iconic selection behavior:
-            // Unselected: Dimmed semi-transparent silver text (alpha 0.60), no background box.
-            // Selected: Solid white rectangle overlays behind text, text font color inverts to dark background navy (#07101C).
+            // Water Wave Ripple Selection behavior:
+            // Unselected: Dimmed semi-transparent silver text (alpha 0.60), wave effect dormant.
+            // Hovered/Selected: Water wave ripples expand across the selection frame with flowing river crests.
             if (item.SelectionBox != null)
             {
-                item.SelectionBox.color = new Color(1f, 1f, 1f, item.HoverBlend);
+                var wave = item.SelectionBox.GetComponent<UIWaveRippleHover>();
+                if (wave != null)
+                {
+                    wave.SetSelectedState(item.HoverBlend > 0.05f);
+                }
+                else
+                {
+                    item.SelectionBox.color = new Color(1f, 1f, 1f, item.HoverBlend);
+                }
             }
 
-            Color unselTextColor = new Color(0.92f, 0.95f, 0.98f, 0.60f);
+            Color unselTextColor = new Color(0.92f, 0.95f, 0.98f, 0.65f);
             Color selTextColor = new Color(0.04f, 0.08f, 0.14f, 1.0f); // Deep dark background navy
             item.LabelText.color = Color.Lerp(unselTextColor, selTextColor, item.HoverBlend);
 
-            float scale = Mathf.Lerp(1.0f, 1.02f, item.HoverBlend);
+            float scale = Mathf.Lerp(1.0f, 1.025f, item.HoverBlend);
             item.RootRect.localScale = new Vector3(scale, scale, 1f);
 
             Color dotCol = new Color(0.04f, 0.08f, 0.14f, item.HoverBlend * 0.92f);
@@ -2174,19 +2180,20 @@ namespace HoaVaMau.Gameplay
                     var glowGO = CreateRect("Official_Logo_WarmGlow", cluster);
                     glowGO.anchorMin = glowGO.anchorMax = new Vector2(0f, 1f);
                     glowGO.pivot = new Vector2(0f, 1f);
-                    glowGO.anchoredPosition = new Vector2(-20f, 14f);
-                    glowGO.sizeDelta = new Vector2(510f, 275f);
+                    glowGO.anchoredPosition = new Vector2(-25f, 20f);
+                    glowGO.sizeDelta = new Vector2(660f, 420f);
                     var glowImg = glowGO.gameObject.AddComponent<Image>();
                     glowImg.sprite = softDotSprite;
-                    glowImg.color = new Color(0.04f, 0.09f, 0.16f, 0.24f);
+                    glowImg.color = new Color(0.04f, 0.09f, 0.16f, 0.28f);
                     glowImg.raycastTarget = false;
                 }
 
+                // Enlarged Calligraphy Logo (Prominent, majestic title framing)
                 var logoGO = CreateRect("Official_Calligraphy_Logo", cluster);
                 logoGO.anchorMin = logoGO.anchorMax = new Vector2(0f, 1f);
                 logoGO.pivot = new Vector2(0f, 1f);
                 logoGO.anchoredPosition = new Vector2(0f, 0f);
-                logoGO.sizeDelta = new Vector2(465f, 250f);
+                logoGO.sizeDelta = new Vector2(590f, 380f);
                 mainLogoImg = logoGO.gameObject.AddComponent<Image>();
                 mainLogoImg.sprite = gameOfficialLogoSprite;
                 mainLogoImg.preserveAspect = true;
@@ -2198,22 +2205,22 @@ namespace HoaVaMau.Gameplay
                 titleGO.anchorMin = titleGO.anchorMax = new Vector2(0f, 1f);
                 titleGO.pivot = new Vector2(0f, 1f);
                 titleGO.anchoredPosition = new Vector2(0f, 0f);
-                titleGO.sizeDelta = new Vector2(580f, 80f);
+                titleGO.sizeDelta = new Vector2(640f, 100f);
                 var tTxt = titleGO.gameObject.AddComponent<Text>();
                 tTxt.font = font;
-                tTxt.fontSize = 46;
+                tTxt.fontSize = 52;
                 tTxt.fontStyle = FontStyle.Bold;
                 tTxt.alignment = TextAnchor.MiddleLeft;
                 tTxt.color = Color.white;
                 tTxt.text = "H O A   T R Ê N   Đ Ấ T   Đ Ỏ";
             }
 
-            // 2. Thin Horizon Divider
+            // 2. Thin Horizon Divider (Shifted down for breathing room below larger logo)
             var divGO = CreateRect("Horizon_Divider", cluster);
             divGO.anchorMin = divGO.anchorMax = new Vector2(0f, 1f);
             divGO.pivot = new Vector2(0f, 1f);
-            divGO.anchoredPosition = new Vector2(8f, -248f);
-            divGO.sizeDelta = new Vector2(380f, 2f);
+            divGO.anchoredPosition = new Vector2(8f, -375f);
+            divGO.sizeDelta = new Vector2(460f, 2f);
             var divImg = divGO.gameObject.AddComponent<Image>();
             divImg.color = new Color(1.0f, 0.95f, 0.80f, 0.65f);
 
@@ -2221,21 +2228,21 @@ namespace HoaVaMau.Gameplay
             var subGO = CreateRect("Subtitle_Text", cluster);
             subGO.anchorMin = subGO.anchorMax = new Vector2(0f, 1f);
             subGO.pivot = new Vector2(0f, 1f);
-            subGO.anchoredPosition = new Vector2(8f, -264f);
-            subGO.sizeDelta = new Vector2(460f, 28f);
+            subGO.anchoredPosition = new Vector2(8f, -392f);
+            subGO.sizeDelta = new Vector2(500f, 28f);
             var subTxt = subGO.gameObject.AddComponent<Text>();
             subTxt.font = font;
-            subTxt.fontSize = 14;
+            subTxt.fontSize = 15;
             subTxt.alignment = TextAnchor.MiddleLeft;
             subTxt.color = new Color(0.98f, 0.92f, 0.75f, 0.94f);
             subTxt.text = "• • •   F L O W E R   O N   R E D   S O I L   • • •";
 
-            // 4. Menu Buttons (BẮT ĐẦU, TIẾP TỤC, TÙY CHỈNH, THOÁT)
+            // 4. Menu Buttons (BẮT ĐẦU, TIẾP TỤC, TÙY CHỈNH, THOÁT) with Water Wave Ripple Effect
             var btnContainer = CreateRect("MainButtons_Container", cluster);
             btnContainer.anchorMin = btnContainer.anchorMax = new Vector2(0f, 1f);
             btnContainer.pivot = new Vector2(0f, 1f);
-            btnContainer.anchoredPosition = new Vector2(8f, -312f);
-            btnContainer.sizeDelta = new Vector2(380f, 270f);
+            btnContainer.anchoredPosition = new Vector2(8f, -445f);
+            btnContainer.sizeDelta = new Vector2(420f, 300f);
 
             string[] labels = { "BẮT ĐẦU", "TIẾP TỤC", "TÙY CHỈNH", "THOÁT" };
             menuButtons.Clear();
@@ -2246,8 +2253,8 @@ namespace HoaVaMau.Gameplay
                 var btnRect = CreateRect($"Btn_{i}_{labels[i]}", btnContainer);
                 btnRect.anchorMin = btnRect.anchorMax = new Vector2(0f, 1f);
                 btnRect.pivot = new Vector2(0f, 1f);
-                btnRect.anchoredPosition = new Vector2(0f, -i * 56f);
-                btnRect.sizeDelta = new Vector2(345f, 46f);
+                btnRect.anchoredPosition = new Vector2(0f, -i * 58f);
+                btnRect.sizeDelta = new Vector2(365f, 48f);
 
                 var btn = btnRect.gameObject.AddComponent<Button>();
                 var colors = btn.colors;
@@ -2261,6 +2268,22 @@ namespace HoaVaMau.Gameplay
                 hitImg.raycastTarget = true;
                 btn.targetGraphic = hitImg;
 
+                // Water Wave Ripple Box inside button frame
+                var boxRect = CreateRect("SelectionBox", btnRect);
+                boxRect.anchorMin = new Vector2(0f, 0.05f);
+                boxRect.anchorMax = new Vector2(0.96f, 0.95f);
+                boxRect.offsetMin = Vector2.zero;
+                boxRect.offsetMax = Vector2.zero;
+                var boxImg = boxRect.gameObject.AddComponent<Image>();
+#if UNITY_EDITOR
+                boxImg.sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Textures/UI/T_UI_WhiteBox.png");
+                var baseWaveMat = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/UI/M_UI_WaterWaveRipple.mat");
+                boxImg.material = (baseWaveMat != null) ? new Material(baseWaveMat) { name = $"{labels[i]}_WaveMat" } : null;
+#endif
+                boxImg.color = Color.white;
+                boxImg.raycastTarget = false;
+                var rippleHover = boxRect.gameObject.AddComponent<UIWaveRippleHover>();
+
                 var trigger = btnRect.gameObject.AddComponent<EventTrigger>();
                 var hoverEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
                 hoverEntry.callback.AddListener((data) =>
@@ -2270,18 +2293,20 @@ namespace HoaVaMau.Gameplay
                         selectedMenuIndex = idx;
                         PlayHover();
                     }
+                    var pe = data as PointerEventData;
+                    if (pe != null && rippleHover != null) rippleHover.OnPointerEnter(pe);
                 });
                 trigger.triggers.Add(hoverEntry);
 
-                // Planet of Lana selection box: Solid white rectangle overlay behind text
-                var boxRect = CreateRect("SelectionBox", btnRect);
-                boxRect.anchorMin = new Vector2(0f, 0.1f);
-                boxRect.anchorMax = new Vector2(0.92f, 0.9f);
-                boxRect.offsetMin = Vector2.zero;
-                boxRect.offsetMax = Vector2.zero;
-                var boxImg = boxRect.gameObject.AddComponent<Image>();
-                boxImg.color = new Color(1f, 1f, 1f, 0f); // Hidden until selected
-                boxImg.raycastTarget = false;
+
+
+                var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+                exitEntry.callback.AddListener((data) =>
+                {
+                    var pe = data as PointerEventData;
+                    if (pe != null && rippleHover != null) rippleHover.OnPointerExit(pe);
+                });
+                trigger.triggers.Add(exitEntry);
 
                 var txtRect = CreateRect("Label", btnRect);
                 txtRect.anchorMin = new Vector2(0f, 0f);
@@ -2290,11 +2315,15 @@ namespace HoaVaMau.Gameplay
                 txtRect.offsetMax = Vector2.zero;
                 var txt = txtRect.gameObject.AddComponent<Text>();
                 txt.font = font;
-                txt.fontSize = 18;
+                txt.fontSize = 21;
                 txt.alignment = TextAnchor.MiddleLeft;
-                txt.color = new Color(0.92f, 0.95f, 0.98f, 0.60f);
+                txt.color = new Color(0.94f, 0.96f, 0.98f, 0.80f);
                 txt.text = labels[i];
                 txt.raycastTarget = false;
+
+                var shadow = txtRect.gameObject.AddComponent<Shadow>();
+                shadow.effectColor = new Color(0.01f, 0.03f, 0.08f, 0.70f);
+                shadow.effectDistance = new Vector2(1.5f, -1.5f);
 
                 var lDots = CreateRect("LeftDot", btnRect);
                 lDots.anchorMin = new Vector2(0f, 0.5f);

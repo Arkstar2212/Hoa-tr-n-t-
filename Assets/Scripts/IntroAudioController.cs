@@ -7,7 +7,7 @@ public class IntroAudioController : MonoBehaviour
     [Tooltip("Kéo AudioSource chứa file tiếng gió vào đây")]
     public AudioSource windAudioSource;
 
-    [Tooltip("Kéo AudioSource chứa file Piano Lofi (Haru Haru) vào đây")]
+    [Tooltip("Kéo AudioSource chứa file Piano Lofi vào đây")]
     public AudioSource lofiAudioSource;
 
     [Header("Âm lượng tối đa (0–1)")]

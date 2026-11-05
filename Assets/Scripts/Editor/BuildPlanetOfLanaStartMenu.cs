@@ -1,4 +1,4 @@
-#pragma warning disable CS0618
+﻿#pragma warning disable CS0618
 #if UNITY_EDITOR
 using System.IO;
 using System.Collections.Generic;
@@ -54,8 +54,7 @@ namespace HoaVaMau.Editor
             Sprite shipSpr         = ImportAndLoadUISprite("Assets/Textures/Canh1_Sprites/TransportShip_1954_Card.png");
 
             AudioClip bgmClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Breath of the World.mp3");
-            if (bgmClip == null) bgmClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haru Haru (Piano Cover).mp3");
-            AudioClip windClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/soundreality-wind-blowing-457954.mp3");
+                        AudioClip windClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/soundreality-wind-blowing-457954.mp3");
 
             // Decorate scene with the new Lana trees if in overhaul scene
             if (GameObject.Find("05_Midground") != null)
@@ -83,13 +82,11 @@ namespace HoaVaMau.Editor
             AudioClip track1 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Phat_Hien_Binh_Yen.mp3");
             AudioClip track2 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Pastoral_Alien.mp3");
             AudioClip track3 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Breath of the World.mp3");
-            AudioClip track4 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haru Haru (Piano Cover).mp3");
-            var musicList = new List<AudioClip>();
+                        var musicList = new List<AudioClip>();
             if (track1 != null) musicList.Add(track1);
             if (track2 != null) musicList.Add(track2);
             if (track3 != null) musicList.Add(track3);
-            if (track4 != null) musicList.Add(track4);
-            sys.SetRandomMenuMusicClips(musicList.ToArray());
+                        sys.SetRandomMenuMusicClips(musicList.ToArray());
 
             CaptureStartMenuVerificationScreenshots(sys);
             sys.SetPreviewState(PlanetOfLanaStartMenuSystem.MenuPhase.StartMenuOpenVista);
@@ -137,8 +134,7 @@ namespace HoaVaMau.Editor
             Sprite shipSpr         = ImportAndLoadUISprite("Assets/Textures/Canh1_Sprites/TransportShip_1954_Card.png");
 
             AudioClip bgmClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Breath of the World.mp3");
-            if (bgmClip == null) bgmClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haru Haru (Piano Cover).mp3");
-            AudioClip windClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/soundreality-wind-blowing-457954.mp3");
+                        AudioClip windClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/soundreality-wind-blowing-457954.mp3");
 
             // Load Living Ocean Textures
             Sprite boatHeroSpr  = ImportAndLoadOceanSprite("Assets/Textures/Environment/T_Camau_Boat_Hero.png", 215.0f);
@@ -272,13 +268,11 @@ namespace HoaVaMau.Editor
             AudioClip track1 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Phat_Hien_Binh_Yen.mp3");
             AudioClip track2 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Pastoral_Alien.mp3");
             AudioClip track3 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Breath of the World.mp3");
-            AudioClip track4 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haru Haru (Piano Cover).mp3");
-            var menuPlaylist = new List<AudioClip>();
+                        var menuPlaylist = new List<AudioClip>();
             if (track1 != null) menuPlaylist.Add(track1);
             if (track2 != null) menuPlaylist.Add(track2);
             if (track3 != null) menuPlaylist.Add(track3);
-            if (track4 != null) menuPlaylist.Add(track4);
-
+            
             var menuGO = GameObject.Find("00_UI_PlanetOfLana_StartMenu");
             if (menuGO != null) Object.DestroyImmediate(menuGO);
             menuGO = new GameObject("00_UI_PlanetOfLana_StartMenu");
@@ -427,8 +421,7 @@ namespace HoaVaMau.Editor
 
             // 3. Load Looping Music ("Breath of the World.mp3") and Wind Audio
             AudioClip bgmClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Breath of the World.mp3");
-            if (bgmClip == null) bgmClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haru Haru (Piano Cover).mp3");
-            AudioClip windClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/soundreality-wind-blowing-457954.mp3");
+                        AudioClip windClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/soundreality-wind-blowing-457954.mp3");
 
             // 4. Enhance Vista Sky with Cloud Radiance & Crepuscular Sunbeams
             SetupCloudRadianceAndSunbeams();
@@ -1129,13 +1122,11 @@ namespace HoaVaMau.Editor
             AudioClip track1 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Phat_Hien_Binh_Yen.mp3");
             AudioClip track2 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Pastoral_Alien.mp3");
             AudioClip track3 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Breath of the World.mp3");
-            AudioClip track4 = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Haru Haru (Piano Cover).mp3");
-            var menuPlaylist = new List<AudioClip>();
+                        var menuPlaylist = new List<AudioClip>();
             if (track1 != null) menuPlaylist.Add(track1);
             if (track2 != null) menuPlaylist.Add(track2);
             if (track3 != null) menuPlaylist.Add(track3);
-            if (track4 != null) menuPlaylist.Add(track4);
-
+            
             sys.ConfigureAssets(studioLogoSpr, officialLogoSpr, flowerSpr, doveSpr, softDotSpr, boySpr, shipSpr, bgmClip, windClip, targetScene, null, menuPlaylist.ToArray());
             sys.SetRandomMenuMusicClips(menuPlaylist.ToArray());
             sys.RebuildUIImmediate();
