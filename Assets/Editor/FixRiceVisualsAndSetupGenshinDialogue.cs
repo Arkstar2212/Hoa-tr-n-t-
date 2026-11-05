@@ -21,6 +21,12 @@ namespace HoaVaMau.EditorTools
         [MenuItem("Hoa va Mau/Cutscene & Rice/Apply Genshin Dialogue & Fix Rice Visuals", false, 0)]
         public static void Execute()
         {
+            var activeScene = EditorSceneManager.GetActiveScene();
+            if (!activeScene.path.Contains("CaMau_1954_Village"))
+            {
+                EditorSceneManager.OpenScene("Assets/Scenes/CaMau_1954_Village.unity");
+            }
+
             Debug.Log("<color=#3b82f6>[Cutscene & Rice]</color> Bắt đầu xử lý: Thay thế lúa vàng nhẹ & Cài đặt Genshin Conversation...");
 
             // 1. SỬA RENDER LÚA -> LÚA VÀNG NHẸ (SOFT GOLDEN RICE)
@@ -589,22 +595,28 @@ namespace HoaVaMau.EditorTools
                 },
                 "Male_Waving", "Male_Talking_01");
 
-            // 8. Bé Tèo (Trẻ con chơi đùa)
+            // 8. Bé Tèo (Trẻ con chơi đùa - Rủ chạy đua)
             SetupNPC(npcsRoot, "NPC_Child_Playing_Boy",
                 "Bé Tèo",
-                "Trẻ chăn trâu xóm trong",
+                "Trẻ xóm trong",
                 new string[]
                 {
-                    "Anh An ơi! Cào cào của em bắt được bự hơn của anh nè!",
-                    "Nó búng một cái bay qua tận rãnh mương luôn á!"
+                    "Anh An ơi! Chạy đua ra đầu ngõ với em không?",
+                    "Em chạy nhanh như gió thoảng, đố anh bắt kịp em đó!"
                 },
                 new DialogueChoice[]
                 {
                     new DialogueChoice
                     {
-                        choiceText = "Để anh bắt con muồm muỗm to gấp đôi cho em coi!",
-                        responseLine = "Dạ, em thách anh bắt được đó!",
+                        choiceText = "Chạy đua thì chạy đua, anh chấp em ba bước luôn!",
+                        responseLine = "Hi hi, chuẩn bị nghen anh An: Một... Hai... Ba... Chạy!",
                         responseAnim = "Waving_01"
+                    },
+                    new DialogueChoice
+                    {
+                        choiceText = "Để lát nữa nghen, anh đang có việc cần ra bến đò.",
+                        responseLine = "Dạ, lát nữa anh về nhớ chạy đua với em đó nha!",
+                        responseAnim = "Waving_02"
                     }
                 },
                 "Waving_01", "Waving_02");

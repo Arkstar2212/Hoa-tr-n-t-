@@ -12,10 +12,9 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords:
-  - _ENABLEPLAYERPUSH_ON
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
+  m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
@@ -32,13 +31,13 @@ Material:
     m_Floats:
     - _ColorStrength: 0.15
     - _Cutoff: 0.05
-    - _EnablePlayerPush: 1
+    - _EnablePlayerPush: 0
     - _GrassStiffness: 1
-    - _PushStrength: 0.85
+    - _PushStrength: 0
     - _Turbulence: 0.35
     - _UseVertexColorTint: 0
     - _WindFrequency: 1.6
-    - _WindSwayStrength: 0.25
+    - _WindSwayStrength: 0.04
     m_Colors:
     - _BaseShadowColor: {r: 0.2, g: 0.28, b: 0.1, a: 1}
     - _MidColor: {r: 0.65, g: 0.75, b: 0.3, a: 1}

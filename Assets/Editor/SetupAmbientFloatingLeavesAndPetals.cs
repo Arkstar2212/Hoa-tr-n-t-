@@ -16,12 +16,25 @@ namespace HoaTrenDatDo.EditorTools
         [MenuItem("Tools/VFX/Setup Ambient Floating Leaves And Petals")]
         public static void SetupVFX()
         {
+            var activeScene = EditorSceneManager.GetActiveScene();
+            if (!activeScene.path.Contains("CaMau_1954_Village"))
+            {
+                EditorSceneManager.OpenScene("Assets/Scenes/CaMau_1954_Village.unity");
+            }
+
             // 1. Ensure Materials Exist with URP Particle Unlit Shader
             var leafMat = GetOrCreateParticleMaterial(CoconutLeafMatPath, CoconutLeafTexPath, new Color(0.92f, 0.94f, 0.72f, 0.85f));
             var petalMat = GetOrCreateParticleMaterial(FlowerPetalMatPath, FlowerPetalTexPath, new Color(0.98f, 0.82f, 0.88f, 0.88f));
 
             // 2. Locate or Create Root Parent in 09_VFX
-            var vfxRoot = GameObject.Find("09_VFX");
+            var vfxRoot = GameObject.Find("CaMau_1954_Village/Environment/09_VFX") ?? GameObject.Find("09_VFX");
+            if (vfxRoot == null)
+            {
+                var env = GameObject.Find("CaMau_1954_Village/Environment") ?? GameObject.Find("Environment");
+                vfxRoot = new GameObject("09_VFX");
+                if (env != null) vfxRoot.transform.parent = env.transform;
+            }
+
             var existing = GameObject.Find("[VFX_Ambient_Floating_Leaves_And_Petals]");
             if (existing != null)
             {
