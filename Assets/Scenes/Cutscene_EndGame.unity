@@ -4474,7 +4474,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "[ Nh\u1EA5n Space ho\u1EB7c R \u0111\u1EC3 xem l\u1EA1i ]"
+  m_text: "[ Nh\u1EA5n Space ho\u1EB7c Z \u0111\u1EC3 v\u1EC1 Menu ch\xEDnh  \u2022  R \u0111\u1EC3 xem l\u1EA1i ]"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 7c0f4198ff4a7644f87ca24f3270e498, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: b774ecf8a32cd2041a2f7b7043892992, type: 2}

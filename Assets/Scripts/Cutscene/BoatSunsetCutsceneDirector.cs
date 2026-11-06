@@ -59,9 +59,14 @@ namespace HoaVaMau.Cutscene
 
         private float cutsceneTimer = 0f;
         private bool isWaitingForInput = false;
+        private bool isTransitioningToMenu = false;
 
         private void Start()
         {
+            if (promptText != null)
+            {
+                promptText.text = "Nhấn Space hoặc Z để quay về Menu chính";
+            }
             // Destroy any leftover temporary fade canvas from the previous scene
             var oldCanvas = GameObject.Find("Departure_Fade_Canvas");
             if (oldCanvas != null)
@@ -151,14 +156,33 @@ namespace HoaVaMau.Cutscene
                 }
             }
 
-            // 5. Input Check once "Còn tiếp..." has faded in
+            // 5. Input Check
             if (isWaitingForInput)
             {
-                if (Input.anyKeyDown || Input.GetMouseButtonDown(0))
+                if (IsSpaceOrZPressed() || Input.anyKeyDown || Input.GetMouseButtonDown(0))
                 {
-                    ReturnToVillage();
+                    ReturnToMainMenu();
                 }
             }
+            else
+            {
+                if (IsSpaceOrZPressed())
+                {
+                    ReturnToMainMenu();
+                }
+            }
+        }
+
+        private bool IsSpaceOrZPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (UnityEngine.InputSystem.Keyboard.current != null)
+            {
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                if (kb.spaceKey.wasPressedThisFrame || kb.zKey.wasPressedThisFrame) return true;
+            }
+#endif
+            return Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Z);
         }
 
         private IEnumerator RunCutsceneSequence()
@@ -227,10 +251,17 @@ namespace HoaVaMau.Cutscene
             isWaitingForInput = true;
         }
 
+        public void ReturnToMainMenu()
+        {
+            if (isTransitioningToMenu) return;
+            isTransitioningToMenu = true;
+            Debug.Log("[BoatSunsetCutsceneDirector] Player pressed Space or Z. Returning to Scene_MainMenu...");
+            SceneManager.LoadScene("Scene_MainMenu");
+        }
+
         public void ReturnToVillage()
         {
-            Debug.Log("[BoatSunsetCutsceneDirector] Player pressed key. Returning to CaMau_1954_Village...");
-            SceneManager.LoadScene("CaMau_1954_Village");
+            ReturnToMainMenu();
         }
     }
 }

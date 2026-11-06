@@ -1,5 +1,9 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 using TMPro;
 
 namespace HoaVaMau.Cutscenes
@@ -84,12 +88,18 @@ namespace HoaVaMau.Cutscenes
         // Runtime state
         private float currentTime = 0f;
         private bool isPlaying = false;
+        private bool isTransitioningToMenu = false;
 
         public float Progress => scrubProgress;
         public bool IsPlaying => isPlaying;
 
         private void Start()
         {
+            if (restartHintText != null)
+            {
+                restartHintText.text = "[ Nhấn Space hoặc Z để về Menu chính  •  R để xem lại ]";
+            }
+
             if (Application.isPlaying)
             {
                 PlayCutscene();
@@ -104,6 +114,8 @@ namespace HoaVaMau.Cutscenes
         {
             if (Application.isPlaying)
             {
+                if (isTransitioningToMenu) return;
+
                 if (isPlaying)
                 {
                     currentTime += Time.deltaTime;
@@ -123,8 +135,12 @@ namespace HoaVaMau.Cutscenes
                     }
                 }
 
-                // Press Space or R to replay cutscene in play mode
-                if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.R))
+                // Input: Space or Z returns to Main Menu; R replays cutscene
+                if (IsSpaceOrZPressed())
+                {
+                    ReturnToMainMenu();
+                }
+                else if (IsReplayPressed())
                 {
                     PlayCutscene();
                 }
@@ -139,11 +155,47 @@ namespace HoaVaMau.Cutscenes
             }
         }
 
+        private bool IsSpaceOrZPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null)
+            {
+                var kb = Keyboard.current;
+                if (kb.spaceKey.wasPressedThisFrame || kb.zKey.wasPressedThisFrame) return true;
+            }
+#endif
+            return Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Z);
+        }
+
+        private bool IsReplayPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null)
+            {
+                var kb = Keyboard.current;
+                if (kb.rKey.wasPressedThisFrame) return true;
+            }
+#endif
+            return Input.GetKeyDown(KeyCode.R);
+        }
+
+        /// <summary>
+        /// Transitions smoothly back to Scene_MainMenu.
+        /// </summary>
+        public void ReturnToMainMenu()
+        {
+            if (isTransitioningToMenu) return;
+            isTransitioningToMenu = true;
+            Debug.Log("[EndGameCutsceneDirector] Player pressed Space or Z. Returning to Scene_MainMenu...");
+            SceneManager.LoadScene("Scene_MainMenu");
+        }
+
         /// <summary>
         /// Starts playing the cutscene from the beginning.
         /// </summary>
         public void PlayCutscene()
         {
+            isTransitioningToMenu = false;
             currentTime = 0f;
             scrubProgress = 0f;
             isPlaying = true;

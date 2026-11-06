@@ -455,7 +455,7 @@ namespace HoaVaMau.Editor
             var hintTmp = hintGo.AddComponent<TextMeshProUGUI>();
             if (fontAsset != null) hintTmp.font = fontAsset;
             if (titleMat != null) hintTmp.fontSharedMaterial = titleMat;
-            hintTmp.text = "[ Nhấn Space hoặc R để xem lại ]";
+            hintTmp.text = "[ Nhấn Space hoặc Z để về Menu chính  •  R để xem lại ]";
             hintTmp.fontSize = 17f;
             hintTmp.fontStyle = FontStyles.Bold;
             hintTmp.alignment = TextAlignmentOptions.Center;
