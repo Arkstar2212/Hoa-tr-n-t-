@@ -76,6 +76,11 @@ namespace HoaVaMau.Dialogue
             GameObject choiceCont, RectTransform promptRect, CanvasGroup promptGrp, Text pKey, Text pName, Text pAction)
         {
             dialogueCanvas = canvas;
+            if (dialogueCanvas != null)
+            {
+                dialogueCanvas.overrideSorting = true;
+                dialogueCanvas.sortingOrder = 25000;
+            }
             canvasGroup = cGroup;
             topLetterbox = topBox;
             bottomLetterbox = botBox;
@@ -132,6 +137,15 @@ namespace HoaVaMau.Dialogue
 #if UNITY_EDITOR
                 shipHornClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/SFX_Vintage_ShipHorn_1950s.mp3");
 #endif
+            }
+            if (dialogueCanvas == null && canvasGroup != null)
+            {
+                dialogueCanvas = canvasGroup.GetComponent<Canvas>();
+            }
+            if (dialogueCanvas != null)
+            {
+                dialogueCanvas.overrideSorting = true;
+                dialogueCanvas.sortingOrder = 25000;
             }
         }
 

@@ -406,8 +406,7 @@ namespace HoaVaMau.Editor
             // 2. Upgrade An_Player with Barefoot Dirt Footsteps, 3D Visibility, & ThirdPersonOrbitCamera binding
             FixScenePlayerAndMainCamera();
 
-            // 3. Ported UI Guides & Core Managers from Overhaul -> 06_Managers
-            SetupManagerComponent<CaMau3DUIGuideController>(managersGroup.transform, "CaMau3DUIGuideController");
+            // 3. Ported Core Managers from Overhaul -> 06_Managers (No 3D UI guide - controls are in Settings)
             SetupManagerComponent<PlanetOfLanaPromptSystem>(managersGroup.transform, "PlanetOfLanaPromptSystem");
 
             var pauseMenu = SetupManagerComponent<PauseMenuController>(managersGroup.transform, "PauseMenuController");

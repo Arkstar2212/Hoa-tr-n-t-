@@ -15,6 +15,7 @@ Shader "HoaVaMau/LanaStylizedLedge"
 
         _IsGrassCap ("Is Grass Cap Mesh (1=Grass, 0=Rock, 0.5=Auto Normal)", Range(0, 1)) = 0.5
         _GrassNormalThreshold ("Auto Grass Normal Y Threshold", Range(0.1, 0.9)) = 0.45
+        _ReceiveShadows ("Receive Shadows (1=On, 0=Off)", Float) = 1.0
         _GrassShadowColor ("Grass Canopy Shadow Tint", Color) = (0.15, 0.30, 0.24, 1)
         _ShadowStrength ("Directional Shadow Strength", Range(0.0, 1.0)) = 0.58
     }
@@ -70,6 +71,7 @@ Shader "HoaVaMau/LanaStylizedLedge"
                 half4 _RockDarkColor;
                 half _IsGrassCap;
                 half _GrassNormalThreshold;
+                half _ReceiveShadows;
                 half4 _GrassShadowColor;
                 half _ShadowStrength;
             CBUFFER_END
@@ -110,10 +112,16 @@ Shader "HoaVaMau/LanaStylizedLedge"
             {
                 float3 N = normalize(IN.normalWS);
 
-                // Sample URP Main Light Shadows (cast by trees, rocks, and characters)
-                float4 shadowCoord = TransformWorldToShadowCoord(IN.positionWS);
-                Light mainLight = GetMainLight(shadowCoord);
-                half shadowAtten = mainLight.shadowAttenuation;
+                // Sample URP Main Light Shadows conditionally (never allow underground rock underbelly to receive foliage silhouettes)
+                half shadowAtten = 1.0h;
+                #if defined(_MAIN_LIGHT_SHADOWS) || defined(_MAIN_LIGHT_SHADOWS_CASCADE) || defined(_MAIN_LIGHT_SHADOWS_SCREEN)
+                if (_ReceiveShadows > 0.5h && _IsGrassCap > 0.20h)
+                {
+                    float4 shadowCoord = TransformWorldToShadowCoord(IN.positionWS);
+                    Light mainLight = GetMainLight(shadowCoord);
+                    shadowAtten = mainLight.shadowAttenuation;
+                }
+                #endif
 
                 // Smooth horizontal painterly brush strokes (no harsh Voronoi grid)
                 float brushCoarse = ValueNoise(float2(IN.positionWS.x * 0.35, IN.positionWS.z * 1.4 + IN.positionWS.y * 1.8));
@@ -148,10 +156,10 @@ Shader "HoaVaMau/LanaStylizedLedge"
                 float strokeBand = smoothstep(0.32, 0.68, lipFactor * 0.80 + brushCoarse * 0.20 + (brushFine - 0.5) * 0.06);
                 half3 grassCol = lerp(gMid, gTop, strokeBand);
 
-                // Apply lush Planet of Lana canopy shadow tint on sunlit grass
-                half shadowMask = (1.0h - shadowAtten) * saturate(_ShadowStrength);
-                half3 shadowedGrass = lerp(grassCol * half3(0.46h, 0.60h, 0.56h), _GrassShadowColor.rgb, 0.45h);
-                grassCol = lerp(grassCol, shadowedGrass, shadowMask);
+                // Soft watercolor dappled shadow on surface grass (never pitch black)
+                half grassShadowMask = (_IsGrassCap > 0.20h && _ReceiveShadows > 0.5h) ? ((1.0h - shadowAtten) * saturate(_ShadowStrength)) : 0.0h;
+                half3 shadowedGrass = lerp(grassCol * half3(0.52h, 0.65h, 0.58h), _GrassShadowColor.rgb, 0.40h);
+                grassCol = lerp(grassCol, shadowedGrass, grassShadowMask);
 
                 // Soft dark underside on the overhanging grass lip so it blends naturally into the dark silhouette ground
                 if (_IsGrassCap > 0.75 && IN.color.r < 0.72)
@@ -159,21 +167,28 @@ Shader "HoaVaMau/LanaStylizedLedge"
                     grassCol = lerp(_RockDarkColor.rgb * 1.35, grassCol, smoothstep(0.22, 0.72, IN.color.r));
                 }
 
-                // Planet of Lana Deep Navy-Slate Ground Cross-Section & Subtle Cliff Strata
-                float depthGrad = saturate((IN.positionWS.y + 4.2) / 2.6);
+                // Planet of Lana / Nam Bo Deep Red Basalt Earth Cross-Section & Subtle Strata
+                float depthGrad = saturate((IN.positionWS.y + 4.2) / 3.0);
                 float strata = ValueNoise(float2(IN.positionWS.x * 0.55 + brushCoarse * 0.8, IN.positionWS.y * 2.2));
                 float cliffMask = saturate(IN.color.b + smoothstep(-1.4, -0.3, IN.positionWS.y) * 0.75);
 
-                half3 baseRock = lerp(_RockDarkColor.rgb, _RockMidColor.rgb, depthGrad * 0.75 + strata * 0.25);
+                half3 baseRock = lerp(_RockDarkColor.rgb, _RockMidColor.rgb, depthGrad * 0.65 + strata * 0.35);
                 half3 cliffRock = lerp(_RockMidColor.rgb, _RockLightColor.rgb, smoothstep(0.38, 0.68, strata + N.x * 0.15));
                 half3 rockCol = lerp(baseRock, cliffRock, cliffMask * 0.70);
-                rockCol *= lerp(1.0h, 0.68h, shadowMask);
+
+                // Underground rock underbelly NEVER receives surface shadows (pure, clean earth cutaway)
+                if (_IsGrassCap >= 0.25h && _ReceiveShadows > 0.5h)
+                {
+                    half rockShadowMask = (1.0h - shadowAtten) * saturate(_ShadowStrength * 0.45h);
+                    rockCol = lerp(rockCol, rockCol * 0.75h, rockShadowMask);
+                }
 
                 // Under-lip occlusion band right beneath the grass cap (encoded in IN.color.g)
                 float rockAO = (_IsGrassCap < 0.25) ? saturate(IN.color.g) : 1.0;
-                rockCol *= lerp(0.55, 1.0, rockAO);
+                rockCol *= lerp(0.60, 1.0, rockAO);
 
                 half3 finalCol = lerp(rockCol, grassCol, grassMask);
+                return half4(finalCol, 1.0);
                 return half4(finalCol, 1.0);
             }
             ENDHLSL

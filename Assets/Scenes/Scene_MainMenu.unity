@@ -352,54 +352,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 44717830}
   m_CullTransparentMesh: 1
---- !u!21 &54845414
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: SelectionBox_WaterRipple_Mat
-  m_Shader: {fileID: 4800000, guid: 06e06c0f4cc848544966f50c6925c9d2, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _ColorMask: 15
-    - _HoverBlend: 0
-    - _RippleProgress: 0
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    - _UseUIAlphaClip: 0
-    - _WaveAmplitude: 0.4
-    - _WaveFrequency: 14
-    - _WaveSpeed: 3.6
-    m_Colors:
-    - _Color: {r: 0.97999996, g: 0.96, b: 0.93, a: 0.94}
-    - _RippleCenter: {r: 0.2, g: 0.5, b: 0, a: 0}
-    - _RippleColor: {r: 1, g: 0.97999996, b: 0.88, a: 1}
-    - _WaveColor: {r: 1, g: 0.86, b: 0.58, a: 0.95}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &74701908
 GameObject:
   m_ObjectHideFlags: 0
@@ -2816,54 +2768,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 399344284}
   m_CullTransparentMesh: 1
---- !u!21 &399804277
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: SelectionBox_WaterRipple_Mat
-  m_Shader: {fileID: 4800000, guid: 06e06c0f4cc848544966f50c6925c9d2, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _ColorMask: 15
-    - _HoverBlend: 0
-    - _RippleProgress: 0
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    - _UseUIAlphaClip: 0
-    - _WaveAmplitude: 0.4
-    - _WaveFrequency: 14
-    - _WaveSpeed: 3.6
-    m_Colors:
-    - _Color: {r: 0.97999996, g: 0.96, b: 0.93, a: 0.94}
-    - _RippleCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
-    - _RippleColor: {r: 1, g: 0.97999996, b: 0.88, a: 1}
-    - _WaveColor: {r: 1, g: 0.86, b: 0.58, a: 0.95}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &410056426
 GameObject:
   m_ObjectHideFlags: 0
@@ -3335,54 +3239,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 494037465}
   m_CullTransparentMesh: 1
---- !u!21 &496120327
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: SelectionBox_WaterRipple_Mat
-  m_Shader: {fileID: 4800000, guid: 06e06c0f4cc848544966f50c6925c9d2, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _ColorMask: 15
-    - _HoverBlend: 0
-    - _RippleProgress: 0
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    - _UseUIAlphaClip: 0
-    - _WaveAmplitude: 0.4
-    - _WaveFrequency: 14
-    - _WaveSpeed: 3.6
-    m_Colors:
-    - _Color: {r: 0.97999996, g: 0.96, b: 0.93, a: 0.94}
-    - _RippleCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
-    - _RippleColor: {r: 1, g: 0.97999996, b: 0.88, a: 1}
-    - _WaveColor: {r: 1, g: 0.86, b: 0.58, a: 0.95}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &496622882
 GameObject:
   m_ObjectHideFlags: 0
@@ -5063,54 +4919,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 641703437}
   m_CullTransparentMesh: 1
---- !u!21 &647519177
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: SelectionBox_WaterRipple_Mat
-  m_Shader: {fileID: 4800000, guid: 06e06c0f4cc848544966f50c6925c9d2, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _ColorMask: 15
-    - _HoverBlend: 0
-    - _RippleProgress: 0
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    - _UseUIAlphaClip: 0
-    - _WaveAmplitude: 0.4
-    - _WaveFrequency: 14
-    - _WaveSpeed: 3.6
-    m_Colors:
-    - _Color: {r: 0.97999996, g: 0.96, b: 0.93, a: 0.94}
-    - _RippleCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
-    - _RippleColor: {r: 1, g: 0.97999996, b: 0.88, a: 1}
-    - _WaveColor: {r: 1, g: 0.86, b: 0.58, a: 0.95}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &659100088
 GameObject:
   m_ObjectHideFlags: 0
@@ -5851,7 +5659,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 399804277}
+  m_Material: {fileID: 1540435411}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -7092,7 +6900,10 @@ MonoBehaviour:
   softDotSprite: {fileID: 21300000, guid: c7f476d287a024f44ab416975d5741db, type: 3}
   boySilhouetteSprite: {fileID: 21300000, guid: 9a3bec73bc9421649b354a8aaf56035d, type: 3}
   shipSilhouetteSprite: {fileID: 21300000, guid: 87985c5d3b03e4e45a574cf449e8f0cf, type: 3}
-  fallbackSlotThumbnails: []
+  fallbackSlotThumbnails:
+  - {fileID: 2800000, guid: 47af8c18f49c28f43b80a2a42eada956, type: 3}
+  - {fileID: 2800000, guid: 506e4fd46d9de1144bc191794f26d723, type: 3}
+  - {fileID: 2800000, guid: 6a5d4389b6dfa704dafdf67f0f7e9e15, type: 3}
   mainMenuMusicClip: {fileID: 8300000, guid: 6bda1180eda4f694aafa16b7ac7d1e97, type: 3}
   randomMenuMusicClips: []
   ambientWindClip: {fileID: 8300000, guid: a0c5aa918c5a57c44b346393205f4f12, type: 3}
@@ -8852,6 +8663,54 @@ RectTransform:
   m_AnchoredPosition: {x: -30, y: 0}
   m_SizeDelta: {x: 60, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!21 &1103534969
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SelectionBox_WaterRipple_Mat
+  m_Shader: {fileID: 4800000, guid: 06e06c0f4cc848544966f50c6925c9d2, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ColorMask: 15
+    - _HoverBlend: 0
+    - _RippleProgress: 0
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _UseUIAlphaClip: 0
+    - _WaveAmplitude: 0.4
+    - _WaveFrequency: 14
+    - _WaveSpeed: 3.6
+    m_Colors:
+    - _Color: {r: 0.97999996, g: 0.96, b: 0.93, a: 0.94}
+    - _RippleCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _RippleColor: {r: 1, g: 0.97999996, b: 0.88, a: 1}
+    - _WaveColor: {r: 1, g: 0.86, b: 0.58, a: 0.95}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &1120152445
 GameObject:
   m_ObjectHideFlags: 0
@@ -10611,6 +10470,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1349721806}
   m_CullTransparentMesh: 1
+--- !u!21 &1358171793
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SelectionBox_WaterRipple_Mat
+  m_Shader: {fileID: 4800000, guid: 06e06c0f4cc848544966f50c6925c9d2, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ColorMask: 15
+    - _HoverBlend: 0
+    - _RippleProgress: 0
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _UseUIAlphaClip: 0
+    - _WaveAmplitude: 0.4
+    - _WaveFrequency: 14
+    - _WaveSpeed: 3.6
+    m_Colors:
+    - _Color: {r: 0.97999996, g: 0.96, b: 0.93, a: 0.94}
+    - _RippleCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _RippleColor: {r: 1, g: 0.97999996, b: 0.88, a: 1}
+    - _WaveColor: {r: 1, g: 0.86, b: 0.58, a: 0.95}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &1359352278
 GameObject:
   m_ObjectHideFlags: 0
@@ -11678,7 +11585,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 54845414}
+  m_Material: {fileID: 1358171793}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -12477,6 +12384,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1517545649}
   m_CullTransparentMesh: 1
+--- !u!21 &1540435411
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SelectionBox_WaterRipple_Mat
+  m_Shader: {fileID: 4800000, guid: 06e06c0f4cc848544966f50c6925c9d2, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ColorMask: 15
+    - _HoverBlend: 0
+    - _RippleProgress: 0
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _UseUIAlphaClip: 0
+    - _WaveAmplitude: 0.4
+    - _WaveFrequency: 14
+    - _WaveSpeed: 3.6
+    m_Colors:
+    - _Color: {r: 0.97999996, g: 0.96, b: 0.93, a: 0.94}
+    - _RippleCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _RippleColor: {r: 1, g: 0.97999996, b: 0.88, a: 1}
+    - _WaveColor: {r: 1, g: 0.86, b: 0.58, a: 0.95}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &1543827432
 GameObject:
   m_ObjectHideFlags: 0
@@ -12556,6 +12511,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1543827432}
   m_CullTransparentMesh: 1
+--- !u!21 &1558541836
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SelectionBox_WaterRipple_Mat
+  m_Shader: {fileID: 4800000, guid: 06e06c0f4cc848544966f50c6925c9d2, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ColorMask: 15
+    - _HoverBlend: 0
+    - _RippleProgress: 0
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _UseUIAlphaClip: 0
+    - _WaveAmplitude: 0.4
+    - _WaveFrequency: 14
+    - _WaveSpeed: 3.6
+    m_Colors:
+    - _Color: {r: 0.97999996, g: 0.96, b: 0.93, a: 0.94}
+    - _RippleCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _RippleColor: {r: 1, g: 0.97999996, b: 0.88, a: 1}
+    - _WaveColor: {r: 1, g: 0.86, b: 0.58, a: 0.95}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &1579318359
 GameObject:
   m_ObjectHideFlags: 0
@@ -15071,7 +15074,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 496120327}
+  m_Material: {fileID: 1103534969}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -16099,7 +16102,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 647519177}
+  m_Material: {fileID: 1558541836}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}

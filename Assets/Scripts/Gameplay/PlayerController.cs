@@ -570,7 +570,7 @@ namespace HoaVaMau.Gameplay
             if (stillOnRope)
             {
                 CurrentState = (Mathf.Abs(inputReader.Vertical) > 0.1f) ? PlayerState.RopeClimb : PlayerState.RopeGrab;
-                if (Mathf.Abs(inputReader.Horizontal) > 0.1f)
+                if (false)
                 {
                     SetFacingDirection(Mathf.Sign(inputReader.Horizontal));
                 }
@@ -605,7 +605,7 @@ namespace HoaVaMau.Gameplay
             nearestNodeIndex = -1;
             var ropes = Object.FindObjectsByType<RopeController>(FindObjectsInactive.Exclude);
             RopeController bestRope = null;
-            float bestDistSq = 2.0f * 2.0f; // Bán kính tìm kiếm 2.0 mét
+            float bestDistSq = 1.25f * 1.25f; // Bán kính bám dây tự nhiên 1.25m theo tầm với tay
 
             Vector3 playerCenter = transform.position + Vector3.up * 1.0f;
 
@@ -613,7 +613,7 @@ namespace HoaVaMau.Gameplay
             {
                 if (rope == null) continue;
                 int nodeIdx = rope.GetNearestNodeIndex(playerCenter, out float dist);
-                if (dist <= 2.0f && (dist * dist) < bestDistSq)
+                if (dist <= 1.25f && (dist * dist) < bestDistSq)
                 {
                     bestDistSq = dist * dist;
                     bestRope = rope;

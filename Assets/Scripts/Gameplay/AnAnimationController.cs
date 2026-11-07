@@ -211,12 +211,12 @@ namespace HoaVaMau.Gameplay
 
                     animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0.95f);
                     animator.SetIKPosition(AvatarIKGoal.RightHand, rHandTarget);
-                    animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0.85f);
+                    animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0.0f);
                     animator.SetIKRotation(AvatarIKGoal.RightHand, ropeHandRot);
 
                     animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.95f);
                     animator.SetIKPosition(AvatarIKGoal.LeftHand, lHandTarget);
-                    animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0.85f);
+                    animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0.0f);
                     animator.SetIKRotation(AvatarIKGoal.LeftHand, ropeHandRot);
                 }
                 else
@@ -228,14 +228,14 @@ namespace HoaVaMau.Gameplay
                     Vector3 rProjected = ropeGrabPos + Vector3.Project(rHandAnim - ropeGrabPos, ropeTangent);
                     Vector3 lProjected = ropeGrabPos + Vector3.Project(lHandAnim - ropeGrabPos, ropeTangent);
 
-                    animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0.90f);
+                    animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0.0f);
                     animator.SetIKPosition(AvatarIKGoal.RightHand, rProjected);
-                    animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0.80f);
+                    animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0.0f);
                     animator.SetIKRotation(AvatarIKGoal.RightHand, ropeHandRot);
 
-                    animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.90f);
+                    animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.0f);
                     animator.SetIKPosition(AvatarIKGoal.LeftHand, lProjected);
-                    animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0.80f);
+                    animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0.0f);
                     animator.SetIKRotation(AvatarIKGoal.LeftHand, ropeHandRot);
                 }
 
@@ -714,18 +714,20 @@ namespace HoaVaMau.Gameplay
                     if (vertInput > 0.12f)
                     {
                         CrossFadeToState("RopeClimbUp", 0.10f);
-                        animator.speed = 1.15f;
+                        animator.speed = 1.25f;
                     }
                     else if (vertInput < -0.12f)
                     {
                         CrossFadeToState("RopeClimbDown", 0.10f);
-                        animator.speed = 1.15f;
+                        animator.speed = 1.25f;
                     }
                     else
                     {
                         // Bám dây tự nhiên (RopeHang): hai tay nắm dây, thân người buông theo phương thẳng đứng
                         // Chuyển động đung đưa con lắc được điều khiển vật lý 1:1 qua PlayerRopeHandler (không dùng animation quẫy chân)
-                        CrossFadeToState("RopeHang", 0.15f);
+                        var curRope = (playerController.RopeHandler != null) ? playerController.RopeHandler.CurrentRope : null;
+                        string ropeState = (curRope != null && Mathf.Abs(curRope.AngularVelocity) > 0.85f) ? "RopeSwing" : "RopeHang";
+                        CrossFadeToState(ropeState, 0.15f);
                         animator.speed = 1.0f;
                     }
                     return;

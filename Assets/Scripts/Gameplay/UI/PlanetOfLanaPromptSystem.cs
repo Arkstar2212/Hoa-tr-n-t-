@@ -64,15 +64,9 @@ namespace HoaVaMau.Gameplay
 
         private IEnumerator ShowInitialMovementPrompt()
         {
-            if (Object.FindAnyObjectByType<PlanetOfLanaTutorialController>() != null ||
-                Object.FindAnyObjectByType<CaMau3DUIGuideController>() != null)
-            {
-                yield break;
-            }
-
-            yield return new WaitForSeconds(1.5f);
-            var p = Object.FindAnyObjectByType<PlayerController>();
-            ShowPrompt(PromptType.Move, "DI CHUYỂN", p != null ? p.transform : null, 5f);
+            // Initial movement prompts are only for 2D tutorial (managed by PlanetOfLanaTutorialController).
+            // Do not show in 3D Village or any scene without 2D PlayerController.
+            yield break;
         }
 
         private void Update()
@@ -84,6 +78,8 @@ namespace HoaVaMau.Gameplay
                 Vector3 screenPos = Camera.main.WorldToScreenPoint(trackedWorldTarget.position + Vector3.up * 1.5f) + screenOffset;
                 if (screenPos.z > 0f)
                 {
+                    screenPos.x = Mathf.Clamp(screenPos.x, 140f, Screen.width - 140f);
+                    screenPos.y = Mathf.Clamp(screenPos.y, 80f, Screen.height - 80f);
                     promptRootRect.position = screenPos;
                 }
             }
@@ -197,7 +193,8 @@ namespace HoaVaMau.Gameplay
 
             promptCanvas = canvasGo.GetComponent<Canvas>();
             promptCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            promptCanvas.sortingOrder = 950;
+            promptCanvas.overrideSorting = true;
+            promptCanvas.sortingOrder = 32700; // ALWAYS ON TOP OF EVERYTHING ELSE
 
             var scaler = canvasGo.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;

@@ -10,7 +10,7 @@ namespace HoaTrenDatDo.EditorTools
         private const string CoconutLeafMatPath = "Assets/Materials/Environment/M_VFX_DriftingCoconutLeaf.mat";
         private const string FlowerPetalMatPath = "Assets/Materials/Environment/M_VFX_FloatingFlowerPetal.mat";
 
-        private const string CoconutLeafTexPath = "Assets/Art/PlanetOfLana_Official/Bushes/Seed-Leaf.png";
+        private const string CoconutLeafTexPath = "Assets/Art/PlanetOfLana_Official/Bushes/PlantLeaf01.png";
         private const string FlowerPetalTexPath = "Assets/Art/PlanetOfLana_Official/Flora/RockFlowerPink01.png";
 
         [MenuItem("Tools/VFX/Setup Ambient Floating Leaves And Petals")]
@@ -23,7 +23,7 @@ namespace HoaTrenDatDo.EditorTools
             }
 
             // 1. Ensure Materials Exist with URP Particle Unlit Shader
-            var leafMat = GetOrCreateParticleMaterial(CoconutLeafMatPath, CoconutLeafTexPath, new Color(0.92f, 0.94f, 0.72f, 0.85f));
+            var leafMat = GetOrCreateParticleMaterial(CoconutLeafMatPath, CoconutLeafTexPath, Color.white);
             var petalMat = GetOrCreateParticleMaterial(FlowerPetalMatPath, FlowerPetalTexPath, new Color(0.98f, 0.82f, 0.88f, 0.88f));
 
             // 2. Locate or Create Root Parent in 09_VFX
@@ -114,7 +114,7 @@ namespace HoaTrenDatDo.EditorTools
             main.startSpeed = new ParticleSystem.MinMaxCurve(0.6f, 1.2f);
             main.startSize = new ParticleSystem.MinMaxCurve(0.18f, 0.30f);
             main.startRotation = new ParticleSystem.MinMaxCurve(0f, 360f * Mathf.Deg2Rad);
-            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.95f, 0.96f, 0.80f, 0.85f), new Color(0.78f, 0.88f, 0.65f, 0.75f));
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 1f, 1f, 0.95f), new Color(0.92f, 0.98f, 0.88f, 0.85f));
             main.gravityModifier = 0.02f;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.maxParticles = 35;

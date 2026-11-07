@@ -91,40 +91,15 @@ namespace HoaVaMau.Gameplay
         public static void CaptureAndSaveThumbnail(int slot, Camera targetCam = null)
         {
             if (!Application.isPlaying) return;
-            if (targetCam == null) targetCam = Camera.main;
-            if (targetCam == null) return;
 
-            try
+            if (CheckpointManager.Instance != null)
             {
-                int width = 360;
-                int height = 640;
-                RenderTexture rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
-                RenderTexture prevTarget = targetCam.targetTexture;
-                RenderTexture prevActive = RenderTexture.active;
-
-                targetCam.targetTexture = rt;
-                targetCam.Render();
-
-                RenderTexture.active = rt;
-                Texture2D tex = new Texture2D(width, height, TextureFormat.RGB24, false);
-                tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-                tex.Apply();
-
-                targetCam.targetTexture = prevTarget;
-                RenderTexture.active = prevActive;
-                UnityEngine.Object.Destroy(rt);
-
-                byte[] bytes = tex.EncodeToPNG();
-                UnityEngine.Object.Destroy(tex);
-
-                string path = GetThumbnailFilePath(slot);
-                File.WriteAllBytes(path, bytes);
-                Debug.Log($"[HoaVaMauSaveSystem] Captured and saved thumbnail for slot {slot} at {path}");
+                CheckpointManager.Instance.CaptureAndSaveSlotThumbnail(slot);
+                return;
             }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"[HoaVaMauSaveSystem] Failed capturing thumbnail for slot {slot}: {ex.Message}");
-            }
+
+            // Fallback runtime capture if CheckpointManager not in current scene
+            ThumbnailCaptureRuntime.CaptureSlot(slot);
         }
 
         public static bool HasAnySaveData()

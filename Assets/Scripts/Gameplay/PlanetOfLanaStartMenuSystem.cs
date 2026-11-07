@@ -1,4 +1,4 @@
-﻿#pragma warning disable 0414
+#pragma warning disable 0414
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -1543,10 +1543,29 @@ namespace HoaVaMau.Gameplay
                     Texture2D thumbTex = HoaVaMauSaveSystem.LoadThumbnailTexture(slot);
 
                     // If not yet captured, use fallback concept art thumbnail
-                    if (thumbTex == null && fallbackSlotThumbnails != null && fallbackSlotThumbnails.Length > 0)
+                    // Check fallback
+
+
+#if UNITY_EDITOR
+                    if (thumbTex == null)
                     {
-                        int fallbackIdx = (slot - 1) % fallbackSlotThumbnails.Length;
-                        thumbTex = fallbackSlotThumbnails[fallbackIdx];
+                        string[] defaultPaths = new string[]
+                        {
+                            "Assets/Textures/Backgrounds_Lana/BG_Lana_MainSkyHills_Official.png",
+                            "Assets/Textures/Backgrounds_Lana/BG_Lana_CoastalBay_Day.jpg",
+                            "Assets/Textures/Backgrounds_Lana/BG_Lana_HillsFields_Sunset.jpg"
+                        };
+                        int pathIdx = Mathf.Clamp(slot - 1, 0, defaultPaths.Length - 1);
+                        thumbTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(defaultPaths[pathIdx]);
+                    }
+#endif
+
+                    {
+                        if (thumbTex == null && fallbackSlotThumbnails != null && fallbackSlotThumbnails.Length > 0)
+                        {
+                            thumbTex = fallbackSlotThumbnails[(slot - 1) % fallbackSlotThumbnails.Length];
+                        }
+
                     }
 
                     if (thumbTex != null && card.ThumbnailImg != null)

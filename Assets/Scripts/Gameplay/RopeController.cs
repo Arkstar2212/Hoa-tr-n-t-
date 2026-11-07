@@ -8,6 +8,7 @@ namespace HoaVaMau.Gameplay
     /// Features:
     /// - Physical Pendulum Kinematics when player attaches: 100% stable, zero vibration, natural resonant pumping (A/D).
     /// - Momentum Transfer: Leaping onto the rope transfers player airborne velocity into authentic pendulum swing.
+    /// - Low Natural Air Damping: Preserves satisfying swing momentum and gives high athletic arcs (up to 48 deg).
     /// - Procedural Verlet Tail: Lower rope segments below the player trail with inertia, mass and air resistance.
     /// - Natural Ambient Breeze: Soft harmonic idle sway when unoccupied.
     /// - Silky Smooth LineRenderer with natural hemp fiber gradient.
@@ -42,8 +43,8 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float airDamping = 0.988f;
         [Range(4, 20)]
         [SerializeField] private int constraintIterations = 14;
-        [SerializeField] private float maxSwingSpeed = 5.0f;
-        [SerializeField] private float maxSwingAngle = 32.0f; // Max deflection angle (degrees)
+        [SerializeField] private float maxSwingSpeed = 6.5f;
+        [SerializeField] private float maxSwingAngle = 48.0f; // Max deflection angle (degrees)
 
         [Header("Ambient Breeze (Gentle Wiggle)")]
         [SerializeField] private bool enableAmbientWiggle = true;
@@ -51,9 +52,9 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float windFrequency = 1.25f;
 
         [Header("Player Interaction (Planet of Lana Standard)")]
-        [SerializeField] private float playerSwingForce = 15.0f; // Responsive swing pumping
+        [SerializeField] private float playerSwingForce = 26.0f; // Responsive harmonic swing pumping
         [SerializeField] private float climbWiggleForce = 0.25f;
-        [SerializeField] private float momentumTransferRatio = 0.70f; // Transfer jump momentum into swing
+        [SerializeField] private float momentumTransferRatio = 0.85f; // Transfer jump momentum into swing
 
         [Header("Visuals")]
         [SerializeField] private Color ropeColor = new Color(0.60f, 0.45f, 0.28f);
@@ -232,11 +233,13 @@ namespace HoaVaMau.Gameplay
             // Restoring torque from gravity: alpha_g = -(g / L) * sin(theta)
             float gravityTorque = -(gravity / effLength) * Mathf.Sin(currentAngle);
 
-            // Fast natural settling damping on the rope (Planet of Lana standard)
-            float bodyDamping = Mathf.Abs(smoothedSwingInput) > 0.05f ? 0.65f : 1.4f;
+            // Natural settling damping: low damping when swinging freely (0.22f) for authentic inertia,
+            // active counter-braking only when player deliberately holds opposite to swing direction.
+            bool isBraking = Mathf.Abs(smoothedSwingInput) > 0.1f && (Mathf.Sign(smoothedSwingInput) != Mathf.Sign(angularVelocity)) && Mathf.Abs(angularVelocity) > 0.25f;
+            float bodyDamping = isBraking ? 1.5f : (Mathf.Abs(smoothedSwingInput) > 0.05f ? 0.14f : 0.22f);
 
             // Smooth user swing input
-            smoothedSwingInput = Mathf.MoveTowards(smoothedSwingInput, currentSwingInput, dt * 5.5f);
+            smoothedSwingInput = Mathf.MoveTowards(smoothedSwingInput, currentSwingInput, dt * 5.0f);
 
             // Resonant pumping (holding with swing direction pumps energy, holding against acts as brake)
             float pumpTorque = 0f;
@@ -246,13 +249,13 @@ namespace HoaVaMau.Gameplay
                 if (isPumpingWithMotion)
                 {
                     // Maximum pumping efficiency at low angles
-                    float efficiency = 1.0f + 0.45f * Mathf.Max(0f, Mathf.Cos(currentAngle));
+                    float efficiency = 1.0f + 0.55f * Mathf.Max(0f, Mathf.Cos(currentAngle));
                     pumpTorque = smoothedSwingInput * (playerSwingForce / effLength) * efficiency;
                 }
                 else
                 {
                     // Active counter-force brake when player pushes opposite to swing
-                    pumpTorque = smoothedSwingInput * (playerSwingForce * 1.30f / effLength);
+                    pumpTorque = smoothedSwingInput * (playerSwingForce * 1.20f / effLength);
                 }
             }
 
@@ -279,7 +282,7 @@ namespace HoaVaMau.Gameplay
             currentAngle = Mathf.Clamp(currentAngle, -maxAngleRad - 0.05f, maxAngleRad + 0.05f);
 
             // Decay input gradually if unheld
-            currentSwingInput = Mathf.MoveTowards(currentSwingInput, 0f, dt * 2.2f);
+            currentSwingInput = Mathf.MoveTowards(currentSwingInput, 0f, dt * 3.5f);
 
             // Update rope nodes along the pendulum line & procedural tail
             int grabIdx = Mathf.Clamp(Mathf.RoundToInt(playerClimbFraction * (nodes.Length - 1)), 1, nodes.Length - 1);
@@ -470,7 +473,7 @@ namespace HoaVaMau.Gameplay
             attachedPlayer = player;
             nodeIndex = Mathf.Clamp(nodeIndex, 1, nodes.Length - 2);
             playerClimbFraction = (float)nodeIndex / Mathf.Max(1, nodes.Length - 1);
-            playerClimbFraction = Mathf.Clamp(playerClimbFraction, 0.15f, 0.88f);
+            playerClimbFraction = Mathf.Clamp(playerClimbFraction, 0.10f, 0.90f);
 
             float effLength = Mathf.Max(0.8f, totalLength * playerClimbFraction);
             Vector3 attachPos = nodes[nodeIndex].position;
@@ -527,7 +530,7 @@ namespace HoaVaMau.Gameplay
         {
             float oldLength = Mathf.Max(0.8f, totalLength * playerClimbFraction);
             float deltaFraction = -deltaMeters / totalLength;
-            playerClimbFraction = Mathf.Clamp(playerClimbFraction + deltaFraction, 0.08f, 0.94f);
+            playerClimbFraction = Mathf.Clamp(playerClimbFraction + deltaFraction, 0.10f, 0.90f);
             float newLength = Mathf.Max(0.8f, totalLength * playerClimbFraction);
 
             // Conservation of angular momentum during climb (L1 * w1 = L2 * w2)
@@ -538,8 +541,8 @@ namespace HoaVaMau.Gameplay
 
             // Subtle hand wiggle perturbation
             int grabIdx = Mathf.Clamp(Mathf.RoundToInt(playerClimbFraction * (nodes.Length - 1)), 1, nodes.Length - 1);
-            float wiggle = Mathf.Sin(Time.time * 22f) * climbWiggleForce * Mathf.Sign(deltaMeters);
-            nodes[grabIdx].position += new Vector3(wiggle * 0.015f, 0f, 0f);
+            float wiggle = Mathf.Sin(Time.time * 20f) * climbWiggleForce * Mathf.Sign(deltaMeters);
+            nodes[grabIdx].position += new Vector3(wiggle * 0.012f, 0f, 0f);
         }
 
         public Vector3 GetPlayerRopePosition(PlayerController player)

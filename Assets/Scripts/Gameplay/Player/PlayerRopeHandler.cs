@@ -4,8 +4,9 @@ namespace HoaVaMau.Gameplay
 {
     /// <summary>
     /// SOLID - Single Responsibility Principle:
-    /// Chuyên trách quản lý tương tác với hệ thống dây thừng (RopeController):
-    /// bám dây, trèo lên/xuống, lấy đà đung đưa con lắc và bật nhảy phóng qua vực theo chuẩn Planet of Lana.
+    /// Quản lý toàn diện tương tác với hệ thống dây thừng (RopeController):
+    /// bám dây êm ái, trèo lên/xuống linh hoạt mượt mà, đung đưa con lắc cộng hưởng tự nhiên (Planet of Lana standard),
+    /// không bị giật lật mặt 180 độ bất thường, và bật nhảy kế thừa trọn vẹn động lượng tiếp tuyến.
     /// </summary>
     public class PlayerRopeHandler
     {
@@ -14,7 +15,7 @@ namespace HoaVaMau.Gameplay
         private RopeController currentRope;
         private float ropeAttachCooldown = 0f;
 
-        public float HandOffsetHeight { get; set; } = 1.20f; // Khoảng cách từ gốc tọa độ chân lên đến bàn tay nắm dây (chuẩn 1.20m theo Boy_Character)
+        public float HandOffsetHeight { get; set; } = 1.20f; // Khoảng cách từ gốc chân lên tay nắm dây (chuẩn Boy_Character)
         public float CurrentRopeAngle => currentRope != null ? currentRope.CurrentAngleDegrees : 0f;
 
         public bool CanAttachToRope => ropeAttachCooldown <= 0f;
@@ -40,11 +41,11 @@ namespace HoaVaMau.Gameplay
             currentRope = rope;
             if (charController != null) charController.enabled = false;
 
-            // Bàn tay bám đúng tại attachPos, thân người và chân nằm phía dưới
+            // Bàn tay bám đúng tại attachPos, thân người nằm phía dưới
             transform.position = new Vector3(attachPos.x, attachPos.y - HandOffsetHeight, 0f);
 
-            // Xoay mặt theo hướng nhảy tới nếu có vận tốc ngang
-            if (Mathf.Abs(incomingVelocity.x) > 0.2f)
+            // Xoay mặt theo hướng nhảy tới nếu có vận tốc ngang rõ rệt
+            if (Mathf.Abs(incomingVelocity.x) > 0.25f)
             {
                 player.SetFacingDirection(Mathf.Sign(incomingVelocity.x));
             }
@@ -68,31 +69,29 @@ namespace HoaVaMau.Gameplay
                 return false;
             }
 
-            // 1. Leo trèo lên / xuống dọc theo chiều dài dây thừng với tốc độ mượt mà tự nhiên
+            // 1. Leo trèo lên / xuống dọc theo chiều dài dây thừng với tốc độ mượt mà tự nhiên (1.25m/s - 1.35m/s)
             if (Mathf.Abs(verticalInput) > 0.12f)
             {
-                float climbSpeed = (verticalInput > 0f) ? 0.50f : 0.55f;
+                float climbSpeed = (verticalInput > 0f) ? 1.25f : 1.35f;
                 currentRope.Climb(player, verticalInput * climbSpeed * dt);
             }
 
-            // 2. Chuyển hướng mặt theo phím A / D (Chuẩn Planet of Lana: gọn lẹ, không momentum swing tích lũy phóng người)
+            // 2. Tiếp nhận input đung đưa con lắc & đổi hướng mặt tự nhiên (Chuẩn Planet of Lana)
             if (currentRope != null) currentRope.ApplySwingInput(horizontalInput, dt);
-            if (Mathf.Abs(horizontalInput) > 0.05f)
+
+            // Chỉ đổi hướng mặt khi người chơi cố ý nhấn giữ rẽ hướng (ngưỡng 0.35f), KHÔNG tự động đảo mặt theo chu kỳ vung dây
+            if (Mathf.Abs(horizontalInput) > 0.35f)
             {
-                // No momentum swing pumping
                 player.SetFacingDirection(Mathf.Sign(horizontalInput));
-            }
-            else if (Mathf.Abs(currentRope.AngularVelocity) > 0.45f)
-            {
-                // Tự động hướng mặt theo hướng đang vung dây (Planet of Lana standard)
-                player.SetFacingDirection(Mathf.Sign(currentRope.AngularVelocity));
             }
 
             // 3. Cập nhật vị trí và góc xoay nhân vật theo đốt dây đang bám (Planet of Lana standard)
             Vector3 ropeGrabPos = currentRope.GetPlayerRopePosition(player);
             float ropeAngle = currentRope.CurrentAngleDegrees;
             float angVel = currentRope.AngularVelocity;
-            float lagAngle = -Mathf.Clamp(angVel * 3.5f, -14f, 14f);
+
+            // Độ trễ quán tính thân người mềm mại theo luồng gió và chuyển động con lắc
+            float lagAngle = -Mathf.Clamp(angVel * 2.2f, -10f, 10f);
             float totalTiltAngle = ropeAngle + lagAngle;
 
             Quaternion ropeTilt = Quaternion.AngleAxis(totalTiltAngle, Vector3.forward);
@@ -114,19 +113,22 @@ namespace HoaVaMau.Gameplay
                 }
                 else
                 {
-                    // Phóng người theo đà đu dây: kế thừa vận tốc tiếp tuyến + xung lực bật nhảy
-                    float launchDir = horizontalInput != 0f
+                    // Hướng phóng: ưu tiên phím A/D người chơi đang giữ, nếu buông phím thì theo đà vung dây hoặc hướng mặt
+                    float launchDir = Mathf.Abs(horizontalInput) > 0.15f
                         ? Mathf.Sign(horizontalInput)
-                        : (Mathf.Abs(ropeTanVel.x) > 0.4f ? Mathf.Sign(ropeTanVel.x) : player.FacingDirection);
+                        : (Mathf.Abs(ropeTanVel.x) > 0.3f ? Mathf.Sign(ropeTanVel.x) : player.FacingDirection);
 
-                    float launchSpeedX = Mathf.Clamp(4.0f + Mathf.Abs(ropeTanVel.x) * 1.15f, 4.5f, 8.5f);
-                    float launchSpeedY = (player != null && player.Motor != null) ? Mathf.Max(player.Motor.JumpForce, 6.2f) : 6.2f;
+                    // Kế thừa trọn vẹn động lượng tiếp tuyến của con lắc kết hợp sức bật chân
+                    float baseSpeedX = 4.0f;
+                    float swingBonusX = Mathf.Abs(ropeTanVel.x) * 1.35f;
+                    float launchSpeedX = Mathf.Clamp(baseSpeedX + swingBonusX, 4.2f, 9.5f);
+                    float launchSpeedY = (player != null && player.Motor != null) ? Mathf.Max(player.Motor.JumpForce, 6.6f) : 6.6f;
 
                     releaseVelocity = new Vector3(launchDir * launchSpeedX, launchSpeedY, 0f);
                     player.SetFacingDirection(launchDir);
                 }
 
-                ropeAttachCooldown = 0.35f;
+                ropeAttachCooldown = 0.32f;
                 DetachFromRope(player, releaseVelocity);
                 return false; // Released
             }

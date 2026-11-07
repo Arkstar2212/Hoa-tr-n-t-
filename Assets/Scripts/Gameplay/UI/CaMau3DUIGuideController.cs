@@ -118,6 +118,11 @@ namespace HoaVaMau.Gameplay
         public void SetEditorPreviewState()
         {
             if (uiCanvas == null) Build3DUIGuideCanvas();
+            if (uiCanvas != null)
+            {
+                uiCanvas.overrideSorting = true;
+                uiCanvas.sortingOrder = 32700;
+            }
             RefreshSceneTargets();
             if (arrivalTitleGroup != null) arrivalTitleGroup.alpha = 0.96f;
             if (controlStripGroup != null) controlStripGroup.alpha = 0.90f;
@@ -303,48 +308,8 @@ namespace HoaVaMau.Gameplay
                 }
             }
 
-            // Priority 4: Initial Sequential 3D Movement Onboarding (Walk -> Sprint -> Jump)
-            if (!moveGuideDone)
-            {
-                if (player3D.PlanarSpeed > 0.25f)
-                {
-                    walkedTimer += Time.deltaTime;
-                    if (walkedTimer >= 1.25f) moveGuideDone = true;
-                }
-                keys = new[] { "W", "A", "S", "D" };
-                subLabel = "DI CHUYỂN 3D";
-                return;
-            }
-
-            if (!sprintGuideDone)
-            {
-                sprintShowTimer += Time.deltaTime;
-                if (player3D.IsSprinting || sprintShowTimer >= 3.2f)
-                {
-                    sprintGuideDone = true;
-                }
-                else
-                {
-                    keys = new[] { "SHIFT" };
-                    subLabel = "CHẠY NHANH";
-                    return;
-                }
-            }
-
-            if (!jumpGuideDone)
-            {
-                jumpShowTimer += Time.deltaTime;
-                if (!player3D.IsGrounded || jumpShowTimer >= 3.0f)
-                {
-                    jumpGuideDone = true;
-                }
-                else
-                {
-                    keys = new[] { jumpKey };
-                    subLabel = "NHẢY VƯỢT BẬC";
-                    return;
-                }
-            }
+            // Movement onboarding disabled per user request (viewable in Settings/Pause menu only, guides only in 2D initial scene)
+            return;
         }
 
         private void UpdateArrivalVignette(float dt)
@@ -392,24 +357,6 @@ namespace HoaVaMau.Gameplay
 
         private void UpdateControlStrip(float dt)
         {
-            if (IsToggleGuideKeyPressed())
-            {
-                controlStripPinned = !controlStripPinned;
-                if (controlStripPinned) controlStripAutoHideTimer = 9999f;
-                else controlStripAutoHideTimer = 0f;
-            }
-
-            if (!controlStripPinned && controlStripAutoHideTimer > 0f)
-            {
-                controlStripAutoHideTimer -= dt;
-            }
-
-            if (controlStripGroup != null)
-            {
-                float targetAlpha = (controlStripPinned || controlStripAutoHideTimer > 0f) ? 0.88f : 0.28f;
-                controlStripGroup.alpha = Mathf.MoveTowards(controlStripGroup.alpha, targetAlpha, dt * 2.5f);
-            }
-
             if (stealthStatusBadgeText != null && player3D != null)
             {
                 if (player3D.IsHidingInBush)
@@ -472,7 +419,8 @@ namespace HoaVaMau.Gameplay
             canvasGO.transform.SetParent(transform, false);
             uiCanvas = canvasGO.AddComponent<Canvas>();
             uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            uiCanvas.sortingOrder = 445;
+            uiCanvas.overrideSorting = true;
+            uiCanvas.sortingOrder = 32700; // ALWAYS ON TOP OF EVERYTHING ELSE
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -646,44 +594,12 @@ namespace HoaVaMau.Gameplay
             narrativeBodyText.color = new Color(0.98f, 0.97f, 0.94f, 0.96f);
             narrativeBodyText.raycastTarget = false;
 
-            // E. Subtle Top-Right Minimalist Control Strip ([H] to pin/fade) + Stealth Indicator
-            var ctrlRect = CreateRect("Minimalist_3D_Control_Guide", canvasGO.transform);
-            ctrlRect.anchorMin = ctrlRect.anchorMax = new Vector2(1f, 1f);
-            ctrlRect.pivot = new Vector2(1f, 1f);
-            ctrlRect.anchoredPosition = new Vector2(-28f, -20f);
-            ctrlRect.sizeDelta = new Vector2(890f, 54f);
-            controlStripGroup = ctrlRect.gameObject.AddComponent<CanvasGroup>();
-            controlStripGroup.alpha = 0.92f;
-            controlStripGroup.blocksRaycasts = false;
-
-            var ctrlPillBg = CreateRect("ControlPillBackdrop", ctrlRect);
-            ctrlPillBg.anchorMin = new Vector2(0f, 0.42f);
-            ctrlPillBg.anchorMax = new Vector2(1f, 1f);
-            ctrlPillBg.offsetMin = new Vector2(-14f, -3f);
-            ctrlPillBg.offsetMax = new Vector2(14f, 3f);
-            var ctrlPillImg = ctrlPillBg.gameObject.AddComponent<Image>();
-            ctrlPillImg.color = new Color(0.04f, 0.06f, 0.11f, 0.56f);
-            ctrlPillImg.raycastTarget = false;
-
-            var ctrlTxtRect = CreateRect("ControlsLine", ctrlRect);
-            ctrlTxtRect.anchorMin = new Vector2(0f, 0.45f);
-            ctrlTxtRect.anchorMax = new Vector2(1f, 1f);
-            ctrlTxtRect.offsetMin = ctrlTxtRect.offsetMax = Vector2.zero;
-            var ctrlTxt = ctrlTxtRect.gameObject.AddComponent<Text>();
-            ctrlTxt.font = uiFont;
-            ctrlTxt.fontSize = 13;
-            ctrlTxt.alignment = TextAnchor.MiddleRight;
-            ctrlTxt.color = new Color(0.96f, 0.95f, 0.90f, 0.86f);
-            ctrlTxt.text = "[WASD] Di chuyển   •   [Shift] Chạy   •   [Space] Nhảy   •   [C] Cúi nấp   •   [E] Tương tác   •   [Esc] Tạm dừng   •   [H] Ẩn/Hiện";
-            ctrlTxt.raycastTarget = false;
-            var ctrlShadow = ctrlTxtRect.gameObject.AddComponent<Shadow>();
-            ctrlShadow.effectColor = new Color(0f, 0f, 0f, 0.70f);
-            ctrlShadow.effectDistance = new Vector2(0f, -1f);
-
-            var stealthRect = CreateRect("StealthStatusLine", ctrlRect);
-            stealthRect.anchorMin = new Vector2(0f, 0f);
-            stealthRect.anchorMax = new Vector2(1f, 0.45f);
-            stealthRect.offsetMin = stealthRect.offsetMax = Vector2.zero;
+            // Stealth Indicator (only shows stealth status if applicable)
+            var stealthRect = CreateRect("StealthStatusLine", canvasGO.transform);
+            stealthRect.anchorMin = stealthRect.anchorMax = new Vector2(1f, 1f);
+            stealthRect.pivot = new Vector2(1f, 1f);
+            stealthRect.anchoredPosition = new Vector2(-28f, -20f);
+            stealthRect.sizeDelta = new Vector2(400f, 30f);
             stealthStatusBadgeText = stealthRect.gameObject.AddComponent<Text>();
             stealthStatusBadgeText.font = uiFont;
             stealthStatusBadgeText.fontSize = 13;
@@ -691,6 +607,9 @@ namespace HoaVaMau.Gameplay
             stealthStatusBadgeText.alignment = TextAnchor.MiddleRight;
             stealthStatusBadgeText.text = "";
             stealthStatusBadgeText.raycastTarget = false;
+            var stealthShadow = stealthRect.gameObject.AddComponent<Shadow>();
+            stealthShadow.effectColor = new Color(0f, 0f, 0f, 0.70f);
+            stealthShadow.effectDistance = new Vector2(0f, -1f);
         }
 
         private void RebuildKeyCapGlyphs(string[] keyLabels, string subLabel)

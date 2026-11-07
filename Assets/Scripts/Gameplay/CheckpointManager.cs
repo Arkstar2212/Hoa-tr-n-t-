@@ -104,7 +104,7 @@ namespace HoaVaMau.Gameplay
             }
         }
 
-        public void SetCheckpoint(Vector3 pos, int index = 0)
+        public void SetCheckpoint(Vector3 pos, int index = 0, bool autoSave = true)
         {
             bool is3D = (player == null && (player3D != null || Object.FindAnyObjectByType<Player3DController>() != null));
             currentCheckpointPos = is3D ? pos : new Vector3(pos.x, pos.y, 0f);
@@ -118,7 +118,23 @@ namespace HoaVaMau.Gameplay
                 DynamicDifficultyManager.Instance.AdvanceCheckpoint(currentCheckpointIndex);
             }
 
-            Debug.Log($"<color=#40b8a6>[CheckpointManager]</color> Checkpoint {currentCheckpointIndex} updated to: {currentCheckpointPos}");
+            if (autoSave && Application.isPlaying)
+            {
+                int activeSlot = HoaVaMauSaveSystem.ActiveSlotIndex;
+                string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+                string chapter = (activeScene == "CaMau_1954_Village") ? "Chương 2: Xóm Rạch Gốc 1954" : "Chương 1: Đất Đỏ Cà Mau";
+                string location = (activeScene == "CaMau_1954_Village") ? $"Làng Ven Sông (Trạm {currentCheckpointIndex})" : $"Rừng Sớm Cà Mau (Trạm {currentCheckpointIndex})";
+
+                HoaVaMauSaveSystem.SaveCurrentGameState(activeSlot, chapter, location, currentCheckpointIndex, currentCheckpointPos, true, activeScene);
+                PlanetOfLanaStartMenuSystem.TriggerAutosave(location);
+            }
+
+            Debug.Log($"<color=#40b8a6>[CheckpointManager]</color> Checkpoint {currentCheckpointIndex} updated to: {currentCheckpointPos} (Slot {HoaVaMauSaveSystem.ActiveSlotIndex} autosaved)");
+        }
+
+        public void CaptureAndSaveSlotThumbnail(int slot)
+        {
+            ThumbnailCaptureRuntime.CaptureSlot(slot);
         }
 
         public void RestartFromBeginning()

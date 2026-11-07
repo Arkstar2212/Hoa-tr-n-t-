@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_Lana_MossyBoulder_Artistic
+  m_Shader: {fileID: 4800000, guid: 547d1cb909383854aa328157152c27a2, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _GoldenEndX: 49
+    - _GoldenStartX: 42
+    - _GrassNormalThreshold: 0.4
+    - _IsGrassCap: 0.5
+    - _ReceiveShadows: 1
+    - _ShadowStrength: 0.38
+    m_Colors:
+    - _GrassGoldMidColor: {r: 0.5, g: 0.45, b: 0.20999995, a: 1}
+    - _GrassGoldTopColor: {r: 0.74, g: 0.65, b: 0.29999998, a: 1}
+    - _GrassMidColor: {r: 0.32, g: 0.36, b: 0.18, a: 1}
+    - _GrassShadowColor: {r: 0.2, g: 0.28, b: 0.18, a: 1}
+    - _GrassTopColor: {r: 0.44, g: 0.49, b: 0.27, a: 1}
+    - _RockDarkColor: {r: 0.13, g: 0.14, b: 0.16, a: 1}
+    - _RockLightColor: {r: 0.34, g: 0.35, b: 0.36, a: 1}
+    - _RockMidColor: {r: 0.22, g: 0.23, b: 0.25, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

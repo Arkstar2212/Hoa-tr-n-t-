@@ -300,6 +300,8 @@ namespace HoaVaMau.Gameplay
                 Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
                 if (screenPos.z > 0f)
                 {
+                    screenPos.x = Mathf.Clamp(screenPos.x, 90f, Screen.width - 90f);
+                    screenPos.y = Mathf.Clamp(screenPos.y, 70f, Screen.height - 70f);
                     glyphClusterRect.position = screenPos;
                 }
             }
@@ -340,7 +342,8 @@ namespace HoaVaMau.Gameplay
 
             tutorialCanvas = canvasGO.AddComponent<Canvas>();
             tutorialCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            tutorialCanvas.sortingOrder = 450;
+            tutorialCanvas.overrideSorting = true;
+            tutorialCanvas.sortingOrder = 32700; // ALWAYS ON TOP OF EVERYTHING ELSE
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -349,6 +352,7 @@ namespace HoaVaMau.Gameplay
 
             glyphFont = Font.CreateDynamicFontFromOSFont("Segoe UI", 28) ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
+            // Floating World-Projected Diegetic Keycap Cluster
             var clusterGO = new GameObject("GlyphCluster", typeof(RectTransform), typeof(CanvasGroup), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter));
             clusterGO.transform.SetParent(canvasGO.transform, false);
             glyphClusterRect = clusterGO.GetComponent<RectTransform>();

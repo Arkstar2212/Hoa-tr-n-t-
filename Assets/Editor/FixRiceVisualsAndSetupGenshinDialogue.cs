@@ -169,7 +169,8 @@ namespace HoaVaMau.EditorTools
 
             var dialogueCanvas = canvasGO.GetComponent<Canvas>();
             dialogueCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            dialogueCanvas.sortingOrder = 500;
+            dialogueCanvas.overrideSorting = true;
+            dialogueCanvas.sortingOrder = 25000;
 
             var scaler = canvasGO.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
