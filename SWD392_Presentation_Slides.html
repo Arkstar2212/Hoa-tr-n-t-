@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SWD392 - Software Architecture & Design | Hoa Trên Đất Đỏ</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css" id="theme">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai.min.css">
+<style>
+  :root {
+    --primary-color: #e06c75;
+    --accent-color: #61afef;
+    --bg-dark: #1e1e24;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --border-subtle: rgba(255, 255, 255, 0.15);
+  }
+  .reveal {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    color: #e0e0e0;
+  }
+  .reveal h1, .reveal h2, .reveal h3 {
+    text-transform: none;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .reveal h1 { color: #f8f9fa; font-size: 2.1em; }
+  .reveal h2 { color: #61afef; font-size: 1.5em; margin-bottom: 25px; border-bottom: 2px solid var(--accent-color); display: inline-block; padding-bottom: 5px; }
+  .reveal h3 { color: #98c379; font-size: 1.15em; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+    text-align: left;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px;
+    align-items: stretch;
+    text-align: left;
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    backdrop-filter: blur(8px);
+  }
+  .badge {
+    background: #e06c75;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.55em;
+    font-weight: bold;
+    vertical-align: middle;
+  }
+  .badge-blue { background: #61afef; }
+  .badge-green { background: #98c379; }
+  .badge-purple { background: #c678dd; }
+
+  ul { font-size: 0.72em; line-height: 1.6; }
+  p { font-size: 0.75em; line-height: 1.5; }
+  .text-highlight { color: #e5c07b; font-weight: 600; }
+  .diagram-box {
+    background: #111317;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px dashed #61afef;
+    font-family: monospace;
+    font-size: 0.62em;
+    line-height: 1.4;
+    white-space: pre;
+    color: #abb2bf;
+    overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+  <!-- SLIDE 1: TITLE -->
+  <section data-background-gradient="linear-gradient(to bottom, #111827, #030712)">
+    <span class="badge">SWD392 DEFENSE</span>
+    <h1 style="margin-top: 15px;">KIẾN TRÚC & THIẾT KẾ PHẦN MỀM</h1>
+    <h3 style="color: #abb2bf; font-weight: 400;">Đồ án Game 2.5D Narrative Adventure: <strong style="color: #e06c75;">Hoa trên đất đỏ</strong></h3>
+    <div style="margin-top: 40px; font-size: 0.65em; line-height: 1.8; color: #abb2bf;">
+      <p><strong>Nền tảng:</strong> Unity 6 (URP) | C# 9+ (.NET Standard) | Cinemachine 3 & New Input System</p>
+      <p><strong>Báo cáo viên:</strong> Nhóm Đồ Án Kỹ Thuật Phần Mềm</p>
+    </div>
+  </section>
+
+  <!-- SLIDE 2: PROBLEM STATEMENT & MOTIVATION -->
+  <section>
+    <h2>1. BÀI TOÁN & THÁCH THỨC THIẾT KẾ</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Bối cảnh & Nghiệp vụ Game</h3>
+        <ul>
+          <li>Thể loại: <span class="text-highlight">2.5D Historical Narrative Adventure</span> Nam Bộ thập niên 1950.</li>
+          <li>Kết hợp giữa đi cảnh màn hình ngang (2.5D platforming) với các đoạn chuyển cảnh điện ảnh 3D tự do (Cinematic 3D Orbit).</li>
+          <li>Cốt truyện phi tuyến tính: Cây hội thoại phân nhánh & tương tác NPC (Genshin-style dialogue flow).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Thách thức Kiến trúc (SWD)</h3>
+        <ul>
+          <li><strong>Tight Coupling:</strong> Các hệ thống Player, Camera, Cutscene, Audio, UI rất dễ bị phụ thuộc chéo lẫn nhau nếu không phân lớp tốt.</li>
+          <li><strong>Control Handover:</strong> Cơ chế bàn giao quyền điều khiển (Gameplay &harr; Timeline Cutscene) phải mượt mà, triệt tiêu race-condition.</li>
+          <li><strong>Performance:</strong> Duy trì chuẩn 60 FPS, Zero Memory Leak và Garbage Collection allocation tối thiểu.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 3: FURPS+ REQUIREMENTS -->
+  <section>
+    <h2>2. YÊU CẦU PHẦN MỀM (FURPS+ MODEL)</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3><span class="badge badge-blue">FR</span> Functional Requirements</h3>
+        <ul>
+          <li><strong>Locomotion Subsystem:</strong> Di chuyển 2.5D, nhảy vật lý, bám dây thừng, tương tác bến thuyền.</li>
+          <li><strong>Dialogue Subsystem:</strong> Cây hội thoại ScriptableObject, hỗ trợ hiển thị có dấu UTF-8, trigger quest.</li>
+          <li><strong>Cinematic Director:</strong> Tự động kích hoạt Cutscenes (Sunset Boat, Village Pier), blend camera mượt.</li>
+          <li><strong>Save/State System:</strong> Checkpoint lưu vị trí và cờ cốt truyện.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="badge badge-green">NFR</span> Quality Attributes</h3>
+        <ul>
+          <li><strong>Performance:</strong> Frame rate &ge; 60 FPS, Render budget &lt; 16.6ms, GC Alloc &lt; 1KB/frame.</li>
+          <li><strong>Modularity & Extensibility:</strong> Thêm màn chơi, cutscene hay NPC mới không can thiệp code nhân vật.</li>
+          <li><strong>Portability:</strong> Dùng Unity New Input System, tương thích Keyboard, Mouse, Gamepad.</li>
+          <li><strong>Reliability:</strong> 0 Missing Inspector References, cơ chế Fail-Safe khi cắt ngang cutscene.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 4: SYSTEM ARCHITECTURAL STYLE -->
+  <section>
+    <h2>3. KIẾN TRÚC TỔNG THỂ (LAYERED + EVENT-DRIVEN)</h2>
+    <div class="grid-2">
+      <div class="card" style="font-size: 0.9em;">
+        <h3>Phân tầng 4 Lớp (Tiered Architecture)</h3>
+        <p><strong>1. Presentation Layer:</strong> UI Canvas (TextMeshPro), Cinemachine Virtual Cameras, VFX.</p>
+        <p><strong>2. Business & Gameplay Logic:</strong> Character Locomotion, Cutscene FSM, Dialogue Controller.</p>
+        <p><strong>3. Core Services Layer:</strong> Game Event Bus, Input Action Providers, Audio Managers.</p>
+        <p><strong>4. Data & Asset Layer:</strong> ScriptableObjects (Quests, Dialogues), URP Shaders, Audio Assets.</p>
+      </div>
+      <div class="diagram-box">
+┌───────────────────────────────────────────────┐
+│        PRESENTATION (UI, V-CAM, VFX)          │
+└───────────────────────┬───────────────────────┘
+                        ▼
+┌───────────────────────────────────────────────┐
+│     GAMEPLAY LOGIC (Character, Dialogue)      │
+└───────────────────────┬───────────────────────┘
+                        ▼ (C# Events / Actions)
+┌───────────────────────────────────────────────┐
+│     CORE SERVICES (EventBus, Input, Audio)    │
+└───────────────────────┬───────────────────────┘
+                        ▼
+┌───────────────────────────────────────────────┐
+│   DATA & ASSETS (ScriptableObjects, URP Data) │
+└───────────────────────────────────────────────┘</div>
+    </div>
+  </section>
+
+  <!-- SLIDE 5: 4+1 ARCHITECTURAL VIEW MODEL -->
+  <section>
+    <h2>4. MÔ HÌNH 4+1 VIEW MODEL</h2>
+    <div class="grid-2">
+      <div class="card">
+        <p><strong>1. Logical View:</strong> Phân chia các gói domain: <code>Scripts/Camera</code>, <code>Scripts/Cutscenes</code>, <code>Scripts/Dialogue</code>, <code>Scripts/Player</code> với giao diện Interface tường minh.</p>
+        <p><strong>2. Process View:</strong> Tách biệt luồng vật lý (FixedUpdate 50Hz) với luồng logic (Update) và luồng bất đồng bộ (Coroutines/Async cho Cutscene & Tweening).</p>
+      </div>
+      <div class="card">
+        <p><strong>3. Development View:</strong> Tổ chức C# Assembly Definition Files (.asmdef) riêng biệt cho Editor và Runtime, đảm bảo build không rò rỉ Editor code.</p>
+        <p><strong>4. Physical / Deployment:</strong> Đóng gói Standalone Player (.exe x86_64) với Universal Render Pipeline 2D/3D Batching.</p>
+        <p><strong>+1. Scenarios (Use Cases):</strong> Trục cốt lõi: <em>Người chơi kích hoạt Trigger Bến Thuyền &rarr; Khóa Input &rarr; Timeline diễn hoạt thuyền rời bến &rarr; Camera trả lại góc chơi game</em>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 6: APPLIED DESIGN PATTERNS -->
+  <section>
+    <h2>5. CÁC DESIGN PATTERNS CHỦ CHỐT</h2>
+    <div class="grid-3">
+      <div class="card">
+        <span class="badge badge-purple">BEHAVIORAL</span>
+        <h3>Observer / Event Bus</h3>
+        <p>Giao tiếp giữa Director và Character thông qua C# Action Delegate. Triệt tiêu 100% hard-references giữa Cutscene và Player.</p>
+      </div>
+      <div class="card">
+        <span class="badge badge-purple">BEHAVIORAL</span>
+        <h3>State Pattern (FSM)</h3>
+        <p>Quản lý trạng thái nhân vật: <code>LocomotionState</code>, <code>RopeClimbState</code>, <code>InCutsceneLockedState</code>. Loại bỏ chuỗi <code>if-else</code> cồng kềnh.</p>
+      </div>
+      <div class="card">
+        <span class="badge badge-blue">CREATIONAL</span>
+        <h3>Singleton / Service</h3>
+        <p>Áp dụng cho <code>IntroAudioController</code>, <code>SaveSystem</code>. Kiểm soát vòng đời tập trung với <code>DontDestroyOnLoad</code> an toàn.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 7: DETAILED COMPONENT DESIGN (SOLID) -->
+  <section>
+    <h2>6. CHI TIẾT THIẾT KẾ & ÁP DỤNG SOLID</h2>
+    <div class="card" style="margin-bottom: 20px;">
+      <div class="grid-2">
+        <div>
+          <h3>Luồng Bàn Giao Cutscene (Handover)</h3>
+          <ul>
+            <li><strong>Single Responsibility (SRP):</strong> <code>BoatSunsetCutsceneDirector</code> chỉ lo kích hoạt Timeline & Camera; không can thiệp code di chuyển vật lý của Player.</li>
+            <li><strong>Open/Closed (OCP):</strong> Thêm màn cắt cảnh mới chỉ cần tạo thêm class cài đặt <code>ICinematicDirector</code> mà không phải sửa PlayerController.</li>
+            <li><strong>Dependency Inversion (DIP):</strong> Module tầng cao không phụ thuộc module tầng thấp; cả hai phụ thuộc vào Event Interface trung gian.</li>
+          </ul>
+        </div>
+        <div class="diagram-box">
+[BoatSunsetCutsceneDirector]
+         │ (Fires Event)
+         ▼
+[GameEventManager.OnCinematicTriggered(true)]
+   ┌─────┴────────────────┐
+   ▼                      ▼
+[PlayerController]    [HUDController]
+SetInputLocked(true)  FadeOutUI()
+StopPhysicsVelocity()</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 8: DATA ARCHITECTURE & ASSET MANAGEMENT -->
+  <section>
+    <h2>7. DATA ARCHITECTURE & ASSET INTEGRITY</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Data-Driven Architecture</h3>
+        <ul>
+          <li><strong>ScriptableObject Architecture:</strong> Tách biệt triệt để Logic xử lý khỏi Dữ liệu nội dung (Content).</li>
+          <li>Dữ liệu lời thoại, cây nhánh và thông số nhân vật được lưu dưới dạng Asset (.asset), cho phép Narrative Designer chỉnh sửa trực tiếp không cần compile code.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Asset Integrity & Performance</h3>
+        <ul>
+          <li><strong>Asset Pipeline:</strong> Bảo tồn nguyên bản tranh màu nước và quy chuẩn lịch sử Nam Bộ 1950.</li>
+          <li><strong>Memory Management:</strong> Sử dụng Texture Atlasing và Sprite Mesh Caching trong URP, hạn chế tối đa Draw Calls khi hiển thị background parallax nhiều lớp.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 9: QUALITY ASSURANCE & VERIFICATION -->
+  <section>
+    <h2>8. KIỂM THỬ VÀ ĐẢM BẢO CHẤT LƯỢNG (QA)</h2>
+    <div class="grid-3">
+      <div class="card">
+        <h3>Code Audit</h3>
+        <p>Quét tĩnh với StyleCop & Unity Roslyn Analyzers. Loại bỏ triệt để NullReferenceException và các hàm khởi tạo rác trong <code>Update()</code>.</p>
+      </div>
+      <div class="card">
+        <h3>Live Unity Profiler</h3>
+        <p>Đo kiểm trực tiếp trên Unity 6 URP. CPU frame time &lt; 12ms, GPU pass tối ưu hóa ánh sáng 2D Lit Shaders mượt mà.</p>
+      </div>
+      <div class="card">
+        <h3>Automated Hook Tests</h3>
+        <p>Triển khai <code>AutoRebuildLevelHook.cs</code> và Editor scripts để tự động thẩm định Hierarchy, Missing References trước khi build.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 10: CONCLUSION & FUTURE WORK -->
+  <section data-background-gradient="linear-gradient(to bottom, #111827, #030712)">
+    <h2>9. TỔNG KẾT & ĐỊNH HƯỚNG PHÁT TRIỂN</h2>
+    <div class="card" style="margin-bottom: 25px;">
+      <ul style="font-size: 0.8em;">
+        <li>Đã hiện thực hóa kiến trúc phần mềm chuẩn mực cho game narrative 2.5D, kết hợp mượt mà giữa Event-Driven và Layered Architecture.</li>
+        <li>Bảo đảm đầy đủ các chỉ số chất lượng: Hiệu năng cao (60 FPS), tính mở rộng cao, dễ dàng bảo trì và tích hợp nội dung mới.</li>
+        <li>Định hướng: Mở rộng hệ thống Streaming với Addressables và nâng cấp Node-based Graph cho các tình tiết phân nhánh phức tạp hơn ở các Chapter sau.</li>
+      </ul>
+    </div>
+    <h3 style="color: #e5c07b;">CẢM ƠN THẦY/CÔ VÀ CÁC BẠN ĐÃ LẮNG NGHE!</h3>
+    <p style="font-size: 0.7em; color: #abb2bf;">Q&A: Nhóm sẵn sàng giải đáp các câu hỏi kỹ thuật về Kiến trúc & Thiết kế hệ thống.</p>
+  </section>
+
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>
+  Reveal.initialize({
+    controls: true,
+    progress: true,
+    center: true,
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide'
+  });
+</script>
+</body>
+</html>

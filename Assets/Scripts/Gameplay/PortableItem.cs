@@ -58,10 +58,6 @@ namespace HoaVaMau.Gameplay
         {
             if (isCarried && carrier != null)
             {
-                // Lock Z to 0 during carry
-                Vector3 p = transform.position;
-                p.z = 0f;
-                transform.position = p;
                 return;
             }
 
@@ -69,6 +65,19 @@ namespace HoaVaMau.Gameplay
             if (transform.position.y < respawnBelowY)
             {
                 Respawn();
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (isCarried && carrier != null)
+            {
+                // Khóa chặt chẽ viên đá tại carrySocket (trên tay nhân vật) và mặt phẳng 2.5D (Z = 0)
+                transform.localPosition = Vector3.zero;
+                transform.localRotation = Quaternion.identity;
+                Vector3 p = transform.position;
+                p.z = 0f;
+                transform.position = p;
             }
         }
 

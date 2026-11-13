@@ -870,47 +870,92 @@ namespace HoaVaMau.Editor
         // =========================================================================================
         private static void PurgeUndergroundClutterAndStrayFoliage()
         {
-            // Scan all foliage and prop GameObjects in Zone 1 (X: -15m .. 35m)
-            var roots = new GameObject[] {
-                GameObject.Find("02_Gameplay"),
-                GameObject.Find("04_Lana_Unified_Ecosystem"),
-                GameObject.Find("08_Artistic_Refinements")
+            // A. Explicitly destroy legacy prototype roots that cast black silhouettes / 2D slab cutouts
+            string[] explicitRootsToPurge = new string[] {
+                "[Official_Lana_Foreground_Framing]",
+                "[Rock_VerticalCut_Cascade]"
             };
 
-            List<GameObject> toDestroy = new List<GameObject>();
-
-            foreach (var r in roots)
+            foreach (var rName in explicitRootsToPurge)
             {
-                if (r == null) continue;
-                foreach (var tr in r.GetComponentsInChildren<Transform>(true))
+                var go = GameObject.Find(rName);
+                if (go != null)
                 {
-                    if (tr == null || tr == r.transform) continue;
-                    float x = tr.position.x;
-                    float y = tr.position.y;
-                    float z = tr.position.z;
+                    Debug.Log($"<color=#f43f5e>[Purge]</color> Destroyed legacy clutter root: {rName}");
+                    UnityEngine.Object.DestroyImmediate(go);
+                }
+            }
 
-                    if (x < -15.0f || x > 35.0f) continue;
-
-                    // Allow ravine chasm floor objects between X = 14.4m and 17.8m down to Y = -4.2m
-                    if (x >= 14.4f && x <= 17.8f)
+            // B. Clean up Zone 1 items inside [Official_Lana_Foliage_Meadow_Additive] (X <= 35m)
+            var meadowGroup = GameObject.Find("[Official_Lana_Foliage_Meadow_Additive]");
+            if (meadowGroup != null)
+            {
+                List<GameObject> meadowZone1 = new List<GameObject>();
+                foreach (var tr in meadowGroup.GetComponentsInChildren<Transform>(true))
+                {
+                    if (tr != null && tr != meadowGroup.transform && tr.position.x <= 35.5f)
                     {
-                        if (y < -4.30f) toDestroy.Add(tr.gameObject);
+                        meadowZone1.Add(tr.gameObject);
+                    }
+                }
+                foreach (var go in meadowZone1)
+                {
+                    if (go != null) UnityEngine.Object.DestroyImmediate(go);
+                }
+                Debug.Log($"<color=#f43f5e>[Purge]</color> Cleaned {meadowZone1.Count} old meadow items in Zone 1.");
+            }
+
+            // C. Purge loose root 2D rocks and bushes in Zone 1
+            var rootObjs = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
+            foreach (var rgo in rootObjs)
+            {
+                if (rgo == null) continue;
+                string n = rgo.name;
+                float rx = rgo.transform.position.x;
+                if (rx <= 35.5f && (n.StartsWith("T_LanaVN_Rock_") || n.StartsWith("Rock_") || n.StartsWith("FG_") || n.StartsWith("T_HD_Bush_")))
+                {
+                    Debug.Log($"<color=#f43f5e>[Purge]</color> Destroyed loose root prop in Zone 1: {n}");
+                    UnityEngine.Object.DestroyImmediate(rgo);
+                }
+            }
+
+            // D. Comprehensive underground scan across all objects in Zone 1 (X: -15m .. 35m)
+            // Rule 5: NEVER touch protected Rice Paddies!
+            List<GameObject> toDestroy = new List<GameObject>();
+            var allRenderers = UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None);
+
+            foreach (var sr in allRenderers)
+            {
+                if (sr == null) continue;
+                var tr = sr.transform;
+                float x = tr.position.x;
+                float y = tr.position.y;
+                float z = tr.position.z;
+
+                if (x < -15.0f || x > 35.5f) continue;
+
+                // Protect rice field roots
+                string pName = tr.parent != null ? tr.parent.name : "";
+                if (pName.Contains("Rice") || pName.Contains("Paddy")) continue;
+
+                // Allow ravine chasm floor objects between X = 14.4m and 17.8m down to Y = -4.2m
+                if (x >= 14.4f && x <= 17.8f)
+                {
+                    if (y < -4.30f) toDestroy.Add(sr.gameObject);
+                    continue;
+                }
+
+                float expectedSurfaceY = SampleRefinedSurfaceY(x);
+
+                // If any sprite is buried more than 25cm under the surface, OR floating at negative Z in front of soil:
+                if (y < expectedSurfaceY - 0.25f || (z < 0.0f && y < expectedSurfaceY - 0.10f))
+                {
+                    string oname = sr.gameObject.name.ToLowerInvariant();
+                    if (oname.Contains("rootrock") || oname.Contains("underbelly") || oname.Contains("turfcap") || oname.Contains("mound"))
+                    {
                         continue;
                     }
-
-                    float expectedSurfaceY = SampleRefinedSurfaceY(x);
-
-                    // If any sprite, bush, plant or collider is buried more than 28cm under the surface: PURGE!
-                    if (y < expectedSurfaceY - 0.28f)
-                    {
-                        string n = tr.gameObject.name.ToLowerInvariant();
-                        // Keep root rocks and procedural underbelly
-                        if (n.Contains("rootrock") || n.Contains("underbelly") || n.Contains("ledge") || n.Contains("physic") || n.Contains("col_"))
-                        {
-                            continue;
-                        }
-                        toDestroy.Add(tr.gameObject);
-                    }
+                    toDestroy.Add(sr.gameObject);
                 }
             }
 

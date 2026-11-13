@@ -30,6 +30,9 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private Color crackTintLevel1 = new Color(0.92f, 0.78f, 0.65f);
         [SerializeField] private Color crackTintLevel2 = new Color(0.70f, 0.50f, 0.35f);
 
+        [Header("Liên kết Dây thừng (Bung dây khi vỡ chốt cọc gỗ)")]
+        [SerializeField] private RopeController linkedRopeToDrop;
+
         private int currentHits = 0;
         private InteractableCrate interactableCrate;
         private Transform visualRoot;
@@ -53,6 +56,21 @@ namespace HoaVaMau.Gameplay
                 {
                     Vector3 contactPt = collision.contacts.Length > 0 ? collision.contacts[0].point : transform.position;
                     TakeDamage(1, contactPt, collision.relativeVelocity);
+                }
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (isDestroyed) return;
+            var portable = other.GetComponentInParent<PortableItem>();
+            if (portable != null && !portable.IsCarried)
+            {
+                var rb = other.attachedRigidbody;
+                Vector3 vel = rb != null ? rb.linearVelocity : Vector3.down * 4f;
+                if (vel.magnitude >= minImpactSpeed * 0.5f)
+                {
+                    TakeDamage(1, other.ClosestPoint(transform.position), vel);
                 }
             }
         }
@@ -146,7 +164,12 @@ namespace HoaVaMau.Gameplay
             // Bắn ra các mảnh dăm gỗ nhỏ tại điểm va chạm
             SpawnWoodSplinters(impactPoint, impactVelocity);
 
-            if (currentHits == 1)
+            if (currentHits >= maxHits)
+            {
+                // VỠ VỤN THÀNH MẢNH (PhysX Fracture Pieces) — hỗ trợ maxHits = 1 (ném 1 phát vỡ ngay)
+                FractureAndExplode(impactPoint, impactVelocity);
+            }
+            else if (currentHits == 1)
             {
                 // Cấp độ 1: Xuất hiện vết rạn nứt đầu tiên
                 if (crackDecals.Count >= 2)
@@ -164,11 +187,6 @@ namespace HoaVaMau.Gameplay
                     if (decal != null) decal.SetActive(true);
                 }
                 PlayWoodHitSound(0.85f);
-            }
-            else if (currentHits >= maxHits)
-            {
-                // Cấp độ 3: VỠ VỤN THÀNH MẢNH (PhysX Fracture Pieces)
-                FractureAndExplode(impactPoint, impactVelocity);
             }
         }
 
@@ -226,14 +244,25 @@ namespace HoaVaMau.Gameplay
             if (isDestroyed) return;
             isDestroyed = true;
 
+            // Nếu chốt cọc gỗ có liên kết giữ dây thừng: Bung dây thừng rơi trôi xuống ngay!
+            if (linkedRopeToDrop != null)
+            {
+                linkedRopeToDrop.ReleaseCoiledRope();
+            }
+
             // Nếu người chơi đang bám kéo thùng: Buông ra ngay
             if (interactableCrate != null && interactableCrate.IsGrabbed)
             {
                 interactableCrate.ReleaseGrab();
             }
 
-            Vector3 crateCenter = transform.position + new Vector3(0f, 0.70f, 0f);
-            Vector3 size = (interactableCrate != null) ? interactableCrate.BoxSize : new Vector3(1.4f, 1.4f, 1.0f);
+            var ownBox = GetComponent<BoxCollider>();
+            Vector3 crateCenter = (interactableCrate != null)
+                ? transform.position + new Vector3(0f, 0.70f, 0f)
+                : transform.position;
+            Vector3 size = (interactableCrate != null)
+                ? interactableCrate.BoxSize
+                : (ownBox != null ? Vector3.Max(ownBox.size * 0.55f, new Vector3(0.45f, 0.45f, 0.45f)) : new Vector3(0.75f, 0.75f, 0.65f));
 
             GameObject debrisContainer = new GameObject($"FracturedCrate_Debris_{gameObject.name}");
             debrisContainer.transform.position = transform.position;
@@ -248,8 +277,8 @@ namespace HoaVaMau.Gameplay
                 bounceCombine = PhysicsMaterialCombine.Minimum
             };
 
-            int totalPlanks = Mathf.Max(12, plankPieceCount);
-            int totalChunks = Mathf.Max(12, chunkPieceCount);
+            int totalPlanks = Mathf.Max(4, plankPieceCount);
+            int totalChunks = Mathf.Max(4, chunkPieceCount);
 
             // 1. Sinh các mảnh ván gỗ dẹt (Wood Planks)
             for (int i = 0; i < totalPlanks; i++)

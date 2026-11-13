@@ -298,7 +298,8 @@ namespace HoaVaMau.Gameplay
                     break;
 
                 case PlayerState.AimingThrow:
-                    // Dừng chân tập trung canh góc & lực ném
+                    // Cho phép người chơi di chuyển bước chân tự nhiên (A/D) để canh góc và vị trí ném
+                    HandleAimLocomotion(dt);
                     interactionHandler.UpdateAimingThrow(
                         this,
                         inputReader.MousePosition,
@@ -448,6 +449,16 @@ namespace HoaVaMau.Gameplay
             }
 
             motor.ApplyHorizontalMovement(inputReader.Horizontal, currentSpeed, dt);
+        }
+
+        private void HandleAimLocomotion(float dt)
+        {
+            bool grounded = motor.IsGrounded;
+            motor.ApplyGravity(grounded, false, dt);
+
+            // Bước chân chậm rãi, tập trung canh góc ném (70% walkSpeed)
+            float aimSpeed = walkSpeed * 0.72f;
+            motor.ApplyHorizontalMovement(inputReader.Horizontal, aimSpeed, dt);
         }
 
         private void StartLedgeGrab(Vector3 grabPos, Vector3 landPos)

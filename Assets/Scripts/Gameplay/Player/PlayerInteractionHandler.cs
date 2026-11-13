@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace HoaVaMau.Gameplay
 {
@@ -397,10 +397,13 @@ namespace HoaVaMau.Gameplay
             currentAimAngle = Mathf.Atan2(throwDir.y, Mathf.Abs(throwDir.x)) * Mathf.Rad2Deg;
             aimVelocity = throwDir * currentAimPower;
 
-            // Vẽ đường cong Parabol dự đoán điểm rơi và tầm ném
+            // Vẽ đường cong Parabol dự đoán điểm rơi và sợi dây cao su nhiều đốt co giãn
             if (trajectoryPredictor != null)
             {
                 trajectoryPredictor.RenderTrajectory(launchPos, aimVelocity, Physics.gravity.y);
+                Vector3 rockPos = (carriedItem != null) ? carriedItem.transform.position : (launchPos - throwDir * 0.45f);
+                rockPos.z = 0f;
+                trajectoryPredictor.RenderRubberBand(launchPos, rockPos, currentAimPower / MaxThrowSpeed);
             }
 
             // Nhả Chuột Trái: Thực hiện ném bóng đi theo đúng quỹ đạo đã canh!

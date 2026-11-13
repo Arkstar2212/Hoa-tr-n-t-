@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace HoaVaMau.Gameplay
@@ -37,6 +37,11 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float totalLength = 4.6f;
         [SerializeField] private float ropeVisualWidth = 0.055f;
 
+        [Header("Coiled & Drop Release (Puzzle Mechanic)")]
+        [SerializeField] private bool startCoiled = false;
+        [SerializeField] private float coiledLength = 0.45f;
+        [SerializeField] private float dropUnrollSpeed = 8.0f;
+
         [Header("Physics & Motion Smoothing")]
         [SerializeField] private float gravity = 22.0f;
         [Range(0.90f, 0.999f)]
@@ -65,6 +70,9 @@ namespace HoaVaMau.Gameplay
         private float segmentLength;
         private Vector3 anchorPosition;
         private LineRenderer lineRenderer;
+        private bool isCoiled = false;
+        private float currentDeployedLength = 4.6f;
+        private bool hasBouncedAtBottom = false;
 
         // Attached Player & Pendulum State
         private PlayerController attachedPlayer;
@@ -83,6 +91,7 @@ namespace HoaVaMau.Gameplay
         public float AngularVelocity => angularVelocity;
         public float PlayerClimbFraction => playerClimbFraction;
         public float TotalLength => totalLength;
+        public bool IsCoiled => isCoiled;
 
         private void Awake()
         {
@@ -107,7 +116,9 @@ namespace HoaVaMau.Gameplay
             anchorPosition = transform.position;
             anchorPosition.z = 0f;
 
-            segmentLength = totalLength / Mathf.Max(1, nodeCount - 1);
+            isCoiled = startCoiled;
+            currentDeployedLength = isCoiled ? Mathf.Max(0.25f, coiledLength) : totalLength;
+            segmentLength = currentDeployedLength / Mathf.Max(1, nodeCount - 1);
 
             nodes = new RopeNode[nodeCount];
             for (int i = 0; i < nodeCount; i++)
@@ -158,7 +169,7 @@ namespace HoaVaMau.Gameplay
                 knotTr = knotGO.transform;
             }
             knotTr.localPosition = new Vector3(0f, 0.03f, -0.03f);
-            knotTr.localScale = new Vector3(0.55f, 0.55f, 1f);
+            knotTr.localScale = isCoiled ? new Vector3(0.75f, 0.75f, 1f) : new Vector3(0.55f, 0.55f, 1f);
             var sr = knotTr.GetComponent<SpriteRenderer>();
             if (sr == null) sr = knotTr.gameObject.AddComponent<SpriteRenderer>();
 #if UNITY_EDITOR
@@ -169,10 +180,10 @@ namespace HoaVaMau.Gameplay
 #endif
             sr.sortingOrder = lineRenderer.sortingOrder + 1;
 
-            // Trigger colliders starting from 20% down to 90% of length (playable zone)
-            int triggerCount = 8;
-            int startNode = Mathf.Max(1, Mathf.RoundToInt(nodeCount * 0.18f));
-            int endNode = Mathf.Min(nodeCount - 1, Mathf.RoundToInt(nodeCount * 0.92f));
+            // Trigger colliders starting from 16% down to 94% of length (playable zone)
+            int triggerCount = 10;
+            int startNode = Mathf.Max(1, Mathf.RoundToInt(nodeCount * 0.16f));
+            int endNode = Mathf.Min(nodeCount - 1, Mathf.RoundToInt(nodeCount * 0.94f));
             float step = (float)(endNode - startNode) / Mathf.Max(1, triggerCount - 1);
 
             for (int t = 0; t < triggerCount; t++)
@@ -193,10 +204,42 @@ namespace HoaVaMau.Gameplay
                 RopeSegmentTrigger rst = trigGO.AddComponent<RopeSegmentTrigger>();
                 rst.Init(this, nodeIdx);
 
+                if (isCoiled) trigGO.SetActive(false);
+
                 triggerColliders.Add(trigGO);
             }
 
             UpdateVisuals();
+        }
+
+        /// <summary>
+        /// Bung cuộn dây thừng khi chốt cọc gỗ buộc dây bị ném đá cuội làm vỡ:
+        /// dây tự động tuột rơi trôi xuống dưới khe vực để người chơi leo lên vùng đất cao hơn.
+        /// </summary>
+        public void ReleaseCoiledRope()
+        {
+            if (!isCoiled) return;
+            isCoiled = false;
+            hasBouncedAtBottom = false;
+
+            foreach (var trig in triggerColliders)
+            {
+                if (trig != null) trig.SetActive(true);
+            }
+
+            Transform knotTr = transform.Find("BranchKnot");
+            if (knotTr != null) knotTr.localScale = new Vector3(0.55f, 0.55f, 1f);
+
+            // Tạo xung lực rơi và đung đưa nhẹ tự nhiên khi dây bung xuống
+            if (nodes != null)
+            {
+                float dt = Time.fixedDeltaTime > 0f ? Time.fixedDeltaTime : 0.02f;
+                for (int i = 1; i < nodes.Length; i++)
+                {
+                    float factor = (float)i / (nodes.Length - 1);
+                    nodes[i].prevPosition = nodes[i].position - new Vector3(0.75f * factor, -3.2f * factor, 0f) * dt;
+                }
+            }
         }
 
         private void FixedUpdate()
@@ -206,6 +249,28 @@ namespace HoaVaMau.Gameplay
             float dt = Time.fixedDeltaTime;
             anchorPosition = transform.position;
             anchorPosition.z = 0f;
+
+            if (isCoiled)
+            {
+                currentDeployedLength = Mathf.Max(0.25f, coiledLength);
+                segmentLength = currentDeployedLength / Mathf.Max(1, nodeCount - 1);
+            }
+            else if (currentDeployedLength < totalLength)
+            {
+                currentDeployedLength = Mathf.MoveTowards(currentDeployedLength, totalLength, dropUnrollSpeed * dt);
+                segmentLength = currentDeployedLength / Mathf.Max(1, nodeCount - 1);
+
+                // Khi dây rơi chạm tới đáy: Tạo phản lực nảy ngược đàn hồi như sợi cao su nhiều đốt (elastic snap & bounce)
+                if (!hasBouncedAtBottom && currentDeployedLength >= totalLength * 0.94f)
+                {
+                    hasBouncedAtBottom = true;
+                    for (int i = 1; i < nodes.Length; i++)
+                    {
+                        float ratio = (float)i / (nodes.Length - 1);
+                        nodes[i].prevPosition = nodes[i].position + new Vector3(0.40f * Mathf.Sin(ratio * Mathf.PI), 1.95f * ratio, 0f) * dt;
+                    }
+                }
+            }
 
             if (attachedPlayer != null)
             {
@@ -400,7 +465,9 @@ namespace HoaVaMau.Gameplay
                     if (dist < 0.0001f) continue;
 
                     float error = (dist - segmentLength) / dist;
-                    Vector3 correction = delta * (error * 0.5f);
+                    // Độ đàn hồi cao su tự nhiên (compliance 0.88f) giúp dây co giãn và nảy mềm mại
+                    float rubberCompliance = 0.88f;
+                    Vector3 correction = delta * (error * 0.5f * rubberCompliance);
 
                     if (i == 0)
                     {
@@ -410,6 +477,17 @@ namespace HoaVaMau.Gameplay
                     {
                         nodes[i].position += correction;
                         nodes[i + 1].position -= correction;
+
+                        // Bending resistance: giữ cho sợi dây cao su nhiều đốt luôn có độ uốn cong tự nhiên
+                        if (i > 0 && i < nodes.Length - 1)
+                        {
+                            Vector3 prev = nodes[i - 1].position;
+                            Vector3 curr = nodes[i].position;
+                            Vector3 next = nodes[i + 1].position;
+                            Vector3 mid = (prev + next) * 0.5f;
+                            Vector3 bendCorrection = (mid - curr) * (0.075f * rubberCompliance);
+                            nodes[i].position += bendCorrection;
+                        }
                     }
                 }
 
@@ -447,17 +525,46 @@ namespace HoaVaMau.Gameplay
             UpdateVisuals();
         }
 
+        private Vector3 GetCatmullRomPosition(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
+        {
+            return 0.5f * (
+                (2f * p1) +
+                (-p0 + p2) * t +
+                (2f * p0 - 5f * p1 + 4f * p2 - p3) * (t * t) +
+                (-p0 + 3f * p1 - 3f * p2 + p3) * (t * t * t)
+            );
+        }
+
         private void UpdateVisuals()
         {
             if (nodes == null || nodes.Length < 2 || lineRenderer == null) return;
 
-            Vector3[] positions = new Vector3[nodes.Length];
-            for (int i = 0; i < nodes.Length; i++)
+            // Nội suy đường cong mượt mà Catmull-Rom spline qua các đốt dây cao su (3 phân đoạn / đốt)
+            int subDivisions = 3;
+            int pointCount = (nodes.Length - 1) * subDivisions + 1;
+            Vector3[] splinePoints = new Vector3[pointCount];
+            int ptIdx = 0;
+
+            for (int i = 0; i < nodes.Length - 1; i++)
             {
-                positions[i] = nodes[i].position;
+                Vector3 p0 = (i > 0) ? nodes[i - 1].position : (nodes[i].position + (nodes[i].position - nodes[i + 1].position));
+                Vector3 p1 = nodes[i].position;
+                Vector3 p2 = nodes[i + 1].position;
+                Vector3 p3 = (i < nodes.Length - 2) ? nodes[i + 2].position : (nodes[i + 1].position + (nodes[i + 1].position - nodes[i].position));
+
+                for (int sub = 0; sub < subDivisions; sub++)
+                {
+                    float t = (float)sub / subDivisions;
+                    Vector3 pt = GetCatmullRomPosition(t, p0, p1, p2, p3);
+                    pt.z = 0f;
+                    splinePoints[ptIdx++] = pt;
+                }
             }
-            lineRenderer.positionCount = nodes.Length;
-            lineRenderer.SetPositions(positions);
+            splinePoints[ptIdx] = nodes[nodes.Length - 1].position;
+            splinePoints[ptIdx].z = 0f;
+
+            lineRenderer.positionCount = splinePoints.Length;
+            lineRenderer.SetPositions(splinePoints);
         }
 
         // ==========================================
@@ -465,6 +572,7 @@ namespace HoaVaMau.Gameplay
         // ==========================================
         public void OnPlayerTouchSegment(PlayerController player, int nodeIndex, Vector3 incomingVelocity = default)
         {
+            if (isCoiled) return;
             if (attachedPlayer != null) return;
             if (!player.CanAttachToRope) return;
             if (player.CurrentState == PlayerState.LedgeGrab || player.CurrentState == PlayerState.LedgeClimb) return;
@@ -508,6 +616,11 @@ namespace HoaVaMau.Gameplay
 
         public int GetNearestNodeIndex(Vector3 pos, out float distance)
         {
+            if (isCoiled)
+            {
+                distance = float.MaxValue;
+                return -1;
+            }
             int bestIdx = 0;
             float minDistSq = float.MaxValue;
             if (nodes != null)

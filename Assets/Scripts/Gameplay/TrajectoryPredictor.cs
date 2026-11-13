@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace HoaVaMau.Gameplay
@@ -21,13 +21,20 @@ namespace HoaVaMau.Gameplay
         [SerializeField] private float lineWidthStart = 0.08f;
         [SerializeField] private float lineWidthEnd = 0.04f;
 
+        [Header("Elastic Rubber Band (Sợi cao su nhiều đốt)")]
+        [SerializeField] private int rubberSegmentCount = 12;
+        [SerializeField] private Color rubberColor = new Color(0.85f, 0.42f, 0.22f, 0.95f);
+        [SerializeField] private float rubberWidth = 0.042f;
+
         private LineRenderer lineRend;
+        private LineRenderer rubberRend;
         private Transform landingMarker;
         private readonly List<Vector3> points = new List<Vector3>(40);
 
         private void Awake()
         {
             SetupLineRenderer();
+            SetupRubberRenderer();
             CreateLandingMarker();
             Hide();
         }
@@ -142,12 +149,77 @@ namespace HoaVaMau.Gameplay
             }
         }
 
+        private void SetupRubberRenderer()
+        {
+            Transform existing = transform.Find("Trajectory_RubberBand");
+            if (existing != null) rubberRend = existing.GetComponent<LineRenderer>();
+            else
+            {
+                GameObject rubberGO = new GameObject("Trajectory_RubberBand");
+                rubberGO.transform.SetParent(transform, false);
+                rubberRend = rubberGO.AddComponent<LineRenderer>();
+            }
+
+            rubberRend.useWorldSpace = true;
+            rubberRend.startWidth = rubberWidth;
+            rubberRend.endWidth = rubberWidth * 0.78f;
+            rubberRend.numCapVertices = 4;
+            rubberRend.numCornerVertices = 4;
+            rubberRend.startColor = rubberColor;
+            rubberRend.endColor = rubberColor;
+
+            Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
+            if (unlitShader != null)
+            {
+                Material mat = new Material(unlitShader);
+                mat.color = rubberColor;
+                rubberRend.sharedMaterial = mat;
+            }
+            rubberRend.enabled = false;
+        }
+
+        /// <summary>
+        /// Mô phỏng sợi dây cao su nhiều đốt đàn hồi co giãn nối giữa điểm tì tay và viên đá ném.
+        /// </summary>
+        public void RenderRubberBand(Vector3 anchorPos, Vector3 stonePos, float powerRatio)
+        {
+            if (rubberRend == null) SetupRubberRenderer();
+            if (rubberRend == null) return;
+
+            rubberRend.enabled = true;
+            Vector3[] bandPoints = new Vector3[rubberSegmentCount];
+            float tension = Mathf.Clamp01(powerRatio);
+            float vibration = Mathf.Sin(Time.time * 26f) * (0.016f * tension);
+
+            Vector3 dir = stonePos - anchorPos;
+            Vector3 normal = Vector3.Cross(dir.normalized, Vector3.forward);
+
+            for (int i = 0; i < rubberSegmentCount; i++)
+            {
+                float t = (float)i / (rubberSegmentCount - 1);
+                Vector3 p = Vector3.Lerp(anchorPos, stonePos, t);
+                // Catenary sag mềm mại & dao động đàn hồi tự nhiên như sợi cao su thật
+                float sag = Mathf.Sin(t * Mathf.PI) * (0.038f * (1f - tension * 0.75f) + vibration);
+                p += normal * sag;
+                p.z = 0f;
+                bandPoints[i] = p;
+            }
+
+            rubberRend.positionCount = rubberSegmentCount;
+            rubberRend.SetPositions(bandPoints);
+        }
+
         public void Hide()
         {
             if (lineRend != null)
             {
                 lineRend.positionCount = 0;
                 lineRend.enabled = false;
+            }
+            if (rubberRend != null)
+            {
+                rubberRend.positionCount = 0;
+                rubberRend.enabled = false;
             }
             if (landingMarker != null)
             {

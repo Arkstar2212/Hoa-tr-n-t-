@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -285,6 +285,22 @@ namespace HoaVaMau.Gameplay
                 animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0f);
             }
 
+            // Aiming Throw IK: Khi vá»«a bÆ°á»›c Ä‘i vá»«a ngáº¯m nÃ©m, khÃ³a tay pháº£i giÆ¡ ra sau vÃ  tay trÃ¡i ngáº¯m tá»›i trÆ°á»›c
+            if (playerController != null && playerController.CurrentState == PlayerState.AimingThrow && currentSmoothSpeed > 0.15f)
+            {
+                float facing = playerController.FacingDirection;
+                Transform hBone = (headBone != null) ? headBone : animator.GetBoneTransform(HumanBodyBones.Head);
+                Vector3 headP = (hBone != null) ? hBone.position : transform.position + Vector3.up * 1.25f;
+                Vector3 aimHandBack = headP + new Vector3(-facing * 0.28f, 0.05f, 0f);
+                Vector3 aimFrontHand = headP + new Vector3(facing * 0.42f, -0.05f, 0f);
+
+                animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0.90f);
+                animator.SetIKPosition(AvatarIKGoal.RightHand, aimHandBack);
+
+                animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 0.70f);
+                animator.SetIKPosition(AvatarIKGoal.LeftHand, aimFrontHand);
+            }
+
             bool isCrouchedState = (currentPlayingState == "Crouch" || currentPlayingState == "CrouchWalk" || currentPlayingState == "CrouchIdle" ||
                                    mode == AnAnimationMode.ForceCrouch ||
                                    (playerController != null && playerController.IsCrouching));
@@ -429,10 +445,18 @@ namespace HoaVaMau.Gameplay
                         activeCarrySocket.position = Vector3.Lerp(handPos, defaultCarryWorldPos, liftT * liftT);
                     }
                 }
-                else if (throwPhase == ThrowAnimPhase.AimWindup && rightHandBone != null)
+                else
                 {
-                    // Khi giơ tay ra sau chuẩn bị ném: đặt vật nằm trên bàn tay phải đang vung ra sau
-                    activeCarrySocket.position = new Vector3(rightHandBone.position.x, rightHandBone.position.y + 0.05f, 0f);
+                    // Khi đang bưng/cầm đá (Carrying) hoặc đang ngắm ném (AimWindup):
+                    // Khóa chặt vị trí viên đá vào bàn tay phải (Right Hand), đồng bộ 100% theo bước chân di chuyển của người chơi
+                    if (rightHandBone != null)
+                    {
+                        activeCarrySocket.position = new Vector3(rightHandBone.position.x, rightHandBone.position.y, 0f);
+                    }
+                    else
+                    {
+                        activeCarrySocket.position = defaultCarryWorldPos;
+                    }
                 }
             }
         }
@@ -783,16 +807,27 @@ namespace HoaVaMau.Gameplay
             }
             else if (throwPhase == ThrowAnimPhase.AimWindup || (playerController != null && playerController.CurrentState == PlayerState.AimingThrow))
             {
-                // Pha 2 (Chuẩn bị ném / Giữ Chuột Trái): Bỏ qua đoạn nhặt đồ, lấy khúc chuẩn bị ném (0.37 -> 0.45) và giữ nguyên tư thế giơ tay ngắm
+                // Pha 2 (Chuẩn bị ném / Giữ Chuột Trái): Bỏ qua đoạn nhặt đồ, lấy khúc chuẩn bị ném (0.37 -> 0.45)
                 if (throwPhase != ThrowAnimPhase.AimWindup)
                 {
                     throwPhase = ThrowAnimPhase.AimWindup;
                     throwNormTime = ThrowPickupEndNorm;
                 }
-                currentPlayingState = "Throw";
-                animator.speed = 0f;
-                throwNormTime = Mathf.MoveTowards(throwNormTime, ThrowAimHoldNorm, (0.08f / 0.18f) * dt);
-                animator.Play("Throw", 0, throwNormTime);
+
+                // Nếu người chơi đang bấm A/D di chuyển trong khi ngắm ném:
+                // Chân bước đi (Walk) tự nhiên, chân không bao giờ đứng im một chỗ!
+                if (currentSmoothSpeed > 0.15f)
+                {
+                    animator.speed = 1f;
+                    CrossFadeToState("Walk", 0.12f);
+                }
+                else
+                {
+                    currentPlayingState = "Throw";
+                    animator.speed = 0f;
+                    throwNormTime = Mathf.MoveTowards(throwNormTime, ThrowAimHoldNorm, (0.08f / 0.18f) * dt);
+                    animator.Play("Throw", 0, throwNormTime);
+                }
             }
             else if (throwPhase == ThrowAnimPhase.Release)
             {
@@ -856,9 +891,11 @@ namespace HoaVaMau.Gameplay
             }
             else if (playerController != null && playerController.CurrentState == PlayerState.Carrying)
             {
+                // Khi cáº§m Ä‘Ã¡ di chuyá»ƒn: ChÃ¢n bÆ°á»›c Ä‘i (Walk) hoáº·c cháº¡y (Run) tá»± nhiÃªn, Ä‘Ã¡ luÃ´n Ä‘i theo tay
                 if (currentSmoothSpeed > 0.15f)
                 {
-                    CrossFadeToState("Carry", 0.15f);
+                    string locoState = (playerController.IsSprinting) ? "Run" : "Walk";
+                    CrossFadeToState(locoState, 0.15f);
                 }
                 else
                 {
